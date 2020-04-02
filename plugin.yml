@@ -67,6 +67,26 @@ commands:
     usage: /<command>
     permission: opme.deop
     permission-message: §4Error:§c You do not have permission to execute this command...
+  reward:
+    description: Opens the secrets GUI
+    usage: /<command>
+    permission: rewardgui.*
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  rewards:
+    description: Opens the secrets GUI
+    usage: /<command>
+    permission: rewardgui.*
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  secret:
+    description: Opens the secrets GUI
+    usage: /<command>
+    permission: rewardgui.*
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  secrets:
+    description: Opens the secrets GUI
+    usage: /<command>
+    permission: rewardgui.*
+    permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
   guardpkg.admin:
     description: access to all GuardPkg commands as admin status
@@ -128,3 +148,5 @@ permissions:
   opme.joinbypass:
     description: Bypasses deop on join
     default: false
+  rewardgui.*:
+    description: Gives access to reward GUI

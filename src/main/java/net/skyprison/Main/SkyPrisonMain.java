@@ -52,6 +52,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         File f = new File("plugins/SkyPrisonCore/spongeLocations.yml");
         File f2 = new File("plugins/SkyPrisonCore/regionLocations.yml");
         File f3 = new File("plugins/SkyPrisonCore/dropChest.yml");
+        File f4 = new File("plugins/SkyPrisonCore/rewardGUI.yml");
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
         String date = format.format(new Date());
         File file = new File("plugins/RanksPkg/staff/"+date+".txt");
@@ -65,6 +66,10 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         getCommand("minetp").setExecutor(new MineTP());
         getCommand("opme").setExecutor(new Opme());
         getCommand("deopme").setExecutor(new Deopme());
+        getCommand("rewards").setExecutor(new RewardGUI());
+        getCommand("reward").setExecutor(new RewardGUI());
+        getCommand("secrets").setExecutor(new RewardGUI());
+        getCommand("secret").setExecutor(new RewardGUI());
         if (config.getBoolean("enable-op-command")) {
             getCommand("op").setExecutor(new Op());
         } else {
@@ -577,6 +582,25 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                 | event.getMessage().contains(":DEoP")){
             event.setCancelled(true);
             event.getPlayer().sendMessage(ChatColor.WHITE + "Unknown command. Type " + '"' + "/help" + '"' + " for help.");
+        }
+    }
+//
+// EventHandlers for RewardGUI
+//
+    private RewardGUI RewardGUI = new RewardGUI();
+    @EventHandler
+    public void clickEvent(InventoryClickEvent event) {
+        if (ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("prison secrets") || ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("free secrets")) {
+            if(event.getCurrentItem() != null) {
+                event.setCancelled(true);
+                if(event.getCurrentItem().getType() == Material.PAPER) {
+                    if(event.getSlot() == 53) {
+                        RewardGUI.openGUI((Player) event.getWhoClicked(), 1);
+                    } else if(event.getSlot() == 45) {
+                        RewardGUI.openGUI((Player) event.getWhoClicked(), 0);
+                    }
+                }
+            }
         }
     }
 }
