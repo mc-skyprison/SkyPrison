@@ -135,11 +135,7 @@ public class RewardGUI implements Listener, CommandExecutor {
 
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		Player player = (Player)sender;
-		if (player.hasPermission("rewardgui.*")) {
-			openGUI(player, 0);
-		} else {
-			player.sendMessage(ChatColor.RED + "Sorry, you do not have permission to use that command...");
-		}
+		openGUI(player, 0);
 		return true;
 	}
 }
