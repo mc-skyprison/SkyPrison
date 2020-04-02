@@ -1,7 +1,7 @@
 name: SkyPrisonCore
 authors: [Redhelmet8, DrakePork]
 description: Guard plugins for SkyPrison
-version: 2.0
+version: 3.0
 main: net.skyprison.Main.SkyPrisonMain
 api-version: 1.15
 depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin]
@@ -47,6 +47,26 @@ commands:
     usage: /<command>
     permission: minetp.*
     permission-message: §4Error:§c You do not have permission to execute this command...
+  opme:
+    description: Ops the player.
+    usage: /<command>
+    permission: opme.opme
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  deopme:
+    description: Deops the player.
+    usage: /<command>
+    permission: opme.deopme
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  op:
+    description: Ops a player.
+    usage: /<command>
+    permission: opme.op
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  deop:
+    description: Deops a player
+    usage: /<command>
+    permission: opme.deop
+    permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
   guardpkg.admin:
     description: access to all GuardPkg commands as admin status
@@ -84,3 +104,27 @@ permissions:
     description: Gives access to all RegionTP commands
   minetp.*:
     description: Gives access to all RegionTP commands
+  opme.*:
+    description: Gives access to all commands
+    default: false
+    children:
+      opme.opme: true
+      opme.op: true
+      opme.deop: true
+      opme.deopme: true
+      opme.joinbypass: true
+  opme.opme:
+    description: Gives access to opme command
+    default: false
+  opme.deopme:
+    description: Gives access to deopme command
+    default: false
+  opme.op:
+    description: Gives access to op command
+    default: false
+  opme.deop:
+    description: Gives access to deop command
+    default: false
+  opme.joinbypass:
+    description: Bypasses deop on join
+    default: false

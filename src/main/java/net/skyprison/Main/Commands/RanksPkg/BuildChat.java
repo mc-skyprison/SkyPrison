@@ -1,4 +1,4 @@
-package net.skyprison.Main.Commands;
+package net.skyprison.Main.Commands.RanksPkg;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -7,7 +7,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-public class GuardChat implements CommandExecutor {
+public class BuildChat implements CommandExecutor {
     public void tellConsole(String message){
         Bukkit.getConsoleSender().sendMessage(message);
     }
@@ -15,7 +15,7 @@ public class GuardChat implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if(sender instanceof Player) {
             Player player = (Player)sender;
-            if (!player.hasPermission("guardpkg.admin") && !player.hasPermission("guardpkg.guard") && !player.hasPermission("guardpkg.trialguard")) {
+            if (!player.hasPermission("builderpkg.admin") && !player.hasPermission("builderpkg.builder")) {
                 return false;
             } else {
                 String message = "";
@@ -23,9 +23,9 @@ public class GuardChat implements CommandExecutor {
                     message = message + args[i] + " ";
                 }
                 message = ChatColor.translateAlternateColorCodes('&', message);
-                String fullMessage = "" + ChatColor.DARK_GRAY + ChatColor.BOLD + "(" + ChatColor.GRAY + ChatColor.BOLD + "GUARD" + ChatColor.DARK_GRAY + ChatColor.BOLD + ") " + ChatColor.RED + "" + player.getName() + ChatColor.WHITE + ": " + ChatColor.DARK_AQUA + message;
+                String fullMessage = "" + ChatColor.GREEN + ChatColor.BOLD + "(" + ChatColor.GRAY + ChatColor.BOLD + "BUILDER" + ChatColor.GREEN + ChatColor.BOLD + ") " + ChatColor.RED + "" + player.getName() + ChatColor.WHITE + ": " + ChatColor.GREEN + message;
                 for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-                    if (online.hasPermission("guardpkg.admin") || online.hasPermission("guardpkg.guard") || online.hasPermission("guardpkg.trialguard")) {
+                    if (online.hasPermission("builderpkg.builder") || online.hasPermission("builderpkg.admin")) {
                         online.sendMessage(fullMessage);
                     }
                 }
@@ -38,9 +38,9 @@ public class GuardChat implements CommandExecutor {
                 message = message + args[i] + " ";
             }
             message = ChatColor.translateAlternateColorCodes('&', message);
-            String fullMessage = "" + ChatColor.DARK_GRAY + ChatColor.BOLD + "(" + ChatColor.GRAY + ChatColor.BOLD + "GUARD" + ChatColor.DARK_GRAY + ChatColor.BOLD + ") " + ChatColor.RED + "Console" + ChatColor.WHITE + ": " + ChatColor.DARK_AQUA + message;
+            String fullMessage = "" + ChatColor.GREEN + ChatColor.BOLD + "(" + ChatColor.GRAY + ChatColor.BOLD + "BUILDER" + ChatColor.GREEN + ChatColor.BOLD + ") " + ChatColor.RED + "Console"  + ChatColor.WHITE + ": " + ChatColor.GREEN + message;
             for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-                if (online.hasPermission("guardpkg.admin") || online.hasPermission("guardpkg.guard") || online.hasPermission("guardpkg.trialguard")) {
+                if (online.hasPermission("builderpkg.builder") || online.hasPermission("builderpkg.admin")) {
                     online.sendMessage(fullMessage);
                 }
             }

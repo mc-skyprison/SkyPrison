@@ -6,11 +6,14 @@ import java.util.*;
 
 import com.bergerkiller.bukkit.common.events.EntityRemoveEvent;
 import net.skyprison.Main.Commands.*;
+import net.skyprison.Main.Commands.RanksPkg.*;
+import net.skyprison.Main.Commands.Opme.*;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
@@ -27,6 +30,7 @@ import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -36,9 +40,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class SkyPrisonMain extends JavaPlugin implements Listener {
     private static SkyPrisonMain instance;
+    FileConfiguration config = this.getConfig();
     public void onEnable() {
         Bukkit.getServer().getPluginManager().registerEvents(this, this);
-        getConfig().options().copyDefaults(true);
+        config.addDefault("enable-op-command", true);
+        config.addDefault("enable-deop-command", true);
+        config.addDefault("deop-on-join", false);
+        config.options().copyDefaults(true);
         saveConfig();
         instance = this;
         File f = new File("plugins/SkyPrisonCore/spongeLocations.yml");
@@ -55,6 +63,18 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         getCommand("dropchest").setExecutor(new DropChest());
         getCommand("regiontp").setExecutor(new RegionTP());
         getCommand("minetp").setExecutor(new MineTP());
+        getCommand("opme").setExecutor(new Opme());
+        getCommand("deopme").setExecutor(new Deopme());
+        if (config.getBoolean("enable-op-command")) {
+            getCommand("op").setExecutor(new Op());
+        } else {
+            getCommand("op").setExecutor(new Opdisable());
+        }
+        if (config.getBoolean("enable-deop-command")) {
+            getCommand("deop").setExecutor(new Deop());
+        } else {
+            getCommand("deop").setExecutor(new Opdisable());
+        }
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             Bukkit.getPluginManager().registerEvents(this, this);
         } else {
@@ -216,7 +236,9 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         }
         guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.GOLD + target.getName() + ChatColor.YELLOW + " has handed over their contraband!");
     }
-
+//
+// EventHandlers regarding RanksPkg
+//
     @EventHandler
     public void cbedChat(AsyncPlayerChatEvent event) {
         final Player target = event.getPlayer();
@@ -389,14 +411,16 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             }
         }
     }
-
+//
+// EventHandlers regarding DropParty Chest
+//
     @EventHandler
     public void voidFall(EntityRemoveEvent event) {
         if (event.getEntity().getLocation().getY() < -63) {
             if (event.getEntityType() == EntityType.DROPPED_ITEM) {
                 Item item = (Item) event.getEntity();
                 ItemStack sItem = item.getItemStack();
-                File f = new File("plugins/RanksPkg/dropChest.yml");
+                File f = new File("plugins/SkyPrisonCore/dropChest.yml");
                 YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
                 for (int i = 0; i < 54; i++) {
                     if (!yamlf.contains("items." + i)) {
@@ -412,14 +436,16 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             }
         }
     }
-
+//
+// EventHandlers regarding Sponge Event
+//
     @EventHandler
     public void spongeEvent(BlockDamageEvent event) {
         Block b = event.getBlock();
         Location loc = b.getLocation();
         if(b.getType() == Material.SPONGE) {
             if (loc.getWorld().getName().equalsIgnoreCase("prison") || loc.getWorld().getName().equalsIgnoreCase("event_world")) {
-                File f = new File("plugins/RanksPkg/spongeLocations.yml");
+                File f = new File("plugins/SkyPrisonCore/spongeLocations.yml");
                 YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
                 Set setList = yamlf.getConfigurationSection("locations").getKeys(false);
                 for (int i = 0; i < setList.size(); i++) {
@@ -456,7 +482,9 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             }
         }
     }
-
+//
+// EventHandlers regarding Villager Trading
+//
     @EventHandler
     public void villagerTrade(InventoryOpenEvent event) {
         if (event.getInventory().getType() != InventoryType.MERCHANT) {
@@ -466,7 +494,9 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             event.setCancelled(true);
         }
     }
-
+//
+// EventHandlers regarding Farming & Mining
+//
     @EventHandler
     public void cactusGrow (ItemSpawnEvent event) {
         ItemStack b = event.getEntity().getItemStack();
@@ -516,6 +546,37 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                     }
                 }
             }
+        }
+    }
+//
+// EventHandlers regarding Opme commands
+//
+    @EventHandler
+    public void deopOnJoin(PlayerJoinEvent event) {
+        Player p = event.getPlayer();
+        if (config.getBoolean("deop-on-join")) {
+            if (!p.hasPermission("opme.joinbypass")) {
+                if(p.isOp()) {
+                    p.setOp(false);
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void disableCommands(PlayerCommandPreprocessEvent event)  {
+        if(event.getMessage().startsWith("/") && event.getMessage().contains(":op")
+                | event.getMessage().contains(":OP") | event.getMessage().contains(":Op")
+                | event.getMessage().contains(":oP") | event.getMessage().contains(":deop")
+                | event.getMessage().contains(":DEOP") | event.getMessage().contains(":Deop")
+                | event.getMessage().contains(":dEop") | event.getMessage().contains(":deOp")
+                | event.getMessage().contains(":deoP") | event.getMessage().contains(":DEop")
+                | event.getMessage().contains(":dEOp") | event.getMessage().contains(":deOP")
+                | event.getMessage().contains(":DeoP") | event.getMessage().contains(":DEOp")
+                | event.getMessage().contains(":dEOP") | event.getMessage().contains(":DeOP")
+                | event.getMessage().contains(":DEoP")){
+            event.setCancelled(true);
+            event.getPlayer().sendMessage(ChatColor.WHITE + "Unknown command. Type " + '"' + "/help" + '"' + " for help.");
         }
     }
 }
