@@ -1,0 +1,86 @@
+name: SkyPrisonCore
+authors: [Redhelmet8, DrakePork]
+description: Guard plugins for SkyPrison
+version: 2.0
+main: net.skyprison.Main.SkyPrisonMain
+api-version: 1.15
+depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin]
+commands:
+  cb:
+    description: Request contraband from player
+    usage: /<command>
+  guardduty:
+    description: Go on and off duty as a guard
+    usage: /<command>
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  g:
+    description: Guard Chat
+    usage: /<command>
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  buildmode:
+    description: Go on and off builder mode
+    usage: /<command>
+    permission: builderpkg.builder
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  b:
+    description: Builder Chat
+    usage: /<command>
+    permission: builderpkg.builder
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  spongeloc:
+    description: Sponge Commands
+    usage: /<command>
+    permission: sponge.setlocation
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  dropchest:
+    description: DropChest Commands
+    usage: /<command>
+    permission: dropchest.*
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  regiontp:
+    description: Teleport players within regions to other places
+    usage: /<command>
+    permission: regionteleport.*
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  minetp:
+    description: Teleport with tokens wow
+    usage: /<command>
+    permission: minetp.*
+    permission-message: §4Error:§c You do not have permission to execute this command...
+permissions:
+  guardpkg.admin:
+    description: access to all GuardPkg commands as admin status
+    children:
+      guardpkg.guard: true
+      guardpkg.trialguard: true
+      guardpkg.adminbypass: true
+  guardpkg.guard:
+    description: Gives access to all Guard specific functions
+    children:
+      guardpkg.trialguard: true
+  guardpkg.trialguard:
+    description: differentiates guards and trial guards
+  guardpkg.onduty:
+    description: player is on duty when they have this perm
+    default: false
+  guardpkg.guardhit:
+    description: Shows when a player hits you
+  guardpkg.adminbypass:
+    description: Bypasses Item Removal and that kind of stuff
+  builderpkg.admin:
+    description: access to all guardpkg commands as admin status
+    children:
+      builderpkg.builder: true
+  builderpkg.builder:
+    description: Gives access to all Builder specific functions
+  builderpkg.onduty:
+    description: player is in build mode when they have this perm
+    default: false
+  sponge.setlocation:
+    description: Allows usage for sponge commands
+  dropchest.*:
+    description: Allows usage for dropchest commands
+  regionteleport.*:
+    description: Gives access to all RegionTP commands
+  minetp.*:
+    description: Gives access to all RegionTP commands
