@@ -80,15 +80,8 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         } else {
             getCommand("deop").setExecutor(new Opdisable());
         }
-        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            Bukkit.getPluginManager().registerEvents(this, this);
-        } else {
-            throw new RuntimeException("Could not find PlaceholderAPI!! Plugin can not work without it!");
-        }
     }
-
     public void onDisable() {}
-    public SkyPrisonMain getInstance() { return instance; }
 
     private ArrayList<Player> cbed = new ArrayList();
     private HashMap<Player, Player> cbedMap = new HashMap();
@@ -322,9 +315,21 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             }
         }
     }
-
+    private RewardGUI RewardGUI = new RewardGUI();
     @EventHandler
     public boolean invclick(InventoryClickEvent event) {
+        if (ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("prison secrets") || ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("free secrets")) {
+            if(event.getCurrentItem() != null) {
+                event.setCancelled(true);
+                if(event.getCurrentItem().getType() == Material.PAPER) {
+                    if(event.getSlot() == 53) {
+                        RewardGUI.openGUI((Player) event.getWhoClicked(), 1);
+                    } else if(event.getSlot() == 45) {
+                        RewardGUI.openGUI((Player) event.getWhoClicked(), 0);
+                    }
+                }
+            }
+        }
         Player player = (Player)event.getWhoClicked();
         if (this.cbed.contains(player)) {
             event.setCancelled(true);
@@ -474,7 +479,6 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                                     Bukkit.dispatchCommand(console, command);
                                     command = "tokensadd " + event.getPlayer().getName() + " 25";
                                     Bukkit.dispatchCommand(console, command);
-                                    placeSponge.getBlock().setType(Material.SPONGE);
                                     break;
                                 }
                             }
@@ -582,25 +586,6 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                 | event.getMessage().contains(":DEoP")){
             event.setCancelled(true);
             event.getPlayer().sendMessage(ChatColor.WHITE + "Unknown command. Type " + '"' + "/help" + '"' + " for help.");
-        }
-    }
-//
-// EventHandlers for RewardGUI
-//
-    private RewardGUI RewardGUI = new RewardGUI();
-    @EventHandler
-    public void clickEvent(InventoryClickEvent event) {
-        if (ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("prison secrets") || ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("free secrets")) {
-            if(event.getCurrentItem() != null) {
-                event.setCancelled(true);
-                if(event.getCurrentItem().getType() == Material.PAPER) {
-                    if(event.getSlot() == 53) {
-                        RewardGUI.openGUI((Player) event.getWhoClicked(), 1);
-                    } else if(event.getSlot() == 45) {
-                        RewardGUI.openGUI((Player) event.getWhoClicked(), 0);
-                    }
-                }
-            }
         }
     }
 }

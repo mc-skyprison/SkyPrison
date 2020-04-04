@@ -25,8 +25,8 @@ public class SpongeLoc implements CommandExecutor {
 			YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
 			if (args.length < 1) {
 				Set setList = yamlf.getConfigurationSection("locations").getKeys(false);
-				for (int i = 0; i < setList.size(); i++) {
-					if(!yamlf.contains("locations." + i)) {
+				for (int i = 0; i < setList.size()+2; i++) {
+					if (!yamlf.contains("locations." + i)) {
 						yamlf.set("locations." + i + ".world", player.getLocation().getWorld().getName());
 						yamlf.set("locations." + i + ".x", player.getLocation().getX());
 						yamlf.set("locations." + i + ".y", player.getLocation().getY());
@@ -37,12 +37,10 @@ public class SpongeLoc implements CommandExecutor {
 							e.printStackTrace();
 						}
 						break;
-					} else {
-
 					}
 				}
 				player.sendMessage(ChatColor.WHITE + "[" + ChatColor.YELLOW + "Sponge" + ChatColor.WHITE + "]" + ChatColor.GREEN + " Sponge location set at your location");
-			} else if(args[0].equalsIgnoreCase("list")) {
+			} else if (args[0].equalsIgnoreCase("list")) {
 				for (String key : yamlf.getConfigurationSection("locations").getKeys(false)) {
 					player.sendMessage(ChatColor.YELLOW + key + ChatColor.GREEN + ": X: " + yamlf.getInt("locations." + key + ".x") + " Y: " + yamlf.getInt("locations." + key + ".y") + " Z: " + yamlf.getInt("locations." + key + ".z"));
 				}
@@ -79,8 +77,48 @@ public class SpongeLoc implements CommandExecutor {
 				}
 			} else if (args[0].equalsIgnoreCase("help")) {
 				player.sendMessage("/spongeloc\n/spongeloc tp <id>\n/spongeloc list\n/spongeloc delete <id>");
+			} else if (args[0].equalsIgnoreCase(("place"))) {
+				Set setList = yamlf.getConfigurationSection("locations").getKeys(false);
+				for(int i = 0; i < setList.size(); i++) {
+					if (yamlf.contains("locations." + i)) {
+						World w = Bukkit.getServer().getWorld(yamlf.getString("locations." + i + ".world"));
+						Location spongeLoc = new Location(w, yamlf.getDouble("locations." + i + ".x"), yamlf.getDouble("locations." + i + ".y"), yamlf.getDouble("locations." + i + ".z"));
+						if (spongeLoc.getBlock().getType() == Material.SPONGE) {
+							spongeLoc.getBlock().setType(Material.AIR);
+							break;
+						}
+					}
+				}
+				Random random = new Random();
+				int rand = random.nextInt(setList.size());
+				World w = Bukkit.getServer().getWorld(yamlf.getString("locations." + rand + ".world"));
+				Location placeSponge = new Location(w, yamlf.getDouble("locations." + rand + ".x"), yamlf.getDouble("locations." + rand + ".y"), yamlf.getDouble("locations." + rand + ".z"));
+				placeSponge = placeSponge.getBlock().getLocation();
+				placeSponge.getBlock().setType(Material.SPONGE);
 			} else {
 				player.sendMessage("/spongeloc\n/spongeloc tp <id>\n/spongeloc list\n/spongeloc delete <id>");
+			}
+		} else {
+			if (args[0].equalsIgnoreCase(("place"))) {
+				File f = new File("plugins/SkyPrisonCore/spongeLocations.yml");
+				YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
+				Set setList = yamlf.getConfigurationSection("locations").getKeys(false);
+				for (int i = 0; i < setList.size(); i++) {
+					if (yamlf.contains("locations." + i)) {
+						World w = Bukkit.getServer().getWorld(yamlf.getString("locations." + i + ".world"));
+						Location spongeLoc = new Location(w, yamlf.getDouble("locations." + i + ".x"), yamlf.getDouble("locations." + i + ".y"), yamlf.getDouble("locations." + i + ".z"));
+						if (spongeLoc.getBlock().getType() == Material.SPONGE) {
+							spongeLoc.getBlock().setType(Material.AIR);
+							break;
+						}
+					}
+				}
+				Random random = new Random();
+				int rand = random.nextInt(setList.size());
+				World w = Bukkit.getServer().getWorld(yamlf.getString("locations." + rand + ".world"));
+				Location placeSponge = new Location(w, yamlf.getDouble("locations." + rand + ".x"), yamlf.getDouble("locations." + rand + ".y"), yamlf.getDouble("locations." + rand + ".z"));
+				placeSponge = placeSponge.getBlock().getLocation();
+				placeSponge.getBlock().setType(Material.SPONGE);
 			}
 		}
 		return true;
