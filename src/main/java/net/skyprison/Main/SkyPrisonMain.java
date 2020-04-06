@@ -214,18 +214,6 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         }
     }
 
-/*
-    @EventHandler
-    public void cbedCommand(PlayerCommandPreprocessEvent event) {
-        Player player = event.getPlayer();
-        String[] args = event.getMessage().split(" ");
-        if (this.cbed.contains(player)) {
-            player.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "Please respond Yes or No before you proceed...");
-            event.setCancelled(true);
-        }
-    }
-*/
-
     @EventHandler
     public void moveEvent(PlayerMoveEvent event) {
         Player player = event.getPlayer();
