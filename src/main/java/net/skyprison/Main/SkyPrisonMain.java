@@ -41,6 +41,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class SkyPrisonMain extends JavaPlugin implements Listener {
     private static SkyPrisonMain instance;
     FileConfiguration config = this.getConfig();
+    public static SkyPrisonMain getInstance() {
+        return instance;
+    }
     public void onEnable() {
         Bukkit.getServer().getPluginManager().registerEvents(this, this);
         config.addDefault("enable-op-command", true);
@@ -83,7 +86,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
 
     public ArrayList<Player> cbed = new ArrayList();
     public HashMap<Player, Player> cbedMap = new HashMap();
-    public Map<Player, Map.Entry<Player, Long>> hitcd = new HashMap(); private Material[] contraband = {
+    public Map<Player, Map.Entry<Player, Long>> hitcd = new HashMap(); public Material[] contraband = {
             Material.WOODEN_SWORD, Material.IRON_SWORD, Material.STONE_SWORD, Material.EGG, Material.SNOWBALL, Material.TRIDENT, Material.POTION, Material.FLINT_AND_STEEL, Material.TIPPED_ARROW, Material.BOW, Material.GOLDEN_SWORD, Material.SPLASH_POTION, Material.CROSSBOW };
 
     public boolean isGuardGear(ItemStack i) {
@@ -112,20 +115,6 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         }
     }
 
-    public boolean InvCheckCont(Player target) {
-        for (int n = 0; n < target.getInventory().getSize(); n++) {
-            ItemStack i = target.getInventory().getItem(n);
-            if (i != null) {
-                for (Material cb : this.contraband) {
-                    if (i.getType() == cb) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
     private void InvGuardGearDelPlyr(Player player) {
         for (int n = 0; n < player.getInventory().getSize(); n++) {
             ItemStack i = player.getInventory().getItem(n);
@@ -149,64 +138,6 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
 
         if (deletedsomething) {
             player.closeInventory();
-        }
-    }
-
-    public void cbPunish(final Player target, final int tmremaining) {
-        if (this.cbed.contains(target)) {
-            if (tmremaining > 0) {
-                Inventory cbSelector = Bukkit.getServer().createInventory(null, 36, ChatColor.DARK_RED + "You've been caught with contraband!");
-                for (int i = 0; i < 36; i++) {
-                    if (i >= 18 && i <= 26) {
-                        cbSelector.setItem(i, new ItemStack(Material.REDSTONE_BLOCK));
-                    } else if (i == 11) {
-                        ItemStack sword = new ItemStack(Material.GOLDEN_SWORD, 1);
-                        ItemMeta meta = sword.getItemMeta();
-                        ArrayList<String> lore = new ArrayList<String>();
-                        lore.add("Select me to:");
-                        lore.add("-turn in your contraband");
-                        lore.add("-not get jailed");
-                        meta.setLore(lore);
-                        sword.setItemMeta(meta);
-                        cbSelector.setItem(i, sword);
-                    } else if (i == 15) {
-                        ItemStack ironbars = new ItemStack(Material.IRON_BARS, 1);
-                        ItemMeta meta = ironbars.getItemMeta();
-                        ArrayList<String> lore = new ArrayList<String>();
-                        lore.add("Select me to:");
-                        lore.add("-keep your contraband");
-                        lore.add("-get jailed for 5min");
-                        meta.setLore(lore);
-                        ironbars.setItemMeta(meta);
-                        cbSelector.setItem(i, ironbars);
-                    } else if (i >= 9 && i <= 17) {
-                        cbSelector.setItem(i, new ItemStack(Material.AIR));
-                    } else {
-
-                        cbSelector.setItem(i, new ItemStack(Material.SANDSTONE, 1));
-                    }
-                }
-                if (!target.getOpenInventory().getTitle().equalsIgnoreCase(ChatColor.DARK_RED + "You've been caught with contraband!")) {
-                    target.openInventory(cbSelector);
-                }
-                for (int i = 0; i <= 10 - tmremaining; i++) {
-                    int slot = 18 + i;
-                    target.getOpenInventory().setItem(slot, new ItemStack(Material.GLASS, 1));
-                }
-                getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
-                    public void run() {
-                        int tm = tmremaining - 1;
-                        SkyPrisonMain.this.cbPunish(target, tm);
-                    }
-                },20L);
-            } else {
-                target.closeInventory();
-                Bukkit.getServer().dispatchCommand(getServer().getConsoleSender(), "jail " + target.getName());
-                target.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "You did not respond. You have automatically been sent to jail for having contraband. All contraband items will remain in your inventory!");
-                this.cbed.remove(target);
-                ((Player)this.cbedMap.get(target)).sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.GOLD + target.getName() + ChatColor.LIGHT_PURPLE + " has gone to jail!");
-                this.cbedMap.remove(target);
-            }
         }
     }
 
@@ -283,6 +214,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         }
     }
 
+/*
     @EventHandler
     public void cbedCommand(PlayerCommandPreprocessEvent event) {
         Player player = event.getPlayer();
@@ -292,6 +224,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             event.setCancelled(true);
         }
     }
+*/
 
     @EventHandler
     public void moveEvent(PlayerMoveEvent event) {
@@ -331,15 +264,15 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             }
         }
         Player player = (Player)event.getWhoClicked();
-        if (this.cbed.contains(player)) {
+        if (cbed.contains(player)) {
             event.setCancelled(true);
             if (player.getOpenInventory().getTitle().equalsIgnoreCase(ChatColor.DARK_RED + "You've been caught with contraband!")) {
                 if (event.getSlot() == 11) {
                     player.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "You have selected to turn over your contraband. All contraband items have been removed from your inventory!");
-                    this.cbed.remove(player);
-                    ((Player)this.cbedMap.get(player)).sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.GOLD + player.getName() + ChatColor.YELLOW + " has given up their contraband!");
+                    cbed.remove(player);
+                    cbedMap.get(player).sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.GOLD + player.getName() + ChatColor.YELLOW + " has given up their contraband!");
                     cbedRemInv(player, (Player)this.cbedMap.get(player));
-                    this.cbedMap.remove(player);
+                    cbedMap.remove(player);
                     return true;
                 }
                 if (event.getSlot() == 15) {
