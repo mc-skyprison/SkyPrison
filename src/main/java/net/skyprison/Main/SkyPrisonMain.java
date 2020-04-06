@@ -67,9 +67,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         getCommand("opme").setExecutor(new Opme());
         getCommand("deopme").setExecutor(new Deopme());
         getCommand("rewards").setExecutor(new RewardGUI());
-        getCommand("reward").setExecutor(new RewardGUI());
-        getCommand("secrets").setExecutor(new RewardGUI());
-        getCommand("secret").setExecutor(new RewardGUI());
+        getCommand("contraband").setExecutor(new Contraband());
         if (config.getBoolean("enable-op-command")) {
             getCommand("op").setExecutor(new Op());
         } else {
@@ -83,12 +81,12 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     }
     public void onDisable() {}
 
-    private ArrayList<Player> cbed = new ArrayList();
-    private HashMap<Player, Player> cbedMap = new HashMap();
-    private Map<Player, Map.Entry<Player, Long>> hitcd = new HashMap(); private Material[] contraband = {
+    public ArrayList<Player> cbed = new ArrayList();
+    public HashMap<Player, Player> cbedMap = new HashMap();
+    public Map<Player, Map.Entry<Player, Long>> hitcd = new HashMap(); private Material[] contraband = {
             Material.WOODEN_SWORD, Material.IRON_SWORD, Material.STONE_SWORD, Material.EGG, Material.SNOWBALL, Material.TRIDENT, Material.POTION, Material.FLINT_AND_STEEL, Material.TIPPED_ARROW, Material.BOW, Material.GOLDEN_SWORD, Material.SPLASH_POTION, Material.CROSSBOW };
 
-    private boolean isGuardGear(ItemStack i) {
+    public boolean isGuardGear(ItemStack i) {
         if(i != null) {
             if (i.getType() == Material.CHAINMAIL_HELMET || i.getType() == Material.CHAINMAIL_CHESTPLATE || i.getType() == Material.CHAINMAIL_LEGGINGS || i.getType() == Material.CHAINMAIL_BOOTS || i.getType() == Material.DIAMOND_SWORD) {
                 return true;
@@ -114,7 +112,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         }
     }
 
-    private boolean InvCheckCont(Player target) {
+    public boolean InvCheckCont(Player target) {
         for (int n = 0; n < target.getInventory().getSize(); n++) {
             ItemStack i = target.getInventory().getItem(n);
             if (i != null) {
@@ -154,7 +152,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         }
     }
 
-    private void cbPunish(final Player target, final int tmremaining) {
+    public void cbPunish(final Player target, final int tmremaining) {
         if (this.cbed.contains(target)) {
             if (tmremaining > 0) {
                 Inventory cbSelector = Bukkit.getServer().createInventory(null, 36, ChatColor.DARK_RED + "You've been caught with contraband!");
@@ -273,7 +271,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     @EventHandler
     public void guardhit(EntityDamageByEntityEvent event) {
         if(event.getDamager() instanceof Player && event.getEntity() instanceof Player) {
-            if (event.getEntity().hasPermission("guardpkg.guardhit")) {
+            if (event.getEntity().hasPermission("skyprisoncore.showhit")) {
                 Player damager = (Player)event.getDamager();
                 Player damagee = (Player)event.getEntity();
                 Map.Entry<Player, Long> lasthit = (Map.Entry)this.hitcd.get(damager);
@@ -296,19 +294,21 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void moveevent(PlayerMoveEvent event) {
+    public void moveEvent(PlayerMoveEvent event) {
         Player player = event.getPlayer();
-        if (player.hasPermission("guardpkg.onduty") && !player.getWorld().getName().equalsIgnoreCase("prison")) {
+        if (player.hasPermission("skyprisoncore.guard.onduty")
+                && !player.getWorld().getName().equalsIgnoreCase("prison")) {
             event.setCancelled(true);
             player.sendMessage("" + ChatColor.RED + "Please go off duty when leaving the prison world!");
         }
         if (this.cbed.contains(player)) {
             event.setCancelled(true);
         }
-        if (player.hasPermission("builderpkg.onduty")) {
-            if(player.getWorld().getName().equalsIgnoreCase("creativeworld")) {
-            } else if(player.getWorld().getName().equalsIgnoreCase("buildworld")) {
-            } else if(player.getWorld().getName().equalsIgnoreCase("skycity")) {
+        if (player.hasPermission("skyprisoncore.builder.onduty")) {
+            if(player.getWorld().getName().equalsIgnoreCase("creativeworld")
+                    | player.getWorld().getName().equalsIgnoreCase("buildworld")
+                    | player.getWorld().getName().equalsIgnoreCase("skycity")
+                    | player.getWorld().getName().equalsIgnoreCase("tree_grid_world")) {
             } else {
                 event.setCancelled(true);
                 player.sendMessage("" + ChatColor.RED + "Please go off duty when leaving the build worlds!");
@@ -354,7 +354,10 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                 return false;
             }
         }
-        if (!player.hasPermission("guardpkg.adminbypass") && (!player.hasPermission("guardpkg.onduty") || !player.getLocation().getWorld().getName().equalsIgnoreCase("prison")) && !player.getLocation().getWorld().getName().equalsIgnoreCase("events") && !player.getOpenInventory().getType().equals(InventoryType.CREATIVE)) {
+        if (!player.hasPermission("skyprisoncore.guard.itembypasss")
+                && !player.getLocation().getWorld().getName().equalsIgnoreCase("prison")
+                && !player.getLocation().getWorld().getName().equalsIgnoreCase("events")
+                && !player.getOpenInventory().getType().equals(InventoryType.CREATIVE)) {
             if (isGuardGear(event.getCurrentItem())) {
                 event.setCancelled(true);
             }
@@ -372,52 +375,12 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     public void pickup(EntityPickupItemEvent event) {
         if (event.getEntity() instanceof Player) {
             Player player = (Player)event.getEntity();
-            if (!player.hasPermission("guardpkg.adminbypass") && !player.hasPermission("guardpkg.onduty") && !event.getEntity().getLocation().getWorld().getName().equalsIgnoreCase("events")) {
+            if (!player.hasPermission("skyprisoncore.guard.itembypass")
+                    && !event.getEntity().getLocation().getWorld().getName().equalsIgnoreCase("events")) {
                 if (isGuardGear(event.getItem().getItemStack())) {
                     event.setCancelled(true);
                 }
                 InvGuardGearDelPlyr(player);
-            }
-        }
-    }
-
-    @EventHandler
-    public void contraband(PlayerCommandPreprocessEvent event) {
-        Player guard = event.getPlayer();
-        String[] args = event.getMessage().split(" ");
-        if (args[0].equalsIgnoreCase("/cb")) {
-            event.setCancelled(true);
-            if (guard.hasPermission("guardpkg.onduty")) {
-                if (args.length < 2) {
-                    guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.YELLOW + " Use /cb <target> to initiate contraband countdown...");
-                    return;
-                }
-                Player target = Bukkit.getServer().getPlayer(args[1]);
-                if (target != null) {
-                    if (!this.cbed.contains(target)) {
-                        double radius = 20.0D;
-                        if (target.getLocation().distance(guard.getLocation()) <= radius) {
-                            if (InvCheckCont(target)) {
-                                this.cbed.add(target);
-                                this.cbedMap.put(target, guard);
-                                target.sendMessage("\n\n\n[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.GOLD + guard.getName() + ChatColor.RED + " has caught you with contraband.");
-                                cbPunish(target, 10);
-                                return;
-                            }
-                            guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "Player does not have contraband!");
-                        } else {
-
-                            guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "You are not close enough to the player to execute this command!");
-                        }
-                    } else {
-                        guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "Player has already been '/cb'ed!");
-                    }
-                } else {
-                    guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "Player is not online or cannot be /cb'ed...");
-                }
-            } else {
-
-                guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "You do not have the permission to execute this command...");
             }
         }
     }
@@ -564,7 +527,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     public void deopOnJoin(PlayerJoinEvent event) {
         Player p = event.getPlayer();
         if (config.getBoolean("deop-on-join")) {
-            if (!p.hasPermission("opme.joinbypass")) {
+            if (!p.hasPermission("skyprisoncore.deop.joinbypass")) {
                 if(p.isOp()) {
                     p.setOp(false);
                 }

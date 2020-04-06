@@ -4,128 +4,171 @@ description: Guard plugins for SkyPrison
 version: 3.0
 main: net.skyprison.Main.SkyPrisonMain
 api-version: 1.15
+website: https://skyprison.net
 depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin]
 commands:
-  cb:
+  #
+  # Guard Commands
+  #
+  contraband:
     description: Request contraband from player
     usage: /<command>
+    aliases: cb
+    permission: skyprisoncore.guard.contraband
+    permission-message: §4Error:§c You do not have permission to execute this command...
   guardduty:
     description: Go on and off duty as a guard
     usage: /<command>
+    permission: skyprisoncore.guard.guardduty
     permission-message: §4Error:§c You do not have permission to execute this command...
   g:
     description: Guard Chat
     usage: /<command>
+    permission: skyprisoncore.guard.guardchat
     permission-message: §4Error:§c You do not have permission to execute this command...
+  # Builder Commands
   buildmode:
     description: Go on and off builder mode
     usage: /<command>
-    permission: builderpkg.builder
+    permission: skyprisoncore.builder.buildmode
     permission-message: §4Error:§c You do not have permission to execute this command...
   b:
     description: Builder Chat
     usage: /<command>
-    permission: builderpkg.builder
+    permission: skyprisoncore.builder.buildchat
     permission-message: §4Error:§c You do not have permission to execute this command...
+  #
+  # Minigame Commands
+  #
   spongeloc:
     description: Sponge Commands
     usage: /<command>
-    permission: sponge.setlocation
+    permission: skyprisoncore.sponge
     permission-message: §4Error:§c You do not have permission to execute this command...
-  dropchest:
-    description: DropChest Commands
-    usage: /<command>
-    permission: dropchest.*
-    permission-message: §4Error:§c You do not have permission to execute this command...
+  #
+  # Teleport Commands
+  #
   regiontp:
     description: Teleport players within regions to other places
     usage: /<command>
-    permission: regionteleport.*
+    permission: skyprisoncore.teleport.region
     permission-message: §4Error:§c You do not have permission to execute this command...
   minetp:
     description: Teleport with tokens wow
     usage: /<command>
-    permission: minetp.*
+    permission: skyprisoncore.teleport.token
     permission-message: §4Error:§c You do not have permission to execute this command...
-  opme:
-    description: Ops the player.
+  #
+  # GUI Commands
+  #
+  dropchest:
+    description: DropChest Commands
     usage: /<command>
-    permission: opme.opme
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  deopme:
-    description: Deops the player.
-    usage: /<command>
-    permission: opme.deopme
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  op:
-    description: Ops a player.
-    usage: /<command>
-    permission: opme.op
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  deop:
-    description: Deops a player
-    usage: /<command>
-    permission: opme.deop
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  reward:
-    description: Opens the secrets GUI
-    usage: /<command>
-    permission: rewardgui.*
+    permission: skyprisoncore.dropchest
     permission-message: §4Error:§c You do not have permission to execute this command...
   rewards:
     description: Opens the secrets GUI
     usage: /<command>
-    permission: rewardgui.*
+    aliases: [reward, secret, secrets]
+    permission: skyprisoncore.rewardgui
     permission-message: §4Error:§c You do not have permission to execute this command...
-  secret:
-    description: Opens the secrets GUI
+  #
+  # Opme Commands
+  #
+  opme:
+    description: Ops the player.
     usage: /<command>
-    permission: rewardgui.*
+    permission: skyprisoncore.opme
     permission-message: §4Error:§c You do not have permission to execute this command...
-  secrets:
-    description: Opens the secrets GUI
+  deopme:
+    description: Deops the player.
     usage: /<command>
-    permission: rewardgui.*
+    permission: skyprisoncore.deopme
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  op:
+    description: Ops a player.
+    usage: /<command>
+    permission: skyprisoncore.op
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  deop:
+    description: Deops a player
+    usage: /<command>
+    permission: skyprisoncore.deop
     permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
-  guardpkg.admin:
-    description: access to all GuardPkg commands as admin status
-    children:
-      guardpkg.guard: true
-      guardpkg.trialguard: true
-      guardpkg.adminbypass: true
-  guardpkg.guard:
-    description: Gives access to all Guard specific functions
-    children:
-      guardpkg.trialguard: true
-  guardpkg.trialguard:
-    description: differentiates guards and trial guards
-  guardpkg.onduty:
+  #
+  # Guard Permissions
+  #
+  skyprisoncore.guard.guardduty:
+    description: Gives access to /guardduty
+  skyprisoncore.guard.adminguard:
+    description: Makes you admin guard when you do /guardduty
+  skyprisoncore.guard.seniorguard:
+    description: Makes you senior guard when you do /guardduty
+  skyprisoncore.guard.guard:
+    description: Makes you guard when you do /guardduty
+  skyprisoncore.guard.trialguard:
+    description: Makes you trial guard when you do /guardduty
+  skyprisoncore.guard.onduty:
     description: player is on duty when they have this perm
     default: false
-  guardpkg.guardhit:
+  skyprisoncore.showhit:
     description: Shows when a player hits you
-  guardpkg.adminbypass:
+  skyprisoncore.guard.itembypass:
     description: Bypasses Item Removal and that kind of stuff
-  builderpkg.admin:
-    description: access to all guardpkg commands as admin status
-    children:
-      builderpkg.builder: true
-  builderpkg.builder:
-    description: Gives access to all Builder specific functions
-  builderpkg.onduty:
+  skyprisoncore.guard.guardchat:
+    description: Gives access to guardchat
+  skyprisoncore.guard.contraband:
+    description: Gives access to /cb
+  #
+  # Builder Permissions
+  #
+  skyprisoncore.builder.buildmode:
+    description: Gives access to /buildmode
+  skyprisoncore.builder.onduty:
     description: player is in build mode when they have this perm
     default: false
-  sponge.setlocation:
-    description: Allows usage for sponge commands
-  dropchest.*:
-    description: Allows usage for dropchest commands
-  regionteleport.*:
-    description: Gives access to all RegionTP commands
-  minetp.*:
-    description: Gives access to all RegionTP commands
-  opme.*:
-    description: Gives access to all commands
+  skyprisoncore.builder.buildchat:
+    description: Gives access to buildchat
+  #
+  # Minigame Permissions
+  #
+  skyprisoncore.sponge:
+    description: Gives acess to /spongeloc
+  #
+  # Teleport Permissions
+  #
+  skyprisoncore.teleport.token:
+    description: Gives access to /minetp
+  skyprisoncore.teleport.region:
+    description: Gives access to all /regiontp commands
+  #
+  # GUI Permissions
+  #
+  skyprisoncore.rewardgui:
+    description: Gives access to /rewards
+  skyprisoncore.dropchest:
+    description: Gives access to /dropchest
+  #
+  # Opme Permissions
+  #
+  skyprisoncore.op:
+    description: Gives access to op command
+    default: false
+  skyprisoncore.deopme:
+    description: Gives access to deopme command
+    default: false
+  skyprisoncore.opme:
+    description: Gives access to opme command
+    default: false
+  skyprisoncore.deop:
+    description: Gives access to deop command
+    default: false
+  skyprisoncore.deop.joinbypass:
+    description: Bypasses deop on join
+    default: false
+  skyprisoncore.opme.*:
+    description: Gives access to all opme commands
     default: false
     children:
       opme.opme: true
@@ -133,20 +176,3 @@ permissions:
       opme.deop: true
       opme.deopme: true
       opme.joinbypass: true
-  opme.opme:
-    description: Gives access to opme command
-    default: false
-  opme.deopme:
-    description: Gives access to deopme command
-    default: false
-  opme.op:
-    description: Gives access to op command
-    default: false
-  opme.deop:
-    description: Gives access to deop command
-    default: false
-  opme.joinbypass:
-    description: Bypasses deop on join
-    default: false
-  rewardgui.*:
-    description: Gives access to reward GUI
