@@ -83,7 +83,9 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         }
     }
     public void onDisable() {}
-
+    //
+    // Creates lists of people that have been /cb, and also creates the list containing all of them contraband
+    //
     public ArrayList<Player> cbed = new ArrayList();
     public HashMap<Player, Player> cbedMap = new HashMap();
     public Map<Player, Map.Entry<Player, Long>> hitcd = new HashMap(); public Material[] contraband = {
@@ -217,6 +219,18 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     @EventHandler
     public void moveEvent(PlayerMoveEvent event) {
         Player player = event.getPlayer();
+/*        if(Bukkit.getPlayer("DrakePork").isOnline()) {
+            Collection<Player> arr = Bukkit.getPlayer("DrakePork").getLocation().getNearbyPlayers(3);
+            for(Player p : arr) {
+                if(!p.getName().equalsIgnoreCase("drakepork")) {
+                    Location drakeLoc = Bukkit.getPlayer("DrakePork").getLocation();
+                    Location eLoc = p.getLocation();
+                    Location newLoc = eLoc.subtract(drakeLoc);
+                    Vector newV = newLoc.toVector().normalize().multiply(0.2);
+                    p.setVelocity(newV);
+                }
+            }
+        }*/
         if (player.hasPermission("skyprisoncore.guard.onduty")
                 && !player.getWorld().getName().equalsIgnoreCase("prison")) {
             event.setCancelled(true);
