@@ -468,6 +468,9 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                 }
             }
         }
+        if(p.getName().equalsIgnoreCase("redhelmet8")) {
+            event.setJoinMessage(null);
+        }
     }
 
     @EventHandler
