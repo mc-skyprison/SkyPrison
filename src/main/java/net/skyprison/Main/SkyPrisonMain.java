@@ -41,9 +41,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class SkyPrisonMain extends JavaPlugin implements Listener {
     private static SkyPrisonMain instance;
     FileConfiguration config = this.getConfig();
+
     public static SkyPrisonMain getInstance() {
         return instance;
     }
+
     public void onEnable() {
         Bukkit.getServer().getPluginManager().registerEvents(this, this);
         config.addDefault("enable-op-command", true);
@@ -58,7 +60,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         File f4 = new File("plugins/SkyPrisonCore/rewardGUI.yml");
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
         String date = format.format(new Date());
-        File file = new File("plugins/RanksPkg/staff/"+date+".txt");
+        File file = new File("plugins/RanksPkg/staff/" + date + ".txt");
         getCommand("g").setExecutor(new GuardChat());
         getCommand("guardduty").setExecutor(new GuardDuty());
         getCommand("b").setExecutor(new BuildChat());
@@ -82,17 +84,21 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             getCommand("deop").setExecutor(new Opdisable());
         }
     }
-    public void onDisable() {}
+
+    public void onDisable() {
+    }
+
     //
     // Creates lists of people that have been /cb, and also creates the list containing all of them contraband
     //
     public ArrayList<Player> cbed = new ArrayList();
     public HashMap<Player, Player> cbedMap = new HashMap();
-    public Map<Player, Map.Entry<Player, Long>> hitcd = new HashMap(); public Material[] contraband = {
-            Material.WOODEN_SWORD, Material.IRON_SWORD, Material.STONE_SWORD, Material.EGG, Material.SNOWBALL, Material.TRIDENT, Material.POTION, Material.FLINT_AND_STEEL, Material.TIPPED_ARROW, Material.BOW, Material.GOLDEN_SWORD, Material.SPLASH_POTION, Material.CROSSBOW };
+    public Map<Player, Map.Entry<Player, Long>> hitcd = new HashMap();
+    public Material[] contraband = {
+            Material.WOODEN_SWORD, Material.IRON_SWORD, Material.STONE_SWORD, Material.EGG, Material.SNOWBALL, Material.TRIDENT, Material.POTION, Material.FLINT_AND_STEEL, Material.TIPPED_ARROW, Material.BOW, Material.GOLDEN_SWORD, Material.SPLASH_POTION, Material.CROSSBOW};
 
     public boolean isGuardGear(ItemStack i) {
-        if(i != null) {
+        if (i != null) {
             if (i.getType() == Material.CHAINMAIL_HELMET || i.getType() == Material.CHAINMAIL_CHESTPLATE || i.getType() == Material.CHAINMAIL_LEGGINGS || i.getType() == Material.CHAINMAIL_BOOTS || i.getType() == Material.DIAMOND_SWORD) {
                 return true;
             } else if (i.getType() == Material.BOW) {
@@ -165,7 +171,8 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         }
         guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.GOLD + target.getName() + ChatColor.YELLOW + " has handed over their contraband!");
     }
-//
+
+    //
 // EventHandlers regarding RanksPkg
 //
     @EventHandler
@@ -179,10 +186,10 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                 getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
                     public void run() {
                         SkyPrisonMain.this.cbed.remove(target);
-                        SkyPrisonMain.this.cbedRemInv(target, (Player)SkyPrisonMain.this.cbedMap.get(target));
+                        SkyPrisonMain.this.cbedRemInv(target, (Player) SkyPrisonMain.this.cbedMap.get(target));
                         SkyPrisonMain.this.cbedMap.remove(target);
                     }
-                },5L);
+                }, 5L);
             } else if (args[0].equalsIgnoreCase("no")) {
                 event.setCancelled(true);
                 getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
@@ -190,10 +197,10 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                         SkyPrisonMain.this.cbed.remove(target);
                         Bukkit.getServer().dispatchCommand(SkyPrisonMain.this.getServer().getConsoleSender(), "jail " + target.getName());
                         target.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "You have selected to go to jail. All contraband items will remain in your inventory!");
-                        ((Player)SkyPrisonMain.this.cbedMap.get(target)).sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.GOLD + target.getName() + ChatColor.YELLOW + " has gone to jail!");
+                        ((Player) SkyPrisonMain.this.cbedMap.get(target)).sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.GOLD + target.getName() + ChatColor.YELLOW + " has gone to jail!");
                         SkyPrisonMain.this.cbedMap.remove(target);
                     }
-                },5L);
+                }, 5L);
             } else {
                 target.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "Please respond Yes or No before you proceed...");
                 event.setCancelled(true);
@@ -203,12 +210,12 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
 
     @EventHandler
     public void guardhit(EntityDamageByEntityEvent event) {
-        if(event.getDamager() instanceof Player && event.getEntity() instanceof Player) {
+        if (event.getDamager() instanceof Player && event.getEntity() instanceof Player) {
             if (event.getEntity().hasPermission("skyprisoncore.showhit")) {
-                Player damager = (Player)event.getDamager();
-                Player damagee = (Player)event.getEntity();
-                Map.Entry<Player, Long> lasthit = (Map.Entry)this.hitcd.get(damager);
-                if (this.hitcd.get(damager) == null || (lasthit.getKey() == damagee && System.currentTimeMillis() / 1000L - ((Long)lasthit.getValue()).longValue() > 5L)) {
+                Player damager = (Player) event.getDamager();
+                Player damagee = (Player) event.getEntity();
+                Map.Entry<Player, Long> lasthit = (Map.Entry) this.hitcd.get(damager);
+                if (this.hitcd.get(damager) == null || (lasthit.getKey() == damagee && System.currentTimeMillis() / 1000L - ((Long) lasthit.getValue()).longValue() > 5L)) {
                     damagee.sendMessage(ChatColor.RED + "You have been hit by " + damager.getName());
                     this.hitcd.put(damager, new AbstractMap.SimpleEntry(damagee, Long.valueOf(System.currentTimeMillis() / 1000L)));
                 }
@@ -240,7 +247,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             event.setCancelled(true);
         }
         if (player.hasPermission("skyprisoncore.builder.onduty")) {
-            if(player.getWorld().getName().equalsIgnoreCase("creativeworld")
+            if (player.getWorld().getName().equalsIgnoreCase("creativeworld")
                     | player.getWorld().getName().equalsIgnoreCase("buildworld")
                     | player.getWorld().getName().equalsIgnoreCase("skycity")
                     | player.getWorld().getName().equalsIgnoreCase("tree_grid_world")) {
@@ -250,22 +257,24 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             }
         }
     }
+
     private RewardGUI RewardGUI = new RewardGUI();
+
     @EventHandler
     public boolean invclick(InventoryClickEvent event) {
         if (ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("prison secrets") || ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("free secrets")) {
-            if(event.getCurrentItem() != null) {
+            if (event.getCurrentItem() != null) {
                 event.setCancelled(true);
-                if(event.getCurrentItem().getType() == Material.PAPER) {
-                    if(event.getSlot() == 53) {
+                if (event.getCurrentItem().getType() == Material.PAPER) {
+                    if (event.getSlot() == 53) {
                         RewardGUI.openGUI((Player) event.getWhoClicked(), 1);
-                    } else if(event.getSlot() == 45) {
+                    } else if (event.getSlot() == 45) {
                         RewardGUI.openGUI((Player) event.getWhoClicked(), 0);
                     }
                 }
             }
         }
-        Player player = (Player)event.getWhoClicked();
+        Player player = (Player) event.getWhoClicked();
         if (cbed.contains(player)) {
             event.setCancelled(true);
             if (player.getOpenInventory().getTitle().equalsIgnoreCase(ChatColor.DARK_RED + "You've been caught with contraband!")) {
@@ -273,7 +282,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                     player.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "You have selected to turn over your contraband. All contraband items have been removed from your inventory!");
                     cbed.remove(player);
                     cbedMap.get(player).sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.GOLD + player.getName() + ChatColor.YELLOW + " has given up their contraband!");
-                    cbedRemInv(player, (Player)this.cbedMap.get(player));
+                    cbedRemInv(player, (Player) this.cbedMap.get(player));
                     cbedMap.remove(player);
                     return true;
                 }
@@ -281,7 +290,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                     this.cbed.remove(player);
                     Bukkit.getServer().dispatchCommand(getServer().getConsoleSender(), "jail " + player.getName());
                     player.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "You have selected to go to jail. All contraband items will remain in your inventory!");
-                    ((Player)this.cbedMap.get(player)).sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.GOLD + player.getName() + ChatColor.YELLOW + " has gone to jail!");
+                    ((Player) this.cbedMap.get(player)).sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.GOLD + player.getName() + ChatColor.YELLOW + " has gone to jail!");
                     this.cbedMap.remove(player);
                     return true;
                 }
@@ -309,7 +318,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     @EventHandler
     public void pickup(EntityPickupItemEvent event) {
         if (event.getEntity() instanceof Player) {
-            Player player = (Player)event.getEntity();
+            Player player = (Player) event.getEntity();
             if (!player.hasPermission("skyprisoncore.guard.itembypass")
                     && !event.getEntity().getLocation().getWorld().getName().equalsIgnoreCase("events")) {
                 if (isGuardGear(event.getItem().getItemStack())) {
@@ -319,7 +328,8 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             }
         }
     }
-//
+
+    //
 // EventHandlers regarding DropParty Chest
 //
     @EventHandler
@@ -344,14 +354,15 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             }
         }
     }
-//
+
+    //
 // EventHandlers regarding Sponge Event
 //
     @EventHandler
     public void spongeEvent(BlockDamageEvent event) {
         Block b = event.getBlock();
         Location loc = b.getLocation();
-        if(b.getType() == Material.SPONGE) {
+        if (b.getType() == Material.SPONGE) {
             if (loc.getWorld().getName().equalsIgnoreCase("prison") || loc.getWorld().getName().equalsIgnoreCase("event_world")) {
                 File f = new File("plugins/SkyPrisonCore/spongeLocations.yml");
                 YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
@@ -389,7 +400,8 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             }
         }
     }
-//
+
+    //
 // EventHandlers regarding Villager Trading
 //
     @EventHandler
@@ -401,16 +413,17 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             event.setCancelled(true);
         }
     }
-//
+
+    //
 // EventHandlers regarding Farming & Mining
 //
     @EventHandler
-    public void cactusGrow (ItemSpawnEvent event) {
+    public void cactusGrow(ItemSpawnEvent event) {
         ItemStack b = event.getEntity().getItemStack();
         Location loc = event.getLocation();
-        if(b.getType() == Material.CACTUS && loc.getWorld().getName().equalsIgnoreCase("world")) {
-            int random = (int)(Math.random() * 10 + 1);
-            if(random == 10) {
+        if (b.getType() == Material.CACTUS && loc.getWorld().getName().equalsIgnoreCase("world")) {
+            int random = (int) (Math.random() * 10 + 1);
+            if (random == 10) {
             }
         }
     }
@@ -426,22 +439,22 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             loc.getWorld().dropItem(cob, snowblock);
         } else if (b.getType() == Material.SNOW_BLOCK && loc.getWorld().getName().equalsIgnoreCase("events")) {
             event.setDropItems(false);
-        } else if(b.getType() == Material.BIRCH_LOG && loc.getWorld().getName().equalsIgnoreCase("prison")) {
-            Location newLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY()-1, loc.getBlockZ());
+        } else if (b.getType() == Material.BIRCH_LOG && loc.getWorld().getName().equalsIgnoreCase("prison")) {
+            Location newLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - 1, loc.getBlockZ());
             Block newB = newLoc.getBlock();
             if (newB.getType() == Material.GRASS_BLOCK || newB.getType() == Material.DIRT) {
                 getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
                     public void run() {
                         loc.getBlock().setType(Material.BIRCH_SAPLING);
                     }
-                },2L);
+                }, 2L);
             }
-        } else if(b.getType() == Material.WHEAT && loc.getWorld().getName().equalsIgnoreCase("prison")) {
-            if(!event.getPlayer().isOp()) {
+        } else if (b.getType() == Material.WHEAT && loc.getWorld().getName().equalsIgnoreCase("prison")) {
+            if (!event.getPlayer().isOp()) {
                 BlockData bdata = b.getBlockData();
-                if(bdata instanceof Ageable) {
+                if (bdata instanceof Ageable) {
                     Ageable age = (Ageable) bdata;
-                    if(age.getAge() != age.getMaximumAge()) {
+                    if (age.getAge() != age.getMaximumAge()) {
                         event.setCancelled(true);
                         event.getPlayer().sendMessage(ChatColor.RED + "" + ChatColor.ITALIC + "This wheat isn't ready for harvest..");
                     } else {
@@ -449,13 +462,14 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                             public void run() {
                                 loc.getBlock().setType(Material.WHEAT);
                             }
-                        },2L);
+                        }, 2L);
                     }
                 }
             }
         }
     }
-//
+
+    //
 // EventHandlers regarding Opme commands
 //
     @EventHandler
@@ -463,19 +477,16 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         Player p = event.getPlayer();
         if (config.getBoolean("deop-on-join")) {
             if (!p.hasPermission("skyprisoncore.deop.joinbypass")) {
-                if(p.isOp()) {
+                if (p.isOp()) {
                     p.setOp(false);
                 }
             }
         }
-        if(p.getName().equalsIgnoreCase("redhelmet8")||p.getName().equalsIgnoreCase("118masterman")) {
-            event.setJoinMessage(null);
-        }
     }
 
     @EventHandler
-    public void disableCommands(PlayerCommandPreprocessEvent event)  {
-        if(event.getMessage().startsWith("/") && event.getMessage().contains(":op")
+    public void disableCommands(PlayerCommandPreprocessEvent event) {
+        if (event.getMessage().startsWith("/") && event.getMessage().contains(":op")
                 | event.getMessage().contains(":OP") | event.getMessage().contains(":Op")
                 | event.getMessage().contains(":oP") | event.getMessage().contains(":deop")
                 | event.getMessage().contains(":DEOP") | event.getMessage().contains(":Deop")
@@ -484,9 +495,11 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                 | event.getMessage().contains(":dEOp") | event.getMessage().contains(":deOP")
                 | event.getMessage().contains(":DeoP") | event.getMessage().contains(":DEOp")
                 | event.getMessage().contains(":dEOP") | event.getMessage().contains(":DeOP")
-                | event.getMessage().contains(":DEoP")){
+                | event.getMessage().contains(":DEoP")) {
             event.setCancelled(true);
             event.getPlayer().sendMessage(ChatColor.WHITE + "Unknown command. Type " + '"' + "/help" + '"' + " for help.");
         }
     }
 }
+
+

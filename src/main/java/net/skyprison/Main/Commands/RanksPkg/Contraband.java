@@ -103,6 +103,7 @@ public class Contraband implements CommandExecutor {
 							if (InvCheckCont(target)) {
 								SkyPrisonMain.getInstance().cbed.add(target);
 								SkyPrisonMain.getInstance().cbedMap.put(target, guard);
+								guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "You have caught "+ChatColor.GOLD + target.getName()+ChatColor.RED+" with contraband. Please await their decision...");
 								target.sendMessage("\n\n\n[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.GOLD + guard.getName() + ChatColor.RED + " has caught you with contraband.");
 								cbPunish(target, 10);
 							} else {

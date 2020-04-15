@@ -176,3 +176,9 @@ permissions:
       opme.deop: true
       opme.deopme: true
       opme.joinbypass: true
+  #
+  # SilentJoin Permissions
+  #
+  skyprisoncore.silentjoin:
+    description: Gives access to silentjoinn command
+    default:  false
