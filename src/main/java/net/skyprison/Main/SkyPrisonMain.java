@@ -73,6 +73,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         getCommand("deopme").setExecutor(new Deopme());
         getCommand("rewards").setExecutor(new RewardGUI());
         getCommand("contraband").setExecutor(new Contraband());
+        getCommand("silentjoin").setExecutor(new SilentJoin());
         if (config.getBoolean("enable-op-command")) {
             getCommand("op").setExecutor(new Op());
         } else {

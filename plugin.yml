@@ -95,6 +95,14 @@ commands:
     usage: /<command>
     permission: skyprisoncore.deop
     permission-message: §4Error:§c You do not have permission to execute this command...
+  #
+  # SilentJoin Commands
+  #
+  silentjoin:
+    description: Toggles join and leave messages
+    usage: /<command>
+    permission: skyprisoncore.silentjoin
+    permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
   #
   # Guard Permissions
