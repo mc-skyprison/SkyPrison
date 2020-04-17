@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import com.bergerkiller.bukkit.common.events.EntityRemoveEvent;
+import com.google.common.collect.Lists;
 import net.skyprison.Main.Commands.*;
 import net.skyprison.Main.Commands.RanksPkg.*;
 import net.skyprison.Main.Commands.Opme.*;
@@ -20,7 +21,6 @@ import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -31,7 +31,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
@@ -57,6 +56,8 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         config.addDefault("enable-op-command", true);
         config.addDefault("enable-deop-command", true);
         config.addDefault("deop-on-join", false);
+        config.addDefault("builder-worlds", Lists.newArrayList("world"));
+        config.addDefault("guard-worlds", Lists.newArrayList("prison"));
         config.options().copyDefaults(true);
         saveConfig();
         instance = this;
@@ -252,32 +253,33 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     @EventHandler
     public void moveEvent(PlayerMoveEvent event) {
         Player player = event.getPlayer();
-/*        if(Bukkit.getPlayer("DrakePork").isOnline()) {
-            Collection<Player> arr = Bukkit.getPlayer("DrakePork").getLocation().getNearbyPlayers(3);
-            for(Player p : arr) {
-                if(!p.getName().equalsIgnoreCase("drakepork")) {
-                    Location drakeLoc = Bukkit.getPlayer("DrakePork").getLocation();
-                    Location eLoc = p.getLocation();
-                    Location newLoc = eLoc.subtract(drakeLoc);
-                    Vector newV = newLoc.toVector().normalize().multiply(0.2);
-                    p.setVelocity(newV);
-                }
-            }
-        }*/
-        if (player.hasPermission("skyprisoncore.guard.onduty")
-                && !player.getWorld().getName().equalsIgnoreCase("prison")) {
-            event.setCancelled(true);
-            player.sendMessage("" + ChatColor.RED + "Please go off duty when leaving the prison world!");
-        }
         if (this.cbed.contains(player)) {
             event.setCancelled(true);
         }
-        if (player.hasPermission("skyprisoncore.builder.onduty")) {
-            if (player.getWorld().getName().equalsIgnoreCase("creativeworld")
-                    | player.getWorld().getName().equalsIgnoreCase("buildworld")
-                    | player.getWorld().getName().equalsIgnoreCase("skycity")
-                    | player.getWorld().getName().equalsIgnoreCase("tree_grid_world")) {
-            } else {
+        if (player.hasPermission("skyprisoncore.guard.onduty")) {
+            ArrayList arr = (ArrayList) config.getList("guard-worlds");
+            Boolean inWorld = false;
+            for(int i = 0; i < arr.size(); i++) {
+                if(player.getWorld().getName().equalsIgnoreCase((String) arr.get(i))) {
+                    inWorld = true;
+                    break;
+                }
+            }
+            if(inWorld == false) {
+                event.setCancelled(true);
+                player.sendMessage("" + ChatColor.RED + "Please go off duty when leaving the prison world!");
+            }
+        }
+        if(player.hasPermission("skyprisoncore.builder.onduty")) {
+            ArrayList arr = (ArrayList) config.getList("builder-worlds");
+            Boolean inWorld = false;
+            for(int i = 0; i < arr.size(); i++) {
+                if(player.getWorld().getName().equalsIgnoreCase((String) arr.get(i))) {
+                    inWorld = true;
+                    break;
+                }
+            }
+            if(inWorld == false) {
                 event.setCancelled(true);
                 player.sendMessage("" + ChatColor.RED + "Please go off duty when leaving the build worlds!");
             }
