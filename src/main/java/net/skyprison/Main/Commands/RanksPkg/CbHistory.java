@@ -27,7 +27,7 @@ public class CbHistory implements CommandExecutor {
     }
 
     private void admin(Player sender, String[] args) {
-        if(args.length > 2) {
+        if(args.length > 2 || args.length < 1) {
             sender.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.YELLOW + " Use /cbhistory <target> [guard] to open archived inventory of 'target' collected by 'guard'...");
             return;
         }
@@ -40,7 +40,7 @@ public class CbHistory implements CommandExecutor {
     }
 
     private void guard(Player sender, String[] args) {
-        if(args.length > 1) {
+        if(args.length != 1) {
             sender.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.YELLOW + " Use /cbhistory <target> <guard> to open archived inventory of [target] collected by [guard]...");
             return;
         }
