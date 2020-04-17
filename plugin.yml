@@ -26,6 +26,13 @@ commands:
     usage: /<command>
     permission: skyprisoncore.guard.guardchat
     permission-message: §4Error:§c You do not have permission to execute this command...
+  # CbHistory Commands
+  cbhistory:
+    description: Retrieves contraband inventory based on player cb'ed
+    usage: /<command>
+    aliases: cbhist
+    permission: skyprisoncore.guard.cbhistory
+    permission-message: §4Error:§c You do not have permission to execute this command...
   # Builder Commands
   buildmode:
     description: Go on and off builder mode
@@ -128,6 +135,12 @@ permissions:
     description: Gives access to guardchat
   skyprisoncore.guard.contraband:
     description: Gives access to /cb
+
+  #
+  # CbHistory Permissions
+  #
+  skyprisoncore.guard.cbhistory:
+    description: Gives access to /cbhistory
   #
   # Builder Permissions
   #
@@ -189,4 +202,4 @@ permissions:
   #
   skyprisoncore.silentjoin:
     description: Gives access to silentjoinn command
-    default:  false
+    default: false

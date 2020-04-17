@@ -8,6 +8,10 @@ import com.bergerkiller.bukkit.common.events.EntityRemoveEvent;
 import net.skyprison.Main.Commands.*;
 import net.skyprison.Main.Commands.RanksPkg.*;
 import net.skyprison.Main.Commands.Opme.*;
+import net.skyprison.Main.Commands.RanksPkg.CbHistory;
+import net.skyprison.Main.Commands.RanksPkg.Contraband;
+import net.skyprison.Main.Commands.RanksPkg.GuardChat;
+import net.skyprison.Main.Commands.RanksPkg.GuardDuty;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
@@ -16,6 +20,7 @@ import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -26,6 +31,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
@@ -73,6 +79,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         getCommand("deopme").setExecutor(new Deopme());
         getCommand("rewards").setExecutor(new RewardGUI());
         getCommand("contraband").setExecutor(new Contraband());
+        getCommand("cbhistory").setExecutor(new CbHistory());
         getCommand("silentjoin").setExecutor(new SilentJoin());
         if (config.getBoolean("enable-op-command")) {
             getCommand("op").setExecutor(new Op());
@@ -90,14 +97,14 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     }
 
     //
-    // Creates lists of people that have been /cb, and also creates the list containing all of them contraband
+    // Creates lists of people that have been /cb, and also creates the list containing all of the contraband
     //
     public ArrayList<Player> cbed = new ArrayList();
     public HashMap<Player, Player> cbedMap = new HashMap();
     public Map<Player, Map.Entry<Player, Long>> hitcd = new HashMap();
     public Material[] contraband = {
             Material.WOODEN_SWORD, Material.IRON_SWORD, Material.STONE_SWORD, Material.EGG, Material.SNOWBALL, Material.TRIDENT, Material.POTION, Material.FLINT_AND_STEEL, Material.TIPPED_ARROW, Material.BOW, Material.GOLDEN_SWORD, Material.SPLASH_POTION, Material.CROSSBOW};
-
+    public Map<String, HashMap<String, Inventory>> cbGuards = new HashMap();
     public boolean isGuardGear(ItemStack i) {
         if (i != null) {
             if (i.getType() == Material.CHAINMAIL_HELMET || i.getType() == Material.CHAINMAIL_CHESTPLATE || i.getType() == Material.CHAINMAIL_LEGGINGS || i.getType() == Material.CHAINMAIL_BOOTS || i.getType() == Material.DIAMOND_SWORD) {
@@ -154,7 +161,6 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         int m = 0;
         target.closeInventory();
         Inventory cbInv = Bukkit.getServer().createInventory(null, 27, ChatColor.DARK_RED + "Contraband! " + ChatColor.RED + target.getName());
-        guard.openInventory(cbInv);
         for (int n = 0; n < target.getInventory().getSize(); n++) {
             ItemStack i = target.getInventory().getItem(n);
             if (i != null) {
@@ -170,12 +176,31 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                 }
             }
         }
+        if(this.cbGuards.get(guard.getName().toLowerCase()) == null) {
+            HashMap<String, Inventory> cbArchive = new HashMap<String, Inventory>();
+            cbArchive.put("blank", cbInv);
+            this.cbGuards.put(guard.getName().toLowerCase(), cbArchive);
+        }
+        HashMap<String, Inventory> cbArchive = this.cbGuards.get(guard.getName().toLowerCase());
+        cbArchive.put(target.getName().toLowerCase(), cbInv);
+        this.cbGuards.put(guard.getName().toLowerCase(), cbArchive);
+        guard.openInventory(cbInv);
         guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.GOLD + target.getName() + ChatColor.YELLOW + " has handed over their contraband!");
     }
 
     //
-// EventHandlers regarding RanksPkg
-//
+    // EventHandlers regarding RanksPkg
+    //
+    /*@EventHandler
+    public void cbinvclose(InventoryCloseEvent event) {
+        HumanEntity human = event.getPlayer();
+        if(human instanceof Player) {
+            Player closer = Bukkit.getPlayer(human.getUniqueId());
+            Map.Entry<Player, Long> lasthit = (Map.Entry) this.hitcd.get();
+            if(event.getInventory() == this.cbhist.)
+        }
+    }*/
+
     @EventHandler
     public void cbedChat(AsyncPlayerChatEvent event) {
         final Player target = event.getPlayer();
@@ -216,7 +241,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                 Player damager = (Player) event.getDamager();
                 Player damagee = (Player) event.getEntity();
                 Map.Entry<Player, Long> lasthit = (Map.Entry) this.hitcd.get(damager);
-                if (this.hitcd.get(damager) == null || (lasthit.getKey() == damagee && System.currentTimeMillis() / 1000L - ((Long) lasthit.getValue()).longValue() > 5L)) {
+                if (this.hitcd.get(damager) == null || (lasthit.getKey() == damagee && System.currentTimeMillis() / 1000L - ((Long) lasthit.getValue()).longValue() > 5L) || lasthit.getKey() !=damagee) {
                     damagee.sendMessage(ChatColor.RED + "You have been hit by " + damager.getName());
                     this.hitcd.put(damager, new AbstractMap.SimpleEntry(damagee, Long.valueOf(System.currentTimeMillis() / 1000L)));
                 }
