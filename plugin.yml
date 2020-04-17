@@ -10,12 +10,6 @@ commands:
   #
   # Guard Commands
   #
-  contraband:
-    description: Request contraband from player
-    usage: /<command>
-    aliases: cb
-    permission: skyprisoncore.guard.contraband
-    permission-message: §4Error:§c You do not have permission to execute this command...
   guardduty:
     description: Go on and off duty as a guard
     usage: /<command>
@@ -26,14 +20,24 @@ commands:
     usage: /<command>
     permission: skyprisoncore.guard.guardchat
     permission-message: §4Error:§c You do not have permission to execute this command...
-  # CbHistory Commands
+  #
+  # Contraband Commands
+  #
+  contraband:
+    description: Request contraband from player
+    usage: /<command>
+    aliases: cb
+    permission: skyprisoncore.guard.contraband
+    permission-message: §4Error:§c You do not have permission to execute this command...
   cbhistory:
     description: Retrieves contraband inventory based on player cb'ed
     usage: /<command>
     aliases: cbhist
     permission: skyprisoncore.guard.cbhistory
     permission-message: §4Error:§c You do not have permission to execute this command...
+  #
   # Builder Commands
+  #
   buildmode:
     description: Go on and off builder mode
     usage: /<command>
@@ -133,12 +137,11 @@ permissions:
     description: Bypasses Item Removal and that kind of stuff
   skyprisoncore.guard.guardchat:
     description: Gives access to guardchat
+  #
+  # Contraband Permissions
+  #
   skyprisoncore.guard.contraband:
     description: Gives access to /cb
-
-  #
-  # CbHistory Permissions
-  #
   skyprisoncore.guard.cbhistory:
     description: Gives access to /cbhistory
   #
@@ -202,4 +205,3 @@ permissions:
   #
   skyprisoncore.silentjoin:
     description: Gives access to silentjoinn command
-    default: false

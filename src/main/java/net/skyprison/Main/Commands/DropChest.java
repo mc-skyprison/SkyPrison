@@ -1,5 +1,6 @@
 package net.skyprison.Main.Commands;
 
+import net.skyprison.Main.SkyPrisonMain;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -39,14 +40,20 @@ public class DropChest implements CommandExecutor {
 				Location min = new Location(world, -10, 134, 11);
 				Location max = new Location(world, 18, 140, -11);
 				for(int b = 0; b < setList.size(); b++) {
-					Location randLoc = randomLocation(min, max);
-					loc.getWorld().dropItem(randLoc, yamlf.getItemStack("items." + b + ".item"));
-					yamlf.getConfigurationSection("items.").set(String.valueOf(b), null);
-					try {
-						yamlf.save(f);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
+					int finalB = b;
+					SkyPrisonMain.getInstance().getServer().getScheduler().scheduleSyncDelayedTask(SkyPrisonMain.getInstance(), new Runnable() {
+						public void run() {
+							Bukkit.getPlayer("DrakePork").sendMessage("test");
+							Location randLoc = randomLocation(min, max);
+							loc.getWorld().dropItem(randLoc, yamlf.getItemStack("items." + finalB + ".item"));
+							yamlf.getConfigurationSection("items.").set(String.valueOf(finalB), null);
+							try {
+								yamlf.save(f);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						}
+					},20L);
 				}
 			}
 		}
