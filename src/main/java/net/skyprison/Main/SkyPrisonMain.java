@@ -240,7 +240,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         if (event.getDamager() instanceof Player && event.getEntity() instanceof Player) {
             Player damager = (Player) event.getDamager();
             Player damagee = (Player) event.getEntity();
-            if(damager.hasPermission("skyprisoncore.guard.guardduty") && damagee.hasPermission("skyprisoncore.guard.guardduty")) {
+            if(damager.hasPermission("skyprisoncore.guard.onduty") && damagee.hasPermission("skyprisoncore.guard.onduty")) {
                 event.setCancelled(true);
             } else if (damagee.hasPermission("skyprisoncore.showhit")) {
                 Map.Entry<Player, Long> lasthit = (Map.Entry) this.hitcd.get(damager);
