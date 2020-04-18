@@ -21,9 +21,6 @@ public class GuardDuty implements CommandExecutor {
                 } else if(player.hasPermission("skyprisoncore.guard.guard")) {
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " parent remove guard");
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission unset skyprisoncore.guard.onduty");
-                } else {
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " parent remove trialguard");
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission unset skyprisoncore.guard.onduty");
                 }
                 player.sendMessage(ChatColor.GOLD + "Guard Duty: " + ChatColor.BLUE + "You have gone " + ChatColor.RED + "off" + ChatColor.BLUE + " duty. Thank you for your continued support in creating the prison atmosphere. Please dispose of your gear using " + ChatColor.RED + " /dispose" + ChatColor.BLUE + ". Understand that you are not able to enforce any 'prison' rules at this time.");
                 for (Player online : Bukkit.getServer().getOnlinePlayers()) {
@@ -38,9 +35,6 @@ public class GuardDuty implements CommandExecutor {
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.guard.onduty");
                 } else if(player.hasPermission("skyprisoncore.guard.guard")) {
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " parent add guard");
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.guard.onduty");
-                } else {
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " parent add trialguard");
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.guard.onduty");
                 }
                 player.sendMessage(ChatColor.GOLD + "Guard Duty: " + ChatColor.BLUE + "You have gone " + ChatColor.GREEN + "on" + ChatColor.BLUE + " duty. Thank you for your continued support in creating the prison atmosphere. You should have access to all guard commands now. Understand that you need to enforce any 'prison' rules at this time.");

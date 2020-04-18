@@ -126,8 +126,6 @@ permissions:
     description: Makes you senior guard when you do /guardduty
   skyprisoncore.guard.guard:
     description: Makes you guard when you do /guardduty
-  skyprisoncore.guard.trialguard:
-    description: Makes you trial guard when you do /guardduty
   skyprisoncore.guard.onduty:
     description: player is on duty when they have this perm
     default: false

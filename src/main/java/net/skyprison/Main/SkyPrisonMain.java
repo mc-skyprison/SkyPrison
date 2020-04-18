@@ -238,9 +238,11 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     @EventHandler
     public void guardhit(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player && event.getEntity() instanceof Player) {
-            if (event.getEntity().hasPermission("skyprisoncore.showhit")) {
-                Player damager = (Player) event.getDamager();
-                Player damagee = (Player) event.getEntity();
+            Player damager = (Player) event.getDamager();
+            Player damagee = (Player) event.getEntity();
+            if(damager.hasPermission("skyprisoncore.guard.guardduty") && damagee.hasPermission("skyprisoncore.guard.guardduty")) {
+                event.setCancelled(true);
+            } else if (damagee.hasPermission("skyprisoncore.showhit")) {
                 Map.Entry<Player, Long> lasthit = (Map.Entry) this.hitcd.get(damager);
                 if (this.hitcd.get(damager) == null || (lasthit.getKey() == damagee && System.currentTimeMillis() / 1000L - ((Long) lasthit.getValue()).longValue() > 5L) || lasthit.getKey() !=damagee) {
                     damagee.sendMessage(ChatColor.RED + "You have been hit by " + damager.getName());
