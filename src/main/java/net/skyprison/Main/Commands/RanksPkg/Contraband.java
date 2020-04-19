@@ -21,7 +21,7 @@ public class Contraband implements CommandExecutor {
 		for (int n = 0; n < target.getInventory().getSize(); n++) {
 			ItemStack i = target.getInventory().getItem(n);
 			if (i != null) {
-				for (Material cb : SkyPrisonMain.getInstance().contraband) {
+				for (Material cb : SkyPrisonMain.getInstance().contraband()) {
 					if (i.getType() == cb) {
 						return true;
 					}

@@ -58,6 +58,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         config.addDefault("deop-on-join", false);
         config.addDefault("builder-worlds", Lists.newArrayList("world"));
         config.addDefault("guard-worlds", Lists.newArrayList("prison"));
+        config.addDefault("contrabands", Lists.newArrayList("wooden_sword"));
         config.options().copyDefaults(true);
         saveConfig();
         instance = this;
@@ -100,11 +101,17 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     //
     // Creates lists of people that have been /cb, and also creates the list containing all of the contraband
     //
+    public List<Material> contraband() {
+        ArrayList arr = (ArrayList) config.getList("contrabands");
+        List<Material> contraband = Lists.newArrayList();
+        for(int i = 0; i < arr.size(); i++) {
+                contraband.add(Material.getMaterial(arr.get(i).toString().toUpperCase()));
+        }
+        return contraband;
+    }
     public ArrayList<Player> cbed = new ArrayList();
     public HashMap<Player, Player> cbedMap = new HashMap();
     public Map<Player, Map.Entry<Player, Long>> hitcd = new HashMap();
-    public Material[] contraband = {
-            Material.WOODEN_SWORD, Material.IRON_SWORD, Material.STONE_SWORD, Material.EGG, Material.SNOWBALL, Material.TRIDENT, Material.POTION, Material.FLINT_AND_STEEL, Material.TIPPED_ARROW, Material.BOW, Material.GOLDEN_SWORD, Material.SPLASH_POTION, Material.CROSSBOW};
     public Map<String, HashMap<String, Inventory>> cbGuards = new HashMap();
     public boolean isGuardGear(ItemStack i) {
         if (i != null) {
@@ -165,7 +172,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         for (int n = 0; n < target.getInventory().getSize(); n++) {
             ItemStack i = target.getInventory().getItem(n);
             if (i != null) {
-                for (Material cb : this.contraband) {
+                for (Material cb : contraband()) {
                     if (i.getType() == cb && m < 27) {
                         ItemStack newcb = new ItemStack(i.getType());
                         ItemMeta newmeta = i.getItemMeta();
