@@ -193,11 +193,11 @@ permissions:
     description: Gives access to all opme commands
     default: false
     children:
-      opme.opme: true
-      opme.op: true
-      opme.deop: true
-      opme.deopme: true
-      opme.joinbypass: true
+      skyprisoncore.opme: true
+      skyprisoncore.op: true
+      skyprisoncore.deop: true
+      skyprisoncore.deopme: true
+      skyprisoncore.deop.joinbypass: true
   #
   # SilentJoin Permissions
   #
