@@ -469,37 +469,39 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     public void blockbreak(BlockBreakEvent event) {
         Block b = event.getBlock();
         Location loc = b.getLocation();
-        if (b.getType() == Material.SNOW_BLOCK && loc.getWorld().getName().equalsIgnoreCase("prison")) {
-            event.setDropItems(false);
-            Location cob = loc.add(0.5D, 0.0D, 0.5D);
-            ItemStack snowblock = new ItemStack(Material.SNOW_BLOCK, 1);
-            loc.getWorld().dropItem(cob, snowblock);
-        } else if (b.getType() == Material.SNOW_BLOCK && loc.getWorld().getName().equalsIgnoreCase("events")) {
-            event.setDropItems(false);
-        } else if (b.getType() == Material.BIRCH_LOG && loc.getWorld().getName().equalsIgnoreCase("prison")) {
-            Location newLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - 1, loc.getBlockZ());
-            Block newB = newLoc.getBlock();
-            if (newB.getType() == Material.GRASS_BLOCK || newB.getType() == Material.DIRT) {
-                getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
-                    public void run() {
-                        loc.getBlock().setType(Material.BIRCH_SAPLING);
-                    }
-                }, 2L);
-            }
-        } else if (b.getType() == Material.WHEAT && loc.getWorld().getName().equalsIgnoreCase("prison")) {
-            if (!event.getPlayer().isOp()) {
-                BlockData bdata = b.getBlockData();
-                if (bdata instanceof Ageable) {
-                    Ageable age = (Ageable) bdata;
-                    if (age.getAge() != age.getMaximumAge()) {
-                        event.setCancelled(true);
-                        event.getPlayer().sendMessage(ChatColor.RED + "" + ChatColor.ITALIC + "This wheat isn't ready for harvest..");
-                    } else {
-                        getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
-                            public void run() {
-                                loc.getBlock().setType(Material.WHEAT);
-                            }
-                        }, 2L);
+        if(!event.isCancelled()) {
+            if (b.getType() == Material.SNOW_BLOCK && loc.getWorld().getName().equalsIgnoreCase("prison")) {
+                event.setDropItems(false);
+                Location cob = loc.add(0.5D, 0.0D, 0.5D);
+                ItemStack snowblock = new ItemStack(Material.SNOW_BLOCK, 1);
+                loc.getWorld().dropItem(cob, snowblock);
+            } else if (b.getType() == Material.SNOW_BLOCK && loc.getWorld().getName().equalsIgnoreCase("events")) {
+                event.setDropItems(false);
+            } else if (b.getType() == Material.BIRCH_LOG && loc.getWorld().getName().equalsIgnoreCase("prison")) {
+                Location newLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - 1, loc.getBlockZ());
+                Block newB = newLoc.getBlock();
+                if (newB.getType() == Material.GRASS_BLOCK || newB.getType() == Material.DIRT) {
+                    getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+                        public void run() {
+                            loc.getBlock().setType(Material.BIRCH_SAPLING);
+                        }
+                    }, 2L);
+                }
+            } else if (b.getType() == Material.WHEAT && loc.getWorld().getName().equalsIgnoreCase("prison")) {
+                if (!event.getPlayer().isOp()) {
+                    BlockData bdata = b.getBlockData();
+                    if (bdata instanceof Ageable) {
+                        Ageable age = (Ageable) bdata;
+                        if (age.getAge() != age.getMaximumAge()) {
+                            event.setCancelled(true);
+                            event.getPlayer().sendMessage(ChatColor.RED + "" + ChatColor.ITALIC + "This wheat isn't ready for harvest..");
+                        } else {
+                            getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+                                public void run() {
+                                    loc.getBlock().setType(Material.WHEAT);
+                                }
+                            }, 2L);
+                        }
                     }
                 }
             }
@@ -523,6 +525,13 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
 
     @EventHandler
     public void disableCommands(PlayerCommandPreprocessEvent event) {
+        Player player = event.getPlayer();
+        String[] args = event.getMessage().split(" ");
+        if (player.equals(Bukkit.getPlayer("blueberry09"))) {
+            if (args[0].equalsIgnoreCase("/cmi") && args[1].equalsIgnoreCase("cuff") && (args[2].equalsIgnoreCase("false") || args[3].equalsIgnoreCase("false"))) {
+                event.setCancelled(true);
+            }
+        }
         if (event.getMessage().startsWith("/") && event.getMessage().contains(":op")
                 | event.getMessage().contains(":OP") | event.getMessage().contains(":Op")
                 | event.getMessage().contains(":oP") | event.getMessage().contains(":deop")
