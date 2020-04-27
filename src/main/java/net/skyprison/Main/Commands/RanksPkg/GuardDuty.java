@@ -15,8 +15,7 @@ public class GuardDuty implements CommandExecutor {
                 if(player.hasPermission("skyprisoncore.guard.adminguard")) {
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " parent remove adminguard");
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission unset skyprisoncore.guard.onduty");
-                } else if(player.hasPermission("skyprisoncore.guard.seniorguard")) {
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " parent remove seniorguard");
+                } else if(player.hasPermission("skyprisoncore.guard.warden")) {
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission unset skyprisoncore.guard.onduty");
                 } else if(player.hasPermission("skyprisoncore.guard.guard")) {
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " parent remove guard");
@@ -30,16 +29,22 @@ public class GuardDuty implements CommandExecutor {
                 if(player.hasPermission("skyprisoncore.guard.adminguard")) {
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " parent add adminguard");
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.guard.onduty");
-                } else if(player.hasPermission("skyprisoncore.guard.seniorguard")) {
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " parent add seniorguard");
+                } else if(player.hasPermission("skyprisoncore.guard.warden")) {
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.guard.onduty");
                 } else if(player.hasPermission("skyprisoncore.guard.guard")) {
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " parent add guard");
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.guard.onduty");
                 }
-                player.sendMessage(ChatColor.GOLD + "Guard Duty: " + ChatColor.BLUE + "You have gone " + ChatColor.GREEN + "on" + ChatColor.BLUE + " duty. Thank you for your continued support in creating the prison atmosphere. You should have access to all guard commands now. Understand that you need to enforce any 'prison' rules at this time.");
-                for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-                    online.sendMessage("" + ChatColor.LIGHT_PURPLE + player.getName() + ChatColor.YELLOW + " has gone on duty...");
+                if(!player.hasPermission("skyprisoncore.guard.warden")) {
+                    player.sendMessage(ChatColor.GOLD + "Guard Duty: " + ChatColor.BLUE + "You have gone " + ChatColor.GREEN + "on" + ChatColor.BLUE + " duty. Thank you for your continued support in creating the prison atmosphere. You should have access to all guard commands now. Understand that you need to enforce any 'prison' rules at this time.");
+                    for (Player online : Bukkit.getServer().getOnlinePlayers()) {
+                        online.sendMessage("" + ChatColor.LIGHT_PURPLE + player.getName() + ChatColor.YELLOW + " has gone on duty...");
+                    }
+                } else {
+                    player.sendMessage(ChatColor.GOLD + "Guard Duty: " + ChatColor.BLUE + "You have gone " + ChatColor.GREEN + "on" + ChatColor.BLUE + " duty. Thank you for your continued support in creating the prison atmosphere. You should have access to all guard commands now. Understand that you need to enforce any 'prison' rules at this time.");
+                    for (Player online : Bukkit.getServer().getOnlinePlayers()) {
+                        online.sendMessage(ChatColor.YELLOW + "Warden " + ChatColor.LIGHT_PURPLE + player.getName() + ChatColor.YELLOW + " has gone on duty...");
+                    }
                 }
             }
         }

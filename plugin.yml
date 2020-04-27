@@ -122,8 +122,8 @@ permissions:
     description: Gives access to /guardduty
   skyprisoncore.guard.adminguard:
     description: Makes you admin guard when you do /guardduty
-  skyprisoncore.guard.seniorguard:
-    description: Makes you senior guard when you do /guardduty
+  skyprisoncore.guard.warden:
+    description: Makes you warden guard when you do /guardduty
   skyprisoncore.guard.guard:
     description: Makes you guard when you do /guardduty
   skyprisoncore.guard.onduty:
