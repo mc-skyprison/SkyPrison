@@ -551,16 +551,20 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     @EventHandler
     public void silentlogoff(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        if(player.hasPermission("cmi.messages.disablequit")) {
-            Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(),"s "+player.getName()+" has left silently...");
+        if(!player.getPlayer().equals(Bukkit.getPlayer("DrakePork"))) {
+            if (player.hasPermission("cmi.messages.disablequit")) {
+                Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "s " + player.getName() + " has left silently...");
+            }
         }
     }
 
     @EventHandler
     public void silentjoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        if(player.hasPermission("cmi.messages.disablelogin")) {
-            Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(),"s "+player.getName()+" has joined silently...");
+        if(!player.getPlayer().equals(Bukkit.getPlayer("DrakePork"))) {
+            if (player.hasPermission("cmi.messages.disablelogin")) {
+                Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "s " + player.getName() + " has joined silently...");
+            }
         }
     }
 }
