@@ -95,27 +95,31 @@ public class Contraband implements CommandExecutor {
 				guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.YELLOW + " Use /cb <target> to initiate contraband countdown...");
 			} else {
 				Player target = Bukkit.getServer().getPlayer(args[0]);
-				if (target != null) {
-					if (!SkyPrisonMain.getInstance().cbed.contains(target)) {
-						double radius = 20.0D;
-						if (target.getLocation().distance(guard.getLocation()) <= radius) {
-							if (InvCheckCont(target)) {
-								SkyPrisonMain.getInstance().cbed.add(target);
-								SkyPrisonMain.getInstance().cbedMap.put(target, guard);
-								guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "You have caught "+ChatColor.GOLD + target.getName()+ChatColor.RED+" with contraband. Please await their decision...");
-								target.sendMessage("\n\n\n[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.GOLD + guard.getName() + ChatColor.RED + " has caught you with contraband.");
-								cbPunish(target, 10);
+				if(target.getWorld().equals(guard.getWorld())) {
+					if (target != null) {
+						if (!SkyPrisonMain.getInstance().cbed.contains(target)) {
+							double radius = 20.0D;
+							if (target.getLocation().distance(guard.getLocation()) <= radius) {
+								if (InvCheckCont(target)) {
+									SkyPrisonMain.getInstance().cbed.add(target);
+									SkyPrisonMain.getInstance().cbedMap.put(target, guard);
+									guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "You have caught "+ChatColor.GOLD + target.getName()+ChatColor.RED+" with contraband. Please await their decision...");
+									target.sendMessage("\n\n\n[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.GOLD + guard.getName() + ChatColor.RED + " has caught you with contraband.");
+									cbPunish(target, 10);
+								} else {
+									guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "Player does not have contraband!");
+								}
 							} else {
-								guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "Player does not have contraband!");
+								guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "You are not close enough to the player to execute this command!");
 							}
 						} else {
-							guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "You are not close enough to the player to execute this command!");
+							guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "Player has already been '/cb'ed!");
 						}
 					} else {
-						guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "Player has already been '/cb'ed!");
+						guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "Player is not online or cannot be /cb'ed...");
 					}
 				} else {
-					guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "Player is not online or cannot be /cb'ed...");
+					guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "Player is not in prison world...");
 				}
 			}
 		}
