@@ -33,10 +33,7 @@ import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -544,6 +541,26 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                 | event.getMessage().contains(":DEoP")) {
             event.setCancelled(true);
             event.getPlayer().sendMessage(ChatColor.WHITE + "Unknown command. Type " + '"' + "/help" + '"' + " for help.");
+        }
+    }
+
+    //
+    //Event Handlers regarding silent join/leave
+    //
+
+    @EventHandler
+    public void silentlogoff(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        if(player.hasPermission("cmi.messages.disablequit")) {
+            Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(),"s "+player.getName()+" has left silently...");
+        }
+    }
+
+    @EventHandler
+    public void silentjoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        if(player.hasPermission("cmi.messages.disablelogin")) {
+            Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(),"s "+player.getName()+" has joined silently...");
         }
     }
 }
