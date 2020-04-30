@@ -1,12 +1,13 @@
 package net.skyprison.Main;
 
 import java.io.*;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 import com.bergerkiller.bukkit.common.events.EntityRemoveEvent;
 import com.google.common.collect.Lists;
 import net.skyprison.Main.Commands.*;
+import net.skyprison.Main.Commands.Donations.DonorAdd;
+import net.skyprison.Main.Commands.Donations.Purchases;
 import net.skyprison.Main.Commands.RanksPkg.*;
 import net.skyprison.Main.Commands.Opme.*;
 import net.skyprison.Main.Commands.RanksPkg.CbHistory;
@@ -28,6 +29,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -41,9 +43,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 
 public class SkyPrisonMain extends JavaPlugin implements Listener {
-    private static SkyPrisonMain instance;
     FileConfiguration config = this.getConfig();
 
+    private static SkyPrisonMain instance;
     public static SkyPrisonMain getInstance() {
         return instance;
     }
@@ -58,14 +60,26 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         config.addDefault("contrabands", Lists.newArrayList("wooden_sword"));
         config.options().copyDefaults(true);
         saveConfig();
-        instance = this;
-        File f = new File("plugins/SkyPrisonCore/spongeLocations.yml");
-        File f2 = new File("plugins/SkyPrisonCore/regionLocations.yml");
-        File f3 = new File("plugins/SkyPrisonCore/dropChest.yml");
-        File f4 = new File("plugins/SkyPrisonCore/rewardGUI.yml");
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-        String date = format.format(new Date());
-        File file = new File("plugins/RanksPkg/staff/" + date + ".txt");
+        ArrayList files = new ArrayList();
+        files.add("bounties.yml");
+        files.add("spongeLocations.yml");
+        files.add("regionLocations.yml");
+        files.add("dropChest.yml");
+        files.add("rewardGUI.yml");
+        files.add("donations");
+        for (int i = 0; i < files.size(); i++) {
+            File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
+                    .getDataFolder() + "/" + files.get(i));
+            if (!f.exists() && !files.get(i).equals("donations")) {
+                try {
+                    f.createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else if (!f.exists() && files.get(i).equals("donations")) {
+                f.mkdir();
+            }
+        }
         getCommand("g").setExecutor(new GuardChat());
         getCommand("guardduty").setExecutor(new GuardDuty());
         getCommand("b").setExecutor(new BuildChat());
@@ -80,6 +94,9 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         getCommand("contraband").setExecutor(new Contraband());
         getCommand("cbhistory").setExecutor(new CbHistory());
         getCommand("silentjoin").setExecutor(new SilentJoin());
+        getCommand("donoradd").setExecutor(new DonorAdd());
+        getCommand("purchases").setExecutor(new Purchases());
+        getCommand("bounty").setExecutor(new Bounty());
         if (config.getBoolean("enable-op-command")) {
             getCommand("op").setExecutor(new Op());
         } else {
@@ -306,6 +323,11 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                         RewardGUI.openGUI((Player) event.getWhoClicked(), 0);
                     }
                 }
+            }
+        }
+        if (ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("bounties")) {
+            if (event.getCurrentItem() != null) {
+                event.setCancelled(true);
             }
         }
         Player player = (Player) event.getWhoClicked();
@@ -567,6 +589,50 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             }
         }
     }
+
+    //
+    // Event Handlers regarding bounties
+    //
+
+    @EventHandler
+    public void bountyDeath(EntityDeathEvent event) {
+        if(event.getEntity() instanceof Player) {
+            Player killed = (Player) event.getEntity();
+            if(killed.getKiller() instanceof Player && !killed.equals(killed.getKiller())) {
+                final File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonDonations")
+                        .getDataFolder() + "/bounties.yml");
+                if (!f.exists()) {
+                    try {
+                        f.createNewFile();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                Player killer = killed.getKiller();
+                FileConfiguration bounty = YamlConfiguration.loadConfiguration(f);
+                Set<String> bountyList = bounty.getKeys(false);
+                for (String bountyPlayer : bountyList) {
+                    if(killed.getUniqueId().equals(UUID.fromString(bountyPlayer))) {
+                        bounty.set(bountyPlayer, null);
+                        try {
+                            Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money give " + killer.getName() + " " + bounty.getInt(bountyPlayer + ".bounty-prize"));
+                            bounty.save(f);
+                            for (Player online : Bukkit.getServer().getOnlinePlayers()) {
+                                online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "]" + ChatColor.YELLOW + " " + killer.getName() + " has claimed the bounty on " + killed.getName() + "!");
+                            }
+                            killer.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + "You have claimed the bounty on " + killed.getName());
+                        } catch (final IOException e) {
+                            e.printStackTrace();
+                        }
+                        break;
+                    }
+                }
+
+            }
+        }
+    }
+
+
 }
 
 

@@ -1,16 +1,11 @@
 package net.skyprison.Main.Commands;
 
 import org.bukkit.*;
-import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.block.BlockDamageEvent;
-import org.bukkit.plugin.Plugin;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,18 +20,29 @@ public class SpongeLoc implements CommandExecutor {
 			YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
 			if (args.length < 1) {
 				Set setList = yamlf.getConfigurationSection("locations").getKeys(false);
+				Double playerX = player.getLocation().getX();
+				Double playerY = player.getLocation().getY();
+				Double playerZ = player.getLocation().getZ();
 				for (int i = 0; i < setList.size()+2; i++) {
-					if (!yamlf.contains("locations." + i)) {
-						yamlf.set("locations." + i + ".world", player.getLocation().getWorld().getName());
-						yamlf.set("locations." + i + ".x", player.getLocation().getX());
-						yamlf.set("locations." + i + ".y", player.getLocation().getY());
-						yamlf.set("locations." + i + ".z", player.getLocation().getZ());
-						try {
-							yamlf.save(f);
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
+					Double spongeX = yamlf.getDouble("locations." + i + ".x");
+					Double spongeY = yamlf.getDouble("locations." + i + ".y");
+					Double spongeZ = yamlf.getDouble("locations." + i + ".z");
+					if(playerX.equals(spongeX) && playerY.equals(spongeY) && playerZ.equals(spongeZ)) {
+						player.sendMessage(ChatColor.WHITE + "[" + ChatColor.YELLOW + "Sponge" + ChatColor.WHITE + "]" + ChatColor.RED + " There is already a sponge location here!");
 						break;
+					} else {
+						if (!yamlf.contains("locations." + i)) {
+							yamlf.set("locations." + i + ".world", player.getLocation().getWorld().getName());
+							yamlf.set("locations." + i + ".x", player.getLocation().getX());
+							yamlf.set("locations." + i + ".y", player.getLocation().getY());
+							yamlf.set("locations." + i + ".z", player.getLocation().getZ());
+							try {
+								yamlf.save(f);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							break;
+						}
 					}
 				}
 				player.sendMessage(ChatColor.WHITE + "[" + ChatColor.YELLOW + "Sponge" + ChatColor.WHITE + "]" + ChatColor.GREEN + " Sponge location set at your location");

@@ -1,7 +1,7 @@
 name: SkyPrisonCore
 authors: [Redhelmet8, DrakePork]
-description: Guard plugins for SkyPrison
-version: 3.0
+description: All the Custom Stuffs for SkyPrison
+version: ${project.version}
 main: net.skyprison.Main.SkyPrisonMain
 api-version: 1.15
 website: https://skyprison.net
@@ -114,6 +114,27 @@ commands:
     usage: /<command>
     permission: skyprisoncore.silentjoin
     permission-message: §4Error:§c You do not have permission to execute this command...
+  #
+  # Bounty Commands
+  #
+  bounty:
+    description: Bounty Commands
+    usage: /<command>
+    permission: skyprisoncore.bounty
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  #
+  # Donation Commands
+  #
+  donoradd:
+    description: Add a donation
+    usage: /<command>
+    permission: skyprisoncore.donation.donoradd
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  purchases:
+    description: Show purchases
+    usage: /<command>
+    permission: skyprisoncore.donation.purchases
+    permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
   #
   # Guard Permissions
@@ -203,3 +224,15 @@ permissions:
   #
   skyprisoncore.silentjoin:
     description: Gives access to silentjoinn command
+  #
+  # Bount Permissions
+  #
+  skyprisoncore.bounty:
+    description: Gives access to /bounty commands
+  #
+  # Donation Permissions
+  #
+  skyprisoncore.donation.donoradd:
+    description: Gives you access to /donoradd
+  skyprisoncore.donation.purchases:
+    description: Gives you access to /purchases
