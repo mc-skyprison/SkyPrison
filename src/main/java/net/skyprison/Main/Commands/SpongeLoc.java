@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.Set;
 
@@ -16,10 +17,11 @@ public class SpongeLoc implements CommandExecutor {
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {
 			Player player = (Player) sender;
-			File f = new File("plugins/SkyPrisonCore/spongeLocations.yml");
+			File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
+					.getDataFolder() + "/spongeLocations.yml");
 			YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
 			if (args.length < 1) {
-				Set setList = yamlf.getConfigurationSection("locations").getKeys(false);
+				Set<String> setList = yamlf.getConfigurationSection("locations").getKeys(false);
 				Double playerX = player.getLocation().getX();
 				Double playerY = player.getLocation().getY();
 				Double playerZ = player.getLocation().getZ();
@@ -45,6 +47,41 @@ public class SpongeLoc implements CommandExecutor {
 						}
 					}
 				}
+				setList = yamlf.getConfigurationSection("locations").getKeys(false);
+				String world = "";
+				Double x = 0.0;
+				Double y = 0.0;
+				Double z = 0.0;
+				ArrayList<ArrayList> arr = new ArrayList<>();
+				for (String spongeOrder : setList) {
+					ArrayList arr2 = new ArrayList<String>();
+					world = yamlf.getString("locations." + spongeOrder + ".world");
+					x = yamlf.getDouble("locations." + spongeOrder + ".x");
+					y = yamlf.getDouble("locations." + spongeOrder + ".y");
+					z = yamlf.getDouble("locations." + spongeOrder + ".z");
+					arr2.add(world);
+					arr2.add(x);
+					arr2.add(y);
+					arr2.add(z);
+					arr.add(arr2);
+				}
+				yamlf.set("locations", null);
+				try {
+					yamlf.save(f);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				for(int i = 0; i < arr.size(); i++) {
+					yamlf.set("locations." + i + ".world", arr.get(i).get(0));
+					yamlf.set("locations." + i + ".x", arr.get(i).get(1));
+					yamlf.set("locations." + i + ".y", arr.get(i).get(2));
+					yamlf.set("locations." + i + ".z", arr.get(i).get(3));
+					try {
+						yamlf.save(f);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
 				player.sendMessage(ChatColor.WHITE + "[" + ChatColor.YELLOW + "Sponge" + ChatColor.WHITE + "]" + ChatColor.GREEN + " Sponge location set at your location");
 			} else if (args[0].equalsIgnoreCase("list")) {
 				for (String key : yamlf.getConfigurationSection("locations").getKeys(false)) {
@@ -53,23 +90,51 @@ public class SpongeLoc implements CommandExecutor {
 			} else if (args[0].equalsIgnoreCase("delete")) {
 				if (args.length < 2) {
 					player.sendMessage(ChatColor.DARK_RED + "[" + ChatColor.AQUA + "Sponge" + ChatColor.DARK_RED + "]" + ChatColor.RED + " Please specify a location id... ");
-					return true;
 				} else if (!yamlf.getConfigurationSection("locations").contains(args[1])) {
 					player.sendMessage(ChatColor.DARK_RED + "[" + ChatColor.AQUA + "Sponge" + ChatColor.DARK_RED + "]" + ChatColor.RED + " Sponge location with id '" + args[1] + "' does not exist...");
-					return true;
 				} else {
 					yamlf.getConfigurationSection("locations").set(args[1], null);
 					try {
 						yamlf.save(f);
+						Set<String> setList = yamlf.getConfigurationSection("locations").getKeys(false);
+						String world = "";
+						Double x = 0.0;
+						Double y = 0.0;
+						Double z = 0.0;
+						ArrayList<ArrayList> arr = new ArrayList<>();
+						for (String spongeOrder : setList) {
+							ArrayList arr2 = new ArrayList<String>();
+							world = yamlf.getString("locations." + spongeOrder + ".world");
+							x = yamlf.getDouble("locations." + spongeOrder + ".x");
+							y = yamlf.getDouble("locations." + spongeOrder + ".y");
+							z = yamlf.getDouble("locations." + spongeOrder + ".z");
+							arr2.add(world);
+							arr2.add(x);
+							arr2.add(y);
+							arr2.add(z);
+							arr.add(arr2);
+						}
+						yamlf.set("locations", null);
+						try {
+							yamlf.save(f);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						for(int i = 0; i < arr.size(); i++) {
+							yamlf.set("locations." + i + ".world", arr.get(i).get(0));
+							yamlf.set("locations." + i + ".x", arr.get(i).get(1));
+							yamlf.set("locations." + i + ".y", arr.get(i).get(2));
+							yamlf.set("locations." + i + ".z", arr.get(i).get(3));
+							try {
+								yamlf.save(f);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						}
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
-					if (!yamlf.getConfigurationSection("locations").contains(args[1])) {
-						player.sendMessage(ChatColor.DARK_RED + "[" + ChatColor.AQUA + "Sponge" + ChatColor.DARK_RED + "]" + ChatColor.GREEN + " Sponge location with id '" + args[1] + "' successfully deleted...");
-					} else {
-						player.sendMessage(ChatColor.DARK_RED + "[" + ChatColor.AQUA + "Sponge" + ChatColor.DARK_RED + "]" + ChatColor.DARK_RED + " ERROR DELETING LOCATION: DELETE LOCATIONS.TXT AND RELOAD PLUGIN...");
-					}
-					return true;
+					player.sendMessage(ChatColor.DARK_RED + "[" + ChatColor.AQUA + "Sponge" + ChatColor.DARK_RED + "]" + ChatColor.GREEN + " Sponge location with id '" + args[1] + "' successfully deleted...");
 				}
 			} else if (args[0].equalsIgnoreCase("tp")) {
 				if (args.length < 2) {

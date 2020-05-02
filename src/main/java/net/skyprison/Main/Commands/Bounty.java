@@ -22,7 +22,7 @@ public class Bounty implements CommandExecutor {
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {
 			Player player = (Player)sender;
-			final File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
+			File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
 					.getDataFolder() + "/bounties.yml");
 			if (!f.exists()) {
 				try {
