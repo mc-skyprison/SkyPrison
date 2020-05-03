@@ -67,6 +67,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         files.add("dropChest.yml");
         files.add("rewardGUI.yml");
         files.add("donations");
+        files.add("watchlist.yml");
         for (int i = 0; i < files.size(); i++) {
             File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
                     .getDataFolder() + "/" + files.get(i));
@@ -97,6 +98,10 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         getCommand("donoradd").setExecutor(new DonorAdd());
         getCommand("purchases").setExecutor(new Purchases());
         getCommand("bounty").setExecutor(new Bounty());
+        getCommand("watchlist").setExecutor(new Watchlist());
+        getCommand("watchlistadd").setExecutor(new WatchlistAdd());
+        getCommand("watchlistdel").setExecutor(new WatchlistDelete());
+        getCommand("watchlisttoggle").setExecutor(new WatchlistToggle());
         if (config.getBoolean("enable-op-command")) {
             getCommand("op").setExecutor(new Op());
         } else {
@@ -410,10 +415,9 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             }
         }
     }
-
     //
-// EventHandlers regarding Sponge Event
-//
+    // EventHandlers regarding Sponge Event
+    //
     @EventHandler
     public void spongeEvent(BlockDamageEvent event) {
         Block b = event.getBlock();
@@ -586,6 +590,33 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         if(!player.getPlayer().equals(Bukkit.getPlayer("DrakePork"))) {
             if (player.hasPermission("cmi.messages.disablelogin")) {
                 Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "s " + player.getName() + " has joined silently...");
+            }
+        }
+    }
+
+    //
+    // Event Handlers regarding watchlist
+    //
+    public void watchlistjoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        File f = new File("plugins/SkyPrisonCore/watchlist.yml");
+        YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
+        for (String key : yamlf.getConfigurationSection("wlist").getKeys(false)) {
+            if (key.equalsIgnoreCase(player.getName())) {
+                if((System.currentTimeMillis()/1000L)<yamlf.getLong("wlist."+player.getName()+".expires")) {
+                    for (Player online : Bukkit.getServer().getOnlinePlayers()) {
+                        if (online.hasPermission("skyprisoncore.watchlist.basic") && !player.hasPermission("skyprisoncore.watchlist.silent")) {
+                            online.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "]" + ChatColor.WHITE + ": " + ChatColor.RED + player.getName() + ChatColor.YELLOW + " has just logged on and is on the watchlist. Please use /watchlist <player> to see why...");
+                        }
+                    }
+                } else {//players watchlist time has expired and will be removed
+                    yamlf.getConfigurationSection(key).set("wlist." + player.getName(), null);
+                    try {
+                        yamlf.save(f);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
     }
