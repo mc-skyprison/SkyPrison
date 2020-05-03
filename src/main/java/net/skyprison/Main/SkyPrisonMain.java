@@ -597,6 +597,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     //
     // Event Handlers regarding watchlist
     //
+    @EventHandler
     public void watchlistjoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         File f = new File("plugins/SkyPrisonCore/watchlist.yml");
