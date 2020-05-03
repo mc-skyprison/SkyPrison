@@ -1,4 +1,4 @@
-package main.java.net.skyprison.Main.Commands;
+package net.skyprison.Main.Commands;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;

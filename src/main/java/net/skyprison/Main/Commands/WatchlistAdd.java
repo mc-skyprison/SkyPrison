@@ -1,6 +1,6 @@
 package net.skyprison.Main.Commands;
 
-import main.java.net.skyprison.Main.Commands.Watchlist;
+import net.skyprison.Main.Commands.Watchlist;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
