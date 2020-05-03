@@ -22,21 +22,14 @@ public class WatchlistAdd implements CommandExecutor {
             } else {
                 File f = new File("plugins/SkyPrisonCore/watchlist.yml");
                 YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
-                String target = args[1].toLowerCase();
-                boolean onList = false;
-                for (String key : yamlf.getConfigurationSection("wlist").getKeys(false)) {//Checks if target is already on watchlist
-                    Watchlist.wlistCleanup(f, yamlf, key);
-                    if(key.equalsIgnoreCase(target)) {//target is on watchlist
-                        onList = true;
-                    }
-                }
-                if(!onList) {//target is not on watchlist, adding to watchlist
-                    String reason = "";
+                String target = args[0].toLowerCase();
+                if(!yamlf.contains("wlist."+target)) {//target is not on watchlist, adding to watchlist
+                    String reason = args[1];
                     for(int i = 2; i < args.length; i++) {
-                        reason = reason + args[i];
+                        reason = reason +" "+ args[i];
                     }
                     long current = System.currentTimeMillis()/1000L;
-                    long expire = current+(172800L);//48 hours
+                    long expire = current+(172800);//48 hours
                     yamlf.createSection("wlist."+ target);
                     yamlf.set("wlist."+ target+".expire", expire);
                     yamlf.set("wlist."+ target+".reason", reason);
@@ -52,6 +45,9 @@ public class WatchlistAdd implements CommandExecutor {
                     }
                 } else {//target was on watchlist, informing player
                     player.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "]" + ChatColor.WHITE + ": " + ChatColor.RED+"Player is already on watchlist...");
+                }
+                for (String key : yamlf.getConfigurationSection("wlist").getKeys(false)) {//Checks if target is already on watchlist
+                    Watchlist.wlistCleanup(f, yamlf, key);
                 }
             }
         }
