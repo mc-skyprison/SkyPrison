@@ -135,6 +135,33 @@ commands:
     usage: /<command>
     permission: skyprisoncore.donation.purchases
     permission-message: §4Error:§c You do not have permission to execute this command...
+  #
+  # Watchlist Commands
+  #
+  watchlist:
+    description: Displays watchlist and specifics
+    usage: /<command>
+    aliases: [wl]
+    permission: skyprisoncore.watchlist.basic
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  watchlistadd:
+    description: adds a user to the watchlist
+    usage: /<command>
+    aliases: [wladd]
+    permission: skyprisoncore.watchlist.add
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  watchlistdelete:
+    description: Deletes a user from the watchlist
+    usage: /<command>
+    aliases: [wldel, watchlistdel]
+    permission: skyprisoncore.watchlist.delete
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  watchlisttoggle:
+    description: toggles join watchlist messages
+    usage: /<command>
+    aliases: [wltoggle]
+    permission: skyprisoncore.watchlist.toggle
+    permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
   #
   # Guard Permissions
@@ -236,3 +263,14 @@ permissions:
     description: Gives you access to /donoradd
   skyprisoncore.donation.purchases:
     description: Gives you access to /purchases
+  #
+  # Watchlist Permissions
+  #
+  skyprisoncore.watchlist.basic:
+    description: Gives access to /watchlist
+  skyprisoncore.watchlist.add:
+    description: Gives access to /watchlistadd
+  skyprisoncore.watchlist.delete:
+    description: Gives access to /watchlistdelete
+  skyprisoncore.watchlist.toggle:
+    description: Gives access to /watchlisttoggle
