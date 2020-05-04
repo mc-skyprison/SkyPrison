@@ -60,6 +60,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         config.addDefault("contrabands", Lists.newArrayList("wooden_sword"));
         config.options().copyDefaults(true);
         saveConfig();
+        instance = this;
         ArrayList files = new ArrayList();
         files.add("bounties.yml");
         files.add("spongeLocations.yml");
@@ -575,7 +576,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     //
 
     @EventHandler
-    public void silentlogoff(PlayerQuitEvent event) {
+    public void silentLogOff(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         if(!player.getPlayer().equals(Bukkit.getPlayer("DrakePork"))) {
             if (player.hasPermission("cmi.messages.disablequit")) {
@@ -585,7 +586,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void silentjoin(PlayerJoinEvent event) {
+    public void silentJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         if(!player.getPlayer().equals(Bukkit.getPlayer("DrakePork"))) {
             if (player.hasPermission("cmi.messages.disablelogin")) {
@@ -597,8 +598,9 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     //
     // Event Handlers regarding watchlist
     //
+
     @EventHandler
-    public void watchlistjoin(PlayerJoinEvent event) {
+    public void watchListJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         File f = new File("plugins/SkyPrisonCore/watchlist.yml");
         YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
@@ -628,10 +630,10 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
 
     @EventHandler
     public void bountyDeath(EntityDeathEvent event) {
-        if(event.getEntity() instanceof Player) {
+        if(event.getEntity() instanceof Player && event.getEntity().getKiller() instanceof Player) {
             Player killed = (Player) event.getEntity();
-            if(killed.getKiller() instanceof Player && !killed.equals(killed.getKiller())) {
-                final File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonDonations")
+            if(!killed.equals(killed.getKiller())) {
+                File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
                         .getDataFolder() + "/bounties.yml");
                 if (!f.exists()) {
                     try {
