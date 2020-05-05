@@ -215,6 +215,16 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.GOLD + target.getName() + ChatColor.YELLOW + " has handed over their contraband!");
     }
 
+    public static void wlistCleanup(File f, YamlConfiguration yamlf) {
+        long current = System.currentTimeMillis()/1000L;
+        for (String key : yamlf.getConfigurationSection("wlist").getKeys(false)) {
+            long expire = yamlf.getLong("wlist."+key);
+            if(current>expire) {
+                yamlf.set("wlist."+key, null);
+            }
+        }
+    }
+
     //
     // EventHandlers regarding RanksPkg
     //
