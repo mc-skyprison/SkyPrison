@@ -218,9 +218,14 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     public static void wlistCleanup(File f, YamlConfiguration yamlf) {
         long current = System.currentTimeMillis()/1000L;
         for (String key : yamlf.getConfigurationSection("wlist").getKeys(false)) {
-            long expire = yamlf.getLong("wlist."+key);
+            long expire = yamlf.getLong("wlist."+key+".expire");
             if(current>expire) {
                 yamlf.set("wlist."+key, null);
+                try {
+                    yamlf.save(f);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -612,22 +617,10 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         Player player = event.getPlayer();
         File f = new File("plugins/SkyPrisonCore/watchlist.yml");
         YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
-        for (String key : yamlf.getConfigurationSection("wlist").getKeys(false)) {
-            if (key.equalsIgnoreCase(player.getName())) {
-                if((System.currentTimeMillis()/1000L)<yamlf.getLong("wlist."+player.getName()+".expires")) {
-                    for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-                        if (online.hasPermission("skyprisoncore.watchlist.basic") && !player.hasPermission("skyprisoncore.watchlist.silent")) {
-                            online.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "]" + ChatColor.WHITE + ": " + ChatColor.RED + player.getName() + ChatColor.YELLOW + " has just logged on and is on the watchlist. Please use /watchlist <player> to see why...");
-                        }
-                    }
-                } else {//players watchlist time has expired and will be removed
-                    yamlf.getConfigurationSection(key).set("wlist." + player.getName(), null);
-                    try {
-                        yamlf.save(f);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
+        wlistCleanup(f,yamlf);
+        for (Player online : Bukkit.getServer().getOnlinePlayers()) {
+            if (online.hasPermission("skyprisoncore.watchlist.basic") && !player.hasPermission("skyprisoncore.watchlist.silent")) {
+                online.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "]" + ChatColor.WHITE + " " + ChatColor.RED + player.getName() + ChatColor.YELLOW + " has just logged on and is on the watchlist. Please use /watchlist <player> to see why...");
             }
         }
     }
