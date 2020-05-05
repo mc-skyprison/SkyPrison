@@ -619,9 +619,11 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         File f = new File("plugins/SkyPrisonCore/watchlist.yml");
         YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
         wlistCleanup(f,yamlf);
-        for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-            if (online.hasPermission("skyprisoncore.watchlist.basic") && !player.hasPermission("skyprisoncore.watchlist.silent")) {
-                online.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "]" + ChatColor.WHITE + " " + ChatColor.RED + player.getName() + ChatColor.YELLOW + " has just logged on and is on the watchlist. Please use /watchlist <player> to see why...");
+        if(yamlf.contains("wlist."+player.getName().toLowerCase())) {
+            for (Player online : Bukkit.getServer().getOnlinePlayers()) {
+                if (online.hasPermission("skyprisoncore.watchlist.basic") && !player.hasPermission("skyprisoncore.watchlist.silent")) {
+                    online.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "]" + ChatColor.WHITE + " " + ChatColor.RED + player.getName() + ChatColor.YELLOW + " has just logged on and is on the watchlist. Please use /watchlist <player> to see why...");
+                }
             }
         }
     }
@@ -667,8 +669,6 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             }
         }
     }
-
-
 }
 
 
