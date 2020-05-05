@@ -1,6 +1,5 @@
 package net.skyprison.Main.Commands;
 
-import net.skyprison.Main.Commands.Watchlist;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -21,26 +20,27 @@ public class WatchlistDelete implements CommandExecutor {
             } else {
                 File f = new File("plugins/SkyPrisonCore/watchlist.yml");
                 YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
-                String target = args[1].toLowerCase();
-                for (String key : yamlf.getConfigurationSection("wlist").getKeys(false)) {//Checks if target is already on watchlist
-                    Watchlist.wlistCleanup(f, yamlf, key);
-                }
-                if(yamlf.getConfigurationSection("wlist").contains(target)) {//target is on the watchlist
-                    yamlf.getConfigurationSection("wlist").set("wlist." + target, null);
-                    try {
-                        yamlf.save(f);
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                String target = args[0].toLowerCase();
+                if(yamlf.getConfigurationSection("wlist").getKeys(false).size()>0) {
+                    net.skyprison.Main.SkyPrisonMain.wlistCleanup(f, yamlf);
+                    if(yamlf.getConfigurationSection("wlist").contains(target)) {//target is on the watchlist
+                        yamlf.set("wlist." + target, null);
+                        try {
+                            yamlf.save(f);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        if(!yamlf.getConfigurationSection("wlist").contains(target)) {//target is not on the watchlist anymore
+                            player.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "]" + ChatColor.WHITE + " " + ChatColor.YELLOW+"Player "+ChatColor.GOLD+target+ChatColor.YELLOW+" was removed from the watchlist...");
+                        } else {//bad plugin....
+                            player.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "]" + ChatColor.WHITE + " " + ChatColor.RED+"An internal error occurred, please contact an admin...");
+                        }
+                    } else {//target is not on watchlist
+                        player.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "]" + ChatColor.WHITE + " " + ChatColor.RED+"Player is not on the watchlist...");
                     }
-                    if(!yamlf.getConfigurationSection("wlist").contains(target)) {//target is not on the watchlist anymore
-                        player.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "]" + ChatColor.WHITE + ": " + ChatColor.YELLOW+"Player "+ChatColor.GOLD+target+ChatColor.YELLOW+" was removed from the watchlist...");
-                    } else {//bad plugin....
-                        player.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "]" + ChatColor.WHITE + ": " + ChatColor.RED+"An internal error occurred, please contact an admin...");
-                    }
-                } else {
-                    player.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "]" + ChatColor.WHITE + ": " + ChatColor.RED+"Player is not on the watchlist...");
+                } else {//watchlist is empty
+                    player.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "]" + ChatColor.WHITE + " " + ChatColor.RED+"Player is not on the watchlist...");
                 }
-
             }
         }
         return true;
