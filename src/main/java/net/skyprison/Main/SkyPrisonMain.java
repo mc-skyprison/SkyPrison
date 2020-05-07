@@ -657,12 +657,14 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                     if(killed.getUniqueId().equals(UUID.fromString(bountyPlayer))) {
                         try {
                             Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money give " + killer.getName() + " " + bounty.getInt(bountyPlayer + ".bounty-prize"));
+                            Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + killer.getName() + " increment bounties_collected +1 -s");
                             bounty.set(bountyPlayer, null);
                             bounty.save(f);
                             for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-                                online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "]" + ChatColor.YELLOW + " " + killer.getName() + " has claimed the bounty on " + killed.getName() + "!");
+                                if (!online.hasPermission("skyprisoncore.bounty.silent")) {
+                                    online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "]" + ChatColor.YELLOW + " " + killer.getName() + " has claimed the bounty on " + killed.getName() + "!");
+                                }
                             }
-                            killer.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + "You have claimed the bounty on " + killed.getName());
                         } catch (final IOException e) {
                             e.printStackTrace();
                         }

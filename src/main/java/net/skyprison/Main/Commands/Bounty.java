@@ -37,7 +37,7 @@ public class Bounty implements CommandExecutor {
 			SkullMeta meta = (SkullMeta) head.getItemMeta();
 			meta.setOwningPlayer(Bukkit.getOfflinePlayer(UUID.fromString(bountyPlayer)));
 			meta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + Bukkit.getOfflinePlayer(UUID.fromString(bountyPlayer)).getName());
-			lore.add(ChatColor.YELLOW + "Prize: " + bounty.getInt(bountyPlayer + ".bounty-prize"));
+			lore.add(ChatColor.YELLOW + "Prize: $" + bounty.getInt(bountyPlayer + ".bounty-prize"));
 			meta.setLore(lore);
 			head.setItemMeta(meta);
 			bounties.setItem(i, head);
@@ -62,72 +62,99 @@ public class Bounty implements CommandExecutor {
 			FileConfiguration bounty = YamlConfiguration.loadConfiguration(f);
 			Set<String> bountyList = bounty.getKeys(false);
 			//  /bounty set <player> <prize>
+			String bountyHelp = ChatColor.WHITE + "----====" + ChatColor.RED + " Bounties " + ChatColor.WHITE + "====----" + ChatColor.YELLOW + "\n/bounty set <player> <amount> " + ChatColor.WHITE + "- Set a bounty on a player" + ChatColor.YELLOW + "\n/bounty help " + ChatColor.WHITE + "- Shows this" + ChatColor.YELLOW + "\n/bounty list " + ChatColor.WHITE + "- Shows all players with bounties" + ChatColor.YELLOW + "\n/bounty mute " + ChatColor.WHITE + "- Mutes/Unmutes bounty messages except for bounties towards yourself";
 			if(args.length < 1) {
-				player.sendMessage(ChatColor.WHITE + "----====" + ChatColor.RED + " Bounties " + ChatColor.WHITE + "====----" + ChatColor.YELLOW + "\n/bounty set <player> <amount> " + ChatColor.WHITE + "- Set a bounty on a player" + ChatColor.YELLOW + "\n/bounty help " + ChatColor.WHITE + "- Shows this" + ChatColor.YELLOW + "\n/bounty list " + ChatColor.WHITE + "- Shows all players with bounties");
+				player.sendMessage(bountyHelp);
 			}else if(args[0].equalsIgnoreCase("set")) {
-				if(Bukkit.getPlayer(args[1]) != null) {
-					String bountyTarget = Bukkit.getPlayer(args[1]).getUniqueId().toString();
-					if(!player.equals(Bukkit.getPlayer(args[1]))) {
-						if (!Bukkit.getPlayer(args[1]).hasPermission("skyprisoncore.bounty.bypass")) {
-							if (bountyList.contains(bountyTarget)) {
-								ArrayList arr = (ArrayList) bounty.getList(bountyTarget + ".bounty-contributors");
-								if (!arr.contains(player.getName())) {
-									arr.add(player.getName());
-									bounty.set(bountyTarget + ".bounty-contributors", arr);
-								}
-								bounty.set(bountyTarget + ".bounty-prize", bounty.getInt(bountyTarget + ".bounty-prize") + Integer.parseInt(args[2]));
-								try {
-									bounty.save(f);
-									for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-										online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "]" + ChatColor.YELLOW + " " + player.getName() + " has increased the bounty on " + Bukkit.getPlayer(args[1]).getName() + " by " + ChatColor.GREEN + "$" + args[2] + "!");
-									}
-									player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + "Your bounty has been put on " + Bukkit.getPlayer(args[1]).getName());
-								} catch (final IOException e) {
-									e.printStackTrace();
-								}
-							} else if (!bountyList.contains(bountyTarget)) {
-								int page = 0;
-								for (int i = 0; i < bountyList.size(); ) {
-									ArrayList arr = new ArrayList();
-									for (String bountyPlayer : bountyList) {
-										if (bounty.getInt(bountyPlayer + ".page") == i) {
-											arr.add(bountyPlayer);
+				if(!(args.length < 3)) {
+					if (Bukkit.getPlayer(args[1]) != null) {
+						if(Integer.parseInt(args[2]) >= 100) {
+							String bountyTarget = Bukkit.getPlayer(args[1]).getUniqueId().toString();
+							if (!player.equals(Bukkit.getPlayer(args[1]))) {
+								if (!Bukkit.getPlayer(args[1]).hasPermission("skyprisoncore.bounty.bypass")) {
+									if (bountyList.contains(bountyTarget)) {
+										ArrayList arr = (ArrayList) bounty.getList(bountyTarget + ".bounty-contributors");
+										if (!arr.contains(player.getName())) {
+											arr.add(player.getName());
+											bounty.set(bountyTarget + ".bounty-contributors", arr);
+										}
+										bounty.set(bountyTarget + ".bounty-prize", bounty.getInt(bountyTarget + ".bounty-prize") + Integer.parseInt(args[2]));
+										try {
+											bounty.save(f);
+											for (Player online : Bukkit.getServer().getOnlinePlayers()) {
+												if (!online.hasPermission("skyprisoncore.bounty.silent")) {
+													online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + player.getName() + " has increased the bounty on " + Bukkit.getPlayer(args[1]).getName() + " by " + ChatColor.GREEN + "$" + args[2] + "!");
+												}
+											}
+											Bukkit.getPlayer(args[1]).sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + player.getName() + " has put a bounty on you!");
+											Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money take " + player.getName() + " " + args[2]);
+											Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + args[1] + " increment bounties_received +1 -s");
+											Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + player.getName() + " increment bounties_placed +1 -s");
+										} catch (final IOException e) {
+											e.printStackTrace();
+										}
+									} else if (!bountyList.contains(bountyTarget)) {
+										int page = 0;
+										for (int i = 0; i < bountyList.size(); ) {
+											ArrayList arr = new ArrayList();
+											for (String bountyPlayer : bountyList) {
+												if (bounty.getInt(bountyPlayer + ".page") == i) {
+													arr.add(bountyPlayer);
+												}
+											}
+											if (arr.size() <= 45) {
+												page = i;
+												break;
+											} else {
+												i++;
+												continue;
+											}
+										}
+										bounty.set(bountyTarget + ".bounty-prize", Integer.parseInt(args[2]));
+										bounty.set(bountyTarget + ".page", page);
+										bounty.set(bountyTarget + ".bounty-contributors", new ArrayList(Collections.singleton(player.getUniqueId().toString())));
+										try {
+											bounty.save(f);
+											for (Player online : Bukkit.getServer().getOnlinePlayers()) {
+												if (!online.hasPermission("skyprisoncore.bounty.silent")) {
+													online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "]" + ChatColor.YELLOW + " " + player.getName() + " has put a " + ChatColor.GREEN + "$" + args[2] + ChatColor.YELLOW + " bounty on " + Bukkit.getPlayer(args[1]).getName() + "!");
+												}
+											}
+											Bukkit.getPlayer(args[1]).sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + player.getName() + " has put a bounty on you!");
+											Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money take " + player.getName() + " " + args[2]);
+											Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + args[1] + " increment bounties_received +1 -s");
+											Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + player.getName() + " increment bounties_placed +1 -s");
+										} catch (final IOException e) {
+											e.printStackTrace();
 										}
 									}
-									if (arr.size() <= 45) {
-										page = i;
-										break;
-									} else {
-										i++;
-										continue;
-									}
+								} else {
+									player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.RED + "You can't put a bounty on this player!");
 								}
-								bounty.set(bountyTarget + ".bounty-prize", Integer.parseInt(args[2]));
-								bounty.set(bountyTarget + ".page", page);
-								bounty.set(bountyTarget + ".bounty-contributors", new ArrayList(Collections.singleton(player.getUniqueId().toString())));
-								try {
-									bounty.save(f);
-									for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-										online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "]" + ChatColor.YELLOW + " " + player.getName() + " has put a " + ChatColor.GREEN + "$" + args[2] + ChatColor.YELLOW + " bounty on " + Bukkit.getPlayer(args[1]).getName() + "!");
-									}
-									player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + "Your bounty has been put on " + Bukkit.getPlayer(args[1]).getName());
-								} catch (final IOException e) {
-									e.printStackTrace();
-								}
+							} else {
+								player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.RED + "You can't put a bounty on yourself!");
 							}
 						} else {
-							player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.RED + "You can't put a bounty on this player!");
+							player.sendMessage(ChatColor.RED + "Bounty must be equal or higher than $100!");
 						}
 					} else {
-						player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.RED + "You can't put a bounty on yourself!");
+						player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.RED + "Player is not online or doesn't exist..");
 					}
 				} else {
-					player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.RED + "Player is not online or doesn't exist..");
+					player.sendMessage(ChatColor.RED + "/bounty set <player> <amount>");
 				}
 			} else if(args[0].equalsIgnoreCase("list")) {
 				openGUI(player, 0);
 			} else if(args[0].equalsIgnoreCase("help")) {
-				player.sendMessage(ChatColor.WHITE + "----====" + ChatColor.RED + " Bounties " + ChatColor.WHITE + "====----" + ChatColor.YELLOW + "\n/bounty set <player> <amount> " + ChatColor.WHITE + "- Set a bounty on a player" + ChatColor.YELLOW + "\n/bounty help " + ChatColor.WHITE + "- Shows this" + ChatColor.YELLOW + "\n/bounty list " + ChatColor.WHITE + "- Shows all players with bounties");
+				player.sendMessage(bountyHelp);
+			} else if(args[0].equalsIgnoreCase("mute")) {
+				if(!player.hasPermission("skyprisoncore.bounty.silent")) {
+					Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.bounty.silent true");
+					player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + "Bounty messages muted!");
+				} else {
+					Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.bounty.silent false");
+					player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + "Bounty messages unmuted!");
+				}
 			}
 		}
 		return true;
