@@ -18,10 +18,38 @@ import java.io.IOException;
 import java.util.*;
 
 public class Bounty implements CommandExecutor {
+	public void openGUI(Player player, int page) {
+		File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
+				.getDataFolder() + "/bounties.yml");
+		FileConfiguration bounty = YamlConfiguration.loadConfiguration(f);
+		Set<String> bountyList = bounty.getKeys(false);
+		ArrayList<String> arr = new ArrayList();
+		for(String bountyPlayer : bountyList) {
+			if(bounty.getInt(bountyPlayer + ".page") == page) {
+				arr.add(bountyPlayer);
+			}
+		}
+		Inventory bounties = Bukkit.createInventory(null, 54, ChatColor.RED + "Bounties");
+		int i = 0;
+		for (String bountyPlayer : arr) {
+			ArrayList lore = new ArrayList();
+			ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+			SkullMeta meta = (SkullMeta) head.getItemMeta();
+			meta.setOwningPlayer(Bukkit.getOfflinePlayer(UUID.fromString(bountyPlayer)));
+			meta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + Bukkit.getOfflinePlayer(UUID.fromString(bountyPlayer)).getName());
+			lore.add(ChatColor.YELLOW + "Prize: " + bounty.getInt(bountyPlayer + ".bounty-prize"));
+			meta.setLore(lore);
+			head.setItemMeta(meta);
+			bounties.setItem(i, head);
+			i++;
+		}
+		player.openInventory(bounties);
+	}
+
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {
-			Player player = (Player)sender;
+			Player player = (Player) sender;
 			File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
 					.getDataFolder() + "/bounties.yml");
 			if (!f.exists()) {
@@ -34,7 +62,9 @@ public class Bounty implements CommandExecutor {
 			FileConfiguration bounty = YamlConfiguration.loadConfiguration(f);
 			Set<String> bountyList = bounty.getKeys(false);
 			//  /bounty set <player> <prize>
-			if(args[0].equalsIgnoreCase("set")) {
+			if(args.length < 1) {
+				player.sendMessage(ChatColor.WHITE + "----====" + ChatColor.RED + " Bounties " + ChatColor.WHITE + "====----" + ChatColor.YELLOW + "\n/bounty set <player> <amount> " + ChatColor.WHITE + "- Set a bounty on a player" + ChatColor.YELLOW + "\n/bounty help " + ChatColor.WHITE + "- Shows this" + ChatColor.YELLOW + "\n/bounty list " + ChatColor.WHITE + "- Shows all players with bounties");
+			}else if(args[0].equalsIgnoreCase("set")) {
 				String bountyTarget = Bukkit.getPlayer(args[1]).getUniqueId().toString();
 				if(bountyList.contains(bountyTarget)){
 					ArrayList arr = (ArrayList) bounty.getList(bountyTarget + ".bounty-contributors");
@@ -53,7 +83,24 @@ public class Bounty implements CommandExecutor {
 						e.printStackTrace();
 					}
 				} else if(!bountyList.contains(bountyTarget)) {
+					int page = 0;
+					for(int i = 0; i < bountyList.size();) {
+						ArrayList arr = new ArrayList();
+						for(String bountyPlayer : bountyList) {
+							if(bounty.getInt(bountyPlayer + ".page") == i) {
+								arr.add(bountyPlayer);
+							}
+						}
+						if(arr.size() <= 45) {
+							page = i;
+							break;
+						} else {
+							i++;
+							continue;
+						}
+					}
 					bounty.set(bountyTarget + ".bounty-prize", Integer.parseInt(args[2]));
+					bounty.set(bountyTarget + ".page", page);
 					bounty.set(bountyTarget + ".bounty-contributors", new ArrayList(Collections.singleton(player.getUniqueId().toString())));
 					try {
 						bounty.save(f);
@@ -66,21 +113,9 @@ public class Bounty implements CommandExecutor {
 					}
 				}
 			} else if(args[0].equalsIgnoreCase("list")) {
-				Inventory bounties = Bukkit.createInventory(null, 54, ChatColor.RED + "Bounties");
-				int i = 0;
-				for (String bountyPlayer : bountyList) {
-					ArrayList lore = new ArrayList();
-					ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-					SkullMeta meta = (SkullMeta) head.getItemMeta();
-					meta.setOwningPlayer(Bukkit.getOfflinePlayer(UUID.fromString(bountyPlayer)));
-					meta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + Bukkit.getOfflinePlayer(UUID.fromString(bountyPlayer)).getName());
-					lore.add(ChatColor.YELLOW + "Prize: " + bounty.getInt(bountyPlayer + ".bounty-prize"));
-					meta.setLore(lore);
-					head.setItemMeta(meta);
-					bounties.setItem(i, head);
-					i++;
-				}
-				player.openInventory(bounties);
+				openGUI(player, 0);
+			} else if(args[0].equalsIgnoreCase("help")) {
+				player.sendMessage(ChatColor.WHITE + "----====" + ChatColor.RED + " Bounties " + ChatColor.WHITE + "====----" + ChatColor.YELLOW + "\n/bounty set <player> <amount> " + ChatColor.WHITE + "- Set a bounty on a player" + ChatColor.YELLOW + "\n/bounty help " + ChatColor.WHITE + "- Shows this" + ChatColor.YELLOW + "\n/bounty list " + ChatColor.WHITE + "- Shows all players with bounties");
 			}
 		}
 		return true;

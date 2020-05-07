@@ -14,32 +14,40 @@ public class BuildChat implements CommandExecutor {
 
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if(sender instanceof Player) {
-            Player player = (Player)sender;
-            String message = "";
-            for (int i = 0; i < args.length; i++) {
-                message = message + args[i] + " ";
-            }
-            message = ChatColor.translateAlternateColorCodes('&', message);
-            String fullMessage = "" + ChatColor.GREEN + ChatColor.BOLD + "(" + ChatColor.GRAY + ChatColor.BOLD + "BUILDER" + ChatColor.GREEN + ChatColor.BOLD + ") " + ChatColor.RED + "" + player.getName() + ChatColor.WHITE + ": " + ChatColor.GREEN + message;
-            for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-                if (online.hasPermission("skyprisoncore.builder.buildchat")) {
-                    online.sendMessage(fullMessage);
+            if(args.length > 0) {
+                Player player = (Player)sender;
+                String message = "";
+                for (int i = 0; i < args.length; i++) {
+                    message = message + args[i] + " ";
                 }
+                message = ChatColor.translateAlternateColorCodes('&', message);
+                String fullMessage = "" + ChatColor.GREEN + ChatColor.BOLD + "(" + ChatColor.GRAY + ChatColor.BOLD + "BUILDER" + ChatColor.GREEN + ChatColor.BOLD + ") " + ChatColor.RED + "" + player.getName() + ChatColor.WHITE + ": " + ChatColor.GREEN + message;
+                for (Player online : Bukkit.getServer().getOnlinePlayers()) {
+                    if (online.hasPermission("skyprisoncore.builder.buildchat")) {
+                        online.sendMessage(fullMessage);
+                    }
+                }
+                tellConsole(fullMessage);
+            } else {
+                sender.sendMessage(ChatColor.RED + "/b <message>");
             }
-            tellConsole(fullMessage);
         } else {
-            String message = "";
-            for (int i = 0; i < args.length; i++) {
-                message = message + args[i] + " ";
-            }
-            message = ChatColor.translateAlternateColorCodes('&', message);
-            String fullMessage = "" + ChatColor.GREEN + ChatColor.BOLD + "(" + ChatColor.GRAY + ChatColor.BOLD + "BUILDER" + ChatColor.GREEN + ChatColor.BOLD + ") " + ChatColor.RED + "Console"  + ChatColor.WHITE + ": " + ChatColor.GREEN + message;
-            for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-                if (online.hasPermission("skyprisoncore.builder.buildchat")) {
-                    online.sendMessage(fullMessage);
+            if(args.length > 0) {
+                String message = "";
+                for (int i = 0; i < args.length; i++) {
+                    message = message + args[i] + " ";
                 }
+                message = ChatColor.translateAlternateColorCodes('&', message);
+                String fullMessage = "" + ChatColor.GREEN + ChatColor.BOLD + "(" + ChatColor.GRAY + ChatColor.BOLD + "BUILDER" + ChatColor.GREEN + ChatColor.BOLD + ") " + ChatColor.RED + "Console"  + ChatColor.WHITE + ": " + ChatColor.GREEN + message;
+                for (Player online : Bukkit.getServer().getOnlinePlayers()) {
+                    if (online.hasPermission("skyprisoncore.builder.buildchat")) {
+                        online.sendMessage(fullMessage);
+                    }
+                }
+                tellConsole(fullMessage);
+            } else {
+                sender.sendMessage(ChatColor.RED + "/b <message>");
             }
-            tellConsole(fullMessage);
         }
         return true;
     }

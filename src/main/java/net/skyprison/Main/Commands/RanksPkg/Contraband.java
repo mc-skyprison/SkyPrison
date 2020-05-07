@@ -95,8 +95,8 @@ public class Contraband implements CommandExecutor {
 				guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.YELLOW + " Use /cb <target> to initiate contraband countdown...");
 			} else {
 				Player target = Bukkit.getServer().getPlayer(args[0]);
-				if(target.getWorld().equals(guard.getWorld())) {
-					if (target != null) {
+				if (target != null) {
+					if(target.getWorld().equals(guard.getWorld())) {
 						if (!SkyPrisonMain.getInstance().cbed.contains(target)) {
 							double radius = 20.0D;
 							if (target.getLocation().distance(guard.getLocation()) <= radius) {
@@ -116,10 +116,10 @@ public class Contraband implements CommandExecutor {
 							guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "Player has already been '/cb'ed!");
 						}
 					} else {
-						guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "Player is not online or cannot be /cb'ed...");
+						guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "Player is not in prison world...");
 					}
 				} else {
-					guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "Player is not in prison world...");
+					guard.sendMessage("[" + ChatColor.BLUE + "Contraband" + ChatColor.WHITE + "]: " + ChatColor.RED + "Player is not online or cannot be /cb'ed...");
 				}
 			}
 		}

@@ -14,6 +14,10 @@ import net.skyprison.Main.Commands.RanksPkg.CbHistory;
 import net.skyprison.Main.Commands.RanksPkg.Contraband;
 import net.skyprison.Main.Commands.RanksPkg.GuardChat;
 import net.skyprison.Main.Commands.RanksPkg.GuardDuty;
+import net.skyprison.Main.Commands.WatchList.Watchlist;
+import net.skyprison.Main.Commands.WatchList.WatchlistAdd;
+import net.skyprison.Main.Commands.WatchList.WatchlistDelete;
+import net.skyprison.Main.Commands.WatchList.WatchlistToggle;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
@@ -278,7 +282,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void guardhit(EntityDamageByEntityEvent event) {
+    public void guardHit(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player && event.getEntity() instanceof Player) {
             Player damager = (Player) event.getDamager();
             Player damagee = (Player) event.getEntity();
@@ -333,7 +337,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     private RewardGUI RewardGUI = new RewardGUI();
 
     @EventHandler
-    public boolean invclick(InventoryClickEvent event) {
+    public boolean invClick(InventoryClickEvent event) {
         if (ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("prison secrets") || ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("free secrets")) {
             if (event.getCurrentItem() != null) {
                 event.setCancelled(true);
@@ -393,7 +397,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void pickup(EntityPickupItemEvent event) {
+    public void pickUp(EntityPickupItemEvent event) {
         if (event.getEntity() instanceof Player) {
             Player player = (Player) event.getEntity();
             if (!player.hasPermission("skyprisoncore.guard.itembypass")
@@ -505,7 +509,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void blockbreak(BlockBreakEvent event) {
+    public void blockBreak(BlockBreakEvent event) {
         Block b = event.getBlock();
         Location loc = b.getLocation();
         if(!event.isCancelled()) {
@@ -548,10 +552,10 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     }
 
     //
-// EventHandlers regarding Opme commands
+// EventHandlers regarding OpMe commands
 //
     @EventHandler
-    public void deopOnJoin(PlayerJoinEvent event) {
+    public void deOpOnJoin(PlayerJoinEvent event) {
         Player p = event.getPlayer();
         if (config.getBoolean("deop-on-join")) {
             if (!p.hasPermission("skyprisoncore.deop.joinbypass")) {
@@ -591,7 +595,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     //
 
     @EventHandler
-    public void silentlogoff(PlayerQuitEvent event) {
+    public void silentLogOff(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         if(!player.getPlayer().equals(Bukkit.getPlayer("DrakePork"))) {
             if (player.hasPermission("cmi.messages.disablequit")) {
@@ -601,7 +605,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void silentjoin(PlayerJoinEvent event) {
+    public void silentJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         if(!player.getPlayer().equals(Bukkit.getPlayer("DrakePork"))) {
             if (player.hasPermission("cmi.messages.disablelogin")) {
@@ -614,7 +618,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     // Event Handlers regarding watchlist
     //
     @EventHandler
-    public void watchlistjoin(PlayerJoinEvent event) {
+    public void watchListJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         File f = new File("plugins/SkyPrisonCore/watchlist.yml");
         YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
@@ -651,9 +655,9 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                 Set<String> bountyList = bounty.getKeys(false);
                 for (String bountyPlayer : bountyList) {
                     if(killed.getUniqueId().equals(UUID.fromString(bountyPlayer))) {
-                        bounty.set(bountyPlayer, null);
                         try {
                             Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money give " + killer.getName() + " " + bounty.getInt(bountyPlayer + ".bounty-prize"));
+                            bounty.set(bountyPlayer, null);
                             bounty.save(f);
                             for (Player online : Bukkit.getServer().getOnlinePlayers()) {
                                 online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "]" + ChatColor.YELLOW + " " + killer.getName() + " has claimed the bounty on " + killed.getName() + "!");

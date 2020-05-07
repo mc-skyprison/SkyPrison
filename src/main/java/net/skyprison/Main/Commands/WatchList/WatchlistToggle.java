@@ -1,4 +1,4 @@
-package net.skyprison.Main.Commands;
+package net.skyprison.Main.Commands.WatchList;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
