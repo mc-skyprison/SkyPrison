@@ -256,6 +256,8 @@ permissions:
   #
   skyprisoncore.bounty:
     description: Gives access to /bounty commands
+  skyprisoncore.bounty.bypass:
+    description: Players cant bounty you.
   #
   # Donation Permissions
   #
