@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class Bounty implements CommandExecutor {
 	public void openGUI(Player player, int page) {
@@ -58,6 +59,8 @@ public class Bounty implements CommandExecutor {
 		return bd.doubleValue();
 	}
 
+	private final CooldownManager cooldownManager = new CooldownManager();
+
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {
@@ -79,90 +82,98 @@ public class Bounty implements CommandExecutor {
 			if(args.length < 1) {
 				player.sendMessage(bountyHelp);
 			}else if(args[0].equalsIgnoreCase("set")) {
-				if(!(args.length < 3)) {
-					if (Bukkit.getPlayer(args[1]) != null) {
-						if(Double.parseDouble(args[2]) >= 100) {
-							String bountyTarget = Bukkit.getPlayer(args[1]).getUniqueId().toString();
-							if (!player.equals(Bukkit.getPlayer(args[1]))) {
-								if (!Bukkit.getPlayer(args[1]).hasPermission("skyprisoncore.bounty.bypass")) {
-									if (bountyList.contains(bountyTarget)) {
-										ArrayList arr = (ArrayList) bounty.getList(bountyTarget + ".bounty-contributors");
-										if (!arr.contains(player.getName())) {
-											arr.add(player.getUniqueId().toString());
-											bounty.set(bountyTarget + ".bounty-contributors", arr);
-										}
-										bounty.set(bountyTarget + ".bounty-prize", bounty.getDouble(bountyTarget + ".bounty-prize") + round(Double.parseDouble(args[2]), 2));
-										try {
-											if(user.getBalance() > Double.parseDouble(args[2])) {
-												bounty.save(f);
-												for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-													if (!online.hasPermission("skyprisoncore.bounty.silent")) {
-														online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + player.getName() + " has increased the bounty on " + Bukkit.getPlayer(args[1]).getName() + " by " + ChatColor.GREEN + "$" + round(Double.parseDouble(args[2]), 2) + "!");
+				long timeLeft = System.currentTimeMillis() - cooldownManager.getCooldown(player.getUniqueId());
+				if(TimeUnit.MILLISECONDS.toSeconds(timeLeft) >= CooldownManager.DEFAULT_COOLDOWN) {
+					if (!(args.length < 3)) {
+						if (Bukkit.getPlayer(args[1]) != null) {
+							if (Double.parseDouble(args[2]) >= 100) {
+								String bountyTarget = Bukkit.getPlayer(args[1]).getUniqueId().toString();
+								if (!player.equals(Bukkit.getPlayer(args[1]))) {
+									if (!Bukkit.getPlayer(args[1]).hasPermission("skyprisoncore.bounty.bypass")) {
+										if (bountyList.contains(bountyTarget)) {
+											ArrayList arr = (ArrayList) bounty.getList(bountyTarget + ".bounty-contributors");
+											if (!arr.contains(player.getName())) {
+												arr.add(player.getUniqueId().toString());
+												bounty.set(bountyTarget + ".bounty-contributors", arr);
+											}
+											bounty.set(bountyTarget + ".bounty-prize", bounty.getDouble(bountyTarget + ".bounty-prize") + round(Double.parseDouble(args[2]), 2));
+											try {
+												if (user.getBalance() > Double.parseDouble(args[2])) {
+													bounty.save(f);
+													for (Player online : Bukkit.getServer().getOnlinePlayers()) {
+														if (!online.hasPermission("skyprisoncore.bounty.silent")) {
+															online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + player.getName() + " has increased the bounty on " + Bukkit.getPlayer(args[1]).getName() + " by " + ChatColor.GREEN + "$" + round(Double.parseDouble(args[2]), 2) + "!");
+														}
+													}
+													Bukkit.getPlayer(args[1]).sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + player.getName() + " has put a bounty on you!");
+													Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money take " + player.getName() + " " + round(Double.parseDouble(args[2]), 2));
+													Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + args[1] + " increment bounties_received +1 -s");
+													Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + player.getName() + " increment bounties_placed +1 -s");
+													cooldownManager.setCooldown(player.getUniqueId(), System.currentTimeMillis());
+												} else {
+													player.sendMessage(ChatColor.RED + "You do not have enough money..");
+												}
+											} catch (final IOException e) {
+												e.printStackTrace();
+											}
+										} else if (!bountyList.contains(bountyTarget)) {
+											int page = 0;
+											for (int i = 0; i < bountyList.size(); ) {
+												ArrayList arr = new ArrayList();
+												for (String bountyPlayer : bountyList) {
+													if (bounty.getInt(bountyPlayer + ".page") == i) {
+														arr.add(bountyPlayer);
 													}
 												}
-												Bukkit.getPlayer(args[1]).sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + player.getName() + " has put a bounty on you!");
-												Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money take " + player.getName() + " " + round(Double.parseDouble(args[2]), 2));
-												Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + args[1] + " increment bounties_received +1 -s");
-												Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + player.getName() + " increment bounties_placed +1 -s");
-											} else {
-												player.sendMessage(ChatColor.RED + "You do not have enough money..");
-											}
-										} catch (final IOException e) {
-											e.printStackTrace();
-										}
-									} else if (!bountyList.contains(bountyTarget)) {
-										int page = 0;
-										for (int i = 0; i < bountyList.size(); ) {
-											ArrayList arr = new ArrayList();
-											for (String bountyPlayer : bountyList) {
-												if (bounty.getInt(bountyPlayer + ".page") == i) {
-													arr.add(bountyPlayer);
+												if (arr.size() <= 45) {
+													page = i;
+													break;
+												} else {
+													i++;
+													continue;
 												}
 											}
-											if (arr.size() <= 45) {
-												page = i;
-												break;
-											} else {
-												i++;
-												continue;
-											}
-										}
-										bounty.set(bountyTarget + ".bounty-prize", round(Double.parseDouble(args[2]), 2));
-										bounty.set(bountyTarget + ".page", page);
-										bounty.set(bountyTarget + ".bounty-contributors", new ArrayList(Collections.singleton(player.getUniqueId().toString())));
-										try {
-											if(user.getBalance() > Double.parseDouble(args[2])) {
-												bounty.save(f);
-												for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-													if (!online.hasPermission("skyprisoncore.bounty.silent")) {
-														online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "]" + ChatColor.YELLOW + " " + player.getName() + " has put a " + ChatColor.GREEN + "$" + round(Double.parseDouble(args[2]), 2) + ChatColor.YELLOW + " bounty on " + Bukkit.getPlayer(args[1]).getName() + "!");
+											bounty.set(bountyTarget + ".bounty-prize", round(Double.parseDouble(args[2]), 2));
+											bounty.set(bountyTarget + ".page", page);
+											bounty.set(bountyTarget + ".bounty-contributors", new ArrayList(Collections.singleton(player.getUniqueId().toString())));
+											try {
+												if (user.getBalance() > Double.parseDouble(args[2])) {
+													bounty.save(f);
+													for (Player online : Bukkit.getServer().getOnlinePlayers()) {
+														if (!online.hasPermission("skyprisoncore.bounty.silent")) {
+															online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "]" + ChatColor.YELLOW + " " + player.getName() + " has put a " + ChatColor.GREEN + "$" + round(Double.parseDouble(args[2]), 2) + ChatColor.YELLOW + " bounty on " + Bukkit.getPlayer(args[1]).getName() + "!");
+														}
 													}
+													Bukkit.getPlayer(args[1]).sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + player.getName() + " has put a bounty on you!");
+													Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money take " + player.getName() + " " + round(Double.parseDouble(args[2]), 2));
+													Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + args[1] + " increment bounties_received +1 -s");
+													Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + player.getName() + " increment bounties_placed +1 -s");
+													cooldownManager.setCooldown(player.getUniqueId(), System.currentTimeMillis());
+												} else {
+													player.sendMessage(ChatColor.RED + "You do not have enough money..");
 												}
-												Bukkit.getPlayer(args[1]).sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + player.getName() + " has put a bounty on you!");
-												Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money take " + player.getName() + " " + round(Double.parseDouble(args[2]), 2));
-												Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + args[1] + " increment bounties_received +1 -s");
-												Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + player.getName() + " increment bounties_placed +1 -s");
-											} else {
-												player.sendMessage(ChatColor.RED + "You do not have enough money..");
+											} catch (final IOException e) {
+												e.printStackTrace();
 											}
-										} catch (final IOException e) {
-											e.printStackTrace();
 										}
+									} else {
+										player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.RED + "You can't put a bounty on this player!");
 									}
 								} else {
-									player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.RED + "You can't put a bounty on this player!");
+									player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.RED + "You can't put a bounty on yourself!");
 								}
 							} else {
-								player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.RED + "You can't put a bounty on yourself!");
+								player.sendMessage(ChatColor.RED + "Bounty must be equal or higher than $100!");
 							}
 						} else {
-							player.sendMessage(ChatColor.RED + "Bounty must be equal or higher than $100!");
+							player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.RED + "Player is not online or doesn't exist..");
 						}
 					} else {
-						player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.RED + "Player is not online or doesn't exist..");
+						player.sendMessage(ChatColor.RED + "/bounty set <player> <amount>");
 					}
 				} else {
-					player.sendMessage(ChatColor.RED + "/bounty set <player> <amount>");
+					Long timeRem = CooldownManager.DEFAULT_COOLDOWN - TimeUnit.MILLISECONDS.toSeconds(timeLeft);
+					player.sendMessage(ChatColor.RED+ "" + timeRem + " seconds before you can use this again.");
 				}
 			} else if(args[0].equalsIgnoreCase("list")) {
 				openGUI(player, 0);
