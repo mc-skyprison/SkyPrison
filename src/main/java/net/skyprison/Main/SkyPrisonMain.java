@@ -656,7 +656,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                 for (String bountyPlayer : bountyList) {
                     if(killed.getUniqueId().equals(UUID.fromString(bountyPlayer))) {
                         try {
-                            Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money give " + killer.getName() + " " + bounty.getInt(bountyPlayer + ".bounty-prize"));
+                            Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money give " + killer.getName() + " " + bounty.getDouble(bountyPlayer + ".bounty-prize"));
                             Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + killer.getName() + " increment bounties_collected +1 -s");
                             bounty.set(bountyPlayer, null);
                             bounty.save(f);
