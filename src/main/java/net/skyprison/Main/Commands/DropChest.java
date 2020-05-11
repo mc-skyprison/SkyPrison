@@ -1,21 +1,91 @@
 package net.skyprison.Main.Commands;
 
 import net.skyprison.Main.SkyPrisonMain;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
+
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Set;
+import java.util.UUID;
 
 public class DropChest implements CommandExecutor {
+
+	public void openGUI(Player player, int page) {
+		File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
+				.getDataFolder() + "/dropChest.yml");
+		FileConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
+		Set<String> voidItems = yamlf.getConfigurationSection("items").getKeys(false);
+		ArrayList<String> arr = new ArrayList();
+		ArrayList totalPages = new ArrayList();
+		for(String dropItem : voidItems) {
+			if(yamlf.getInt("items." + dropItem + ".page") == page) {
+				arr.add(dropItem);
+			}
+			totalPages.add(yamlf.getInt("items." + dropItem + ".page"));
+		}
+		Inventory dropChest = Bukkit.createInventory(null, 54, ChatColor.RED + "Drop Party | Page " + page);
+		int i = 0;
+		for (String dropItem : arr) {
+			ItemStack droppedItem = yamlf.getItemStack("items." + dropItem + ".item");
+			dropChest.setItem(i, droppedItem);
+			i++;
+		}
+		ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+		ItemStack pageChange = new ItemStack(Material.PAPER);
+		ItemMeta itemMeta = pageChange.getItemMeta();
+		itemMeta.setDisplayName(ChatColor.GREEN + "Next Page");
+		pageChange.setItemMeta(itemMeta);
+		if(page == 0) {
+			dropChest.setItem(45, pane);
+			dropChest.setItem(46, pane);
+			dropChest.setItem(47, pane);
+			dropChest.setItem(48, pane);
+			dropChest.setItem(49, pane);
+			dropChest.setItem(50, pane);
+			dropChest.setItem(51, pane);
+			dropChest.setItem(53, pane);
+			dropChest.setItem(52, pageChange);
+		} else if(Collections.max(totalPages).equals(page)) {
+			dropChest.setItem(45, pane);
+			dropChest.setItem(47, pane);
+			dropChest.setItem(48, pane);
+			dropChest.setItem(49, pane);
+			dropChest.setItem(50, pane);
+			dropChest.setItem(51, pane);
+			dropChest.setItem(52, pane);
+			dropChest.setItem(53, pane);
+			itemMeta.setDisplayName(ChatColor.GREEN + "Previous Page");
+			pageChange.setItemMeta(itemMeta);
+			dropChest.setItem(46, pageChange);
+		} else {
+			dropChest.setItem(45, pane);
+			dropChest.setItem(47, pane);
+			dropChest.setItem(48, pane);
+			dropChest.setItem(49, pane);
+			dropChest.setItem(50, pane);
+			dropChest.setItem(51, pane);
+			dropChest.setItem(53, pane);
+			dropChest.setItem(52, pageChange);
+			itemMeta.setDisplayName(ChatColor.GREEN + "Previous Page");
+			pageChange.setItemMeta(itemMeta);
+			dropChest.setItem(46, pageChange);
+		}
+
+		player.openInventory(dropChest);
+	}
+
 	Location randomLocation(Location min, Location max) {
 		Location range = new Location(min.getWorld(), Math.abs(max.getX() - min.getX()), min.getY(), Math.abs(max.getZ() - min.getZ()));
 		return new Location(min.getWorld(), (Math.random() * range.getX()) + (min.getX() <= max.getX() ? min.getX() : max.getX()), range.getY(), (Math.random() * range.getZ()) + (min.getZ() <= max.getZ() ? min.getZ() : max.getZ()));
@@ -24,17 +94,14 @@ public class DropChest implements CommandExecutor {
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {
-			File f = new File("plugins/SkyPrisonCore/dropChest.yml");
-			YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
-			Inventory dropChest = Bukkit.createInventory(null, 54, ChatColor.RED + "Rewards!");
 			Player player = (Player) sender;
-			Set setList = yamlf.getConfigurationSection("items").getKeys(false);
 			if (args.length < 1) {
-				for (int i = 0; i < setList.size(); i++) {
-					dropChest.setItem(i, yamlf.getItemStack("items." + i + ".item"));
-				}
-				player.openInventory(dropChest);
+				openGUI(player, 0);
 			} else if (args[0].equalsIgnoreCase("drop")) {
+				File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
+						.getDataFolder() + "/dropChest.yml");
+				YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
+				Set setList = yamlf.getConfigurationSection("items").getKeys(false);
 				Location loc = player.getLocation();
 				World world = Bukkit.getWorld("prison");
 				Location min = new Location(world, -10, 134, 11);
@@ -54,6 +121,9 @@ public class DropChest implements CommandExecutor {
 							}
 						}
 					},20L);
+				}
+				for (Player online : Bukkit.getServer().getOnlinePlayers()) {
+					online.sendMessage(ChatColor.WHITE + "[" + ChatColor.LIGHT_PURPLE + "DropParty" + ChatColor.WHITE + "] " + ChatColor.YELLOW + "Drop party is now over!");
 				}
 			}
 		}

@@ -25,14 +25,23 @@ public class DonorAdd implements CommandExecutor {
 			}
 			FileConfiguration playerPurchases = YamlConfiguration.loadConfiguration(f);
 			Boolean stuff = false;
+			StringBuilder itemBought = new StringBuilder();
+			for(int i = 6; i < args.length; i++){
+				if(i != 6) {
+					itemBought.append(" "+args[i]);
+				} else {
+					itemBought.append(args[i]);
+				}
+			}
 			int i = 0;
 			while (stuff == false) {
-				// /donoradd <player> <item-bought> <item-currency> <item-price> <time> <date> <amount of it bought>
+				// /donoradd <player> <item-currency> <item-price> <date> <time> <amount of it bought> <item-bought>
 				if (!playerPurchases.contains(i + ".item-bought")) {
-					playerPurchases.set(i + ".item-bought", args[1]);
-					playerPurchases.set(i + ".item-price", args[2] + args[3]);
-					playerPurchases.set(i + ".bought-date", args[4] + " " + args[5]);
-					playerPurchases.set(i + ".item-quantity", args[6]);
+					playerPurchases.set(i + ".item-price", Double.parseDouble(args[2]));
+					playerPurchases.set(i + ".item-currency", args[1]);
+					playerPurchases.set(i + ".bought-date", args[3] + " " + args[4]);
+					playerPurchases.set(i + ".item-quantity", Integer.parseInt(args[5]));
+					playerPurchases.set(i + ".item-bought", String.valueOf(itemBought));
 					try {
 						playerPurchases.save(f);
 					} catch (final IOException e) {

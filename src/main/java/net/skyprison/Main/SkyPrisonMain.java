@@ -7,6 +7,7 @@ import com.bergerkiller.bukkit.common.events.EntityRemoveEvent;
 import com.google.common.collect.Lists;
 import net.skyprison.Main.Commands.*;
 import net.skyprison.Main.Commands.Donations.DonorAdd;
+import net.skyprison.Main.Commands.Donations.DonorBulk;
 import net.skyprison.Main.Commands.Donations.Purchases;
 import net.skyprison.Main.Commands.RanksPkg.*;
 import net.skyprison.Main.Commands.Opme.*;
@@ -101,6 +102,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         getCommand("cbhistory").setExecutor(new CbHistory());
         getCommand("silentjoin").setExecutor(new SilentJoin());
         getCommand("donoradd").setExecutor(new DonorAdd());
+        getCommand("donorbulk").setExecutor(new DonorBulk());
         getCommand("purchases").setExecutor(new Purchases());
         getCommand("bounty").setExecutor(new Bounty());
         getCommand("watchlist").setExecutor(new Watchlist());
@@ -335,6 +337,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     }
 
     private RewardGUI RewardGUI = new RewardGUI();
+    private DropChest DropChest = new DropChest();
 
     @EventHandler
     public boolean invClick(InventoryClickEvent event) {
@@ -350,6 +353,22 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                 }
             }
         }
+        String[] dropChest = ChatColor.stripColor(event.getView().getTitle()).split(" ");
+        if(dropChest[0].equalsIgnoreCase("Drop") && dropChest[1].equalsIgnoreCase("Party")) {
+            if (event.getCurrentItem() != null) {
+                event.setCancelled(true);
+                if(event.getCurrentItem().getType() == Material.PAPER) {
+                    if(event.getSlot() == 46) {
+                        int page = Integer.parseInt(dropChest[4])-1;
+                        DropChest.openGUI((Player) event.getWhoClicked(), page);
+                    } else if(event.getSlot() == 52) {
+                        int page = Integer.parseInt(dropChest[4])+1;
+                        DropChest.openGUI((Player) event.getWhoClicked(), page);
+                    }
+                }
+            }
+        }
+
         if (ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("bounties")) {
             if (event.getCurrentItem() != null) {
                 event.setCancelled(true);
@@ -419,11 +438,38 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             if (event.getEntityType() == EntityType.DROPPED_ITEM) {
                 Item item = (Item) event.getEntity();
                 ItemStack sItem = item.getItemStack();
-                File f = new File("plugins/SkyPrisonCore/dropChest.yml");
+                File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
+                        .getDataFolder() + "/dropChest.yml");
                 YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
-                for (int i = 0; i < 54; i++) {
+                if(!yamlf.isConfigurationSection("items")) {
+                    yamlf.createSection("items");
+                }
+                try {
+                    yamlf.save(f);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                Set<String> dropList = yamlf.getConfigurationSection("items").getKeys(false);
+                int page = 0;
+                for (int i = 0; i < dropList.size()+2; ) {
+                    ArrayList arr = new ArrayList();
+                    for (String dropItem : dropList) {
+                        if (yamlf.getInt("items." + dropItem + ".page") == i) {
+                            arr.add(dropItem);
+                        }
+                    }
+                    if (arr.size() <= 44) {
+                        page = i;
+                        break;
+                    } else {
+                        i++;
+                        continue;
+                    }
+                }
+                for (int i = 0; i < dropList.size()+2; i++) {
                     if (!yamlf.contains("items." + i)) {
                         yamlf.set("items." + i + ".item", sItem);
+                        yamlf.set("items." + i + ".page", page);
                         try {
                             yamlf.save(f);
                         } catch (IOException e) {

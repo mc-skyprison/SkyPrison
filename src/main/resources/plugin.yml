@@ -125,6 +125,11 @@ commands:
   #
   # Donation Commands
   #
+  donorbulk:
+    description: Add a donation
+    usage: /<command>
+    permission: skyprisoncore.donation.donoradd
+    permission-message: §4Error:§c You do not have permission to execute this command...
   donoradd:
     description: Add a donation
     usage: /<command>
