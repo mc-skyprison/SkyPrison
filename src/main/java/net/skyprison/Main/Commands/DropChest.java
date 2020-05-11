@@ -47,42 +47,37 @@ public class DropChest implements CommandExecutor {
 		ItemMeta itemMeta = pageChange.getItemMeta();
 		itemMeta.setDisplayName(ChatColor.GREEN + "Next Page");
 		pageChange.setItemMeta(itemMeta);
-		if(page == 0) {
-			dropChest.setItem(45, pane);
-			dropChest.setItem(46, pane);
-			dropChest.setItem(47, pane);
-			dropChest.setItem(48, pane);
-			dropChest.setItem(49, pane);
-			dropChest.setItem(50, pane);
-			dropChest.setItem(51, pane);
-			dropChest.setItem(53, pane);
-			dropChest.setItem(52, pageChange);
-		} else if(Collections.max(totalPages).equals(page)) {
-			dropChest.setItem(45, pane);
-			dropChest.setItem(47, pane);
-			dropChest.setItem(48, pane);
-			dropChest.setItem(49, pane);
-			dropChest.setItem(50, pane);
-			dropChest.setItem(51, pane);
-			dropChest.setItem(52, pane);
-			dropChest.setItem(53, pane);
-			itemMeta.setDisplayName(ChatColor.GREEN + "Previous Page");
-			pageChange.setItemMeta(itemMeta);
-			dropChest.setItem(46, pageChange);
-		} else {
-			dropChest.setItem(45, pane);
-			dropChest.setItem(47, pane);
-			dropChest.setItem(48, pane);
-			dropChest.setItem(49, pane);
-			dropChest.setItem(50, pane);
-			dropChest.setItem(51, pane);
-			dropChest.setItem(53, pane);
-			dropChest.setItem(52, pageChange);
-			itemMeta.setDisplayName(ChatColor.GREEN + "Previous Page");
-			pageChange.setItemMeta(itemMeta);
-			dropChest.setItem(46, pageChange);
+		for (int b = 45; b < 54; b++) {
+			if (page == 0) {
+				if (Collections.max(totalPages).equals(page)) {
+					dropChest.setItem(b, pane);
+				} else {
+					if(b != 52) {
+						dropChest.setItem(b, pane);
+					} else {
+						dropChest.setItem(b, pageChange);
+					}
+				}
+			} else if (Collections.max(totalPages).equals(page)) {
+				if(b != 46) {
+					dropChest.setItem(b, pane);
+				} else {
+					itemMeta.setDisplayName(ChatColor.GREEN + "Previous Page");
+					pageChange.setItemMeta(itemMeta);
+					dropChest.setItem(b, pageChange);
+				}
+			} else {
+				if(b != 46 && b != 52) {
+					dropChest.setItem(b, pane);
+				} else if(b == 46) {
+					itemMeta.setDisplayName(ChatColor.GREEN + "Previous Page");
+					pageChange.setItemMeta(itemMeta);
+					dropChest.setItem(b, pageChange);
+				} else {
+					dropChest.setItem(b, pageChange);
+				}
+			}
 		}
-
 		player.openInventory(dropChest);
 	}
 

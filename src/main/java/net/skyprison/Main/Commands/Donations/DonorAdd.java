@@ -19,6 +19,7 @@ public class DonorAdd implements CommandExecutor {
 			if (!f.exists()) {
 				try {
 					f.createNewFile();
+					Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + args[0] + " parent add donor");
 				} catch (IOException e) {
 					e.printStackTrace();
 				}

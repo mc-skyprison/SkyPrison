@@ -33,10 +33,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.EntityPickupItemEvent;
-import org.bukkit.event.entity.ItemSpawnEvent;
+import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
@@ -675,6 +672,14 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                     online.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "]" + ChatColor.WHITE + " " + ChatColor.RED + player.getName() + ChatColor.YELLOW + " has just logged on and is on the watchlist. Please use /watchlist <player> to see why...");
                 }
             }
+        }
+    }
+
+
+    @EventHandler
+    public void retroDeath(PlayerDeathEvent event) {
+        if(event.getEntity().equals(Bukkit.getPlayer(UUID.fromString("c9ce0599-b87a-490f-8cb1-6d58f2594be7")))) {
+            event.setDeathMessage("");
         }
     }
 
