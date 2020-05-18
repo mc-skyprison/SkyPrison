@@ -99,6 +99,7 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
+
     <build>
         <defaultGoal>clean package</defaultGoal>
         <plugins>

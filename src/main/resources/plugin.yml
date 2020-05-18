@@ -167,6 +167,15 @@ commands:
     aliases: [wltoggle]
     permission: skyprisoncore.watchlist.toggle
     permission-message: §4Error:§c You do not have permission to execute this command...
+  #
+  # Killinfo Commands
+  #
+  killinfo:
+    description: Shows info about PvP
+    usage: /<command>
+    aliases: [killsinfo]
+    permission: skyprisoncore.killinfo
+    permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
   #
   # Guard Permissions
@@ -284,3 +293,8 @@ permissions:
     description: Gives access to /watchlistdelete
   skyprisoncore.watchlist.toggle:
     description: Gives access to /watchlisttoggle
+  #
+  # Killinfo Permissions
+  #
+  skyprisoncore.killinfo:
+    description: Gives access to /killinfo

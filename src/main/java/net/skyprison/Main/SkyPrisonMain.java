@@ -2,9 +2,16 @@ package net.skyprison.Main;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
+import com.Ben12345rocks.VotingPlugin.Objects.User;
+import com.Ben12345rocks.VotingPlugin.UserManager.UserManager;
+import com.Zrips.CMI.CMI;
+import com.Zrips.CMI.Containers.CMIUser;
 import com.bergerkiller.bukkit.common.events.EntityRemoveEvent;
 import com.google.common.collect.Lists;
+import me.clip.placeholderapi.PlaceholderAPI;
+import me.clip.placeholderapi.PlaceholderHook;
 import net.skyprison.Main.Commands.*;
 import net.skyprison.Main.Commands.Donations.DonorAdd;
 import net.skyprison.Main.Commands.Donations.DonorBulk;
@@ -26,9 +33,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Item;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -42,6 +47,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 
 public class SkyPrisonMain extends JavaPlugin implements Listener {
@@ -71,6 +77,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         files.add("rewardGUI.yml");
         files.add("donations");
         files.add("watchlist.yml");
+        files.add("RecentKills.yml");
         for (int i = 0; i < files.size(); i++) {
             File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
                     .getDataFolder() + "/" + files.get(i));
@@ -106,6 +113,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         getCommand("watchlistadd").setExecutor(new WatchlistAdd());
         getCommand("watchlistdel").setExecutor(new WatchlistDelete());
         getCommand("watchlisttoggle").setExecutor(new WatchlistToggle());
+        getCommand("killinfo").setExecutor(new KillInfo());
         if (config.getBoolean("enable-op-command")) {
             getCommand("op").setExecutor(new Op());
         } else {
@@ -116,6 +124,43 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         } else {
             getCommand("deop").setExecutor(new Opdisable());
         }
+        registerPlaceholders();
+    }
+
+    private void registerPlaceholders() {
+        PlaceholderAPI.registerPlaceholderHook("SkyPrisonCore", new PlaceholderHook() {
+            @Override
+            public String onRequest(OfflinePlayer p, String params) {
+                for(int i = 1; i <= 8; i++) {
+                    if(params.equalsIgnoreCase("parkour"+i)) {
+                        String parkourPlaceholder = PlaceholderAPI.setPlaceholders(p, "%parkour_course_prize_delay_parkour"+ i +"%");
+                        String availableMessage = ChatColor.GREEN + "Available Now";
+                        if(parkourPlaceholder.equalsIgnoreCase("0")) {
+                            return availableMessage;
+                        } else {
+                            return parkourPlaceholder;
+                        }
+                    }
+                }
+                return super.onRequest(p, params);
+            }
+
+            @Override
+            public String onPlaceholderRequest(Player p, String params) {
+                for(int i = 1; i <= 8; i++) {
+                    if(params.equalsIgnoreCase("parkour"+i)) {
+                        String parkourPlaceholder = PlaceholderAPI.setPlaceholders(p, "%parkour_course_prize_delay_parkour"+ i +"%");
+                        String availableMessage = ChatColor.GREEN + "Available Now";
+                        if(parkourPlaceholder.equalsIgnoreCase("0")) {
+                            return availableMessage;
+                        } else {
+                            return parkourPlaceholder;
+                        }
+                    }
+                }
+                return super.onPlaceholderRequest(p, params);
+            }
+        });
     }
 
     public void onDisable() {
@@ -124,6 +169,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     //
     // Creates lists of people that have been /cb, and also creates the list containing all of the contraband
     //
+
     public List<Material> contraband() {
         ArrayList arr = (ArrayList) config.getList("contrabands");
         List<Material> contraband = Lists.newArrayList();
@@ -687,12 +733,61 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     // Event Handlers regarding bounties
     //
 
+    public void PvPSet(Player killed, Player killer) {
+        File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
+                .getDataFolder() + "/RecentKills.yml");
+        if (!f.exists()) {
+            try {
+                f.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        FileConfiguration kills = YamlConfiguration.loadConfiguration(f);
+        User userTokens = UserManager.getInstance().getVotingPluginUser(killer);
+
+        int pKills = kills.getInt(killer.getUniqueId().toString() + ".pvpkills")+1;
+        int pDeaths = kills.getInt(killed.getUniqueId().toString() + ".pvpdeaths")+1;
+        int pKillerStreak = kills.getInt(killer.getUniqueId().toString() + ".pvpkillstreak")+1;
+        if(!kills.contains(killer.getUniqueId().toString() + ".pvpdeaths")) {
+            kills.set(killer.getUniqueId().toString() + ".pvpdeaths", 0);
+        }
+        kills.set(killer.getUniqueId().toString() + ".pvpkills", pKills);
+        kills.set(killer.getUniqueId().toString() + ".pvpkillstreak", pKillerStreak);
+        kills.set(killer.getUniqueId().toString() + ".kills." + killed.getUniqueId().toString() + ".time", System.currentTimeMillis());
+
+        kills.set(killed.getUniqueId().toString() + ".pvpkillstreak", 0);
+        kills.set(killed.getUniqueId().toString() + ".pvpdeaths", pDeaths);
+        try {
+            kills.save(f);
+            if(killed.hasPermission("skyprisoncore.guard.onduty")) {
+                killer.sendMessage(ChatColor.GRAY + "You killed " + ChatColor.RED + killed.getName() + ChatColor.GRAY + " and received " + ChatColor.RED + "15" + ChatColor.GRAY + " token!");
+                Bukkit.getScheduler().runTaskAsynchronously(this, new Runnable() {
+                    public void run() {
+                        userTokens.addPoints(15);
+                    }});
+            } else {
+                killer.sendMessage(ChatColor.GRAY + "You killed " + ChatColor.RED + killed.getName() + ChatColor.GRAY + " and received " + ChatColor.RED + "1" + ChatColor.GRAY + " token!");
+                Bukkit.getScheduler().runTaskAsynchronously(this, new Runnable() {
+                    public void run() {
+                        userTokens.addPoints(1);
+                    }});
+            }
+        } catch (final IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @EventHandler
-    public void bountyDeath(EntityDeathEvent event) {
+    public void playerDeath(EntityDeathEvent event) {
         if(event.getEntity() instanceof Player && event.getEntity().getKiller() instanceof Player) {
             Player killed = (Player) event.getEntity();
-            if(!killed.equals(killed.getKiller())) {
-                final File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
+            Player killer = killed.getKiller();
+            if(!killed.equals(killer)) {
+                //
+                // Bounty Stuff
+                //
+                File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
                         .getDataFolder() + "/bounties.yml");
                 if (!f.exists()) {
                     try {
@@ -701,7 +796,6 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                         e.printStackTrace();
                     }
                 }
-                Player killer = killed.getKiller();
                 FileConfiguration bounty = YamlConfiguration.loadConfiguration(f);
                 Set<String> bountyList = bounty.getKeys(false);
                 for (String bountyPlayer : bountyList) {
@@ -722,7 +816,57 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                         break;
                     }
                 }
+                //
+                // Token Kills Stuff
+                //
+                f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
+                        .getDataFolder() + "/RecentKills.yml");
+                if (!f.exists()) {
+                    try {
+                        f.createNewFile();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                FileConfiguration kills = YamlConfiguration.loadConfiguration(f);
+                CMIUser userK = CMI.getInstance().getPlayerManager().getUser(killer);
+                CMIUser userD = CMI.getInstance().getPlayerManager().getUser(killed);
+                if(!userD.getLastIp().equalsIgnoreCase(userK.getLastIp())) {
+                    if(kills.contains(killer.getUniqueId().toString() + ".kills")) {
+                        Set<String> killsList = kills.getConfigurationSection(killer.getUniqueId().toString() + ".kills").getKeys(false);
+                        if(killsList.contains(killed.getUniqueId().toString())) {
+                            for(String killedPlayer : killsList) {
+                                if(killed.getUniqueId().equals(UUID.fromString(killedPlayer))) {
+                                    Long time = kills.getLong(killer.getUniqueId().toString() + ".kills." + killedPlayer + ".time");
+                                    Long timeLeft = System.currentTimeMillis() - time;
+                                    if(TimeUnit.MILLISECONDS.toSeconds(timeLeft) >= 300) {
+                                        PvPSet(killed, killer);
+                                    } else {
+                                        int pKills = kills.getInt(killer.getUniqueId().toString() + ".pvpkills")+1;
+                                        int pDeaths = kills.getInt(killed.getUniqueId().toString() + ".pvpdeaths")+1;
+                                        int pKillStreak = kills.getInt(killer.getUniqueId().toString() + ".pvpkillstreak")+1;
+                                        kills.set(killer.getUniqueId().toString() + ".pvpkills", pKills);
+                                        kills.set(killer.getUniqueId().toString() + ".pvpkillstreak", pKillStreak);
 
+                                        kills.set(killed.getUniqueId().toString() + ".pvpkillstreak", 0);
+                                        kills.set(killed.getUniqueId().toString() + ".pvpdeaths", pDeaths);
+                                        try {
+                                            kills.save(f);
+                                            Long timeRem = 300 - TimeUnit.MILLISECONDS.toSeconds(timeLeft);
+                                            killer.sendMessage(ChatColor.GRAY + "You have to wait " + ChatColor.RED + timeRem + ChatColor.GRAY + " seconds before receiving tokens from this player!");
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            PvPSet(killed, killer);
+                        }
+                    } else {
+                        PvPSet(killed, killer);
+                    }
+                }
             }
         }
     }
