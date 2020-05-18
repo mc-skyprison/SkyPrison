@@ -173,7 +173,7 @@ commands:
   killinfo:
     description: Shows info about PvP
     usage: /<command>
-    aliases: [killsinfo, /killstats]
+    aliases: [killsinfo, killstats]
     permission: skyprisoncore.killinfo
     permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
