@@ -40,7 +40,7 @@ public class Referral implements CommandExecutor {
 					}
 					FileConfiguration refer = YamlConfiguration.loadConfiguration(f);
 					if(!refer.isConfigurationSection(player.getUniqueId().toString())) {
-						if(playtime < 2) {
+						if(playtime < 3) {
 							if(CMI.getInstance().getPlayerManager().getUser(args[0]) != null) {
 								User refTokens = UserManager.getInstance().getVotingPluginUser(args[0]);
 								CMIUser reffedPlayer = CMI.getInstance().getPlayerManager().getUser(args[0]);

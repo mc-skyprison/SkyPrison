@@ -1,9 +1,6 @@
 package net.skyprison.Main.Commands;
 
-import com.Zrips.CMI.CMI;
-import com.Zrips.CMI.Containers.CMIUser;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -28,10 +25,6 @@ public class Cheese implements CommandExecutor {
 			sender.sendMessage("Here you have a cheese: " + arr.get(i));
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
-		}
-		if(sender.equals(Bukkit.getPlayer("DrakePork"))) {
-			CMIUser user = CMI.getInstance().getPlayerManager().getUser((OfflinePlayer) sender);
-			user.sendMessage(user.getTotalPlayTime() + " ");
 		}
 		return true;
 	}

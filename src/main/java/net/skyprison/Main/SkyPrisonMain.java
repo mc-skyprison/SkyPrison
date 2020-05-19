@@ -130,6 +130,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             getCommand("deop").setExecutor(new Opdisable());
         }
         if(getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            PlaceholderAPI.unregisterPlaceholderHook("SkyPrisonCore");
             registerPlaceholders();
             getLogger().info("Placeholders successfully loaded");
         } else {
@@ -141,6 +142,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         PlaceholderAPI.registerPlaceholderHook("SkyPrisonCore", new PlaceholderHook() {
             @Override
             public String onRequest(OfflinePlayer p, String params) {
+                CMIUser user = CMI.getInstance().getPlayerManager().getUser(p);
                 for(int i = 1; i <= 8; i++) {
                     if(params.equalsIgnoreCase("parkour"+i)) {
                         String parkourPlaceholder = PlaceholderAPI.setPlaceholders(p, "%parkour_course_prize_delay_parkour"+ i +"%");
@@ -169,22 +171,31 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                         }
                     }
                 }
-                if(params.equalsIgnoreCase("silence")) {
-                    if(user.isSilenceMode()) {
-                        String silenceOn = ChatColor.GREEN + "Silence is enabled";
-                        return silenceOn;
+                if(params.equalsIgnoreCase("private_silence")) {
+                    if(user.isAcceptingPM()) {
+                        String messagingOn = ChatColor.GREEN + "Private Messaging is on";
+                        return messagingOn;
                     } else {
-                        String silenceOff = ChatColor.RED + "Silence is not enabled";
-                        return silenceOff;
+                        String messagingOff = ChatColor.RED + "Private Messaging is off";
+                        return messagingOff;
+                    }
+                }
+                if(params.equalsIgnoreCase("silence")) {
+                    if(!user.isSilenceMode()) {
+                        String globalChatOn = ChatColor.GREEN + "Global Chat is on";
+                        return globalChatOn;
+                    } else {
+                        String globalChatOff = ChatColor.RED + "Global Chat is off";
+                        return globalChatOff;
                     }
                 }
                 if(params.equalsIgnoreCase("bounty_silence")) {
-                    if(p.hasPermission("skyprisoncore.bounty.silent")) {
-                        String silenceOn = ChatColor.GREEN + "Bounty Messages are disabled";
-                        return silenceOn;
+                    if(!p.hasPermission("skyprisoncore.bounty.silent")) {
+                        String bountyMsgOn = ChatColor.GREEN + "Bounty Messages are on";
+                        return bountyMsgOn;
                     } else {
-                        String silenceOff = ChatColor.RED + "Bounty Messages are enabled";
-                        return silenceOff;
+                        String bountyMsgOff = ChatColor.RED + "Bounty Messages are off";
+                        return bountyMsgOff;
                     }
                 }
                 return super.onPlaceholderRequest(p, params);

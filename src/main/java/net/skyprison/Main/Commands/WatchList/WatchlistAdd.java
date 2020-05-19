@@ -68,7 +68,7 @@ public class WatchlistAdd implements CommandExecutor {
                         if (yamlf.contains(target)) {//target was successfully added to the watchlist
                             for (Player online : Bukkit.getServer().getOnlinePlayers()) {
                                 if ((online.hasPermission("skyprisoncore.watchlist.basic") && !online.hasPermission("skyprisoncore.watchlist.silent")) || online == player) {
-                                    online.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "] " + ChatColor.YELLOW + "Player " + ChatColor.GOLD + Bukkit.getPlayer(args[0]).getName() + ChatColor.YELLOW + " was added for reason \n\"" + ChatColor.GOLD + reason + ChatColor.YELLOW + "\"");
+                                    online.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "] " + ChatColor.YELLOW + "Player " + ChatColor.GOLD + CMI.getInstance().getPlayerManager().getUser(args[0]).getName() + ChatColor.YELLOW + " was added for reason \n\"" + ChatColor.GOLD + reason + ChatColor.YELLOW + "\"");
                                 }
                             }
                         } else {//Bad plugin, dont do this

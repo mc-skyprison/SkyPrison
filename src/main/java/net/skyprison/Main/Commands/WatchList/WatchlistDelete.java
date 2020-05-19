@@ -42,7 +42,7 @@ public class WatchlistDelete implements CommandExecutor {
                                 e.printStackTrace();
                             }
                             if (!yamlf.contains(target)) {//target is not on the watchlist anymore
-                                player.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "] " + ChatColor.YELLOW + "Player " + ChatColor.GOLD + Bukkit.getPlayer(args[0]).getName() + ChatColor.YELLOW + " was removed from the watchlist...");
+                                player.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "] " + ChatColor.YELLOW + "Player " + ChatColor.GOLD + CMI.getInstance().getPlayerManager().getUser(args[0]).getName() + ChatColor.YELLOW + " was removed from the watchlist...");
                             } else {//bad plugin....
                                 player.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "] " + ChatColor.RED + "An internal error occurred, please contact an admin...");
                             }
