@@ -173,9 +173,24 @@ commands:
   killinfo:
     description: Shows info about PvP
     usage: /<command>
-    aliases: [killsinfo, killstats]
+    aliases: [killsinfo, killstats, pvpstats]
     permission: skyprisoncore.killinfo
     permission-message: §4Error:§c You do not have permission to execute this command...
+  #
+  # Cheese?
+  #
+  cheese:
+    description: Cheese
+    usage: /<command>
+    aliases: [cheeses]
+    permission: skyprisoncore.cheese
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  referral:
+    description: Cheese
+    usage: /<command>
+    permission: skyprisoncore.referral
+    permission-message: §4Error:§c You do not have permission to execute this command...
+
 permissions:
   #
   # Guard Permissions
@@ -238,28 +253,22 @@ permissions:
   #
   skyprisoncore.op:
     description: Gives access to op command
-    default: false
   skyprisoncore.deopme:
     description: Gives access to deopme command
-    default: false
   skyprisoncore.opme:
     description: Gives access to opme command
-    default: false
   skyprisoncore.deop:
     description: Gives access to deop command
-    default: false
   skyprisoncore.deop.joinbypass:
     description: Bypasses deop on join
     default: false
   skyprisoncore.opme.*:
     description: Gives access to all opme commands
-    default: false
     children:
       skyprisoncore.opme: true
       skyprisoncore.op: true
       skyprisoncore.deop: true
       skyprisoncore.deopme: true
-      skyprisoncore.deop.joinbypass: true
   #
   # SilentJoin Permissions
   #
@@ -298,3 +307,10 @@ permissions:
   #
   skyprisoncore.killinfo:
     description: Gives access to /killinfo
+  #
+  # Cheese?
+  #
+  skyprisoncore.cheese:
+    description: Gives access to /cheese
+  skyprisoncore.referral:
+    description: Gives access to /referral

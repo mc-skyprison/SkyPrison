@@ -13,6 +13,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
 import java.io.File;
@@ -29,10 +30,12 @@ public class Bounty implements CommandExecutor {
 		FileConfiguration bounty = YamlConfiguration.loadConfiguration(f);
 		Set<String> bountyList = bounty.getKeys(false);
 		ArrayList<String> arr = new ArrayList();
+		ArrayList totalPages = new ArrayList();
 		for(String bountyPlayer : bountyList) {
 			if(bounty.getInt(bountyPlayer + ".page") == page) {
 				arr.add(bountyPlayer);
 			}
+			totalPages.add(bounty.getInt(bountyPlayer + ".page"));
 		}
 		Inventory bounties = Bukkit.createInventory(null, 54, ChatColor.RED + "Bounties");
 		int i = 0;
@@ -47,6 +50,46 @@ public class Bounty implements CommandExecutor {
 			head.setItemMeta(meta);
 			bounties.setItem(i, head);
 			i++;
+		}
+		ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+		ItemStack pageChange = new ItemStack(Material.PAPER);
+		ItemMeta itemMeta = pageChange.getItemMeta();
+		itemMeta.setDisplayName(ChatColor.GREEN + "Next Page");
+		pageChange.setItemMeta(itemMeta);
+		for (int b = 45; b < 54; b++) {
+			if (page == 0) {
+				if(totalPages.size() < 1) {
+					bounties.setItem(b, pane);
+				} else {
+					if (Collections.max(totalPages).equals(page)) {
+						bounties.setItem(b, pane);
+					} else {
+						if(b != 52) {
+							bounties.setItem(b, pane);
+						} else {
+							bounties.setItem(b, pageChange);
+						}
+					}
+				}
+			} else if (Collections.max(totalPages).equals(page)) {
+				if(b != 46) {
+					bounties.setItem(b, pane);
+				} else {
+					itemMeta.setDisplayName(ChatColor.GREEN + "Previous Page");
+					pageChange.setItemMeta(itemMeta);
+					bounties.setItem(b, pageChange);
+				}
+			} else {
+				if(b != 46 && b != 52) {
+					bounties.setItem(b, pane);
+				} else if(b == 46) {
+					itemMeta.setDisplayName(ChatColor.GREEN + "Previous Page");
+					pageChange.setItemMeta(itemMeta);
+					bounties.setItem(b, pageChange);
+				} else {
+					bounties.setItem(b, pageChange);
+				}
+			}
 		}
 		player.openInventory(bounties);
 	}
@@ -125,7 +168,7 @@ public class Bounty implements CommandExecutor {
 														arr.add(bountyPlayer);
 													}
 												}
-												if (arr.size() <= 45) {
+												if (arr.size() <= 44) {
 													page = i;
 													break;
 												} else {

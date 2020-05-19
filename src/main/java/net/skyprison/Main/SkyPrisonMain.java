@@ -47,7 +47,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 
 public class SkyPrisonMain extends JavaPlugin implements Listener {
@@ -66,6 +65,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         config.addDefault("builder-worlds", Lists.newArrayList("world"));
         config.addDefault("guard-worlds", Lists.newArrayList("prison"));
         config.addDefault("contrabands", Lists.newArrayList("wooden_sword"));
+        config.addDefault("opped-access", Lists.newArrayList(""));
         config.options().copyDefaults(true);
         saveConfig();
         instance = this;
@@ -76,16 +76,19 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         files.add("dropChest.yml");
         files.add("rewardGUI.yml");
         files.add("donations");
-        files.add("watchlist.yml");
-        files.add("RecentKills.yml");
+        files.add("watchList.yml");
+        files.add("recentKills.yml");
+        files.add("referrals.yml");
         for (int i = 0; i < files.size(); i++) {
             File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
                     .getDataFolder() + "/" + files.get(i));
             if (!f.exists() && !files.get(i).equals("donations")) {
                 try {
                     f.createNewFile();
+                    getLogger().info("File " + files.get(i) + " created");
                 } catch (IOException e) {
                     e.printStackTrace();
+                    getLogger().info("File " + files.get(i) + " failed to create");
                 }
             } else if (!f.exists() && files.get(i).equals("donations")) {
                 f.mkdir();
@@ -114,6 +117,8 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         getCommand("watchlistdel").setExecutor(new WatchlistDelete());
         getCommand("watchlisttoggle").setExecutor(new WatchlistToggle());
         getCommand("killinfo").setExecutor(new KillInfo());
+        getCommand("cheese").setExecutor(new Cheese());
+        getCommand("referral").setExecutor(new Referral());
         if (config.getBoolean("enable-op-command")) {
             getCommand("op").setExecutor(new Op());
         } else {
@@ -124,7 +129,12 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         } else {
             getCommand("deop").setExecutor(new Opdisable());
         }
-        registerPlaceholders();
+        if(getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            registerPlaceholders();
+            getLogger().info("Placeholders successfully loaded");
+        } else {
+            getLogger().info("Placeholders failed to load");
+        }
     }
 
     private void registerPlaceholders() {
@@ -147,6 +157,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
 
             @Override
             public String onPlaceholderRequest(Player p, String params) {
+                CMIUser user = CMI.getInstance().getPlayerManager().getUser(p);
                 for(int i = 1; i <= 8; i++) {
                     if(params.equalsIgnoreCase("parkour"+i)) {
                         String parkourPlaceholder = PlaceholderAPI.setPlaceholders(p, "%parkour_course_prize_delay_parkour"+ i +"%");
@@ -156,6 +167,24 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                         } else {
                             return parkourPlaceholder;
                         }
+                    }
+                }
+                if(params.equalsIgnoreCase("silence")) {
+                    if(user.isSilenceMode()) {
+                        String silenceOn = ChatColor.GREEN + "Silence is enabled";
+                        return silenceOn;
+                    } else {
+                        String silenceOff = ChatColor.RED + "Silence is not enabled";
+                        return silenceOff;
+                    }
+                }
+                if(params.equalsIgnoreCase("bounty_silence")) {
+                    if(p.hasPermission("skyprisoncore.bounty.silent")) {
+                        String silenceOn = ChatColor.GREEN + "Bounty Messages are disabled";
+                        return silenceOn;
+                    } else {
+                        String silenceOff = ChatColor.RED + "Bounty Messages are enabled";
+                        return silenceOff;
                     }
                 }
                 return super.onPlaceholderRequest(p, params);
@@ -267,10 +296,17 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
 
     public static void wlistCleanup(File f, YamlConfiguration yamlf) {
         long current = System.currentTimeMillis()/1000L;
-        for (String key : yamlf.getConfigurationSection("wlist").getKeys(false)) {
-            long expire = yamlf.getLong("wlist."+key+".expire");
-            if(current>expire) {
-                yamlf.set("wlist."+key, null);
+        if (!f.exists()) {
+            try {
+                f.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        for (String key : yamlf.getKeys(false)) {
+            long expire = yamlf.getLong(key + ".expire");
+            if(current > expire) {
+                yamlf.set(key, null);
                 try {
                     yamlf.save(f);
                 } catch (IOException e) {
@@ -381,6 +417,8 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
 
     private RewardGUI RewardGUI = new RewardGUI();
     private DropChest DropChest = new DropChest();
+    private Watchlist Watchlist = new Watchlist();
+    private Bounty Bounty = new Bounty();
 
     @EventHandler
     public boolean invClick(InventoryClickEvent event) {
@@ -415,8 +453,33 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         if (ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("bounties")) {
             if (event.getCurrentItem() != null) {
                 event.setCancelled(true);
+                if(event.getCurrentItem().getType() == Material.PAPER) {
+                    if(event.getSlot() == 46) {
+                        int page = Integer.parseInt(dropChest[4])-1;
+                        Bounty.openGUI((Player) event.getWhoClicked(), page);
+                    } else if(event.getSlot() == 52) {
+                        int page = Integer.parseInt(dropChest[4])+1;
+                        Bounty.openGUI((Player) event.getWhoClicked(), page);
+                    }
+                }
             }
         }
+
+        if (ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("Watchlist")) {
+            if (event.getCurrentItem() != null) {
+                event.setCancelled(true);
+                if(event.getCurrentItem().getType() == Material.PAPER) {
+                    if(event.getSlot() == 46) {
+                        int page = Integer.parseInt(dropChest[4])-1;
+                        Watchlist.openGUI((Player) event.getWhoClicked(), page);
+                    } else if(event.getSlot() == 52) {
+                        int page = Integer.parseInt(dropChest[4])+1;
+                        Watchlist.openGUI((Player) event.getWhoClicked(), page);
+                    }
+                }
+            }
+        }
+
         Player player = (Player) event.getWhoClicked();
         if (cbed.contains(player)) {
             event.setCancelled(true);
@@ -473,52 +536,54 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     }
 
     //
-// EventHandlers regarding DropParty Chest
-//
+    // EventHandlers regarding DropParty Chest
+    //
     @EventHandler
     public void voidFall(EntityRemoveEvent event) {
         if (event.getEntity().getLocation().getY() < -63) {
-            if (event.getEntityType() == EntityType.DROPPED_ITEM) {
-                Item item = (Item) event.getEntity();
-                ItemStack sItem = item.getItemStack();
-                File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
-                        .getDataFolder() + "/dropChest.yml");
-                YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
-                if(!yamlf.isConfigurationSection("items")) {
-                    yamlf.createSection("items");
-                }
-                try {
-                    yamlf.save(f);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                Set<String> dropList = yamlf.getConfigurationSection("items").getKeys(false);
-                int page = 0;
-                for (int i = 0; i < dropList.size()+2; ) {
-                    ArrayList arr = new ArrayList();
-                    for (String dropItem : dropList) {
-                        if (yamlf.getInt("items." + dropItem + ".page") == i) {
-                            arr.add(dropItem);
+            if(event.getEntity().getWorld().getName().equalsIgnoreCase("prison")) {
+                if (event.getEntityType() == EntityType.DROPPED_ITEM) {
+                    Item item = (Item) event.getEntity();
+                    ItemStack sItem = item.getItemStack();
+                    File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
+                            .getDataFolder() + "/dropChest.yml");
+                    YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
+                    if (!yamlf.isConfigurationSection("items")) {
+                        yamlf.createSection("items");
+                    }
+                    try {
+                        yamlf.save(f);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    Set<String> dropList = yamlf.getConfigurationSection("items").getKeys(false);
+                    int page = 0;
+                    for (int i = 0; i < dropList.size() + 2; ) {
+                        ArrayList arr = new ArrayList();
+                        for (String dropItem : dropList) {
+                            if (yamlf.getInt("items." + dropItem + ".page") == i) {
+                                arr.add(dropItem);
+                            }
+                        }
+                        if (arr.size() <= 44) {
+                            page = i;
+                            break;
+                        } else {
+                            i++;
+                            continue;
                         }
                     }
-                    if (arr.size() <= 44) {
-                        page = i;
-                        break;
-                    } else {
-                        i++;
-                        continue;
-                    }
-                }
-                for (int i = 0; i < dropList.size()+2; i++) {
-                    if (!yamlf.contains("items." + i)) {
-                        yamlf.set("items." + i + ".item", sItem);
-                        yamlf.set("items." + i + ".page", page);
-                        try {
-                            yamlf.save(f);
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                    for (int i = 0; i < dropList.size() + 2; i++) {
+                        if (!yamlf.contains("items." + i)) {
+                            yamlf.set("items." + i + ".item", sItem);
+                            yamlf.set("items." + i + ".page", page);
+                            try {
+                                yamlf.save(f);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            break;
                         }
-                        break;
                     }
                 }
             }
@@ -709,10 +774,11 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     @EventHandler
     public void watchListJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        File f = new File("plugins/SkyPrisonCore/watchlist.yml");
+        File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
+                .getDataFolder() + "/watchList.yml");
         YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
         wlistCleanup(f,yamlf);
-        if(yamlf.contains("wlist."+player.getName().toLowerCase())) {
+        if(yamlf.contains(player.getUniqueId().toString())) {
             for (Player online : Bukkit.getServer().getOnlinePlayers()) {
                 if (online.hasPermission("skyprisoncore.watchlist.basic") && !player.hasPermission("skyprisoncore.watchlist.silent")) {
                     online.sendMessage(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "WATCHLIST" + ChatColor.DARK_GRAY + "]" + ChatColor.WHITE + " " + ChatColor.RED + player.getName() + ChatColor.YELLOW + " has just logged on and is on the watchlist. Please use /watchlist <player> to see why...");
@@ -735,7 +801,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
 
     public void PvPSet(Player killed, Player killer) {
         File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
-                .getDataFolder() + "/RecentKills.yml");
+                .getDataFolder() + "/recentKills.yml");
         if (!f.exists()) {
             try {
                 f.createNewFile();

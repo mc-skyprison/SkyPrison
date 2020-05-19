@@ -37,8 +37,8 @@ public class Purchases implements CommandExecutor {
 							String itemBought = playerPurchases.getString(i + ".item-bought");
 							double itemPrice = playerPurchases.getDouble(i + ".item-price");
 							String[] boughtDate = playerPurchases.getString(i + ".bought-date").split(" ");
-							String itemQuantity = playerPurchases.getString(i + ".item-quantity");
-							player.sendMessage(ChatColor.DARK_AQUA + itemBought + ChatColor.WHITE + " -" + ChatColor.GREEN + " $" + itemPrice + ChatColor.YELLOW + " " + boughtDate[0] + " " + ChatColor.GOLD + itemQuantity + "x");
+							// String itemQuantity = playerPurchases.getString(i + ".item-quantity"); + " " + ChatColor.GOLD + itemQuantity + "x"
+							player.sendMessage(ChatColor.DARK_AQUA + itemBought + ChatColor.WHITE + " -" + ChatColor.GREEN + " $" + itemPrice + ChatColor.YELLOW + " " + boughtDate[0]);
 							total += playerPurchases.getDouble(i + ".item-price");
 						} else {
 							player.sendMessage(ChatColor.RED + "ERROR READING DONATION FILE, CONTACT ADMIN FOR SUPPORT.");
