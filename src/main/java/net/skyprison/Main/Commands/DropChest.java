@@ -49,13 +49,17 @@ public class DropChest implements CommandExecutor {
 		pageChange.setItemMeta(itemMeta);
 		for (int b = 45; b < 54; b++) {
 			if (page == 0) {
-				if (Collections.max(totalPages).equals(page)) {
+				if(totalPages.size() < 1) {
 					dropChest.setItem(b, pane);
 				} else {
-					if(b != 52) {
+					if (Collections.max(totalPages).equals(page)) {
 						dropChest.setItem(b, pane);
 					} else {
-						dropChest.setItem(b, pageChange);
+						if(b != 52) {
+							dropChest.setItem(b, pane);
+						} else {
+							dropChest.setItem(b, pageChange);
+						}
 					}
 				}
 			} else if (Collections.max(totalPages).equals(page)) {
