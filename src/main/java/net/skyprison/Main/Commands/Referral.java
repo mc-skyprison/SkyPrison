@@ -44,7 +44,7 @@ public class Referral implements CommandExecutor {
 							if(CMI.getInstance().getPlayerManager().getUser(args[0]) != null) {
 								User refTokens = UserManager.getInstance().getVotingPluginUser(args[0]);
 								CMIUser reffedPlayer = CMI.getInstance().getPlayerManager().getUser(args[0]);
-								if(player.getLastIp().equalsIgnoreCase(reffedPlayer.getLastIp())) {
+								if(!player.getLastIp().equalsIgnoreCase(reffedPlayer.getLastIp())) {
 									refer.set(player.getUniqueId().toString() + ".reffedPlayer", reffedPlayer.getUniqueId().toString());
 									int refs = refer.getInt(reffedPlayer.getUniqueId().toString() + ".refsReceived")+1;
 									refer.set(reffedPlayer.getUniqueId().toString() + ".refsReceived", refs);
