@@ -186,8 +186,9 @@ commands:
     permission: skyprisoncore.cheese
     permission-message: §4Error:§c You do not have permission to execute this command...
   referral:
-    description: Cheese
+    description: Give tokens to the guy who refered you to the server
     usage: /<command>
+    aliases: [refer]
     permission: skyprisoncore.referral
     permission-message: §4Error:§c You do not have permission to execute this command...
 
