@@ -51,9 +51,11 @@ public class Referral implements CommandExecutor {
 									try {
 										refer.save(f);
 										if(reffedPlayer.isOnline()) {
-
+											reffedPlayer.sendMessage(ChatColor.AQUA + player.getName() + ChatColor.DARK_AQUA + " has referred you! You have received " + ChatColor.YELLOW + "150" + ChatColor.DARK_AQUA + " tokens!");
+										} else {
+											Bukkit.getServer().dispatchCommand(SkyPrisonMain.getInstance().getServer().getConsoleSender(), "mail send " + reffedPlayer.getName() + " " + ChatColor.AQUA + player.getName() + ChatColor.DARK_AQUA + " has referred you! You have received " + ChatColor.YELLOW + "150" + ChatColor.DARK_AQUA + " tokens!");
 										}
-										player.sendMessage(ChatColor.DARK_AQUA + "Player was successfully referred!");
+										player.sendMessage(ChatColor.DARK_AQUA + "You successfully referred " + ChatColor.AQUA + reffedPlayer.getName() + ChatColor.DARK_AQUA + "!");
 										Bukkit.getScheduler().runTaskAsynchronously(SkyPrisonMain.getInstance(), new Runnable() {
 											public void run() {
 												refTokens.addPoints(150);
