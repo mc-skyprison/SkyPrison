@@ -897,7 +897,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                 // Token Kills Stuff
                 //
                 f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
-                        .getDataFolder() + "/RecentKills.yml");
+                        .getDataFolder() + "/recentKills.yml");
                 if (!f.exists()) {
                     try {
                         f.createNewFile();

@@ -17,6 +17,7 @@ import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -46,8 +47,17 @@ public class Referral implements CommandExecutor {
 								CMIUser reffedPlayer = CMI.getInstance().getPlayerManager().getUser(args[0]);
 								if(!player.getLastIp().equalsIgnoreCase(reffedPlayer.getLastIp())) {
 									refer.set(player.getUniqueId().toString() + ".reffedPlayer", reffedPlayer.getUniqueId().toString());
+
 									int refs = refer.getInt(reffedPlayer.getUniqueId().toString() + ".refsReceived")+1;
 									refer.set(reffedPlayer.getUniqueId().toString() + ".refsReceived", refs);
+									ArrayList arr;
+									if(refer.isList(reffedPlayer.getUniqueId().toString() + ".reffedBy")) {
+										arr = (ArrayList) refer.getList(reffedPlayer.getUniqueId().toString() + ".reffedBy");
+									} else {
+										arr = new ArrayList();
+									}
+									arr.add(player.getUniqueId().toString());
+									refer.set(reffedPlayer.getUniqueId().toString() + ".reffedBy", arr);
 									try {
 										refer.save(f);
 										if(reffedPlayer.isOnline()) {
