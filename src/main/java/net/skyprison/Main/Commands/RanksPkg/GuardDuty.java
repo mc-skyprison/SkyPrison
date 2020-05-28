@@ -17,12 +17,12 @@ public class GuardDuty implements CommandExecutor {
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission unset skyprisoncore.guard.onduty");
                 } else if(player.hasPermission("skyprisoncore.guard.warden")) {
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission unset skyprisoncore.guard.onduty");
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp group warden permission set cmi.respawngroup.free true");
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp group warden permission set cmi.spawngroup.free true");
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp group warden permission set cmi.respawngroup.guard false");
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp group warden permission set cmi.spawngroup.guard false");
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp group warden permission set cmi.keepinventory false");
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp group warden permission set cmi.keepexp false");
+                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set cmi.respawngroup.free true");
+                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set cmi.spawngroup.free true");
+                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set cmi.respawngroup.guard false");
+                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set cmi.spawngroup.guard false");
+                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set cmi.keepinventory false");
+                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set cmi.keepexp false");
                 } else if(player.hasPermission("skyprisoncore.guard.guard")) {
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " parent remove guard");
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission unset skyprisoncore.guard.onduty");
@@ -37,12 +37,12 @@ public class GuardDuty implements CommandExecutor {
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.guard.onduty");
                 } else if(player.hasPermission("skyprisoncore.guard.warden")) {
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.guard.onduty");
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp group warden permission set cmi.respawngroup.free false");
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp group warden permission set cmi.spawngroup.free false");
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp group warden permission set cmi.respawngroup.guard true");
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp group warden permission set cmi.spawngroup.guard true");
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp group warden permission set cmi.keepinventory true");
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp group warden permission set cmi.keepexp true");
+                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set cmi.respawngroup.free false");
+                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set cmi.spawngroup.free false");
+                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set cmi.respawngroup.guard true");
+                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " ermission set cmi.spawngroup.guard true");
+                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set cmi.keepinventory true");
+                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set cmi.keepexp true");
                 } else if(player.hasPermission("skyprisoncore.guard.guard")) {
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " parent add guard");
                     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.guard.onduty");

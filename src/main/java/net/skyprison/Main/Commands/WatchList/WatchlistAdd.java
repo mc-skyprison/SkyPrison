@@ -60,6 +60,7 @@ public class WatchlistAdd implements CommandExecutor {
                         yamlf.set(target + ".expire", expire);
                         yamlf.set(target + ".reason", reason);
                         yamlf.set(target + ".page", page);
+                        yamlf.set(target + ".added-by", player.getUniqueId().toString());
                         try {
                             yamlf.save(f);
                         } catch (IOException e) {

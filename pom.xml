@@ -19,7 +19,11 @@
 
     <repositories>
         <repository>
-            <id>spigotmc-repo</id>
+            <id>Scarsz-Nexus</id>
+            <url>https://nexus.scarsz.me/content/groups/public/</url>
+        </repository>
+        <repository>
+            <id>spigot-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
         <repository>
@@ -45,12 +49,18 @@
     </repositories>
 
     <dependencies>
-        <!--<dependency>-->
-            <!--<groupId>org.spigotmc</groupId>-->
-            <!--<artifactId>spigot-api</artifactId>-->
-            <!--<version>1.15-R0.1-SNAPSHOT</version>-->
-            <!--<scope>provided</scope>-->
-        <!--</dependency>-->
+        <dependency>
+            <groupId>com.discordsrv</groupId>
+            <artifactId>discordsrv</artifactId>
+            <version>1.19.0-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+<!--        <dependency>
+            <groupId>org.spigotmc</groupId>
+            <artifactId>spigot-api</artifactId>
+            <version>1.15.2-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>-->
         <dependency>
             <groupId>com.destroystokyo.paper</groupId>
             <artifactId>paper-api</artifactId>

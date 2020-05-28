@@ -10,6 +10,8 @@ import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import com.bergerkiller.bukkit.common.events.EntityRemoveEvent;
 import com.google.common.collect.Lists;
+import github.scarsz.discordsrv.DiscordSRV;
+import github.scarsz.discordsrv.dependencies.jda.api.entities.TextChannel;
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.PlaceholderHook;
 import net.skyprison.Main.Commands.*;
@@ -43,6 +45,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.*;
+import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -57,7 +60,10 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         return instance;
     }
 
+    private DiscordSRVListener discordsrvListener = new DiscordSRVListener();
+
     public void onEnable() {
+        DiscordSRV.api.subscribe(discordsrvListener);
         Bukkit.getServer().getPluginManager().registerEvents(this, this);
         config.addDefault("enable-op-command", true);
         config.addDefault("enable-deop-command", true);
@@ -204,6 +210,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     }
 
     public void onDisable() {
+        DiscordSRV.api.unsubscribe(discordsrvListener);
     }
 
     //
@@ -717,8 +724,8 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     }
 
     //
-// EventHandlers regarding OpMe commands
-//
+    // EventHandlers regarding OpMe commands
+    //
     @EventHandler
     public void deOpOnJoin(PlayerJoinEvent event) {
         Player p = event.getPlayer();
@@ -732,6 +739,30 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     }
 
     @EventHandler
+    public void consoleCommands(ServerCommandEvent event) {
+        String[] args = event.getCommand().split(" ");
+        if(args[0].equalsIgnoreCase("cmi") && args[1].equalsIgnoreCase("staffmsg")) {
+            TextChannel channel = DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("staff-chat");
+            ArrayList msg = new ArrayList();
+            for(int i = 2; i < args.length; i++) {
+                msg.add(args[i]);
+            }
+            String string = String.join(" ", msg);
+            channel.sendMessage("**Console**: " + string).queue();
+        }
+
+        if(args[0].equalsIgnoreCase("a") || args[0].equalsIgnoreCase("adminchat")) {
+            TextChannel channel = DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("admin-chat");
+            ArrayList msg = new ArrayList();
+            for(int i = 1; i < args.length; i++) {
+                msg.add(args[i]);
+            }
+            String string = String.join(" ", msg);
+            channel.sendMessage("**Console**: " + string).queue();
+        }
+    }
+
+    @EventHandler
     public void disableCommands(PlayerCommandPreprocessEvent event) {
         Player player = event.getPlayer();
         String[] args = event.getMessage().split(" ");
@@ -740,6 +771,31 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                 event.setCancelled(true);
             }
         }
+
+        if(args[0].equalsIgnoreCase("/cmi") && args[1].equalsIgnoreCase("staffmsg")) {
+            if(player.hasPermission("cmi.command.staffmsg")) {
+                TextChannel channel = DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("staff-chat");
+                ArrayList msg = new ArrayList();
+                for(int i = 2; i < args.length; i++) {
+                    msg.add(args[i]);
+                }
+                String string = String.join(" ", msg);
+                channel.sendMessage("**" + player.getName() + "**: " + string).queue();
+            }
+        }
+
+        if(args[0].equalsIgnoreCase("/a") || args[0].equalsIgnoreCase("/adminchat")) {
+            if(player.hasPermission("mcmmo.chat.adminchat ")) {
+                TextChannel channel = DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("admin-chat");
+                ArrayList msg = new ArrayList();
+                for(int i = 1; i < args.length; i++) {
+                    msg.add(args[i]);
+                }
+                String string = String.join(" ", msg);
+                channel.sendMessage("**" + player.getName() + "**: " + string).queue();
+            }
+        }
+
         if (event.getMessage().startsWith("/") && event.getMessage().contains(":op")
                 | event.getMessage().contains(":OP") | event.getMessage().contains(":Op")
                 | event.getMessage().contains(":oP") | event.getMessage().contains(":deop")

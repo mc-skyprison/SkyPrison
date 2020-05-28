@@ -1,5 +1,7 @@
 package net.skyprison.Main.Commands.RanksPkg;
 
+import github.scarsz.discordsrv.DiscordSRV;
+import github.scarsz.discordsrv.dependencies.jda.api.entities.TextChannel;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -21,12 +23,14 @@ public class BuildChat implements CommandExecutor {
                     message = message + args[i] + " ";
                 }
                 message = ChatColor.translateAlternateColorCodes('&', message);
-                String fullMessage = "" + ChatColor.GREEN + ChatColor.BOLD + "(" + ChatColor.GRAY + ChatColor.BOLD + "BUILDER" + ChatColor.GREEN + ChatColor.BOLD + ") " + ChatColor.RED + "" + player.getName() + ChatColor.WHITE + ": " + ChatColor.GREEN + message;
+                String fullMessage = "" + ChatColor.GREEN + ChatColor.BOLD + "(" + ChatColor.GRAY + ChatColor.BOLD + "BUILD" + ChatColor.GREEN + ChatColor.BOLD + ") " + ChatColor.RED + "" + player.getName() + ChatColor.WHITE + ": " + ChatColor.GREEN + message;
                 for (Player online : Bukkit.getServer().getOnlinePlayers()) {
                     if (online.hasPermission("skyprisoncore.builder.buildchat")) {
                         online.sendMessage(fullMessage);
                     }
                 }
+                TextChannel channel = DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("build-chat");
+                channel.sendMessage("**" + player.getName() + "**: " + message).queue();
                 tellConsole(fullMessage);
             } else {
                 sender.sendMessage(ChatColor.RED + "/b <message>");
@@ -38,12 +42,14 @@ public class BuildChat implements CommandExecutor {
                     message = message + args[i] + " ";
                 }
                 message = ChatColor.translateAlternateColorCodes('&', message);
-                String fullMessage = "" + ChatColor.GREEN + ChatColor.BOLD + "(" + ChatColor.GRAY + ChatColor.BOLD + "BUILDER" + ChatColor.GREEN + ChatColor.BOLD + ") " + ChatColor.RED + "Console"  + ChatColor.WHITE + ": " + ChatColor.GREEN + message;
+                String fullMessage = "" + ChatColor.GREEN + ChatColor.BOLD + "(" + ChatColor.GRAY + ChatColor.BOLD + "BUILD" + ChatColor.GREEN + ChatColor.BOLD + ") " + ChatColor.RED + "Console"  + ChatColor.WHITE + ": " + ChatColor.GREEN + message;
                 for (Player online : Bukkit.getServer().getOnlinePlayers()) {
                     if (online.hasPermission("skyprisoncore.builder.buildchat")) {
                         online.sendMessage(fullMessage);
                     }
                 }
+                TextChannel channel = DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("build-chat");
+                channel.sendMessage("**Console**: " + message).queue();
                 tellConsole(fullMessage);
             } else {
                 sender.sendMessage(ChatColor.RED + "/b <message>");

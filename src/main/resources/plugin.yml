@@ -5,7 +5,7 @@ version: ${project.version}
 main: net.skyprison.Main.SkyPrisonMain
 api-version: 1.15
 website: https://skyprison.net
-depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin, CMI, WorldEdit, WorldGuard, BKCommonLib]
+depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin, CMI, WorldEdit, WorldGuard, BKCommonLib, DiscordSRV]
 commands:
   #
   # Guard Commands

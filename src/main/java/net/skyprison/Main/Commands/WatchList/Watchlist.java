@@ -52,7 +52,16 @@ public class Watchlist implements CommandExecutor {
             SkullMeta meta = (SkullMeta) head.getItemMeta();
             meta.setOwningPlayer(Bukkit.getOfflinePlayer(UUID.fromString(suspPlayer)));
             meta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + Bukkit.getOfflinePlayer(UUID.fromString(suspPlayer)).getName());
-            lore.add(ChatColor.YELLOW + "Reason: " + ChatColor.GOLD + suspPlayers.getString(suspPlayer + ".reason"));
+            String reason = suspPlayers.getString(suspPlayer + ".reason");
+            if(reason.length() > 60) {
+                String reason1 = reason.substring(0, 40);
+                String reason2 = reason.substring(40);
+                lore.add(ChatColor.YELLOW + "Reason: " + ChatColor.GOLD + reason1 + "-");
+                lore.add(ChatColor.GOLD + reason2);
+            } else {
+                lore.add(ChatColor.YELLOW + "Reason: " + ChatColor.GOLD + reason);
+            }
+            lore.add(ChatColor.YELLOW + "Added By: " + ChatColor.GOLD + Bukkit.getPlayer(UUID.fromString(suspPlayers.getString(suspPlayer + ".added-by"))).getName());
             meta.setLore(lore);
             head.setItemMeta(meta);
             watchlistGUI.setItem(i, head);

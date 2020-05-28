@@ -1,5 +1,7 @@
 package net.skyprison.Main.Commands.RanksPkg;
 
+import github.scarsz.discordsrv.DiscordSRV;
+import github.scarsz.discordsrv.dependencies.jda.api.entities.TextChannel;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -27,6 +29,8 @@ public class GuardChat implements CommandExecutor {
                         online.sendMessage(fullMessage);
                     }
                 }
+                TextChannel channel = DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("guard-chat");
+                channel.sendMessage("**" + player.getName() + "**: " + message).queue();
                 tellConsole(fullMessage);
             } else {
                 sender.sendMessage(ChatColor.RED + "/g <message>");
@@ -44,6 +48,8 @@ public class GuardChat implements CommandExecutor {
                         online.sendMessage(fullMessage);
                     }
                 }
+                TextChannel channel = DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("guard-chat");
+                channel.sendMessage("**Console**: " + message).queue();
                 tellConsole(fullMessage);
             } else {
                 sender.sendMessage(ChatColor.RED + "/g <message>");
