@@ -3,10 +3,15 @@ authors: [Redhelmet8, DrakePork]
 description: All the Custom Stuffs for SkyPrison
 version: ${project.version}
 main: net.skyprison.Main.SkyPrisonMain
-api-version: 1.15
+api-version: 1.16
 website: https://skyprison.net
-depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin, CMI, WorldEdit, WorldGuard, BKCommonLib, DiscordSRV]
+depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin, CMI, BKCommonLib, DiscordSRV]
 commands:
+  test:
+    description: Go on and off duty as a guard
+    usage: /<command>
+    permission: skyprisoncore.guard.guardduty
+    permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Guard Commands
   #

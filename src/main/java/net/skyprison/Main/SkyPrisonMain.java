@@ -1,7 +1,11 @@
 package net.skyprison.Main;
 
 import java.io.*;
+import java.sql.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import com.Ben12345rocks.VotingPlugin.Objects.User;
@@ -9,6 +13,14 @@ import com.Ben12345rocks.VotingPlugin.UserManager.UserManager;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import com.bergerkiller.bukkit.common.events.EntityRemoveEvent;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.ListenerPriority;
+import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.google.common.collect.Lists;
 import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.dependencies.jda.api.entities.TextChannel;
@@ -35,6 +47,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -48,14 +61,19 @@ import org.bukkit.event.player.*;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.Nullable;
 
 
 public class SkyPrisonMain extends JavaPlugin implements Listener {
     FileConfiguration config = this.getConfig();
 
     private static SkyPrisonMain instance;
+    private Plugin plugin;
+
     public static SkyPrisonMain getInstance() {
         return instance;
     }
@@ -85,22 +103,43 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         files.add("watchList.yml");
         files.add("recentKills.yml");
         files.add("referrals.yml");
+        files.add("logs");
+        files.add("logs/staffchat");
         for (int i = 0; i < files.size(); i++) {
             File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
                     .getDataFolder() + "/" + files.get(i));
-            if (!f.exists() && !files.get(i).equals("donations")) {
-                try {
-                    f.createNewFile();
-                    getLogger().info("File " + files.get(i) + " created");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    getLogger().info("File " + files.get(i) + " failed to create");
+            String file = (String) files.get(i);
+            if(!f.exists()) {
+                if(file.contains(".") ) {
+                    try {
+                        f.createNewFile();
+                        getLogger().info("File " + files.get(i) + " successfully created");
+                    } catch (IOException e) {
+                        /*                    e.printStackTrace();*/
+                        getLogger().info("File " + files.get(i) + " failed to create");
+                    }
+                } else {
+                    f.mkdir();
+                    getLogger().info("Folder " + files.get(i) + " successfully created");
                 }
-            } else if (!f.exists() && files.get(i).equals("donations")) {
-                f.mkdir();
             }
         }
-        getCommand("g").setExecutor(new GuardChat());
+
+        String url = "jdbc:sqlite:"+ Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
+                .getDataFolder() + "/SkyPrisonDB.db";
+        try {
+            Connection conn = DriverManager.getConnection(url);
+            if (conn != null) {
+                DatabaseMetaData meta = conn.getMetaData();
+                getLogger().info("The driver name is " + meta.getDriverName());
+                getLogger().info("A new database has been created.");
+            }
+        } catch (SQLException e) {
+            getLogger().info(e.getMessage());
+        }
+
+
+    getCommand("g").setExecutor(new GuardChat());
         getCommand("guardduty").setExecutor(new GuardDuty());
         getCommand("b").setExecutor(new BuildChat());
         getCommand("buildmode").setExecutor(new BuildMode());
@@ -125,6 +164,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         getCommand("killinfo").setExecutor(new KillInfo());
         getCommand("cheese").setExecutor(new Cheese());
         getCommand("referral").setExecutor(new Referral());
+        getCommand("test").setExecutor((new playtimeRewards()));
         if (config.getBoolean("enable-op-command")) {
             getCommand("op").setExecutor(new Op());
         } else {
@@ -142,6 +182,23 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         } else {
             getLogger().info("Placeholders failed to load");
         }
+
+        ProtocolManager manager = ProtocolLibrary.getProtocolManager();
+        manager.addPacketListener(new PacketAdapter(this, ListenerPriority.NORMAL, PacketType.Play.Server.CHAT) {
+            @Override
+            public void onPacketSending(PacketEvent event) {
+                PacketContainer packet = event.getPacket();
+                String chatMsg = packet.getChatComponents().read(0).getJson();
+                if(chatMsg != null && !chatMsg.isEmpty() && chatMsg.length() != 0) {
+                    if (chatMsg.contains(" Next rank: ")) {
+                        event.setCancelled(true);
+                    } else if(chatMsg.contains("--------------------------------------------------")) {
+                        event.getPacket().getChatComponents().write(0, WrappedChatComponent.fromText(ChatColor.YELLOW + "-----------------------------------"));
+                    }
+                }
+            }
+        });
+
     }
 
     private void registerPlaceholders() {
@@ -159,6 +216,25 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                             return parkourPlaceholder;
                         }
                     }
+                }
+                if(params.equalsIgnoreCase("bounty_prize")) {
+                    File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
+                            .getDataFolder() + "/bounties.yml");
+                    if (!f.exists()) {
+                        try {
+                            f.createNewFile();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    FileConfiguration bounty = YamlConfiguration.loadConfiguration(f);
+                    String bountyPrize = "";
+                    if(bounty.contains(user.getUniqueId().toString())) {
+                        bountyPrize = String.valueOf(bounty.getDouble(user.getUniqueId().toString() + ".bounty-prize"));
+                    } else {
+                        bountyPrize = "0.0";
+                    }
+                    return bountyPrize;
                 }
                 return super.onRequest(p, params);
             }
@@ -204,10 +280,30 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
                         return bountyMsgOff;
                     }
                 }
+                if(params.equalsIgnoreCase("bounty_prize")) {
+                    File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
+                            .getDataFolder() + "/bounties.yml");
+                    if (!f.exists()) {
+                        try {
+                            f.createNewFile();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    FileConfiguration bounty = YamlConfiguration.loadConfiguration(f);
+                    String bountyPrize = "";
+                    if(bounty.contains(user.getUniqueId().toString())) {
+                        bountyPrize = String.valueOf(bounty.getDouble(user.getUniqueId().toString() + ".bounty-prize"));
+                    } else {
+                        bountyPrize = "0.0";
+                    }
+                    return bountyPrize;
+                }
                 return super.onPlaceholderRequest(p, params);
             }
         });
     }
+
 
     public void onDisable() {
         DiscordSRV.api.unsubscribe(discordsrvListener);
@@ -346,7 +442,6 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             if(event.getInventory() == this.cbhist.)
         }
     }*/
-
     @EventHandler
     public void cbedChat(AsyncPlayerChatEvent event) {
         final Player target = event.getPlayer();
@@ -680,6 +775,20 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
         }
     }
 
+    public static ItemStack setItemDamage(ItemStack item, int damage) {
+        Damageable im = (Damageable) item.getItemMeta();
+        int dmg = im.getDamage();
+        if(item.containsEnchantment(Enchantment.DURABILITY)) {
+            int enchantLevel = item.getEnchantmentLevel(Enchantment.DURABILITY);
+            im.setDamage(damage / enchantLevel + dmg);
+        } else {
+            im.setDamage(damage + dmg);
+        }
+        item.setItemMeta((ItemMeta) im);
+        return item;
+    }
+
+
     @EventHandler
     public void blockBreak(BlockBreakEvent event) {
         Block b = event.getBlock();
@@ -693,14 +802,63 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             } else if (b.getType() == Material.SNOW_BLOCK && loc.getWorld().getName().equalsIgnoreCase("events")) {
                 event.setDropItems(false);
             } else if (b.getType() == Material.BIRCH_LOG && loc.getWorld().getName().equalsIgnoreCase("prison")) {
-                Location newLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - 1, loc.getBlockZ());
-                Block newB = newLoc.getBlock();
-                if (newB.getType() == Material.GRASS_BLOCK || newB.getType() == Material.DIRT) {
-                    getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
-                        public void run() {
-                            loc.getBlock().setType(Material.BIRCH_SAPLING);
+                ArrayList axes = new ArrayList();
+                axes.add(Material.DIAMOND_AXE);
+                axes.add(Material.GOLDEN_AXE);
+                axes.add(Material.IRON_AXE);
+                axes.add(Material.STONE_AXE);
+                axes.add(Material.WOODEN_AXE);
+                axes.add(Material.NETHERITE_AXE);
+                if(axes.contains(event.getPlayer().getInventory().getItemInMainHand().getType())) {
+                    Boolean birchDown = true;
+                    int birchDrops = 0;
+                    Location birchLoc;
+                    Location saplingLoc;
+                    int i = 0;
+                    while (birchDown) {
+                        birchLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - i, loc.getBlockZ());
+                        if (birchLoc.getBlock().getType() == Material.BIRCH_LOG) {
+                            birchLoc.getBlock().setType(Material.AIR);
+                            birchDrops++;
+                            i++;
+                        } else {
+                            saplingLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - i + 1, loc.getBlockZ());
+                            Location finalSaplingLoc = saplingLoc;
+                            if (birchLoc.getBlock().getType() == Material.GRASS_BLOCK || birchLoc.getBlock().getType() == Material.DIRT) {
+                                getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+                                    public void run() {
+                                        finalSaplingLoc.getBlock().setType(Material.BIRCH_SAPLING);
+                                    }
+                                }, 2L);
+                            }
+                            birchDown = false;
                         }
-                    }, 2L);
+                    }
+                    Boolean birchUp = true;
+                    int x = 1;
+                    while (birchUp) {
+                        birchLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() + x, loc.getBlockZ());
+                        if (birchLoc.getBlock().getType() == Material.BIRCH_LOG) {
+                            birchLoc.getBlock().setType(Material.AIR);
+                            birchDrops++;
+                            x++;
+                        } else {
+                            birchUp = false;
+                        }
+                    }
+                    ItemStack birchLog = new ItemStack(Material.BIRCH_LOG, birchDrops);
+                    loc.getWorld().dropItem(loc, birchLog);
+                    ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
+                    setItemDamage(item, birchDrops);
+                } else {
+                    Location newLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - 1, loc.getBlockZ());
+                    if (newLoc.getBlock().getType() == Material.GRASS_BLOCK || newLoc.getBlock().getType() == Material.DIRT) {
+                        getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+                            public void run() {
+                                loc.getBlock().setType(Material.BIRCH_SAPLING);
+                            }
+                        }, 2L);
+                    }
                 }
             } else if (b.getType() == Material.WHEAT && loc.getWorld().getName().equalsIgnoreCase("prison")) {
                 if (!event.getPlayer().isOp()) {
@@ -730,12 +888,35 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     public void deOpOnJoin(PlayerJoinEvent event) {
         Player p = event.getPlayer();
         if (config.getBoolean("deop-on-join")) {
-            if (!p.hasPermission("skyprisoncore.deop.joinbypass")) {
-                if (p.isOp()) {
-                    p.setOp(false);
-                }
+            if (p.isOp() && !p.hasPermission("skyprisoncore.deop.joinbypass")) {
+                p.setOp(false);
             }
         }
+/*        String url = "jdbc:sqlite:"+ Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
+                .getDataFolder() + "/SkyPrisonDB.db";
+        String sql = "CREATE TABLE IF NOT EXISTS user (\n"
+                + " id integer PRIMARY KEY,\n"
+                + " name text NOT NULL,\n"
+                + " capacity real\n"
+                + ");";
+        try{
+            Connection conn = DriverManager.getConnection(url);
+            Statement stmt = conn.createStatement();
+            stmt.execute(sql);
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        String sql1 = "INSERT INTO user(name) VALUES(?)";
+
+        try{
+            Connection conn = DriverManager.getConnection(url);
+            PreparedStatement pstmt = conn.prepareStatement(sql1);
+            pstmt.setString(1, p.getUniqueId().toString());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }*/
     }
 
     @EventHandler
@@ -763,7 +944,7 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void disableCommands(PlayerCommandPreprocessEvent event) {
+    public void commands(PlayerCommandPreprocessEvent event) throws IOException {
         Player player = event.getPlayer();
         String[] args = event.getMessage().split(" ");
         if (player.equals(Bukkit.getPlayer("blueberry09"))) {
@@ -774,25 +955,45 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
 
         if(args[0].equalsIgnoreCase("/cmi") && args[1].equalsIgnoreCase("staffmsg")) {
             if(player.hasPermission("cmi.command.staffmsg")) {
-                TextChannel channel = DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("staff-chat");
-                ArrayList msg = new ArrayList();
-                for(int i = 2; i < args.length; i++) {
-                    msg.add(args[i]);
+                if(args.length > 2) {
+                    TextChannel channel = DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("staff-chat");
+                    ArrayList msg = new ArrayList();
+                    for(int i = 2; i < args.length; i++) {
+                        msg.add(args[i]);
+                    }
+                    String string = String.join(" ", msg);
+                    channel.sendMessage("**" + player.getName() + "**: " + string).queue();
+
+                    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                    DateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+                    Date date = new Date();
+                    String currDate = dateFormat.format(date);
+                    File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
+                            .getDataFolder() + "/logs/staffchat/" + currDate + ".txt");
+                    String message = "[" + timeFormat.format(date) + "] " + player.getName() + ": " + string;
+                    if (!f.exists()) {
+                        f.createNewFile();
+                    }
+                    FileWriter fileWriter = new FileWriter(f, true);
+                    BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+                    bufferedWriter.append(message);
+                    bufferedWriter.newLine();
+                    bufferedWriter.close();
                 }
-                String string = String.join(" ", msg);
-                channel.sendMessage("**" + player.getName() + "**: " + string).queue();
             }
         }
 
         if(args[0].equalsIgnoreCase("/a") || args[0].equalsIgnoreCase("/adminchat")) {
             if(player.hasPermission("mcmmo.chat.adminchat ")) {
-                TextChannel channel = DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("admin-chat");
-                ArrayList msg = new ArrayList();
-                for(int i = 1; i < args.length; i++) {
-                    msg.add(args[i]);
+                if(args.length > 1) {
+                    TextChannel channel = DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("admin-chat");
+                    ArrayList msg = new ArrayList();
+                    for(int i = 1; i < args.length; i++) {
+                        msg.add(args[i]);
+                    }
+                    String string = String.join(" ", msg);
+                    channel.sendMessage("**" + player.getName() + "**: " + string).queue();
                 }
-                String string = String.join(" ", msg);
-                channel.sendMessage("**" + player.getName() + "**: " + string).queue();
             }
         }
 
