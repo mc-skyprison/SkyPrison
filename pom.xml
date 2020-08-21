@@ -113,6 +113,12 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>java.me.blackvein</groupId>
+            <artifactId>quests</artifactId>
+            <version>3.9.5</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>com.comphenix.protocol</groupId>
             <artifactId>ProtocolLib</artifactId>
             <version>4.6.0-SNAPSHOT</version>

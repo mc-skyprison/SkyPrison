@@ -65,7 +65,6 @@ import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.Nullable;
 
 
 public class SkyPrisonMain extends JavaPlugin implements Listener {
@@ -474,6 +473,8 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             }
         }
     }
+
+
 
     @EventHandler
     public void guardHit(EntityDamageByEntityEvent event) {
@@ -1109,6 +1110,22 @@ public class SkyPrisonMain extends JavaPlugin implements Listener {
             }
         } catch (final IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    @EventHandler
+    public void playerRiptide(PlayerRiptideEvent event) {
+        Player player = event.getPlayer();
+        if(player.getWorld().getName().equalsIgnoreCase("prison")) {
+            Location loc = player.getLocation();
+            player.teleportAsync(loc);
+        }
+    }
+
+    @EventHandler
+    public void anvilStop(InventoryOpenEvent event) {
+        if(event.getInventory().getType().equals(InventoryType.ANVIL)) {
+            event.setCancelled(true);
         }
     }
 

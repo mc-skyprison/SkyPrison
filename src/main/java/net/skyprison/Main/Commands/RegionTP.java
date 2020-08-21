@@ -27,7 +27,11 @@ public class RegionTP implements CommandExecutor {
 			File f = new File("plugins/SkyPrisonCore/regionLocations.yml");
 			YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
 			if (args.length < 1 || args[0].equalsIgnoreCase("help")) {
-				player.sendMessage(ChatColor.GREEN + "-----===" + ChatColor.AQUA + " RegionTP " + ChatColor.GREEN + "===-----\n"+ ChatColor.DARK_GREEN + "/regiontp <region> <spawn> (-s)" + ChatColor.WHITE + " - " + ChatColor.GREEN +"Teleport all players within a region to the specified location\n"+ ChatColor.DARK_GREEN + "/regiontp setspawn <name>" + ChatColor.WHITE + " - " + ChatColor.GREEN + "Create new regiontp location\n"+ ChatColor.DARK_GREEN + "/regiontp delspawn <name>" + ChatColor.WHITE + " - " + ChatColor.GREEN + "Delete a regiontp location\n"+ ChatColor.DARK_GREEN + "/regiontp list" + ChatColor.WHITE + " - " + ChatColor.GREEN + "Lists all RegionTP Locations");
+				player.sendMessage(ChatColor.GREEN + "-----===" + ChatColor.AQUA + " RegionTP " + ChatColor.GREEN + "===-----" +
+						"\n"+ ChatColor.DARK_GREEN + "/regiontp <region> <spawn> (-s)" + ChatColor.WHITE + " - " + ChatColor.GREEN +"Teleport all players within a region to the specified location" +
+						"\n"+ ChatColor.DARK_GREEN + "/regiontp setspawn <name>" + ChatColor.WHITE + " - " + ChatColor.GREEN + "Create new regiontp location" +
+						"\n"+ ChatColor.DARK_GREEN + "/regiontp delspawn <name>" + ChatColor.WHITE + " - " + ChatColor.GREEN + "Delete a regiontp location" +
+						"\n"+ ChatColor.DARK_GREEN + "/regiontp list" + ChatColor.WHITE + " - " + ChatColor.GREEN + "Lists all RegionTP Locations");
 			} else if (args[0].equalsIgnoreCase("setspawn")) {
 				if (args.length < 2) {
 					player.sendMessage(ChatColor.DARK_RED + "[" + ChatColor.AQUA + "RegionTP" + ChatColor.DARK_RED + "]" + ChatColor.RED + " Please specify a location name... ");

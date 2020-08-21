@@ -104,6 +104,11 @@ public class Bounty implements CommandExecutor {
 
 	private final CooldownManager cooldownManager = new CooldownManager();
 
+
+
+
+
+
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {
