@@ -12,6 +12,11 @@ commands:
     usage: /<command>
     permission: skyprisoncore.guard.guardduty
     permission-message: §4Error:§c You do not have permission to execute this command...
+  econcheck:
+    description: Go on and off duty as a guard
+    usage: /<command>
+    permission: skyprisoncore.command.econcheck
+    permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Guard Commands
   #
