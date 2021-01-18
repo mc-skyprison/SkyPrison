@@ -14,11 +14,11 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
 
-public class DiscordSRVListener {
+public class Discord {
 	private Core plugin;
 
 	@Inject
-	public DiscordSRVListener(Core plugin) {
+	public Discord(Core plugin) {
 		this.plugin = plugin;
 	}
 
@@ -56,16 +56,19 @@ public class DiscordSRVListener {
 	public void discordMessageProcessed(DiscordGuildMessagePreProcessEvent event) {
 		switch(event.getChannel().getName().toLowerCase()) {
 			case "admin-chat":
-				commandRun(event, "royalasylum.chat.admin", "admin-chat", "chat.admin.format");
+				commandRun(event, "skyprisoncore.command.admin", "admin-chat", "chat.admin.format");
 				break;
 			case "build-chat":
-				commandRun(event, "royalasylum.chat.build", "build-chat", "chat.build.format");
+				commandRun(event, "skyprisoncore.command.build", "build-chat", "chat.build.format");
 				break;
 			case "guard-chat":
-				commandRun(event, "royalasylum.chat.guard", "guard-chat", "chat.guard.format");
+				commandRun(event, "skyprisoncore.command.guard", "guard-chat", "chat.guard.format");
 				break;
 			case "discord-chat":
-				commandRun(event, "royalasylum.chat.discord", "discord-chat", "chat.discord.format");
+				commandRun(event, "skyprisoncore.command.discord", "discord-chat", "chat.discord.format");
+				break;
+			case "staff-chat":
+				commandRun(event, "skyprisoncore.command.staff", "staff-chat", "chat.staff.format");
 				break;
 		}
 	}

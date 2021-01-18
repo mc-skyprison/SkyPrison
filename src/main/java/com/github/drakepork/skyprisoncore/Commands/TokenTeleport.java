@@ -1,7 +1,5 @@
 package com.github.drakepork.skyprisoncore.Commands;
 
-import com.Ben12345rocks.VotingPlugin.Objects.User;
-import com.Ben12345rocks.VotingPlugin.UserManager.UserManager;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import me.clip.placeholderapi.PlaceholderAPI;
@@ -13,7 +11,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 
-public class MineTP implements CommandExecutor {
+public class TokenTeleport implements CommandExecutor {
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		CMIUser user = CMI.getInstance().getPlayerManager().getUser((Player)sender);
 		if (sender instanceof Player) {

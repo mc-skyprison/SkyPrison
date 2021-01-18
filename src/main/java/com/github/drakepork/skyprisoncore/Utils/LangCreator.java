@@ -40,6 +40,9 @@ public class LangCreator {
 			langConf.addDefault("chat.build.format", "&8&l(&a&lBUILDER&8&l) &7[name]: &9[message]");
 			langConf.addDefault("chat.build.wrong-usage", "&cWrong Usage! /b <message>");
 
+			langConf.addDefault("chat.staff.format", "&8&l(&a&lSTAFF&8&l) &7[name]: &9[message]");
+			langConf.addDefault("chat.staff.wrong-usage", "&cWrong Usage! /s <message>");
+
 			langConf.addDefault("chat.discordSRV.format", "**[name]**: [message]");
 			langConf.addDefault("chat.stickied.enabled", "&aEnabled sticky chat for [chat]");
 			langConf.addDefault("chat.stickied.disabled", "&aDisabled sticky chat for [chat]");

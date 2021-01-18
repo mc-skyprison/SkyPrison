@@ -1,5 +1,7 @@
 package com.github.drakepork.skyprisoncore.Commands;
 
+import com.github.drakepork.skyprisoncore.Core;
+import com.google.inject.Inject;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -14,11 +16,17 @@ import java.util.Random;
 import java.util.Set;
 
 public class SpongeLoc implements CommandExecutor {
+	private Core plugin;
+
+	@Inject
+	public SpongeLoc(Core plugin) {
+		this.plugin = plugin;
+	}
+
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {
 			Player player = (Player) sender;
-			File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
-					.getDataFolder() + "/spongeLocations.yml");
+			File f = new File(plugin.getDataFolder() + File.separator + "spongelocations.yml");
 			YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
 			if (args.length < 1) {
 				Set<String> setList = yamlf.getConfigurationSection("locations").getKeys(false);
@@ -48,10 +56,10 @@ public class SpongeLoc implements CommandExecutor {
 					}
 				}
 				setList = yamlf.getConfigurationSection("locations").getKeys(false);
-				String world = "";
-				Double x = 0.0;
-				Double y = 0.0;
-				Double z = 0.0;
+				String world;
+				Double x;
+				Double y;
+				Double z;
 				ArrayList<ArrayList> arr = new ArrayList<>();
 				for (String spongeOrder : setList) {
 					ArrayList arr2 = new ArrayList<String>();
@@ -171,7 +179,7 @@ public class SpongeLoc implements CommandExecutor {
 			}
 		} else {
 			if (args[0].equalsIgnoreCase(("place"))) {
-				File f = new File("plugins/SkyPrisonCore/spongeLocations.yml");
+				File f = new File(plugin.getDataFolder() + File.separator + "spongelocations.yml");
 				YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
 				Set setList = yamlf.getConfigurationSection("locations").getKeys(false);
 				for (int i = 0; i < setList.size(); i++) {

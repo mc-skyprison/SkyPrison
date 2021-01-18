@@ -28,8 +28,7 @@ public class DropChest implements CommandExecutor {
 
 
 	public void openGUI(Player player, int page) {
-		File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
-				.getDataFolder() + "/dropChest.yml");
+		File f = new File(plugin.getDataFolder() + File.separator + "dropchest.yml");
 		FileConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
 		Set<String> voidItems = yamlf.getConfigurationSection("items").getKeys(false);
 		ArrayList<String> arr = new ArrayList();
@@ -102,9 +101,7 @@ public class DropChest implements CommandExecutor {
 			if (args.length < 1) {
 				openGUI(player, 0);
 			} else if (args[0].equalsIgnoreCase("drop")) {
-				File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
-						.getDataFolder() + "/dropChest.yml");
-				YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
+				File f = new File(plugin.getDataFolder() + File.separator + "dropchest.yml");				YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
 				Set setList = yamlf.getConfigurationSection("items").getKeys(false);
 				Location loc = player.getLocation();
 				World world = Bukkit.getWorld("prison");
@@ -112,17 +109,15 @@ public class DropChest implements CommandExecutor {
 				Location max = new Location(world, 18, 140, -11);
 				for(int b = 0; b < setList.size(); b++) {
 					int finalB = b;
-					plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
-						public void run() {
-							Bukkit.getPlayer("DrakePork").sendMessage("test");
-							Location randLoc = randomLocation(min, max);
-							loc.getWorld().dropItem(randLoc, yamlf.getItemStack("items." + finalB + ".item"));
-							yamlf.getConfigurationSection("items.").set(String.valueOf(finalB), null);
-							try {
-								yamlf.save(f);
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
+					plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+						Bukkit.getPlayer("DrakePork").sendMessage("test");
+						Location randLoc = randomLocation(min, max);
+						loc.getWorld().dropItem(randLoc, yamlf.getItemStack("items." + finalB + ".item"));
+						yamlf.getConfigurationSection("items.").set(String.valueOf(finalB), null);
+						try {
+							yamlf.save(f);
+						} catch (IOException e) {
+							e.printStackTrace();
 						}
 					},20L);
 				}

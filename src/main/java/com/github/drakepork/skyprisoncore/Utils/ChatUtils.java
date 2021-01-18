@@ -33,7 +33,7 @@ public class ChatUtils {
 			String format = langConf.getString("chat." + chatId + ".format").replaceAll("\\[name\\]", Matcher.quoteReplacement(player.getName()));
 			String message = format.replaceAll("\\[message\\]", Matcher.quoteReplacement(cMessage));
 			for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-				if (online.hasPermission("royalasylum.chat." + chatId)) {
+				if (online.hasPermission("skyprisoncore.command." + chatId)) {
 					online.sendMessage(plugin.colourMessage(message));
 				}
 			}
@@ -61,7 +61,7 @@ public class ChatUtils {
 			String format = langConf.getString("chat." + chatId + ".format").replaceAll("\\[name\\]", "Console");
 			String message = format.replaceAll("\\[message\\]", Matcher.quoteReplacement(cMessage));
 			for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-				if (online.hasPermission("royalasylum.chat." + chatId)) {
+				if (online.hasPermission("skyprisoncore.command." + chatId)) {
 					online.sendMessage(plugin.colourMessage(message));
 				}
 			}

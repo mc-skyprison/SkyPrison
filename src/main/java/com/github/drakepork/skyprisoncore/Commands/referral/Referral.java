@@ -1,9 +1,9 @@
-package com.github.drakepork.skyprisoncore.Commands;
+package com.github.drakepork.skyprisoncore.Commands.referral;
 
-import com.Ben12345rocks.VotingPlugin.Objects.User;
-import com.Ben12345rocks.VotingPlugin.UserManager.UserManager;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
+import com.bencodez.votingplugin.user.UserManager;
+import com.bencodez.votingplugin.user.VotingPluginUser;
 import com.github.drakepork.skyprisoncore.Core;
 import com.google.inject.Inject;
 import org.bukkit.Bukkit;
@@ -34,23 +34,15 @@ public class Referral implements CommandExecutor {
 			CMIUser player = CMI.getInstance().getPlayerManager().getUser((OfflinePlayer) sender);
 			if(args.length == 1) {
 				if(args[0].equalsIgnoreCase("help")) {
-					player.sendMessage(ChatColor.GREEN + "If a player referred you to our server, you can do \n/referral <player> to give them tokens ");
+					player.sendMessage(ChatColor.GREEN + "If a player referred you to our server, you can do \n/referral <player> to give them some points!");
 				} else {
 					Long playtime = TimeUnit.MILLISECONDS.toHours(player.getTotalPlayTime());
-					File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
-							.getDataFolder() + "/referrals.yml");
-					if (!f.exists()) {
-						try {
-							f.createNewFile();
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-					}
+					File f = new File(plugin.getDataFolder() +  File.separator + "referrals.yml");
 					FileConfiguration refer = YamlConfiguration.loadConfiguration(f);
 					if(!refer.isConfigurationSection(player.getUniqueId().toString())) {
 						if(playtime < 3) {
 							if(CMI.getInstance().getPlayerManager().getUser(args[0]) != null) {
-								User refTokens = UserManager.getInstance().getVotingPluginUser(args[0]);
+								VotingPluginUser refTokens = UserManager.getInstance().getVotingPluginUser(args[0]);
 								CMIUser reffedPlayer = CMI.getInstance().getPlayerManager().getUser(args[0]);
 								if(!player.getLastIp().equalsIgnoreCase(reffedPlayer.getLastIp())) {
 									refer.set(player.getUniqueId().toString() + ".reffedPlayer", reffedPlayer.getUniqueId().toString());
@@ -63,7 +55,7 @@ public class Referral implements CommandExecutor {
 									} else {
 										arr = new ArrayList();
 									}
-									arr.add(player.getUniqueId().toString());
+									arr.add(player.getUniqueId().toString() + ":" + System.currentTimeMillis());
 									refer.set(reffedPlayer.getUniqueId().toString() + ".reffedBy", arr);
 									try {
 										refer.save(f);
@@ -73,10 +65,7 @@ public class Referral implements CommandExecutor {
 											Bukkit.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), "mail send " + reffedPlayer.getName() + " " + ChatColor.AQUA + player.getName() + ChatColor.DARK_AQUA + " has referred you! You have received " + ChatColor.YELLOW + "150" + ChatColor.DARK_AQUA + " tokens!");
 										}
 										player.sendMessage(ChatColor.DARK_AQUA + "You successfully referred " + ChatColor.AQUA + reffedPlayer.getName() + ChatColor.DARK_AQUA + "!");
-										Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-											public void run() {
-												refTokens.addPoints(150);
-											}});
+										Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> refTokens.addPoints(150));
 									} catch (IOException e) {
 										e.printStackTrace();
 									}
@@ -96,7 +85,7 @@ public class Referral implements CommandExecutor {
 					}
 				}
 			} else {
-				player.sendMessage(ChatColor.RED + "/referral <player>");
+				player.sendMessage(ChatColor.GREEN + "If a player referred you to our server, you can do \n/referral <player> to give them some points!");
 			}
 		}
 		return true;

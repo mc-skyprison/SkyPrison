@@ -10,53 +10,54 @@ commands:
   test:
     description: Go on and off duty as a guard
     usage: /<command>
-    permission: skyprisoncore.guard.guardduty
+    permission: skyprisoncore.command.guardduty
     permission-message: §4Error:§c You do not have permission to execute this command...
   econcheck:
-    description: Go on and off duty as a guard
+    description: Check the state of the economy
     usage: /<command>
     permission: skyprisoncore.command.econcheck
     permission-message: §4Error:§c You do not have permission to execute this command...
   #
-  # Guard Commands
+  # Chats
   #
-  guardduty:
-    description: Go on and off duty as a guard
-    usage: /<command>
-    permission: skyprisoncore.guard.guardduty
-    permission-message: §4Error:§c You do not have permission to execute this command...
   g:
     description: Guard Chat
     usage: /<command>
-    permission: skyprisoncore.guard.guardchat
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  #
-  # Contraband Commands
-  #
-  contraband:
-    description: Request contraband from player
-    usage: /<command>
-    aliases: cb
-    permission: skyprisoncore.guard.contraband
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  cbhistory:
-    description: Retrieves contraband inventory based on player cb'ed
-    usage: /<command>
-    aliases: cbhist
-    permission: skyprisoncore.guard.cbhistory
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  #
-  # Builder Commands
-  #
-  buildmode:
-    description: Go on and off builder mode
-    usage: /<command>
-    permission: skyprisoncore.builder.buildmode
+    permission: skyprisoncore.command.guard
     permission-message: §4Error:§c You do not have permission to execute this command...
   b:
     description: Builder Chat
     usage: /<command>
-    permission: skyprisoncore.builder.buildchat
+    permission: skyprisoncore.command.build
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  a:
+    description: Admin Chat
+    usage: /<command>
+    permission: skyprisoncore.command.admin
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  s:
+    description: Staff Chat
+    usage: /<command>
+    permission: skyprisoncore.command.staff
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  d:
+    description: Discord Chat
+    usage: /<command>
+    permission: skyprisoncore.command.discord
+    permission-message: §4Error:§c You do not have permission to execute this command...
+
+  #
+  # Contraband Commands
+  #
+  sword:
+    description: Request sword from player
+    usage: /<command>
+    permission: skyprisoncore.command.sword
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  bow:
+    description: Request bow from player
+    usage: /<command>
+    permission: skyprisoncore.command.bow
     permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Minigame Commands
@@ -64,18 +65,14 @@ commands:
   spongeloc:
     description: Sponge Commands
     usage: /<command>
-    permission: skyprisoncore.sponge
+    permission: skyprisoncore.command.spongeloc
     permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Teleport Commands
   #
-  regiontp:
-    description: Teleport players within regions to other places
-    usage: /<command>
-    permission: skyprisoncore.teleport.region
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  minetp:
+  tokenteleport:
     description: Teleport with tokens wow
+    aliases: [tokentp]
     usage: /<command>
     permission: skyprisoncore.teleport.token
     permission-message: §4Error:§c You do not have permission to execute this command...
@@ -85,44 +82,13 @@ commands:
   dropchest:
     description: DropChest Commands
     usage: /<command>
-    permission: skyprisoncore.dropchest
+    permission: skyprisoncore.command.dropchest
     permission-message: §4Error:§c You do not have permission to execute this command...
   rewards:
     description: Opens the secrets GUI
     usage: /<command>
     aliases: [reward, secret, secrets]
-    permission: skyprisoncore.rewardgui
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  #
-  # Opme Commands
-  #
-  opme:
-    description: Ops the player.
-    usage: /<command>
-    permission: skyprisoncore.opme
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  deopme:
-    description: Deops the player.
-    usage: /<command>
-    permission: skyprisoncore.deopme
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  op:
-    description: Ops a player.
-    usage: /<command>
-    permission: skyprisoncore.op
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  deop:
-    description: Deops a player
-    usage: /<command>
-    permission: skyprisoncore.deop
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  #
-  # SilentJoin Commands
-  #
-  silentjoin:
-    description: Toggles join and leave messages
-    usage: /<command>
-    permission: skyprisoncore.silentjoin
+    permission: skyprisoncore.command.secrets
     permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Bounty Commands
@@ -130,7 +96,7 @@ commands:
   bounty:
     description: Bounty Commands
     usage: /<command>
-    permission: skyprisoncore.bounty
+    permission: skyprisoncore.command.bounty
     permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Donation Commands
@@ -138,44 +104,22 @@ commands:
   donorbulk:
     description: Add a donation
     usage: /<command>
-    permission: skyprisoncore.donation.donoradd
+    permission: skyprisoncore.command.donorbulk
     permission-message: §4Error:§c You do not have permission to execute this command...
   donoradd:
     description: Add a donation
     usage: /<command>
-    permission: skyprisoncore.donation.donoradd
+    permission: skyprisoncore.command.donoradd
     permission-message: §4Error:§c You do not have permission to execute this command...
   purchases:
     description: Show purchases
     usage: /<command>
-    permission: skyprisoncore.donation.purchases
+    permission: skyprisoncore.command.purchases
     permission-message: §4Error:§c You do not have permission to execute this command...
-  #
-  # Watchlist Commands
-  #
-  watchlist:
-    description: Displays watchlist and specifics
+  donorcheck:
+    description: Check the state of the economy
     usage: /<command>
-    aliases: [wl]
-    permission: skyprisoncore.watchlist.basic
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  watchlistadd:
-    description: adds a user to the watchlist
-    usage: /<command>
-    aliases: [wladd]
-    permission: skyprisoncore.watchlist.add
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  watchlistdelete:
-    description: Deletes a user from the watchlist
-    usage: /<command>
-    aliases: [wldel, watchlistdel]
-    permission: skyprisoncore.watchlist.delete
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  watchlisttoggle:
-    description: toggles join watchlist messages
-    usage: /<command>
-    aliases: [wltoggle]
-    permission: skyprisoncore.watchlist.toggle
+    permission: skyprisoncore.command.donorcheck
     permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Killinfo Commands
@@ -184,144 +128,102 @@ commands:
     description: Shows info about PvP
     usage: /<command>
     aliases: [killsinfo, killstats, pvpstats]
-    permission: skyprisoncore.killinfo
+    permission: skyprisoncore.command.killinfo
     permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Cheese?
   #
-  cheese:
-    description: Cheese
-    usage: /<command>
-    aliases: [cheeses]
-    permission: skyprisoncore.cheese
-    permission-message: §4Error:§c You do not have permission to execute this command...
   referral:
     description: Give tokens to the guy who refered you to the server
     usage: /<command>
     aliases: [refer]
-    permission: skyprisoncore.referral
+    permission: skyprisoncore.command.referral
     permission-message: §4Error:§c You do not have permission to execute this command...
 
 permissions:
   #
+  # Chat Permissions
+  #
+  skyprisoncore.command.build:
+    description: Gives access to buildchat
+  skyprisoncore.command.guard:
+    description: Gives access to guardchat
+  skyprisoncore.command.admin:
+    description: Gives access to adminchat
+  skyprisoncore.command.discord:
+    description: Gives access to discordchat
+  skyprisoncore.command.staff:
+    description: Gives access to staffchat
+  #
   # Guard Permissions
   #
-  skyprisoncore.guard.guardduty:
-    description: Gives access to /guardduty
-  skyprisoncore.guard.adminguard:
-    description: Makes you admin guard when you do /guardduty
-  skyprisoncore.guard.warden:
-    description: Makes you warden guard when you do /guardduty
-  skyprisoncore.guard.guard:
-    description: Makes you guard when you do /guardduty
   skyprisoncore.guard.onduty:
     description: player is on duty when they have this perm
     default: false
   skyprisoncore.showhit:
     description: Shows when a player hits you
-  skyprisoncore.guard.itembypass:
+  skyprisoncore.contraband.itembypass:
     description: Bypasses Item Removal and that kind of stuff
-  skyprisoncore.guard.guardchat:
-    description: Gives access to guardchat
   #
   # Contraband Permissions
   #
-  skyprisoncore.guard.contraband:
-    description: Gives access to /cb
-  skyprisoncore.guard.cbhistory:
-    description: Gives access to /cbhistory
+  skyprisoncore.command.sword:
+    description: Gives access to /sword
+  skyprisoncore.command.bow:
+    description: Gives access to /bow
   #
   # Builder Permissions
   #
-  skyprisoncore.builder.buildmode:
-    description: Gives access to /buildmode
   skyprisoncore.builder.onduty:
     description: player is in build mode when they have this perm
     default: false
-  skyprisoncore.builder.buildchat:
-    description: Gives access to buildchat
   #
   # Minigame Permissions
   #
-  skyprisoncore.sponge:
+  skyprisoncore.command.sponge:
     description: Gives acess to /spongeloc
   #
   # Teleport Permissions
   #
-  skyprisoncore.teleport.token:
-    description: Gives access to /minetp
-  skyprisoncore.teleport.region:
-    description: Gives access to all /regiontp commands
+  skyprisoncore.command.token:
+    description: Gives access to /tokenteleport
   #
   # GUI Permissions
   #
-  skyprisoncore.rewardgui:
-    description: Gives access to /rewards
-  skyprisoncore.dropchest:
+  skyprisoncore.command.secrets:
+    description: Gives access to /secrets
+  skyprisoncore.command.dropchest:
     description: Gives access to /dropchest
-  #
-  # Opme Permissions
-  #
-  skyprisoncore.op:
-    description: Gives access to op command
-  skyprisoncore.deopme:
-    description: Gives access to deopme command
-  skyprisoncore.opme:
-    description: Gives access to opme command
-  skyprisoncore.deop:
-    description: Gives access to deop command
-  skyprisoncore.deop.joinbypass:
-    description: Bypasses deop on join
-    default: false
-  skyprisoncore.opme.*:
-    description: Gives access to all opme commands
-    children:
-      skyprisoncore.opme: true
-      skyprisoncore.op: true
-      skyprisoncore.deop: true
-      skyprisoncore.deopme: true
-  #
-  # SilentJoin Permissions
-  #
-  skyprisoncore.silentjoin:
-    description: Gives access to silentjoinn command
   #
   # Bounty Permissions
   #
-  skyprisoncore.bounty:
+  skyprisoncore.command.bounty:
     description: Gives access to /bounty commands
-  skyprisoncore.bounty.bypass:
+  skyprisoncore.command.bounty.bypass:
     description: Players cant bounty you.
-  skyprisoncore.bounty.silent:
+  skyprisoncore.command.bounty.silent:
     description: Hides bounty messages
     default: false
   #
   # Donation Permissions
   #
-  skyprisoncore.donation.donoradd:
+  skyprisoncore.command.donorbulk:
+    description: Gives you access to /donorbulk
+  skyprisoncore.command.donoradd:
     description: Gives you access to /donoradd
-  skyprisoncore.donation.purchases:
+  skyprisoncore.command.purchases:
     description: Gives you access to /purchases
-  #
-  # Watchlist Permissions
-  #
-  skyprisoncore.watchlist.basic:
-    description: Gives access to /watchlist
-  skyprisoncore.watchlist.add:
-    description: Gives access to /watchlistadd
-  skyprisoncore.watchlist.delete:
-    description: Gives access to /watchlistdelete
-  skyprisoncore.watchlist.toggle:
-    description: Gives access to /watchlisttoggle
+  skyprisoncore.command.donorcheck:
+    description: Gives you access to /purchases
   #
   # Killinfo Permissions
   #
-  skyprisoncore.killinfo:
+  skyprisoncore.command.killinfo:
     description: Gives access to /killinfo
   #
-  # Cheese?
+  # Referral
   #
-  skyprisoncore.cheese:
-    description: Gives access to /cheese
-  skyprisoncore.referral:
+  skyprisoncore.command.referrallist:
+    description: Gives access to /referrallist
+  skyprisoncore.command.referral:
     description: Gives access to /referral
