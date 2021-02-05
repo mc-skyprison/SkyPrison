@@ -288,38 +288,27 @@ public class RewardGUI implements CommandExecutor {
 				RegionManager regions = container.get(BukkitAdapter.adapt(pWorld));
 				ApplicableRegionSet regionList = regions.getApplicableRegions(BlockVector3.at(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ()));
 				if (!regionList.getRegions().isEmpty()) {
-					regionLoop:
-					for (ProtectedRegion region : regionList) {
-						if (pWorld.getName().equalsIgnoreCase("world_prison")) {
-							switch (region.getId()) {
-								case "grass-welcome":
-									guiType = "grass";
-									break regionLoop;
-								case "desert-welcome":
-									guiType = "desert";
-									break regionLoop;
-								case "nether-welcome":
-									guiType = "nether";
-									break regionLoop;
-								case "snow-welcome":
-									guiType = "snow";
-									break regionLoop;
-								default:
-									guiType = "prison-other";
-									break regionLoop;
-							}
-						} else if (pWorld.getName().equalsIgnoreCase("skycity")) {
-							switch (region.getId()) {
-								case "skycity":
-									guiType = "noble";
-									break regionLoop;
-								case "marina":
-									guiType = "baron";
-									break regionLoop;
-								default:
-									guiType = "skycity-other";
-									break regionLoop;
-							}
+					if (pWorld.getName().equalsIgnoreCase("world_prison")) {
+						if(regionList.getRegions().contains(regions.getRegion("grass-welcome"))) {
+							guiType = "grass";
+						} else if (regionList.getRegions().contains(regions.getRegion("desert-welcome"))) {
+							guiType = "desert";
+						} else if (regionList.getRegions().contains(regions.getRegion("nether-welcome"))) {
+							guiType = "nether";
+						} else if (regionList.getRegions().contains(regions.getRegion("snow-welcome"))) {
+							guiType = "snow";
+						} else {
+							guiType = "prison-other";
+						}
+					} else if (pWorld.getName().equalsIgnoreCase("skycity")) {
+						if(regionList.getRegions().contains(regions.getRegion("grass-welcome"))) {
+							guiType = "skycity";
+						} else if (regionList.getRegions().contains(regions.getRegion("desert-welcome"))) {
+							guiType = "marina";
+						} else if (regionList.getRegions().contains(regions.getRegion("nether-welcome"))) {
+							guiType = "nether";
+						} else {
+							guiType = "skycity-other";
 						}
 					}
 				}

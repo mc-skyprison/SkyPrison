@@ -1,16 +1,16 @@
 name: SkyPrisonCore
-authors: [Redhelmet8, DrakePork]
+authors: [DrakePork, Redhelmet8]
 description: All the Custom Stuffs for SkyPrison
 version: ${project.version}
-main: net.skyprison.Main.SkyPrisonMain
+main: com.github.drakepork.skyprisoncore.Core
 api-version: 1.16
-website: https://skyprison.net
-depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin, CMI, BKCommonLib, DiscordSRV, Quests]
+website: https://skyprison.net/
+depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin, CMI, BKCommonLib, DiscordSRV]
 commands:
   test:
     description: Go on and off duty as a guard
     usage: /<command>
-    permission: skyprisoncore.command.guardduty
+    permission: skyprisoncore.command.econcheck
     permission-message: §4Error:§c You do not have permission to execute this command...
   econcheck:
     description: Check the state of the economy
@@ -65,7 +65,7 @@ commands:
   spongeloc:
     description: Sponge Commands
     usage: /<command>
-    permission: skyprisoncore.command.spongeloc
+    permission: skyprisoncore.command.sponge
     permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Teleport Commands
@@ -74,7 +74,7 @@ commands:
     description: Teleport with tokens wow
     aliases: [tokentp]
     usage: /<command>
-    permission: skyprisoncore.teleport.token
+    permission: skyprisoncore.command.token
     permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # GUI Commands
@@ -89,6 +89,11 @@ commands:
     usage: /<command>
     aliases: [reward, secret, secrets]
     permission: skyprisoncore.command.secrets
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  secretfound:
+    description: Adds secretfound
+    usage: /<command>
+    permission: skyprisoncore.command.secretfound
     permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Bounty Commands
@@ -139,7 +144,26 @@ commands:
     aliases: [refer]
     permission: skyprisoncore.command.referral
     permission-message: §4Error:§c You do not have permission to execute this command...
+  referrallist:
+    description: See everyone who has referred you
+    usage: /<command>
+    aliases: [referlist, reflist]
+    permission: skyprisoncore.command.referrallist
+    permission-message: §4Error:§c You do not have permission to execute this command...
 
+
+  firstjointop:
+    description: See everyone who has referred you
+    usage: /<command>
+    aliases: [referlist, reflist]
+    permission: skyprisoncore.command.firstjointop
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  permshop:
+    description: See everyone who has referred you
+    usage: /<command>
+    aliases: [referlist, reflist]
+    permission: skyprisoncore.command.permshop
+    permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
   #
   # Chat Permissions
@@ -190,6 +214,8 @@ permissions:
   #
   # GUI Permissions
   #
+  skyprisoncore.command.secretfound:
+    description: Gives access to /secrets
   skyprisoncore.command.secrets:
     description: Gives access to /secrets
   skyprisoncore.command.dropchest:
@@ -226,4 +252,11 @@ permissions:
   skyprisoncore.command.referrallist:
     description: Gives access to /referrallist
   skyprisoncore.command.referral:
+    description: Gives access to /referral
+
+  skyprisoncore.command.firstjointop:
+    description: Gives access to /referral
+  skyprisoncore.command.permshop:
+    description: Gives access to /referral
+  skyprisoncore.command.econcheck:
     description: Gives access to /referral

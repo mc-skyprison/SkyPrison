@@ -1,6 +1,8 @@
 package com.github.drakepork.skyprisoncore;
 
 import java.io.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -26,13 +28,17 @@ import com.github.drakepork.skyprisoncore.Commands.referral.Referral;
 import com.github.drakepork.skyprisoncore.Commands.referral.ReferralList;
 import com.github.drakepork.skyprisoncore.Utils.ConfigCreator;
 import com.github.drakepork.skyprisoncore.Utils.LangCreator;
+import com.github.drakepork.skyprisoncore.Utils.Placeholders;
+import com.github.drakepork.skyprisoncore.Utils.PluginReceiver;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import github.scarsz.discordsrv.dependencies.jda.api.entities.TextChannel;
 import com.github.drakepork.skyprisoncore.Commands.*;
 import com.github.drakepork.skyprisoncore.Commands.Donations.DonorAdd;
 import com.github.drakepork.skyprisoncore.Commands.Donations.DonorBulk;
 import com.github.drakepork.skyprisoncore.Commands.Donations.Purchases;
 import com.github.drakepork.skyprisoncore.Listeners.Discord;
+import me.clip.placeholderapi.PlaceholderAPI;
 import me.realized.tokenmanager.TokenManagerPlugin;
 import me.realized.tokenmanager.api.TokenManager;
 import org.apache.commons.lang.StringUtils;
@@ -65,6 +71,9 @@ public class Core extends JavaPlugin implements Listener {
     public HashMap<String, String> hexColour = new HashMap<>();
     public HashMap<UUID, String> stickyChatEnabled = new HashMap<>();
 
+    @Inject private ConfigCreator configCreator;
+    @Inject private LangCreator langCreator;
+
     @Inject private BuildChat BuildChat;
     @Inject private GuardChat GuardChat;
     @Inject private AdminChat AdminChat;
@@ -88,15 +97,15 @@ public class Core extends JavaPlugin implements Listener {
     @Inject private EconomyCheck EconomyCheck;
     @Inject private PermShop PermShop;
 
+    @Inject private RewardGUI RewardGUI;
+    @Inject private SecretFound SecretFound;
+
+
     @Inject private DropChest DropChest;
     @Inject private TokenTeleport TokenTeleport;
     @Inject private playtimeRewards playtimeRewards;
-    @Inject private RewardGUI RewardGUI;
     @Inject private SpongeLoc SpongeLoc;
     @Inject private FirstjoinTop FirstjoinTop;
-
-    @Inject private ConfigCreator configCreator;
-    @Inject private LangCreator langCreator;
 
     private Discord discordListener = new Discord(this);
     FileConfiguration config = this.getConfig();
@@ -104,6 +113,10 @@ public class Core extends JavaPlugin implements Listener {
     public void onEnable() {
         github.scarsz.discordsrv.DiscordSRV.api.subscribe(discordListener);
         Bukkit.getServer().getPluginManager().registerEvents(this, this);
+
+        PluginReceiver module = new PluginReceiver(this);
+        Injector injector = module.createInjector();
+        injector.injectMembers(this);
 
         this.configCreator.init();
         this.langCreator.init();
@@ -116,6 +129,10 @@ public class Core extends JavaPlugin implements Listener {
         files.add("donations.yml");
         files.add("recentkills.yml");
         files.add("referrals.yml");
+        files.add("rewardsdata.yml");
+        files.add("secretsdata.yml");
+        files.add("spongedata.yml");
+        files.add("firstjoindata.yml");
         for (String file : files) {
             File f = new File(this.getDataFolder() + File.separator + file);
             if(!f.exists()) {
@@ -124,6 +141,7 @@ public class Core extends JavaPlugin implements Listener {
                         f.createNewFile();
                         getLogger().info("File " + file + " successfully created");
                     } catch (IOException e) {
+                        e.printStackTrace();
                         getLogger().info("File " + file + " failed to create");
                     }
                 } else {
@@ -133,34 +151,44 @@ public class Core extends JavaPlugin implements Listener {
             }
         }
 
-        getCommand("g").setExecutor(this.GuardChat);
-        getCommand("b").setExecutor(this.BuildChat);
-        getCommand("a").setExecutor(this.AdminChat);
-        getCommand("d").setExecutor(this.DiscordChat);
-        getCommand("s").setExecutor(this.StaffChat);
+        if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new Placeholders(this).register();
+            getLogger().info("Placeholders registered");
+        }
 
-        getCommand("donoradd").setExecutor(this.DonorAdd);
-        getCommand("donorbulk").setExecutor(this.DonorBulk);
-        getCommand("purchases").setExecutor(this.Purchases);
-        getCommand("donorcheck").setExecutor(this.DonorCheck);
+        getCommand("g").setExecutor(GuardChat);
+        getCommand("b").setExecutor(BuildChat);
+        getCommand("a").setExecutor(AdminChat);
+        getCommand("d").setExecutor(DiscordChat);
+        getCommand("s").setExecutor(StaffChat);
 
-        getCommand("spongeloc").setExecutor(this.SpongeLoc);
-        getCommand("dropchest").setExecutor(this.DropChest);
-        getCommand("tokenteleport").setExecutor(this.TokenTeleport);
-        getCommand("rewards").setExecutor(this.RewardGUI);
+        getCommand("donoradd").setExecutor(DonorAdd);
+        getCommand("donorbulk").setExecutor(DonorBulk);
+        getCommand("purchases").setExecutor(Purchases);
+        getCommand("donorcheck").setExecutor(DonorCheck);
 
-        getCommand("bounty").setExecutor(this.Bounty);
-        getCommand("killinfo").setExecutor(this.KillInfo);
+        getCommand("spongeloc").setExecutor(SpongeLoc);
+        getCommand("dropchest").setExecutor(DropChest);
+        getCommand("tokenteleport").setExecutor(TokenTeleport);
 
-        getCommand("test").setExecutor(this.playtimeRewards);
+        getCommand("secretfound").setExecutor(SecretFound);
+        getCommand("rewards").setExecutor(RewardGUI);
 
-        getCommand("econcheck").setExecutor(this.EconomyCheck);
-        getCommand("permshop").setExecutor(this.PermShop);
+        getCommand("bounty").setExecutor(Bounty);
+        getCommand("killinfo").setExecutor(KillInfo);
 
-        getCommand("firstjointop").setExecutor(this.FirstjoinTop);
+        getCommand("test").setExecutor(playtimeRewards);
 
-        getCommand("referral").setExecutor(this.Referral);
-        getCommand("referrallist").setExecutor(this.ReferralList);
+        getCommand("econcheck").setExecutor(EconomyCheck);
+        getCommand("permshop").setExecutor(PermShop);
+
+        getCommand("firstjointop").setExecutor(FirstjoinTop);
+
+        getCommand("referral").setExecutor(Referral);
+        getCommand("referrallist").setExecutor(ReferralList);
+
+        getCommand("sword").setExecutor(Sword);
+        getCommand("bow").setExecutor(Bow);
 
         ProtocolManager manager = ProtocolLibrary.getProtocolManager();
         manager.addPacketListener(new PacketAdapter(this, ListenerPriority.NORMAL, PacketType.Play.Server.CHAT) {
@@ -174,6 +202,7 @@ public class Core extends JavaPlugin implements Listener {
                                 if (packet.getChatComponents().read(0).toString() instanceof String) {
                                     String chatMsg = packet.getChatComponents().read(0).toString();
                                     if (chatMsg.contains("Next ranks:")) {
+                                        Bukkit.getPlayer("DrakePork").sendMessage("wham5");
                                         event.setCancelled(true);
                                     }
                                 }
@@ -248,6 +277,21 @@ public class Core extends JavaPlugin implements Listener {
             matcher.appendReplacement(buffer, "");
         }
         return matcher.appendTail(buffer).toString();
+    }
+
+    @EventHandler
+    public void firstJoinCheck(PlayerJoinEvent event) throws ParseException, IOException {
+        File fData = new File(this.getDataFolder() + File.separator + "firstjoindata.yml");
+        YamlConfiguration firstJoinConf = YamlConfiguration.loadConfiguration(fData);
+        String pUUID = event.getPlayer().getUniqueId().toString();
+        if(!firstJoinConf.isConfigurationSection(pUUID)) {
+            String firstJoinString = PlaceholderAPI.setPlaceholders(event.getPlayer(), "%player_first_join_date%");
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yy HH:mm:ss");
+            Date firstJoinDate = sdf.parse(firstJoinString);
+            Long firstJoinMilli = firstJoinDate.getTime();
+            firstJoinConf.set(pUUID + ".firstjoin", firstJoinMilli);
+            firstJoinConf.save(fData);
+        }
     }
 
     @EventHandler
@@ -354,7 +398,7 @@ public class Core extends JavaPlugin implements Listener {
     @EventHandler
     public void moveEvent(PlayerMoveEvent event) {
         Player player = event.getPlayer();
-        if (player.hasPermission("skyprisoncore.guard.onduty")) {
+        if (player.hasPermission("skyprisoncore.guard.onduty") && !player.isOp()) {
             ArrayList<String> guardWorlds = (ArrayList) config.getList("guard-worlds");
             Boolean inWorld = false;
             for(String guardWorld : guardWorlds) {
@@ -364,12 +408,13 @@ public class Core extends JavaPlugin implements Listener {
                 }
             }
             if(inWorld == false) {
-                event.setCancelled(true);
-                getServer().getScheduler().scheduleSyncDelayedTask(this, () -> player.sendMessage(ChatColor.RED + "Please go off duty!"), 2L);
-
+                if((event.getFrom().getBlockX() != event.getTo().getBlockX()) || (event.getFrom().getBlockZ() != event.getTo().getBlockZ())) {
+                    event.setCancelled(true);
+                    player.sendMessage(ChatColor.RED + "Please go off duty!");
+                }
             }
         }
-        if(player.hasPermission("skyprisoncore.builder.onduty")) {
+        if(player.hasPermission("skyprisoncore.builder.onduty") && !player.isOp()) {
             ArrayList<String> buildWorlds = (ArrayList) config.getList("builder-worlds");
             Boolean inWorld = false;
             for(String buildWorld : buildWorlds) {
@@ -379,9 +424,10 @@ public class Core extends JavaPlugin implements Listener {
                 }
             }
             if(inWorld == false) {
-                event.setCancelled(true);
-                getServer().getScheduler().scheduleSyncDelayedTask(this, () -> player.sendMessage(ChatColor.RED + "Please go off duty!"), 2L);
-
+                if((event.getFrom().getBlockX() != event.getTo().getBlockX()) || (event.getFrom().getBlockZ() != event.getTo().getBlockZ())) {
+                    event.setCancelled(true);
+                    player.sendMessage(ChatColor.RED + "Please go off duty!");
+                }
             }
         }
     }
@@ -402,6 +448,7 @@ public class Core extends JavaPlugin implements Listener {
                 case "nether":
                 case "snow":
                 case "skycity":
+                case "marina":
                 case "skycity-other":
                 case "prison-other":
                     if (event.getSlot() == 40) {
@@ -428,10 +475,13 @@ public class Core extends JavaPlugin implements Listener {
                         case 15:
                             RewardGUI.openGUI(Bukkit.getPlayer(human.getName()), "prison-other");
                             break;
-                        case 20:
+                        case 21:
                             RewardGUI.openGUI(Bukkit.getPlayer(human.getName()), "skycity");
                             break;
-                        case 21:
+                        case 22:
+                            RewardGUI.openGUI(Bukkit.getPlayer(human.getName()), "marina");
+                            break;
+                        case 23:
                             RewardGUI.openGUI(Bukkit.getPlayer(human.getName()), "skycity-other");
                             break;
                     }
@@ -603,7 +653,7 @@ public class Core extends JavaPlugin implements Listener {
                 if (event.getEntityType() == EntityType.DROPPED_ITEM) {
                     Item item = (Item) event.getEntity();
                     ItemStack sItem = item.getItemStack();
-                    File f = new File(this.getDataFolder() + File.separator + "dropChest.yml");
+                    File f = new File(this.getDataFolder() + File.separator + "dropchest.yml");
                     YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
                     if (!yamlf.isConfigurationSection("items")) {
                         yamlf.createSection("items");
@@ -714,10 +764,11 @@ public class Core extends JavaPlugin implements Listener {
 
     @EventHandler
     public void villagerTrade(InventoryOpenEvent event) {
-        if (event.getInventory().getType() != InventoryType.MERCHANT) {
-        } else if (event.getInventory().getType().equals(InventoryType.MERCHANT)) {
+        if (event.getInventory().getType().equals(InventoryType.MERCHANT)) {
             Player player = (Player) event.getPlayer();
             player.sendMessage(ChatColor.RED + "Villager trading has been disabled");
+            event.setCancelled(true);
+        } else if(event.getInventory().getType().equals(InventoryType.SMITHING)) {
             event.setCancelled(true);
         }
     }
@@ -813,7 +864,7 @@ public class Core extends JavaPlugin implements Listener {
                         getServer().getScheduler().scheduleSyncDelayedTask(this, () -> loc.getBlock().setType(Material.BIRCH_SAPLING), 2L);
                     }
                 }
-            } else if (b.getType() == Material.WHEAT && loc.getWorld().getName().equalsIgnoreCase("prison")) {
+            } else if (b.getType() == Material.WHEAT && loc.getWorld().getName().equalsIgnoreCase("world_prison")) {
                 if (!event.getPlayer().isOp()) {
                     BlockData bdata = b.getBlockData();
                     if (bdata instanceof Ageable) {
@@ -826,6 +877,8 @@ public class Core extends JavaPlugin implements Listener {
                         }
                     }
                 }
+            } else if (b.getType() == Material.BIRCH_SAPLING && loc.getWorld().getName().equalsIgnoreCase("world_prison") && !event.getPlayer().isOp()) {
+                event.setCancelled(true);
             }
         }
     }

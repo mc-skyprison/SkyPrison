@@ -36,7 +36,7 @@ public class ReferralList implements CommandExecutor {
 		File f = new File(plugin.getDataFolder() +  File.separator + "referrals.yml");
 		FileConfiguration refer = YamlConfiguration.loadConfiguration(f);
 		List<String> reffedBy = refer.getStringList(player.getUniqueId().toString() + ".reffedBy");
-		Inventory referred = Bukkit.createInventory(null, 54, ChatColor.RED + "Bounties");
+		Inventory referred = Bukkit.createInventory(null, 54, ChatColor.RED + "Referral List");
 		int i = 0;
 		for (String reffedPlayer : reffedBy) {
 			String[] reffed = reffedPlayer.split(":");
@@ -50,7 +50,7 @@ public class ReferralList implements CommandExecutor {
 			DateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 			System.out.println();
 
-			lore.add(ChatColor.YELLOW + "Referred on: " + df.format(cal.get(Integer.parseInt(reffed[1]))));
+			lore.add(ChatColor.YELLOW + "Referred you on: " + df.format(cal.get(Integer.parseInt(reffed[1]))));
 			meta.setLore(lore);
 			head.setItemMeta(meta);
 			referred.setItem(i, head);
