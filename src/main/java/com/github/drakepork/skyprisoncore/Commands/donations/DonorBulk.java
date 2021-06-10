@@ -1,4 +1,4 @@
-package com.github.drakepork.skyprisoncore.Commands.Donations;
+package com.github.drakepork.skyprisoncore.Commands.donations;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;

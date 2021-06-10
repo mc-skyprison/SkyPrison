@@ -1,4 +1,4 @@
-package com.github.drakepork.skyprisoncore.Commands.Donations;
+package com.github.drakepork.skyprisoncore.Commands.economy;
 
 import com.Zrips.CMI.CMI;
 import com.github.drakepork.skyprisoncore.Core;
@@ -20,16 +20,13 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.*;
 
-public class DonorCheck implements CommandExecutor {
+public class EconomyCheck implements CommandExecutor {
 	private Core plugin;
 
 	@Inject
-	public DonorCheck(Core plugin) {
+	public EconomyCheck(Core plugin) {
 		this.plugin = plugin;
 	}
 

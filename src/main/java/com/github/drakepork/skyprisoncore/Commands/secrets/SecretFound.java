@@ -1,4 +1,4 @@
-package com.github.drakepork.skyprisoncore.Commands;
+package com.github.drakepork.skyprisoncore.Commands.secrets;
 
 import com.github.drakepork.skyprisoncore.Core;
 import com.google.inject.Inject;

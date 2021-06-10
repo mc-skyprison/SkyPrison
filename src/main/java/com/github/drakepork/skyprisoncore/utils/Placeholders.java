@@ -1,4 +1,4 @@
-package com.github.drakepork.skyprisoncore.Utils;
+package com.github.drakepork.skyprisoncore.utils;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
@@ -8,7 +8,12 @@ import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+
+import java.io.File;
+import java.util.Locale;
+import java.util.Set;
 
 public class Placeholders extends PlaceholderExpansion {
 	private Core plugin;
@@ -103,6 +108,62 @@ public class Placeholders extends PlaceholderExpansion {
 		if(player == null) {
 			return "";
 		}
+
+		if(identifier.equalsIgnoreCase("total_secrets")) {
+			File secretsDataFile = new File(plugin.getDataFolder() + File.separator
+					+ "secretsdata.yml");
+			YamlConfiguration pData = YamlConfiguration.loadConfiguration(secretsDataFile);
+			CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
+			if (pData.isConfigurationSection(user.getUniqueId().toString())) {
+				Set<String> secretCats = pData.getConfigurationSection(user.getUniqueId().toString() + ".secrets-found").getKeys(false);
+				int totalFound = 0;
+				for(String secretCat : secretCats) {
+					Set<String> secretsFound = pData.getConfigurationSection(user.getUniqueId().toString() + ".secrets-found." + secretCat).getKeys(false);
+
+					for(String secret : secretsFound) {
+						totalFound += pData.getInt(user.getUniqueId().toString() + ".secrets-found." + secretCat + "." + secret + ".times-found");
+					}
+				}
+				return String.valueOf(totalFound);
+			} else {
+				return "0";
+			}
+		}
+
+		if(identifier.equalsIgnoreCase("mod_tag")) {
+			if (player.hasPermission("group.trmod")) {
+				CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
+				String tag = "";
+				switch(user.getRank().getName().toLowerCase()) {
+					case "grass":
+						tag = "&f[{#2ee600}G&f]";
+						break;
+					case "desert":
+						tag = "&f[{#e6b22e}D&f]";
+						break;
+					case "nether":
+						tag = "&f[{#ff2400}N&f]";
+						break;
+					case "snow":
+						tag = "&f[{#3dc3cc}S&f]";
+						break;
+					case "free":
+						tag = "&f[{#f75394}F&f]";
+						break;
+					case "hell":
+						tag = "&f[{#cc141f}H&f]";
+						break;
+					case "end":
+						tag = "&f[{#0085e6}E&f]";
+						break;
+				}
+
+				return plugin.colourMessage(tag);
+			} else {
+				return "";
+			}
+		}
+
 
 		if(identifier.equalsIgnoreCase("silence")) {
 			CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
@@ -224,7 +285,6 @@ public class Placeholders extends PlaceholderExpansion {
 
 		if(identifier.equalsIgnoreCase("train_marina_west_cost")) {
 			identifier = substring;
-			identifier = substring;
 			return getTrainPriceInt(player, identifier);
 		}
 
@@ -255,9 +315,21 @@ public class Placeholders extends PlaceholderExpansion {
 			return getTrainPriceInt(player, identifier);
 		}
 
+		if(identifier.equalsIgnoreCase("sponges_found")) {
+			File spongeData = new File(plugin.getDataFolder() + File.separator
+					+ "spongedata.yml");
+			YamlConfiguration sDataConf = YamlConfiguration.loadConfiguration(spongeData);
+			if(sDataConf.isConfigurationSection(player.getUniqueId().toString())) {
+				int spongeFound = sDataConf.getInt(player.getUniqueId().toString() + ".sponge-found");
+				return String.valueOf(spongeFound);
+			} else {
+				return "0";
+			}
+		}
+
 		for(int i = 1; i <= 8; i++) {
 			if(identifier.equalsIgnoreCase("parkour"+i)) {
-				String parkourPlaceholder = PlaceholderAPI.setPlaceholders(player, "%parkour_course_prize_delay_parkour"+ i +"%");
+				String parkourPlaceholder = PlaceholderAPI.setPlaceholders(player, "%parkour_player_prize_delay_parkour"+ i +"%");
 				String availableMessage = ChatColor.GREEN + "Available Now";
 				if(parkourPlaceholder.equalsIgnoreCase("0")) {
 					return availableMessage;

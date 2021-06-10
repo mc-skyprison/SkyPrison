@@ -1,9 +1,9 @@
-package com.github.drakepork.skyprisoncore.Commands;
+package com.github.drakepork.skyprisoncore.Commands.economy;
 
 import com.github.drakepork.skyprisoncore.Core;
 import com.google.inject.Inject;
 import net.brcdev.shopgui.ShopGuiPlusApi;
-import org.bukkit.Bukkit;
+import net.brcdev.shopgui.exception.player.PlayerDataNotLoadedException;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -25,10 +25,22 @@ public class PermShop implements CommandExecutor {
 			if (args.length == 1) {
 				String shop = args[0];
 				if(ShopGuiPlusApi.getShop(shop) != null) {
-					if(player.hasPermission("shopguiplus.shops." + shop) || player.hasPermission("shopguiplus.shops.*")) {
-						Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "shop " + player.getName() + " " + shop);
+					if (player.hasPermission("shopguiplus.shops." + shop) || player.isOp()) {
+						try {
+							ShopGuiPlusApi.openShop(player, shop, 1);
+						} catch (PlayerDataNotLoadedException e) {
+							e.printStackTrace();
+						}
 					} else {
-						player.sendMessage(ChatColor.RED + "You do not have access to this shop!");
+						if (player.hasPermission("group.free")) {
+							player.sendMessage(ChatColor.RED + "You can't use prison shops!");
+						} else {
+							if (shop.equalsIgnoreCase("center")) {
+								player.sendMessage(ChatColor.RED + "You must be Desert+ to use this shop!");
+							} else {
+								player.sendMessage(ChatColor.RED + "You must be Free+ to use this shop!");
+							}
+						}
 					}
 				} else {
 					player.sendMessage(ChatColor.RED + "Not a valid shop!");

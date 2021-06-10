@@ -5,7 +5,7 @@ version: ${project.version}
 main: com.github.drakepork.skyprisoncore.Core
 api-version: 1.16
 website: https://skyprison.net/
-depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin, CMI, BKCommonLib, DiscordSRV]
+depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin, CMI, BKCommonLib, DiscordSRV, Parkour]
 commands:
   test:
     description: Go on and off duty as a guard
@@ -16,6 +16,22 @@ commands:
     description: Check the state of the economy
     usage: /<command>
     permission: skyprisoncore.command.econcheck
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  ignoretp:
+    description: Ignore someones tpa requests
+    aliases: [tpignore]
+    usage: /<command>
+    permission: skyprisoncore.command.ignoretp
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  bartender:
+    description: Opens bartender GUI
+    usage: /<command>
+    permission: skyprisoncore.command.bartender
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  safezone:
+    description: Gives a player a safezone warning
+    usage: /<command>
+    permission: skyprisoncore.command.safezone
     permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Chats
@@ -45,7 +61,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.discord
     permission-message: §4Error:§c You do not have permission to execute this command...
-
   #
   # Contraband Commands
   #
@@ -58,6 +73,16 @@ commands:
     description: Request bow from player
     usage: /<command>
     permission: skyprisoncore.command.bow
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  contraband:
+    description: Request contraband from player
+    usage: /<command>
+    permission: skyprisoncore.command.contraband
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  guardduty:
+    description: Enable/disable guardduty
+    usage: /<command>
+    permission: skyprisoncore.command.guardduty
     permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Minigame Commands
@@ -126,6 +151,11 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.donorcheck
     permission-message: §4Error:§c You do not have permission to execute this command...
+  endupgrade:
+    description: Opens the end upgrade GUI
+    usage: /<command>
+    permission: skyprisoncore.command.endupgrade
+    permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Killinfo Commands
   #
@@ -134,6 +164,12 @@ commands:
     usage: /<command>
     aliases: [killsinfo, killstats, pvpstats]
     permission: skyprisoncore.command.killinfo
+    permission-message: §4Error:§c You do not have permission to execute this command...
+
+  dontsell:
+    description: Adds/removes an item from the dont sell list
+    usage: /<command>
+    permission: skyprisoncore.command.dontsell
     permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Cheese?
@@ -163,6 +199,11 @@ commands:
     usage: /<command>
     aliases: [referlist, reflist]
     permission: skyprisoncore.command.permshop
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  buyback:
+    description: Buyback items you sold
+    usage: /<command>
+    permission: skyprisoncore.command.buyback
     permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
   #
@@ -195,6 +236,13 @@ permissions:
     description: Gives access to /sword
   skyprisoncore.command.bow:
     description: Gives access to /bow
+  skyprisoncore.command.contraband:
+    description: Gives access to /contraband
+  skyprisoncore.command.safezone:
+    description: Gives access to /safezone
+
+  skyprisoncore.command.guardduty:
+    description: Gives access to /guardduty
   #
   # Builder Permissions
   #
@@ -260,3 +308,11 @@ permissions:
     description: Gives access to /referral
   skyprisoncore.command.econcheck:
     description: Gives access to /referral
+  skyprisoncore.command.buyback:
+    description: Gives access to /buyback
+  skyprisoncore.command.bartender:
+    description: Gives access to /bartender
+  skyprisoncore.command.dontsell:
+    description: Gives access to /dontsell
+  skyprisoncore.command.endupgrade:
+    description: Gives access to /endupgrade

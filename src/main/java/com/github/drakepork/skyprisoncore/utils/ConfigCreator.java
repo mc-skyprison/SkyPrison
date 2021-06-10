@@ -1,4 +1,4 @@
-package com.github.drakepork.skyprisoncore.Utils;
+package com.github.drakepork.skyprisoncore.utils;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;

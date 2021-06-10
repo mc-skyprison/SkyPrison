@@ -2,16 +2,11 @@ package com.github.drakepork.skyprisoncore.Commands.referral;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
-import com.Zrips.CMI.Modules.DiscordSRV.DiscordSRVListener;
-import com.Zrips.CMI.Modules.DiscordSRV.DiscordSRVManager;
-import com.bencodez.votingplugin.user.UserManager;
-import com.bencodez.votingplugin.user.VotingPluginUser;
 import com.github.drakepork.skyprisoncore.Core;
 import com.google.inject.Inject;
 import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.dependencies.jda.api.entities.Member;
 import github.scarsz.discordsrv.dependencies.jda.api.entities.Role;
-import github.scarsz.discordsrv.dependencies.jda.api.entities.User;
 import github.scarsz.discordsrv.util.DiscordUtil;
 import me.realized.tokenmanager.api.TokenManager;
 import org.bukkit.Bukkit;
@@ -60,18 +55,27 @@ public class Referral implements CommandExecutor {
 						}
 					}
 					if(!hasReferred) {
-						if(playtime < 24) {
+						if(playtime >= 1 && playtime < 24) {
 							if(CMI.getInstance().getPlayerManager().getUser(args[0]) != null) {
 								CMIUser reffedPlayer = CMI.getInstance().getPlayerManager().getUser(args[0]);
 								if(!player.getLastIp().equalsIgnoreCase(reffedPlayer.getLastIp())) {
+									int refs = refer.getInt(reffedPlayer.getUniqueId().toString() + ".refsReceived")+1;
+									refer.set(reffedPlayer.getUniqueId().toString() + ".refsReceived", refs);
 									String discordId = DiscordSRV.getPlugin().getAccountLinkManager().getDiscordId(player.getUniqueId());
 									if (discordId != null) {
 										Member member = DiscordUtil.getMemberById(discordId);
-										Role refRole = DiscordUtil.getRole("");
-										DiscordUtil.addRoleToMember(member, refRole);
+										if(refs == 3) {
+											Role refRole = DiscordUtil.getRole("807052387734519858");
+											DiscordUtil.addRoleToMember(member, refRole);
+										} else if(refs == 5) {
+											Role refRole = DiscordUtil.getRole("807052580547067964");
+											DiscordUtil.addRoleToMember(member, refRole);
+										} else if(refs == 10) {
+											Role refRole = DiscordUtil.getRole("807052646015434792");
+											DiscordUtil.addRoleToMember(member, refRole);
+										}
 									}
-									int refs = refer.getInt(reffedPlayer.getUniqueId().toString() + ".refsReceived")+1;
-									refer.set(reffedPlayer.getUniqueId().toString() + ".refsReceived", refs);
+
 									ArrayList arr;
 									if(refer.isList(reffedPlayer.getUniqueId().toString() + ".reffedBy")) {
 										arr = (ArrayList) refer.getList(reffedPlayer.getUniqueId().toString() + ".reffedBy");
@@ -83,13 +87,18 @@ public class Referral implements CommandExecutor {
 									try {
 										refer.save(f);
 										if(reffedPlayer.isOnline()) {
-											reffedPlayer.sendMessage(ChatColor.AQUA + player.getName() + ChatColor.DARK_AQUA + " has referred you! You have received " + ChatColor.YELLOW + "150" + ChatColor.DARK_AQUA + " tokens!");
+											reffedPlayer.sendMessage(ChatColor.AQUA + player.getName() + ChatColor.DARK_AQUA
+													+ " has referred you! You have received " + ChatColor.YELLOW + "150" + ChatColor.DARK_AQUA + " tokens!");
 										} else {
-											Bukkit.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), "mail send " + reffedPlayer.getName() + " " + ChatColor.AQUA + player.getName() + ChatColor.DARK_AQUA + " has referred you! You have received " + ChatColor.YELLOW + "150" + ChatColor.DARK_AQUA + " tokens!");
+											Bukkit.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), "mail send " + reffedPlayer.getName()
+													+ " " + ChatColor.AQUA + player.getName() + ChatColor.DARK_AQUA
+													+ " has referred you! You have received " + ChatColor.YELLOW + "150" + ChatColor.DARK_AQUA + " tokens!");
 										}
-										player.sendMessage(ChatColor.DARK_AQUA + "You successfully referred " + ChatColor.AQUA + reffedPlayer.getName() + ChatColor.DARK_AQUA + "!");
+										player.sendMessage(ChatColor.DARK_AQUA + "You successfully referred " + ChatColor.AQUA + reffedPlayer.getName()
+												+ ChatColor.DARK_AQUA + " and has received" + ChatColor.YELLOW + "25"  + ChatColor.DARK_AQUA +"tokens!");
 										TokenManager tm = (TokenManager) Bukkit.getServer().getPluginManager().getPlugin("TokenManager");
-										tm.addTokens(player.getPlayer(), 250);
+										tm.addTokens(reffedPlayer.getPlayer(), 250);
+										tm.addTokens(player.getPlayer(), 25);
 									} catch (IOException e) {
 										e.printStackTrace();
 									}
@@ -100,7 +109,11 @@ public class Referral implements CommandExecutor {
 								player.sendMessage(ChatColor.RED + "/referral <player>");
 							}
 						} else {
-							player.sendMessage(ChatColor.RED + "You have played too long to refer anyone!");
+							if(playtime < 1) {
+								player.sendMessage(ChatColor.RED + "You need to play 1 hour to be able to refer someone!");
+							} else {
+								player.sendMessage(ChatColor.RED + "You have played too long to refer anyone!");
+							}
 						}
 					} else {
 						player.sendMessage(ChatColor.RED + "You have already referred someone!");

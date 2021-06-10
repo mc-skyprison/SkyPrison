@@ -2,7 +2,7 @@ package com.github.drakepork.skyprisoncore.Commands;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
-import com.github.drakepork.skyprisoncore.Utils.CooldownManager;
+import com.github.drakepork.skyprisoncore.utils.CooldownManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -105,11 +105,6 @@ public class Bounty implements CommandExecutor {
 
 	private final CooldownManager cooldownManager = new CooldownManager();
 
-
-
-
-
-
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {
@@ -138,7 +133,7 @@ public class Bounty implements CommandExecutor {
 							if (Double.parseDouble(args[2]) >= 100) {
 								String bountyTarget = Bukkit.getPlayer(args[1]).getUniqueId().toString();
 								if (!player.equals(Bukkit.getPlayer(args[1]))) {
-									if (!Bukkit.getPlayer(args[1]).hasPermission("skyprisoncore.bounty.bypass")) {
+									if (!Bukkit.getPlayer(args[1]).hasPermission("skyprisoncore.command.bounty.bypass")) {
 										if (bountyList.contains(bountyTarget)) {
 											ArrayList arr = (ArrayList) bounty.getList(bountyTarget + ".bounty-contributors");
 											if (!arr.contains(player.getName())) {
@@ -147,10 +142,10 @@ public class Bounty implements CommandExecutor {
 											}
 											bounty.set(bountyTarget + ".bounty-prize", bounty.getDouble(bountyTarget + ".bounty-prize") + round(Double.parseDouble(args[2]), 2));
 											try {
-												if (user.getBalance() > Double.parseDouble(args[2])) {
+												if (user.getBalance() >= Double.parseDouble(args[2])) {
 													bounty.save(f);
 													for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-														if (!online.hasPermission("skyprisoncore.bounty.silent")) {
+														if (!online.hasPermission("skyprisoncore.command.bounty.silent")) {
 															online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + player.getName() + " has increased the bounty on " + Bukkit.getPlayer(args[1]).getName() + " by " + ChatColor.GREEN + "$" + round(Double.parseDouble(args[2]), 2) + "!");
 														}
 													}
@@ -189,7 +184,7 @@ public class Bounty implements CommandExecutor {
 												if (user.getBalance() > Double.parseDouble(args[2])) {
 													bounty.save(f);
 													for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-														if (!online.hasPermission("skyprisoncore.bounty.silent")) {
+														if (!online.hasPermission("skyprisoncore.command.bounty.silent")) {
 															online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "]" + ChatColor.YELLOW + " " + player.getName() + " has put a " + ChatColor.GREEN + "$" + round(Double.parseDouble(args[2]), 2) + ChatColor.YELLOW + " bounty on " + Bukkit.getPlayer(args[1]).getName() + "!");
 														}
 													}
@@ -229,11 +224,11 @@ public class Bounty implements CommandExecutor {
 			} else if(args[0].equalsIgnoreCase("help")) {
 				player.sendMessage(bountyHelp);
 			} else if(args[0].equalsIgnoreCase("mute")) {
-				if(!player.hasPermission("skyprisoncore.bounty.silent")) {
-					Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.bounty.silent true");
+				if(!player.hasPermission("skyprisoncore.command.bounty.silent")) {
+					Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.command.bounty.silent true");
 					player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + "Bounty messages muted!");
 				} else {
-					Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.bounty.silent false");
+					Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.command.bounty.silent false");
 					player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + "Bounty messages unmuted!");
 				}
 			}

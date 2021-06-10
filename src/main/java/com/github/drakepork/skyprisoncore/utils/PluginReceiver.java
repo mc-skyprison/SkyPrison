@@ -1,4 +1,4 @@
-package com.github.drakepork.skyprisoncore.Utils;
+package com.github.drakepork.skyprisoncore.utils;
 
 import com.github.drakepork.skyprisoncore.Core;
 import com.google.inject.AbstractModule;

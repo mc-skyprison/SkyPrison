@@ -1,13 +1,10 @@
 package com.github.drakepork.skyprisoncore.Commands.referral;
 
-import com.Zrips.CMI.CMI;
-import com.Zrips.CMI.Containers.CMIUser;
 import com.github.drakepork.skyprisoncore.Core;
 import com.google.inject.Inject;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -16,7 +13,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
 import java.io.File;
@@ -46,11 +42,10 @@ public class ReferralList implements CommandExecutor {
 			meta.setOwningPlayer(Bukkit.getOfflinePlayer(UUID.fromString(reffed[0])));
 			meta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + Bukkit.getOfflinePlayer(UUID.fromString(reffed[0])).getName());
 
-			Calendar cal = Calendar.getInstance();
 			DateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-			System.out.println();
-
-			lore.add(ChatColor.YELLOW + "Referred you on: " + df.format(cal.get(Integer.parseInt(reffed[1]))));
+			Calendar calendar = Calendar.getInstance();
+			calendar.setTimeInMillis(Long.parseLong(reffed[1]));
+			lore.add(ChatColor.YELLOW + "Referred you on: " + df.format(calendar.getTime()));
 			meta.setLore(lore);
 			head.setItemMeta(meta);
 			referred.setItem(i, head);

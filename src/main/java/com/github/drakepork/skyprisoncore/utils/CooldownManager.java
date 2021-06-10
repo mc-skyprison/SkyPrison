@@ -1,4 +1,4 @@
-package com.github.drakepork.skyprisoncore.Utils;
+package com.github.drakepork.skyprisoncore.utils;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -1,5 +1,7 @@
 package com.github.drakepork.skyprisoncore.Commands;
 
+import com.github.drakepork.skyprisoncore.Core;
+import com.google.inject.Inject;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -15,7 +17,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 public class KillInfo implements CommandExecutor {
+	private Core plugin;
 
+	@Inject
+	public KillInfo(Core plugin) {
+		this.plugin = plugin;
+	}
 
 
 	public static double round(double value, int places) {
@@ -28,15 +35,7 @@ public class KillInfo implements CommandExecutor {
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {
 			Player player = (Player) sender;
-			File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
-					.getDataFolder() + "/recentKills.yml");
-			if (!f.exists()) {
-				try {
-					f.createNewFile();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
+			File f = new File(plugin.getDataFolder() + File.separator + "recentkills.yml");
 			FileConfiguration kills = YamlConfiguration.loadConfiguration(f);
 			if(!kills.isConfigurationSection(player.getUniqueId().toString())) {
 				kills.set(player.getUniqueId().toString() + ".pvpdeaths", 0);
@@ -54,6 +53,8 @@ public class KillInfo implements CommandExecutor {
 			Double KSRatio;
 			if(deaths == 0 && pKills == 0) {
 				KSRatio = 0.0;
+			} else if(deaths == 0) {
+				KSRatio = round(pKills, 2);
 			} else {
 				KSRatio = round((double) pKills/deaths, 2);
 			}

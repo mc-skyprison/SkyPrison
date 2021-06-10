@@ -1,6 +1,5 @@
-package com.github.drakepork.skyprisoncore.Commands.Donations;
+package com.github.drakepork.skyprisoncore.Commands.donations;
 
-import org.apache.commons.compress.compressors.FileNameUtil;
 import org.apache.commons.io.FilenameUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -32,7 +31,7 @@ public class Purchases implements CommandExecutor {
 					Set setList = playerPurchases.getKeys(false);
 					player.sendMessage(ChatColor.YELLOW + "----====" + ChatColor.GOLD + " Purchases " + ChatColor.YELLOW + "====-----");
 					double total = 0;
-					for (int i = 0; i < setList.size(); i++) {
+					for (int i = 0; i < setList.size()-1; i++) {
 						if (playerPurchases.contains(i + ".item-bought")) {
 							String itemBought = playerPurchases.getString(i + ".item-bought");
 							double itemPrice = playerPurchases.getDouble(i + ".item-price");
@@ -40,8 +39,6 @@ public class Purchases implements CommandExecutor {
 							// String itemQuantity = playerPurchases.getString(i + ".item-quantity"); + " " + ChatColor.GOLD + itemQuantity + "x"
 							player.sendMessage(ChatColor.DARK_AQUA + itemBought + ChatColor.WHITE + " -" + ChatColor.GREEN + " $" + itemPrice + ChatColor.YELLOW + " " + boughtDate[0]);
 							total += playerPurchases.getDouble(i + ".item-price");
-						} else {
-							player.sendMessage(ChatColor.RED + "ERROR READING DONATION FILE, CONTACT ADMIN FOR SUPPORT.");
 						}
 					}
 

@@ -1,4 +1,4 @@
-package com.github.drakepork.skyprisoncore.Commands;
+package com.github.drakepork.skyprisoncore.Commands.secrets;
 
 import com.github.drakepork.skyprisoncore.Core;
 import com.google.inject.Inject;
@@ -7,7 +7,6 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.managers.RegionManager;
-import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.*;
@@ -26,11 +25,11 @@ import org.bukkit.persistence.PersistentDataType;
 import java.io.File;
 import java.util.*;
 
-public class RewardGUI implements CommandExecutor {
+public class SecretsGUI implements CommandExecutor {
 	private Core plugin;
 
 	@Inject
-	public RewardGUI(Core plugin) {
+	public SecretsGUI(Core plugin) {
 		this.plugin = plugin;
 	}
 
@@ -157,7 +156,6 @@ public class RewardGUI implements CommandExecutor {
 		File SVSFile = new File("plugins/ServerSigns/signs/" + SVSSignID);
 		String output;
 		if (!SVSFile.exists()) {
-			Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "ServerSigns File " + ChatColor.DARK_RED + SVSSignID + ChatColor.RED + " DOES NOT EXIST! Please notify DrakePork of issue and file name...");
 			output = ChatColor.DARK_RED + "ERROR! Notify Admin!";
 		} else {
 			YamlConfiguration f = YamlConfiguration.loadConfiguration(SVSFile);
@@ -172,7 +170,11 @@ public class RewardGUI implements CommandExecutor {
 				} else {
 					int hours = cooldown / 3600;
 					int minutes = cooldown % 3600 / 60;
-					output = ChatColor.RED + "" + hours + " hrs " + minutes + " mins";
+					if(minutes >= 0) {
+						output = ChatColor.RED + "" + hours + " hrs " + minutes + " mins";
+					} else {
+						output = ChatColor.GREEN + "Available Now!";
+					}
 				}
 			} else {
 				output = ChatColor.GREEN + "Available Now!";
@@ -300,16 +302,8 @@ public class RewardGUI implements CommandExecutor {
 						} else {
 							guiType = "prison-other";
 						}
-					} else if (pWorld.getName().equalsIgnoreCase("skycity")) {
-						if(regionList.getRegions().contains(regions.getRegion("grass-welcome"))) {
-							guiType = "skycity";
-						} else if (regionList.getRegions().contains(regions.getRegion("desert-welcome"))) {
-							guiType = "marina";
-						} else if (regionList.getRegions().contains(regions.getRegion("nether-welcome"))) {
-							guiType = "nether";
-						} else {
-							guiType = "skycity-other";
-						}
+					} else if (pWorld.getName().equalsIgnoreCase("world_skycity")) {
+						guiType = "skycity";
 					}
 				}
 				openGUI(player, guiType);

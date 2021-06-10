@@ -101,16 +101,16 @@ public class DropChest implements CommandExecutor {
 			if (args.length < 1) {
 				openGUI(player, 0);
 			} else if (args[0].equalsIgnoreCase("drop")) {
-				File f = new File(plugin.getDataFolder() + File.separator + "dropchest.yml");				YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
+				File f = new File(plugin.getDataFolder() + File.separator + "dropchest.yml");
+				YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
 				Set setList = yamlf.getConfigurationSection("items").getKeys(false);
 				Location loc = player.getLocation();
-				World world = Bukkit.getWorld("prison");
+				World world = Bukkit.getWorld("world_prison");
 				Location min = new Location(world, -10, 134, 11);
 				Location max = new Location(world, 18, 140, -11);
 				for(int b = 0; b < setList.size(); b++) {
 					int finalB = b;
 					plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
-						Bukkit.getPlayer("DrakePork").sendMessage("test");
 						Location randLoc = randomLocation(min, max);
 						loc.getWorld().dropItem(randLoc, yamlf.getItemStack("items." + finalB + ".item"));
 						yamlf.getConfigurationSection("items.").set(String.valueOf(finalB), null);

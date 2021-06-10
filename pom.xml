@@ -23,12 +23,8 @@
             <url>https://nexus.scarsz.me/content/groups/public/</url>
         </repository>
         <repository>
-            <id>spigot-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
-        </repository>
-        <repository>
-            <id>papermc</id>
-            <url>https://papermc.io/repo/repository/maven-public/</url>
+            <id>purpur</id>
+            <url>https://repo.pl3x.net/</url>
         </repository>
         <repository>
             <id>MG-Dev Jenkins CI Maven Repository</id>
@@ -47,8 +43,12 @@
             <url>https://jitpack.io</url>
         </repository>
         <repository>
-            <id>dmulloy2-repo</id>
-            <url>https://repo.dmulloy2.net/nexus/repository/public/</url>
+            <id>a5h73y-repo</id>
+            <url>https://dl.bintray.com/a5h73y/repo/</url>
+        </repository>
+        <repository>
+            <id>sonatype</id>
+            <url>https://oss.sonatype.org/content/groups/public/</url>
         </repository>
     </repositories>
 
@@ -56,31 +56,25 @@
         <dependency>
             <groupId>com.discordsrv</groupId>
             <artifactId>discordsrv</artifactId>
-            <version>1.20.0</version>
+            <version>1.22.0</version>
             <scope>provided</scope>
         </dependency>
-<!--        <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
-            <version>1.16.4-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>-->
         <dependency>
-            <groupId>com.destroystokyo.paper</groupId>
-            <artifactId>paper-api</artifactId>
-            <version>1.16.4-R0.1-SNAPSHOT</version>
+            <groupId>net.pl3x.purpur</groupId>
+            <artifactId>purpur-api</artifactId>
+            <version>1.16.5-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.bergerkiller.bukkit</groupId>
             <artifactId>BKCommonLib</artifactId>
-            <version>1.16.1-v1-SNAPSHOT</version>
+            <version>1.16.5-v3-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.sk89q.worldguard</groupId>
             <artifactId>worldguard-bukkit</artifactId>
-            <version>7.0.4</version>
+            <version>7.0.5</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -92,18 +86,18 @@
         <dependency>
             <groupId>com.github.brcdev-minecraft</groupId>
             <artifactId>shopgui-api</artifactId>
-            <version>2.1.1</version>
+            <version>2.2.0</version>
         </dependency>
         <dependency>
             <groupId>com.sk89q.worldedit</groupId>
             <artifactId>worldedit-bukkit</artifactId>
-            <version>7.2.1-SNAPSHOT</version>
+            <version>7.2.5-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.github.BenCodez</groupId>
             <artifactId>VotingPlugin</artifactId>
-            <version>6.0</version>
+            <version>6.3.2</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -113,14 +107,34 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.comphenix.protocol</groupId>
-            <artifactId>ProtocolLib</artifactId>
-            <version>4.6.0-SNAPSHOT</version>
+            <groupId>com.gmail.nossr50.mcMMO</groupId>
+            <artifactId>McMMO</artifactId>
+            <version>2.1.174</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
             <version>4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>net.goldtreeservers</groupId>
+            <artifactId>worldguardextraflags</artifactId>
+            <version>4.1.5</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>me.NoChance.PvPManager</groupId>
+            <artifactId>PvPManager</artifactId>
+            <version>3.7.16</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.a5h73y</groupId>
+            <artifactId>Parkour</artifactId>
+            <version>6.3</version>
+            <type>jar</type>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.github.Realizedd</groupId>
@@ -135,8 +149,8 @@
         </dependency>
     </dependencies>
 
+
     <build>
-        <defaultGoal>clean package</defaultGoal>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
