@@ -28,9 +28,6 @@ import com.github.drakepork.skyprisoncore.utils.ConfigCreator;
 import com.github.drakepork.skyprisoncore.utils.LangCreator;
 import com.github.drakepork.skyprisoncore.utils.Placeholders;
 import com.github.drakepork.skyprisoncore.utils.PluginReceiver;
-import com.gmail.nossr50.datatypes.player.McMMOPlayer;
-import com.gmail.nossr50.events.chat.McMMOPartyChatEvent;
-import com.gmail.nossr50.events.experience.McMMOPlayerLevelUpEvent;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
@@ -43,16 +40,11 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
-import github.scarsz.discordsrv.DiscordSRV;
-import github.scarsz.discordsrv.dependencies.jda.api.entities.TextChannel;
 import com.github.drakepork.skyprisoncore.Commands.*;
 import com.github.drakepork.skyprisoncore.Commands.donations.DonorAdd;
 import com.github.drakepork.skyprisoncore.Commands.donations.DonorBulk;
 import com.github.drakepork.skyprisoncore.Commands.donations.Purchases;
 import com.github.drakepork.skyprisoncore.Commands.economy.*;
-import io.github.a5h73y.parkour.event.PlayerFinishCourseEvent;
-import io.github.a5h73y.parkour.type.course.CourseInfo;
-import io.github.a5h73y.parkour.type.player.PlayerInfo;
 import me.NoChance.PvPManager.Events.PlayerTagEvent;
 import me.NoChance.PvPManager.Events.PlayerUntagEvent;
 import me.NoChance.PvPManager.Managers.PlayerHandler;
@@ -521,41 +513,6 @@ public class Core extends JavaPlugin implements Listener {
                         "{#redviolet}DrakePork{#scarpaflow}] {#melrose}" + cmd.substring(18) + "</T>");
                 event.setCancelled(true);
             }
-        }
-    }
-
-    @EventHandler
-    public void onCourseCompletion(PlayerFinishCourseEvent event) {
-        Player player = event.getPlayer();
-        List<String> completedCourses = PlayerInfo.getCompletedCourses(player);
-        List<String> allCourses = CourseInfo.getAllCourseNames();
-        Collections.sort(allCourses);
-        Collections.sort(completedCourses);
-        if(completedCourses.equals(allCourses)) {
-            asConsole("lp user " + player.getName() + " permission set deluxetags.tag.Parkourist");
-        }
-    }
-
-    @EventHandler
-    public void onMcMMOLevelUp(McMMOPlayerLevelUpEvent event) {
-        McMMOPlayer mcPlayer = com.gmail.nossr50.util.player.UserManager.getPlayer(event.getPlayer());
-        if(mcPlayer.getPowerLevel() == 250) {
-            asConsole("lp user " + event.getPlayer().getName() + " permission set deluxetags.tag.powerlevel1");
-        } else if(mcPlayer.getPowerLevel() == 500) {
-            asConsole("lp user " + event.getPlayer().getName() + " permission set deluxetags.tag.powerlevel2");
-        } else if(mcPlayer.getPowerLevel() == 750) {
-            asConsole("lp user " + event.getPlayer().getName() + " permission set deluxetags.tag.powerlevel3");
-        } else if(mcPlayer.getPowerLevel() == 1000) {
-            asConsole("lp user " + event.getPlayer().getName() + " permission set deluxetags.tag.powerlevel4");
-        } else if(mcPlayer.getPowerLevel() == 1500) {
-            asConsole("lp user " + event.getPlayer().getName() + " permission set deluxetags.tag.powerlevel5");
-        } else if(mcPlayer.getPowerLevel() == 2000) {
-            asConsole("lp user " + event.getPlayer().getName() + " permission set deluxetags.tag.powerlevel6");
-        }
-        if(event.getSkillLevel() == 100) {
-            asConsole("lp user " + event.getPlayer().getName() + " permission set deluxetags.tag." + event.getSkill().getName());
-        } else if(event.getSkillLevel() == 200) {
-            asConsole("lp user " + event.getPlayer().getName() + " permission set deluxetags.tag." + event.getSkill().getName() + "2");
         }
     }
 
@@ -1251,13 +1208,6 @@ public class Core extends JavaPlugin implements Listener {
         } else if(event.getInventory().getType().equals(InventoryType.SMITHING)) {
             event.setCancelled(true);
         }
-    }
-
-    @EventHandler
-    public void McMMOPartyChat(McMMOPartyChatEvent event) {
-        TextChannel channel = DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("party-chats");
-        channel.sendMessage("(**" + event.getAuthorParty().getName() + "**) "
-                + Objects.requireNonNull(Bukkit.getPlayer(event.getPartyChatMessage().getAuthor().uuid())).getName() + " » " + event.getRawMessage()).queue();
     }
 
     //

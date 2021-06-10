@@ -43,10 +43,6 @@
             <url>https://jitpack.io</url>
         </repository>
         <repository>
-            <id>a5h73y-repo</id>
-            <url>https://dl.bintray.com/a5h73y/repo/</url>
-        </repository>
-        <repository>
             <id>sonatype</id>
             <url>https://oss.sonatype.org/content/groups/public/</url>
         </repository>
@@ -107,12 +103,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.gmail.nossr50.mcMMO</groupId>
-            <artifactId>McMMO</artifactId>
-            <version>2.1.174</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
             <version>4.0</version>
@@ -127,13 +117,6 @@
             <groupId>me.NoChance.PvPManager</groupId>
             <artifactId>PvPManager</artifactId>
             <version>3.7.16</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.github.a5h73y</groupId>
-            <artifactId>Parkour</artifactId>
-            <version>6.3</version>
-            <type>jar</type>
             <scope>provided</scope>
         </dependency>
         <dependency>
