@@ -128,7 +128,6 @@ public class Core extends JavaPlugin implements Listener {
     @Inject private DontSell DontSell;
 
     @Inject private DropChest DropChest;
-    @Inject private TokenTeleport TokenTeleport;
     @Inject private SpongeLoc SpongeLoc;
     @Inject private FirstjoinTop FirstjoinTop;
 
@@ -187,9 +186,11 @@ public class Core extends JavaPlugin implements Listener {
         Objects.requireNonNull(getCommand("donorbulk")).setExecutor(DonorBulk);
         Objects.requireNonNull(getCommand("purchases")).setExecutor(Purchases);
 
+        Objects.requireNonNull(getCommand("econcheck")).setExecutor(EconomyCheck);
+        Objects.requireNonNull(getCommand("permshop")).setExecutor(PermShop);
+
         Objects.requireNonNull(getCommand("spongeloc")).setExecutor(SpongeLoc);
         Objects.requireNonNull(getCommand("dropchest")).setExecutor(DropChest);
-        Objects.requireNonNull(getCommand("tokenteleport")).setExecutor(TokenTeleport);
 
         Objects.requireNonNull(getCommand("dontsell")).setExecutor(DontSell);
         Objects.requireNonNull(getCommand("endupgrade")).setExecutor(EndUpgrade);
@@ -199,9 +200,6 @@ public class Core extends JavaPlugin implements Listener {
 
         Objects.requireNonNull(getCommand("bounty")).setExecutor(Bounty);
         Objects.requireNonNull(getCommand("killinfo")).setExecutor(KillInfo);
-
-        Objects.requireNonNull(getCommand("econcheck")).setExecutor(EconomyCheck);
-        Objects.requireNonNull(getCommand("permshop")).setExecutor(PermShop);
 
         Objects.requireNonNull(getCommand("firstjointop")).setExecutor(FirstjoinTop);
 
@@ -221,28 +219,6 @@ public class Core extends JavaPlugin implements Listener {
         Objects.requireNonNull(getCommand("safezone")).setExecutor(Safezone);
 
         Objects.requireNonNull(getCommand("buyback")).setExecutor(BuyBack);
-
-/*        ProtocolManager manager = ProtocolLibrary.getProtocolManager();
-        manager.addPacketListener(new PacketAdapter(this, ListenerPriority.NORMAL, PacketType.Play.Server.CHAT) {
-            @Override
-            public void onPacketSending(PacketEvent event) {
-                if (event.getPacketType() == PacketType.Play.Server.CHAT) {
-                    PacketContainer packet = event.getPacket();
-                    if(packet.getChatComponents() != null) {
-                        if (packet.getChatComponents().read(0) != null) {
-                            if (packet.getChatComponents().read(0).toString() != null) {
-                                if (packet.getChatComponents().read(0).toString() != null) {
-                                    String chatMsg = packet.getChatComponents().read(0).toString();
-                                    if (chatMsg.contains("Next ranks:")) {
-                                        event.setCancelled(true);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        });*/
 
         String line;
         String splitBy = ",";
@@ -269,11 +245,6 @@ public class Core extends JavaPlugin implements Listener {
         return message;
     }
 
-
-    public String removeColour(String message){
-        message = removeColorCodes(ChatColor.translateAlternateColorCodes('&', message));
-        return message;
-    }
 
     public void tellConsole(String message){
         Bukkit.getConsoleSender().sendMessage(message);
@@ -310,24 +281,6 @@ public class Core extends JavaPlugin implements Listener {
         return matcher.appendTail(buffer).toString();
     }
 
-
-    public String removeColorCodes(String message) {
-        if(StringUtils.substringsBetween(message, "{#", "}") != null) {
-            String[] hexNames = StringUtils.substringsBetween(message, "{#", "}");
-            for (String hexName : hexNames) {
-                if (hexColour.get(hexName.toLowerCase()) != null) {
-                    message = message.replaceAll("\\{#" + hexName + "}", "");
-                }
-            }
-        }
-        final Pattern hexPattern = Pattern.compile("\\{#" + "([A-Fa-f0-9]{6})" + "}");
-        Matcher matcher = hexPattern.matcher(message);
-        StringBuffer buffer = new StringBuffer(message.length() + 4 * 8);
-        while (matcher.find()) {
-            matcher.appendReplacement(buffer, "");
-        }
-        return matcher.appendTail(buffer).toString();
-    }
 
     @EventHandler
     public void firstJoinCheck(PlayerJoinEvent event) throws ParseException, IOException {
@@ -784,7 +737,6 @@ public class Core extends JavaPlugin implements Listener {
                                 }
                                 break;
                             case "endupgrade":
-                                Inventory allInv = event.getInventory();
                                 ItemStack clickedItem = clickInv.getItem(event.getSlot());
                                 if(event.getSlot() == 20) {
                                     ItemStack repItem = clickInv.getItem(24);
@@ -817,16 +769,41 @@ public class Core extends JavaPlugin implements Listener {
                                 }  else if(event.getSlot() == 31) {
                                     ItemStack pMain = player.getInventory().getItemInMainHand();
                                     if(pMain.getType() != Material.AIR) {
-                                        ItemStack enchState = clickInv.getItem(20);
-                                        assert enchState != null;
-                                        PersistentDataContainer enchData = enchState.getPersistentDataContainer();
-                                        NamespacedKey enchKey = new NamespacedKey(this, "ench-state");
-                                        int enchCheck = enchData.get(enchKey, PersistentDataType.INTEGER);
+                                        if (clickInv.getItem(event.getSlot()).getType() == Material.GREEN_CONCRETE) {
+                                            ItemStack enchState = clickInv.getItem(20);
+                                            assert enchState != null;
+                                            PersistentDataContainer enchData = enchState.getPersistentDataContainer();
+                                            NamespacedKey enchKey = new NamespacedKey(this, "ench-state");
+                                            int enchCheck = enchData.get(enchKey, PersistentDataType.INTEGER);
 
-                                        ItemStack repItem = clickInv.getItem(24);
-                                        PersistentDataContainer repData = Objects.requireNonNull(repItem).getPersistentDataContainer();
+                                            ItemStack repItem = clickInv.getItem(24);
+                                            PersistentDataContainer repData = Objects.requireNonNull(repItem).getPersistentDataContainer();
+                                            NamespacedKey repKey = new NamespacedKey(this, "repair-state");
+                                            int repCheck = repData.get(repKey, PersistentDataType.INTEGER);
+
+                                            EndUpgrade.confirmGUI(player, enchCheck == 1, repCheck == 1);
+                                        } else {
+                                            player.sendMessage(colourMessage("&cYou can't afford this!"));
+                                        }
+                                    } else {
+                                        player.closeInventory();
+                                        player.sendMessage(colourMessage("&f[&aBlacksmith&f] &cYou are not holding anything in your hand!"));
+                                    }
+                                }
+                                break;
+                            case "confirm-endupgrade":
+                                if(event.getSlot() == 11) {
+                                    ItemStack pMain = player.getInventory().getItemInMainHand();
+                                    if (pMain.getType() != Material.AIR) {
+                                        ItemStack confirmItem = clickInv.getItem(11);
+                                        PersistentDataContainer confirmData = Objects.requireNonNull(confirmItem).getPersistentDataContainer();
+                                        NamespacedKey enchKey = new NamespacedKey(this, "ench-state");
+                                        int enchCheck = confirmData.get(enchKey, PersistentDataType.INTEGER);
+
                                         NamespacedKey repKey = new NamespacedKey(this, "repair-state");
-                                        int repCheck = repData.get(repKey, PersistentDataType.INTEGER);
+                                        int repCheck = confirmData.get(repKey, PersistentDataType.INTEGER);
+
+                                        int cost = EndUpgrade.upgradeCost(player, enchCheck == 1, repCheck == 1);
 
                                         switch (pMain.getType().toString()) {
                                             case "DIAMOND_AXE":
@@ -864,10 +841,19 @@ public class Core extends JavaPlugin implements Listener {
                                         if (repCheck == 1) {
                                             pMain.setDamage(0);
                                         }
-                                    } else {
+
+                                        if(!player.hasPermission("skyprisoncore.command.endupgrade.first-time")) {
+                                            asConsole("money take " + player.getName() + " " + cost);
+                                            player.sendMessage(colourMessage("&f[&aBlacksmith&f] &7Your item" + clickInv.getItem(4).getType() + " &7has been upgraded for &a$" + formatNumber(cost) + "&7!"));
+                                        } else {
+                                            asConsole("lp user " + player.getName() + " permission unset skyprisoncore.command.endupgrade.first-time");
+                                            player.sendMessage(colourMessage("&f[&aBlacksmith&f] &7Your &3" + clickInv.getItem(4).getType() + " &7has been upgraded!"));
+
+                                        }
                                         player.closeInventory();
-                                        player.sendMessage(colourMessage("&f[&aBlacksmith&f] &cYou are not holding anything in your hand!"));
                                     }
+                                } else if (event.getSlot() == 15) {
+                                    player.closeInventory();
                                 }
                                 break;
                         }
@@ -1367,6 +1353,15 @@ public class Core extends JavaPlugin implements Listener {
     // Event Handlers regarding bounties
     //
 
+    @EventHandler
+    public void playerRiptide(PlayerRiptideEvent event) {
+        Player player = event.getPlayer();
+        if(player.getWorld().getName().equalsIgnoreCase("world_prison")) {
+            Location loc = player.getLocation();
+            player.teleportAsync(loc);
+        }
+    }
+
     public void PvPSet(Player killed, Player killer) {
         File f = new File(this.getDataFolder() + File.separator + "recentkills.yml");
         FileConfiguration kills = YamlConfiguration.loadConfiguration(f);
@@ -1392,17 +1387,26 @@ public class Core extends JavaPlugin implements Listener {
                 killer.sendMessage(ChatColor.GRAY + "You killed " + ChatColor.RED + killed.getName() + ChatColor.GRAY + " and received " + ChatColor.RED + "1" + ChatColor.GRAY + " token!");
                 TokenManagerPlugin.getInstance().addTokens(killer, 1);
             }
+
+            if(pDeaths == 1000) {
+                asConsole("lp user " + killed.getName() + " permission set deluxetags.tag.death");
+                killer.sendMessage(colourMessage(colourMessage("&7You have died a whopping &c&l1000 &7times! Therefore, you get a special tag!")));
+            }
+
+            if(pKills == 1000) {
+                asConsole("lp user " + killer.getName() + " permission set deluxetags.tag.kills");
+                killed.sendMessage(colourMessage(colourMessage("&7You have killed players &c&l1000 &7times! Therefore, you get a special tag!")));
+            }
+
+            if(pKillerStreak % 5 == 0 && pKillerStreak <= 100) {
+                killer.sendMessage(colourMessage("&7You've hit a kill streak of &c&l" + pKillerStreak + "&7! You have received &c&l15 &7tokens as a reward!"));
+                TokenManagerPlugin.getInstance().addTokens(killer, 15);
+            } else if(pKillerStreak % 50 == 0 && pKillerStreak > 100) {
+                killer.sendMessage(colourMessage("&7You've hit a kill streak of &c&l" + pKillerStreak + "&7! You have received &c&l30 &7tokens as a reward!"));
+                TokenManagerPlugin.getInstance().addTokens(killer, 30);
+            }
         } catch (final IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    @EventHandler
-    public void playerRiptide(PlayerRiptideEvent event) {
-        Player player = event.getPlayer();
-        if(player.getWorld().getName().equalsIgnoreCase("world_prison")) {
-            Location loc = player.getLocation();
-            player.teleportAsync(loc);
         }
     }
 
@@ -1467,6 +1471,25 @@ public class Core extends JavaPlugin implements Listener {
 
                                                 kills.set(killed.getUniqueId() + ".pvpkillstreak", 0);
                                                 kills.set(killed.getUniqueId() + ".pvpdeaths", pDeaths);
+
+                                                if(pDeaths == 1000) {
+                                                    asConsole("lp user " + killed.getName() + " permission set deluxetags.tag.death");
+                                                    killer.sendMessage(colourMessage(colourMessage("&7You have died a whopping &c&l1000 &7times! Therefore, you get a special tag!")));
+                                                }
+
+                                                if(pKills == 1000) {
+                                                    asConsole("lp user " + killer.getName() + " permission set deluxetags.tag.kills");
+                                                    killed.sendMessage(colourMessage(colourMessage("&7You have killed players &c&l1000 &7times! Therefore, you get a special tag!")));
+                                                }
+
+                                                if(pKillStreak % 5 == 0 && pKillStreak <= 100) {
+                                                    killer.sendMessage(colourMessage("&7You've hit a kill streak of &c&l" + pKillStreak + "&7! You have received &c&l15 &7tokens as a reward!"));
+                                                    TokenManagerPlugin.getInstance().addTokens(killer, 15);
+                                                } else if(pKillStreak % 50 == 0 && pKillStreak > 100) {
+                                                    killer.sendMessage(colourMessage("&7You've hit a kill streak of &c&l" + pKillStreak + "&7! You have received &c&l30 &7tokens as a reward!"));
+                                                    TokenManagerPlugin.getInstance().addTokens(killer, 30);
+                                                }
+
                                                 try {
                                                     kills.save(f);
                                                     long timeRem = 300 - TimeUnit.MILLISECONDS.toSeconds(timeLeft);

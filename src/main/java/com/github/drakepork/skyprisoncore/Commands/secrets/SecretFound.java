@@ -11,10 +11,11 @@ import org.bukkit.entity.Player;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Set;
 
 public class SecretFound implements CommandExecutor {
-	private Core plugin;
+	private final Core plugin;
 
 	@Inject
 	public SecretFound(Core plugin) {
@@ -37,10 +38,10 @@ public class SecretFound implements CommandExecutor {
 			if(secretKey.endsWith(".id")) {
 				String[] getId = secretKey.split("[.]");
 				secretId = getId[0] + "." + getId[1] + "." + getId[2];
-				if(yamlf.getString(secretId + ".id").equalsIgnoreCase(args[0])) {
+				if(Objects.requireNonNull(yamlf.getString(secretId + ".id")).equalsIgnoreCase(args[0])) {
 					guiType =  getId[1];
-					int amountFound = pData.getInt(player.getUniqueId().toString() + ".secrets-found." + guiType + "." + args[0] + ".times-found");
-					pData.set(player.getUniqueId().toString() + ".secrets-found." + guiType + "." + args[0] + ".times-found", amountFound + 1);
+					int amountFound = pData.getInt(player.getUniqueId() + ".secrets-found." + guiType + "." + args[0] + ".times-found");
+					pData.set(player.getUniqueId() + ".secrets-found." + guiType + "." + args[0] + ".times-found", amountFound + 1);
 					try {
 						pData.save(secretsDataFile);
 					} catch (IOException e) {
@@ -50,7 +51,7 @@ public class SecretFound implements CommandExecutor {
 				}
 			}
 		}
-		secrets = yamlf.getConfigurationSection("inventory." + guiType).getKeys(false);
+		secrets = Objects.requireNonNull(yamlf.getConfigurationSection("inventory." + guiType)).getKeys(false);
 
 		int secretsFound = 0;
 		int totalSecrets = 0;
@@ -60,16 +61,16 @@ public class SecretFound implements CommandExecutor {
 				totalSecrets += 1;
 			}
 		}
-		if(pData.isSet(player.getUniqueId().toString() + ".secrets-found." + guiType)) {
-			secretsFound = pData.getConfigurationSection(player.getUniqueId().toString() + ".secrets-found." + guiType).getKeys(false).size();
+		if(pData.isSet(player.getUniqueId() + ".secrets-found." + guiType)) {
+			secretsFound = Objects.requireNonNull(pData.getConfigurationSection(player.getUniqueId() + ".secrets-found." + guiType)).getKeys(false).size();
 		}
 		if (secretsFound == totalSecrets) {
-			if(!pData.isSet(player.getUniqueId().toString() + ".rewards." + "first-time-" + guiType)) {
+			if(!pData.isSet(player.getUniqueId() + ".rewards." + "first-time-" + guiType)) {
 				String name = guiType.substring(0, 1).toUpperCase() + guiType.substring(1);
 				player.sendMessage("You have found all secrets in this category! Check out Rewards to collect your reward!");
-				pData.set(player.getUniqueId().toString() + ".rewards." + "first-time-" + guiType + ".collected", false);
-				pData.set(player.getUniqueId().toString() + ".rewards." + "first-time-" + guiType + ".name", name + " First Time Reward");
-				pData.set(player.getUniqueId().toString() + ".rewards." + "first-time-" + guiType + ".lore", Arrays.asList("--", "Reward: 5 Points"));
+				pData.set(player.getUniqueId() + ".rewards." + "first-time-" + guiType + ".collected", false);
+				pData.set(player.getUniqueId() + ".rewards." + "first-time-" + guiType + ".name", name + " First Time Reward");
+				pData.set(player.getUniqueId() + ".rewards." + "first-time-" + guiType + ".lore", Arrays.asList("--", "Reward: 5 Points"));
 				try {
 					pData.save(secretsDataFile);
 				} catch (IOException e) {

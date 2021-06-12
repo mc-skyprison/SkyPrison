@@ -26,7 +26,7 @@ import java.io.File;
 import java.util.*;
 
 public class SecretsGUI implements CommandExecutor {
-	private Core plugin;
+	private final Core plugin;
 
 	@Inject
 	public SecretsGUI(Core plugin) {
@@ -48,7 +48,7 @@ public class SecretsGUI implements CommandExecutor {
 		return item;
 	}
 
-	private ItemStack categoryMainItemStack(Player player, Material material, int amount, String name, String category, String guiType) {
+	private ItemStack categoryMainItemStack(Player player, Material material, int amount, String name, String category) {
 		File f = new File(plugin.getDataFolder() + File.separator + "secrets.yml");
 		File secretsDataFile = new File(plugin.getDataFolder() + File.separator
 				+ "secretsdata.yml");
@@ -69,11 +69,11 @@ public class SecretsGUI implements CommandExecutor {
 			ItemMeta itemmeta = item.getItemMeta();
 			itemmeta.setDisplayName(name);
 			int secretsFound = 0;
-			if(pData.isSet(player.getUniqueId().toString() + ".secrets-found." + category)) {
-				secretsFound = pData.getConfigurationSection(player.getUniqueId().toString() + ".secrets-found." + category).getKeys(false).size();
+			if(pData.isSet(player.getUniqueId() + ".secrets-found." + category)) {
+				secretsFound = pData.getConfigurationSection(player.getUniqueId() + ".secrets-found." + category).getKeys(false).size();
 			}
 			String lore1 = ChatColor.GRAY +  "Secrets Found: " + secretsFound + "/" + totalSecrets;
-			itemmeta.setLore(Arrays.asList(new String[]{lore1}));
+			itemmeta.setLore(Arrays.asList(lore1));
 			item.setItemMeta(itemmeta);
 
 			return item;
@@ -91,12 +91,12 @@ public class SecretsGUI implements CommandExecutor {
 		ItemStack item = new ItemStack(Material.BOOK, 1);
 		ItemMeta itemmeta = item.getItemMeta();
 		itemmeta.setDisplayName(name);
-		itemmeta.setLore(Arrays.asList(new String[]{ChatColor.GRAY + "" + ChatColor.ITALIC + "Find this secret to unlock it!"}));
+		itemmeta.setLore(Arrays.asList(ChatColor.GRAY + "" + ChatColor.ITALIC + "Find this secret to unlock it!"));
 		item.setItemMeta(itemmeta);
 		return item;
 	}
 
-	private ItemStack rewardItemStack(Player player, List lore, String name, String reward) {
+	private ItemStack rewardItemStack(List lore, String name, String reward) {
 		ItemStack item = new ItemStack(Material.CHEST_MINECART, 1);
 		NamespacedKey key = new NamespacedKey(plugin, "reward");
 		ItemMeta itemmeta = item.getItemMeta();
@@ -108,7 +108,7 @@ public class SecretsGUI implements CommandExecutor {
 	}
 
 
-	private ItemStack secretItemStack(Material material, int amount, String name, String line3, Player player, String secretId, String category) {
+	private ItemStack secretItemStack(Material material, int amount, String name, String line3, Player player, String secretId, String category, String tokenAmount) {
 		ItemStack item = new ItemStack(material, amount);
 		ItemMeta itemmeta = item.getItemMeta();
 
@@ -120,8 +120,8 @@ public class SecretsGUI implements CommandExecutor {
 		File secretsDataFile = new File(plugin.getDataFolder() + File.separator
 				+ "secretsdata.yml");
 		YamlConfiguration pData = YamlConfiguration.loadConfiguration(secretsDataFile);
-		int amountFound = pData.getInt(player.getUniqueId().toString() + ".secrets-found." + category + "." + secretId + ".times-found");
-		if (pData.get(player.getUniqueId().toString() + ".secrets-found." + category + "." + secretId) != null) {
+		int amountFound = pData.getInt(player.getUniqueId() + ".secrets-found." + category + "." + secretId + ".times-found");
+		if (pData.get(player.getUniqueId() + ".secrets-found." + category + "." + secretId) != null) {
 			if (plsName.toLowerCase().contains("parkour")) {
 				if (amountFound == 1) {
 					line1 = ChatColor.GRAY + "You've done this parkour " + ChatColor.AQUA + amountFound + ChatColor.GRAY + " time";
@@ -144,12 +144,29 @@ public class SecretsGUI implements CommandExecutor {
 			line1 = ChatColor.GRAY + "You've found this secret " + ChatColor.AQUA + "0" + ChatColor.GRAY + " times";
 		}
 		line1 = PlaceholderAPI.setPlaceholders(player, line1);
-
-		itemmeta.setLore(Arrays.asList(new String[]{line1, line2, line3}));
+		itemmeta.setLore(Arrays.asList(line1, line2, line3, "", plugin.colourMessage("&bTokens: &7" + tokenAmount)));
 		item.setItemMeta(itemmeta);
 		return item;
 	}
 
+	private String getTokenAmount(String SVSSignID) {
+		File SVSFile = new File("plugins/ServerSigns/signs/" + SVSSignID);
+		String output = "";
+		if (!SVSFile.exists()) {
+			output = ChatColor.DARK_RED + "ERROR! Notify Admin!";
+		} else {
+			YamlConfiguration f = YamlConfiguration.loadConfiguration(SVSFile);
+			Set<String> cmds = f.getConfigurationSection("commands").getKeys(false);
+			for(String cmd : cmds) {
+				String tokenCmd = f.getString("commands." + cmd + ".command");
+				if(tokenCmd.startsWith("tokensadd") || tokenCmd.startsWith("/tokensadd") ) {
+					String[] tokenVal = tokenCmd.split(" ");
+					output = tokenVal[2];
+				}
+			}
+		}
+		return output;
+	}
 
 
 	private String getCooldown(String SVSSignID, UUID pUUID) {
@@ -160,8 +177,8 @@ public class SecretsGUI implements CommandExecutor {
 		} else {
 			YamlConfiguration f = YamlConfiguration.loadConfiguration(SVSFile);
 			if (f.getLong("lastUse." + pUUID) > 0L) {
-				Long useTime = Long.valueOf(f.getLong("lastUse." + pUUID));
-				Long cooldownLong = Long.valueOf(useTime.longValue() / 1000L + f.getLong("cooldown") - System.currentTimeMillis() / 1000L);
+				Long useTime = f.getLong("lastUse." + pUUID);
+				Long cooldownLong = useTime / 1000L + f.getLong("cooldown") - System.currentTimeMillis() / 1000L;
 				int cooldown = cooldownLong.intValue();
 				if (cooldown > 86400) {
 					int days = cooldown / 86400;
@@ -216,7 +233,7 @@ public class SecretsGUI implements CommandExecutor {
 		if(yamlf.contains("inventory." + guiType)) {
 			for (int i = 0; i < slots; i++) {
 				if (yamlf.isSet("inventory." + guiType + "." + i)) {
-					Material material = Material.getMaterial(yamlf.getString("inventory." + guiType + "." + i + ".material"));
+					Material material = Material.getMaterial(Objects.requireNonNull(yamlf.getString("inventory." + guiType + "." + i + ".material")));
 					ItemStack item;
 					int amount = yamlf.getInt("inventory." + guiType + "." + i + ".amount");
 					if (yamlf.getBoolean("inventory." + guiType + "." + i + ".meta")) {
@@ -224,15 +241,15 @@ public class SecretsGUI implements CommandExecutor {
 						if (!pData.contains(player.getUniqueId().toString())) {
 							item = unknownItemStack();
 							rewardInv.setItem(i, item);
-						} else if (pData.isSet(player.getUniqueId().toString() + ".secrets-found." + guiType)) {
-							if (pData.getConfigurationSection(player.getUniqueId().toString() + ".secrets-found." + guiType).contains(secretId)) {
+						} else if (pData.isSet(player.getUniqueId() + ".secrets-found." + guiType)) {
+							if (pData.getConfigurationSection(player.getUniqueId() + ".secrets-found." + guiType).contains(secretId)) {
 								String name = yamlf.getString("inventory." + guiType + "." + i + ".name");
 								int secretX = yamlf.getInt("inventory." + guiType + "." + i + ".X");
 								int secretY = yamlf.getInt("inventory." + guiType + "." + i + ".Y");
 								int secretZ = yamlf.getInt("inventory." + guiType + "." + i + ".Z");
 								String secretWorld = yamlf.getString("inventory." + guiType + "." + i + ".world");
 								String file = secretWorld + "_" + secretX + "_" + secretY + "_" + secretZ + ".yml";
-								item = secretItemStack(material, amount, name, getCooldown(file, player.getUniqueId()), player, secretId, guiType);
+								item = secretItemStack(material, amount, name, getCooldown(file, player.getUniqueId()), player, secretId, guiType, getTokenAmount(file));
 							} else {
 								item = unknownItemStack();
 							}
@@ -245,25 +262,25 @@ public class SecretsGUI implements CommandExecutor {
 						String name = yamlf.getString("inventory." + guiType + "." + i + ".name");
 						if(yamlf.isSet("inventory." + guiType + "." + i + ".category-main")) {
 							String category = yamlf.getString("inventory." + guiType + "." + i + ".category-main");
-							item = categoryMainItemStack(player, material, amount, name, category, guiType);
+							item = categoryMainItemStack(player, material, amount, name, category);
 						} else {
 							item = decorativeItemStack(material, amount, name, player);
 						}
 						rewardInv.setItem(i, item);
 					}
 				} else if(guiType.equalsIgnoreCase("rewards")) {
-					if(pData.isSet(player.getUniqueId().toString() + ".rewards")) {
-						Set<String> rewards = pData.getConfigurationSection(player.getUniqueId().toString() + ".rewards").getKeys(false);
+					if(pData.isSet(player.getUniqueId() + ".rewards")) {
+						Set<String> rewards = pData.getConfigurationSection(player.getUniqueId() + ".rewards").getKeys(false);
 						if (!rewards.isEmpty() && rewards != null) {
 							for (String reward : rewards) {
-								if (!pData.getBoolean(player.getUniqueId().toString() + ".rewards." + reward + ".collected")) {
+								if (!pData.getBoolean(player.getUniqueId() + ".rewards." + reward + ".collected")) {
 									if (!addedRewards.contains(reward)) {
 										File rewardsDataFile = new File(plugin.getDataFolder() + File.separator
 												+ "rewardsdata.yml");
 										YamlConfiguration rData = YamlConfiguration.loadConfiguration(rewardsDataFile);
 										String name = rData.getString(reward + ".name");
 										List lore = rData.getList(reward + ".lore");
-										ItemStack item = rewardItemStack(player, lore, name, reward);
+										ItemStack item = rewardItemStack(lore, name, reward);
 										rewardInv.setItem(i, item);
 										addedRewards.add(reward);
 										break;
