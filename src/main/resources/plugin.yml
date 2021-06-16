@@ -2,7 +2,7 @@ name: SkyPrisonCore
 authors: [DrakePork, Redhelmet8]
 description: All the Custom Stuffs for SkyPrison
 version: ${project.version}
-main: com.github.drakepork.skyprisoncore.Core
+main: net.skyprison.skyprisoncore.SkyPrisonCore
 api-version: 1.16
 website: https://skyprison.net/
 depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin, CMI, BKCommonLib, DiscordSRV, Parkour]
