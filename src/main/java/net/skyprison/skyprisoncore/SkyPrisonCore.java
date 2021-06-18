@@ -348,31 +348,6 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void lavaBucketMine(PlayerBucketEmptyEvent event) {
-        if(!event.isCancelled()) {
-            Player player = event.getPlayer();
-            World pWorld = player.getWorld();
-            if (event.getBucket().equals(Material.LAVA_BUCKET)) {
-                RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
-                RegionManager regions = container.get(BukkitAdapter.adapt(pWorld));
-                ApplicableRegionSet regionList = Objects.requireNonNull(regions).getApplicableRegions(BlockVector3.at(event.getBlock().getX(), event.getBlock().getY(), event.getBlock().getZ()));
-                if (pWorld.getName().equalsIgnoreCase("world_prison")) {
-                    if(regionList.getRegions().contains(regions.getRegion("grass-mine"))) {
-                        event.setCancelled(true);
-                    } else if(regionList.getRegions().contains(regions.getRegion("desert-mine"))) {
-                        event.setCancelled(true);
-                    } else if(regionList.getRegions().contains(regions.getRegion("nether-mine"))) {
-                        event.setCancelled(true);
-                    } else if(regionList.getRegions().contains(regions.getRegion("snow-mine"))) {
-                        event.setCancelled(true);
-                    }
-                }
-            }
-        }
-    }
-
-
-    @EventHandler
     public void guardHit(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player && event.getEntity() instanceof Player) {
             Player damager = (Player) event.getDamager();
@@ -1207,36 +1182,6 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
                     ItemStack apple = new ItemStack(Material.APPLE, 1);
                     event.getBlock().getLocation().getWorld().dropItem(event.getBlock().getLocation(), apple);
                 }
-            }
-        }
-    }
-
-
-    @EventHandler
-    public void mineLogin(PlayerLoginEvent event) {
-        CMIUser player = CMI.getInstance().getPlayerManager().getUser(event.getPlayer());
-        if(player.getLogOutLocation() != null && player.getLogOutLocation().getWorld().getName().equalsIgnoreCase("world_prison")) {
-            Location loc = player.getLogOutLocation();
-            RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
-            RegionManager regions = container.get(BukkitAdapter.adapt(player.getWorld()));
-            assert regions != null;
-            ApplicableRegionSet regionList = regions.getApplicableRegions(BlockVector3.at(loc.getX(), loc.getY(), loc.getZ()));
-            if(regionList.getRegions().contains(regions.getRegion("grass-mine"))) {
-                asConsole("warp grass-mine " + player.getName());
-            } else if(regionList.getRegions().contains(regions.getRegion("desert-mine"))) {
-                asConsole("warp desert-mine " + player.getName());
-            } else if(regionList.getRegions().contains(regions.getRegion("nether-mine"))) {
-                asConsole("warp nether-mine " + player.getName());
-            } else if(regionList.getRegions().contains(regions.getRegion("snow-mine"))) {
-                asConsole("warp snow-mine " + player.getName());
-            } else if(regionList.getRegions().contains(regions.getRegion("donor-mine1"))) {
-                asConsole("warp donor-mine " + player.getName());
-            } else if(regionList.getRegions().contains(regions.getRegion("donor-mine2"))) {
-                asConsole("warp donor-mine1 " + player.getName());
-            } else if(regionList.getRegions().contains(regions.getRegion("donor-mine3"))) {
-                asConsole("warp donor-mine2 " + player.getName());
-            } else if(regionList.getRegions().contains(regions.getRegion("guard-secretview"))) {
-                asConsole("warp prison " + player.getName());
             }
         }
     }
