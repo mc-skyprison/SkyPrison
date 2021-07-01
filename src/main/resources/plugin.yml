@@ -5,7 +5,7 @@ version: ${project.version}
 main: net.skyprison.skyprisoncore.SkyPrisonCore
 api-version: 1.16
 website: https://skyprison.net/
-depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin, CMI, BKCommonLib, DiscordSRV, Parkour, ShopGUIPlus]
+depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin, CMI, BKCommonLib, DiscordSRV, Parkour, ShopGUIPlus, SkyPrisonEco]
 commands:
   test:
     description: Go on and off duty as a guard
