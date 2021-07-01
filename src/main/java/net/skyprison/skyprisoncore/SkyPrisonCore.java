@@ -25,10 +25,7 @@ import net.skyprison.skyprisoncore.Commands.contraband.Sword;
 import net.skyprison.skyprisoncore.Commands.economy.*;
 import net.skyprison.skyprisoncore.Commands.referral.Referral;
 import net.skyprison.skyprisoncore.Commands.referral.ReferralList;
-import net.skyprison.skyprisoncore.utils.ConfigCreator;
-import net.skyprison.skyprisoncore.utils.LangCreator;
-import net.skyprison.skyprisoncore.utils.Placeholders;
-import net.skyprison.skyprisoncore.utils.PluginReceiver;
+import net.skyprison.skyprisoncore.utils.*;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
@@ -50,12 +47,11 @@ import me.NoChance.PvPManager.Managers.PlayerHandler;
 import me.NoChance.PvPManager.PvPManager;
 import me.NoChance.PvPManager.PvPlayer;
 import me.clip.placeholderapi.PlaceholderAPI;
-import me.realized.tokenmanager.TokenManagerPlugin;
-import me.realized.tokenmanager.api.TokenManager;
 import net.brcdev.shopgui.event.ShopPostTransactionEvent;
 import net.brcdev.shopgui.event.ShopPreTransactionEvent;
 import net.brcdev.shopgui.shop.ShopManager;
 import net.goldtreeservers.worldguardextraflags.flags.Flags;
+import net.skyprison.skyprisoneco.SkyPrisonEco;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -77,6 +73,7 @@ import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -132,6 +129,9 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
 
     FileConfiguration config = this.getConfig();
 
+    public SkyPrisonEco ecoPlugin;
+
+
     public void onEnable() {
         Bukkit.getServer().getPluginManager().registerEvents(this, this);
 
@@ -158,6 +158,7 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
         files.add("firstjoindata.yml");
         files.add("recentsells.yml");
         files.add("teleportignore.yml");
+        files.add("tokensdata.yml");
         for (String file : files) {
             File f = new File(this.getDataFolder() + File.separator + file);
             if(!f.exists()) {
@@ -176,9 +177,14 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
             }
         }
 
+
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new Placeholders(this).register();
             getLogger().info("Placeholders registered");
+        }
+
+        if(Bukkit.getPluginManager().getPlugin("SkyPrisonEco") != null) {
+            ecoPlugin = (SkyPrisonEco) Bukkit.getPluginManager().getPlugin("SkyPrisonEco");
         }
 
         Objects.requireNonNull(getCommand("donoradd")).setExecutor(DonorAdd);
@@ -296,6 +302,7 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
         }
     }
 
+
     @EventHandler
     public void onTeleportRequest(CMIPlayerTeleportRequestEvent event) {
         File ignoreData = new File(this.getDataFolder() + File.separator + "teleportignore.yml");
@@ -323,13 +330,12 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
             if (i.getType() == Material.CHAINMAIL_HELMET || i.getType() == Material.CHAINMAIL_CHESTPLATE || i.getType() == Material.CHAINMAIL_LEGGINGS || i.getType() == Material.CHAINMAIL_BOOTS || i.getType() == Material.DIAMOND_SWORD) {
                 return true;
             } else if (i.getType() == Material.BOW) {
-                return i.getItemMeta().hasDisplayName() && i.getItemMeta().getDisplayName().contains("Guard Bow");
+                return i.getItemMeta().hasDisplayName() && i.getItemMeta().getDisplayName().contains("Guard Bow") && i.getItemMeta().isUnbreakable();
             } else if (i.getType() == Material.SHIELD) {
-                return i.getItemMeta().hasDisplayName() && i.getItemMeta().getDisplayName().contains("Guard Shield");
-            } else return i.getType() == Material.LEAD && i.getItemMeta().hasDisplayName() && i.getItemMeta().getDisplayName().contains("Cuffs");
-        } else {
-            return false;
+                return i.getItemMeta().hasDisplayName() && i.getItemMeta().getDisplayName().contains("Guard Shield") && i.getItemMeta().isUnbreakable();
+            }
         }
+        return false;
     }
 
     private void InvGuardGearDelPlyr(Player player) {
@@ -597,7 +603,7 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
             }
         }
         if (player.hasPermission("skyprisoncore.guard.onduty") && !player.isOp()) {
-            ArrayList<String> guardWorlds = (ArrayList<String>) config.getList("guard-worlds");
+            ArrayList<String> guardWorlds = (ArrayList<String>) config.getStringList("guard-worlds");
             boolean inWorld = false;
             for(String guardWorld : Objects.requireNonNull(guardWorlds)) {
                 if(player.getWorld().getName().equalsIgnoreCase(guardWorld)) {
@@ -613,7 +619,7 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
             }
         }
         if(player.hasPermission("skyprisoncore.builder.onduty") && !player.isOp()) {
-            ArrayList<String> buildWorlds = (ArrayList<String>) config.getList("builder-worlds");
+            ArrayList<String> buildWorlds = (ArrayList<String>) config.getStringList("builder-worlds");
             boolean inWorld = false;
             for(String buildWorld : Objects.requireNonNull(buildWorlds)) {
                 if(player.getWorld().getName().equalsIgnoreCase(buildWorld)) {
@@ -917,9 +923,7 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
                                     SecretsGUI.openGUI(player, "rewards");
                                 } else if(Objects.requireNonNull(rData.getString(foundValue + ".reward-type")).equalsIgnoreCase("tokens")) {
                                     int tokenAmount = rData.getInt(foundValue + ".reward");
-                                    TokenManager tm = (TokenManager) Bukkit.getServer().getPluginManager().getPlugin("TokenManager");
-                                    assert tm != null;
-                                    tm.addTokens(player, tokenAmount);
+                                    ecoPlugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tokenAmount);
                                     pData.set(player.getUniqueId() + ".rewards." + foundValue + ".collected", true);
                                     try {
                                         pData.save(secretsDataFile);
@@ -1012,27 +1016,19 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
             }
         }
 
-/*        Player player = (Player) event.getWhoClicked();
+        Player player = (Player) event.getWhoClicked();
         if (!player.hasPermission("skyprisoncore.contraband.itembypass")) {
-            if(!ChatColor.stripColor(event.getView().getTitle()).contains("Request Settings")
-                    || !ChatColor.stripColor(event.getView().getTitle()).contains("Kit Selection (1/1)")) {
-                if (isGuardGear(event.getCurrentItem())) {
-                    event.setCancelled(true);
-                }
-                if (player.getOpenInventory().getType() != InventoryType.PLAYER) {
-                    InvGuardGearDelOther(player);
-                }
+            if(event.getClickedInventory() instanceof PlayerInventory) {
                 InvGuardGearDelPlyr(player);
             }
-        }*/
+        }
     }
 
     @EventHandler
     public void pickUp(EntityPickupItemEvent event) {
         if (event.getEntity() instanceof Player) {
             Player player = (Player) event.getEntity();
-            if (!player.hasPermission("skyprisoncore.contraband.itembypass")
-                    && !event.getEntity().getLocation().getWorld().getName().equalsIgnoreCase("events")) {
+            if (!player.hasPermission("skyprisoncore.contraband.itembypass")) {
                 if (isGuardGear(event.getItem().getItemStack())) {
                     event.setCancelled(true);
                 }
@@ -1099,6 +1095,15 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
     // EventHandlers regarding Sponge Event
     //
 
+    public boolean isInt(String str) {
+        try {
+            Integer.parseInt(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
     @EventHandler
     public void spongeEvent(BlockDamageEvent event) throws IOException {
         Block b = event.getBlock();
@@ -1140,8 +1145,9 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
                                     }
                                     sDataConf.save(spongeData);
 
-                                    TokenManagerPlugin.getInstance().addTokens(event.getPlayer(), 25);
-                                    event.getPlayer().sendMessage(ChatColor.DARK_PURPLE + "Tokens" + ChatColor.DARK_GRAY + " » " + ChatColor.AQUA + "25 tokens "
+                                    ecoPlugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(event.getPlayer()), 25);
+
+                                    event.getPlayer().sendMessage(ChatColor.BLUE + "Tokens" + ChatColor.DARK_GRAY + " » " + ChatColor.AQUA + "25 tokens "
                                             + ChatColor.GRAY + "has been added to your balance.");
                                     break;
                                 }
@@ -1326,10 +1332,10 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
             kills.save(f);
             if(killed.hasPermission("skyprisoncore.guard.onduty")) {
                 killer.sendMessage(ChatColor.GRAY + "You killed " + ChatColor.RED + killed.getName() + ChatColor.GRAY + " and received " + ChatColor.RED + "15" + ChatColor.GRAY + " token!");
-                TokenManagerPlugin.getInstance().addTokens(killer, 15);
+                ecoPlugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 15);
             } else {
                 killer.sendMessage(ChatColor.GRAY + "You killed " + ChatColor.RED + killed.getName() + ChatColor.GRAY + " and received " + ChatColor.RED + "1" + ChatColor.GRAY + " token!");
-                TokenManagerPlugin.getInstance().addTokens(killer, 1);
+                ecoPlugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 1);
             }
 
             if(pDeaths == 1000) {
@@ -1344,10 +1350,10 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
 
             if(pKillerStreak % 5 == 0 && pKillerStreak <= 100) {
                 killer.sendMessage(colourMessage("&7You've hit a kill streak of &c&l" + pKillerStreak + "&7! You have received &c&l15 &7tokens as a reward!"));
-                TokenManagerPlugin.getInstance().addTokens(killer, 15);
+                ecoPlugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 15);
             } else if(pKillerStreak % 50 == 0 && pKillerStreak > 100) {
                 killer.sendMessage(colourMessage("&7You've hit a kill streak of &c&l" + pKillerStreak + "&7! You have received &c&l30 &7tokens as a reward!"));
-                TokenManagerPlugin.getInstance().addTokens(killer, 30);
+                ecoPlugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 30);
             }
         } catch (final IOException e) {
             e.printStackTrace();
@@ -1428,10 +1434,11 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
 
                                                 if(pKillStreak % 5 == 0 && pKillStreak <= 100) {
                                                     killer.sendMessage(colourMessage("&7You've hit a kill streak of &c&l" + pKillStreak + "&7! You have received &c&l15 &7tokens as a reward!"));
-                                                    TokenManagerPlugin.getInstance().addTokens(killer, 15);
+                                                    ecoPlugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 15);
+
                                                 } else if(pKillStreak % 50 == 0 && pKillStreak > 100) {
                                                     killer.sendMessage(colourMessage("&7You've hit a kill streak of &c&l" + pKillStreak + "&7! You have received &c&l30 &7tokens as a reward!"));
-                                                    TokenManagerPlugin.getInstance().addTokens(killer, 30);
+                                                    ecoPlugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 30);
                                                 }
 
                                                 try {

@@ -1,9 +1,9 @@
 package net.skyprison.skyprisoncore.Commands.economy;
 
+import net.brcdev.shopgui.ShopGuiPlugin;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import com.google.inject.Inject;
 import net.brcdev.shopgui.ShopGuiPlusApi;
-import net.brcdev.shopgui.exception.player.PlayerDataNotLoadedException;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -24,13 +24,10 @@ public class PermShop implements CommandExecutor {
 			Player player = (Player) sender;
 			if (args.length == 1) {
 				String shop = args[0];
-				if(ShopGuiPlusApi.getShop(shop) != null) {
+				ShopGuiPlugin shopGUI = ShopGuiPlusApi.getPlugin();
+				if(shopGUI.getShopManager().getShopById(shop) != null) {
 					if (player.hasPermission("shopguiplus.shops." + shop) || player.isOp()) {
-						try {
-							ShopGuiPlusApi.openShop(player, shop, 1);
-						} catch (PlayerDataNotLoadedException e) {
-							e.printStackTrace();
-						}
+						shopGUI.getShopManager().openShopMenu(player, shop, 1, true);
 					} else {
 						if (player.hasPermission("group.free")) {
 							player.sendMessage(ChatColor.RED + "You can't use prison shops!");

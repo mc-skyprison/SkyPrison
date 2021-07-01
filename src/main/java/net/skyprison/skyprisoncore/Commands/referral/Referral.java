@@ -8,7 +8,6 @@ import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.dependencies.jda.api.entities.Member;
 import github.scarsz.discordsrv.dependencies.jda.api.entities.Role;
 import github.scarsz.discordsrv.util.DiscordUtil;
-import me.realized.tokenmanager.api.TokenManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
@@ -25,7 +24,7 @@ import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 public class Referral implements CommandExecutor {
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
 	@Inject
 	public Referral(SkyPrisonCore plugin) {
 		this.plugin = plugin;
@@ -96,9 +95,8 @@ public class Referral implements CommandExecutor {
 										}
 										player.sendMessage(ChatColor.DARK_AQUA + "You successfully referred " + ChatColor.AQUA + reffedPlayer.getName()
 												+ ChatColor.DARK_AQUA + " and has received" + ChatColor.YELLOW + "25"  + ChatColor.DARK_AQUA +"tokens!");
-										TokenManager tm = (TokenManager) Bukkit.getServer().getPluginManager().getPlugin("TokenManager");
-										tm.addTokens(reffedPlayer.getPlayer(), 250);
-										tm.addTokens(player.getPlayer(), 25);
+										plugin.ecoPlugin.tokens.addTokens(reffedPlayer, 250);
+										plugin.ecoPlugin.tokens.addTokens(player, 25);
 									} catch (IOException e) {
 										e.printStackTrace();
 									}

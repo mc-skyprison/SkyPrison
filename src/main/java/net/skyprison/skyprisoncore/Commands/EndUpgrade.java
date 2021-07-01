@@ -164,11 +164,11 @@ public class EndUpgrade implements CommandExecutor {
 				whitePane.setItemMeta(whiteMeta);
 				endUpgradeGUI.setItem(i, whitePane);
 			} else if (i == 13) {
-				ItemStack upgradeItem = player.getInventory().getItemInMainHand();
+				ItemStack upgradeItem = new ItemStack(player.getInventory().getItemInMainHand().getType(), 1);
 				ItemMeta upgradeMeta = upgradeItem.getItemMeta();
 				upgradeMeta.setLore(Arrays.asList(plugin.colourMessage("&7Upgrade Cost: &a" + plugin.formatNumber(itemCost(upgradeItem.getType()))), plugin.colourMessage("&8-------")));
 				upgradeItem.setItemMeta(upgradeMeta);
-				endUpgradeGUI.setItem(i, player.getInventory().getItemInMainHand());
+				endUpgradeGUI.setItem(i, upgradeItem);
 			} else if (i == 20) {
 				ItemStack transferEnch = new ItemStack(Material.ENCHANTED_BOOK);
 				ItemMeta enchMeta = transferEnch.getItemMeta();

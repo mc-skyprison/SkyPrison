@@ -5,7 +5,7 @@ version: ${project.version}
 main: net.skyprison.skyprisoncore.SkyPrisonCore
 api-version: 1.16
 website: https://skyprison.net/
-depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin, CMI, BKCommonLib, DiscordSRV, Parkour]
+depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin, CMI, BKCommonLib, DiscordSRV, Parkour, ShopGUIPlus]
 commands:
   test:
     description: Go on and off duty as a guard
@@ -177,6 +177,16 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.buyback
     permission-message: §4Error:§c You do not have permission to execute this command...
+  tokens:
+    description: All commands related to tokens
+    usage: /<command>
+    permission: skyprisoncore.command.tokens
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  token:
+    description: All commands related to tokens
+    usage: /<command>
+    permission: skyprisoncore.command.tokens
+    permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
   #
   # Guard Permissions
@@ -274,4 +284,8 @@ permissions:
   skyprisoncore.command.dontsell:
     description: Gives access to /dontsell
   skyprisoncore.command.endupgrade:
+    description: Gives access to /endupgrade
+  skyprisoncore.command.tokens:
+    description: Gives access to /endupgrade
+  skyprisoncore.command.tokens.admin:
     description: Gives access to /endupgrade
