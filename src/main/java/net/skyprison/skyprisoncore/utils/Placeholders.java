@@ -101,11 +101,28 @@ public class Placeholders extends PlaceholderExpansion {
 		}
 	}
 
+
 	@Override
 	public String onPlaceholderRequest(Player player, String identifier){
 
 		if(player == null) {
 			return "";
+		}
+
+		if(identifier.equalsIgnoreCase("token_balance_formatted")) {
+			if(plugin.tokensData.containsKey(player.getUniqueId().toString())) {
+				return plugin.formatNumber(plugin.tokensData.get(player.getUniqueId().toString()));
+			} else {
+				return "0";
+			}
+		}
+
+		if(identifier.equalsIgnoreCase("token_balance")) {
+			if(plugin.tokensData.containsKey(player.getUniqueId().toString())) {
+				return String.valueOf(plugin.tokensData.get(player.getUniqueId().toString()));
+			} else {
+				return "0";
+			}
 		}
 
 		if(identifier.equalsIgnoreCase("total_secrets")) {
@@ -175,6 +192,16 @@ public class Placeholders extends PlaceholderExpansion {
 			}
 		}
 
+		if(identifier.equalsIgnoreCase("brews_drank")) {
+			File brewData = new File(plugin.getDataFolder() + File.separator + "brewsdrank.yml");
+			YamlConfiguration brewConf = YamlConfiguration.loadConfiguration(brewData);
+			if(brewConf.contains(player.getUniqueId().toString())) {
+				return String.valueOf(brewConf.getInt(player.getUniqueId().toString()));
+			} else {
+				return "0";
+			}
+		}
+
 		if(identifier.equalsIgnoreCase("silence_private")) {
 			CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
 			if(!user.isAcceptingPM()) {
@@ -193,6 +220,30 @@ public class Placeholders extends PlaceholderExpansion {
 			} else {
 				String availableMessage = ChatColor.GRAY + "Bounty Notifications are " + ChatColor.GREEN + "ENABLED";
 				return availableMessage;
+			}
+		}
+
+		if(identifier.equalsIgnoreCase("sponges_found")) {
+			File spongeData = new File(plugin.getDataFolder() + File.separator
+					+ "spongedata.yml");
+			YamlConfiguration sDataConf = YamlConfiguration.loadConfiguration(spongeData);
+			if(sDataConf.isConfigurationSection(player.getUniqueId().toString())) {
+				int spongeFound = sDataConf.getInt(player.getUniqueId() + ".sponge-found");
+				return String.valueOf(spongeFound);
+			} else {
+				return "0";
+			}
+		}
+
+		for(int i = 1; i <= 8; i++) {
+			if(identifier.equalsIgnoreCase("parkour"+i)) {
+				String parkourPlaceholder = PlaceholderAPI.setPlaceholders(player, "%parkour_player_prize_delay_parkour"+ i +"%");
+				String availableMessage = ChatColor.GREEN + "Available Now";
+				if(parkourPlaceholder.equalsIgnoreCase("0")) {
+					return availableMessage;
+				} else {
+					return parkourPlaceholder;
+				}
 			}
 		}
 
@@ -312,30 +363,6 @@ public class Placeholders extends PlaceholderExpansion {
 		if(identifier.equalsIgnoreCase("train_airport_cost")) {
 			identifier = substring;
 			return getTrainPriceInt(player, identifier);
-		}
-
-		if(identifier.equalsIgnoreCase("sponges_found")) {
-			File spongeData = new File(plugin.getDataFolder() + File.separator
-					+ "spongedata.yml");
-			YamlConfiguration sDataConf = YamlConfiguration.loadConfiguration(spongeData);
-			if(sDataConf.isConfigurationSection(player.getUniqueId().toString())) {
-				int spongeFound = sDataConf.getInt(player.getUniqueId().toString() + ".sponge-found");
-				return String.valueOf(spongeFound);
-			} else {
-				return "0";
-			}
-		}
-
-		for(int i = 1; i <= 8; i++) {
-			if(identifier.equalsIgnoreCase("parkour"+i)) {
-				String parkourPlaceholder = PlaceholderAPI.setPlaceholders(player, "%parkour_player_prize_delay_parkour"+ i +"%");
-				String availableMessage = ChatColor.GREEN + "Available Now";
-				if(parkourPlaceholder.equalsIgnoreCase("0")) {
-					return availableMessage;
-				} else {
-					return parkourPlaceholder;
-				}
-			}
 		}
 
 		return null;

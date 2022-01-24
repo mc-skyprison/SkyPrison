@@ -1,6 +1,7 @@
 package net.skyprison.skyprisoncore;
 
 import java.io.*;
+import java.sql.Connection;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -11,20 +12,21 @@ import java.util.regex.Pattern;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
-import com.Zrips.CMI.Modules.tp.Teleportations;
-import com.Zrips.CMI.events.CMIPlayerTeleportEvent;
 import com.Zrips.CMI.events.CMIPlayerTeleportRequestEvent;
 import com.bencodez.votingplugin.user.UserManager;
 import com.bencodez.votingplugin.user.VotingPluginUser;
-import com.bergerkiller.bukkit.common.events.EntityRemoveEvent;
-import net.skyprison.skyprisoncore.Commands.*;
-import net.skyprison.skyprisoncore.Commands.contraband.Bow;
-import net.skyprison.skyprisoncore.Commands.contraband.Contraband;
-import net.skyprison.skyprisoncore.Commands.contraband.Safezone;
-import net.skyprison.skyprisoncore.Commands.contraband.Sword;
-import net.skyprison.skyprisoncore.Commands.economy.*;
-import net.skyprison.skyprisoncore.Commands.referral.Referral;
-import net.skyprison.skyprisoncore.Commands.referral.ReferralList;
+import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
+import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent;
+import com.dre.brewery.api.events.brew.BrewDrinkEvent;
+import com.google.common.collect.Lists;
+import net.coreprotect.CoreProtect;
+import net.skyprison.skyprisonclaims.SkyPrisonClaims;
+import net.skyprison.skyprisoncore.commands.*;
+import net.skyprison.skyprisoncore.commands.guard.*;
+import net.skyprison.skyprisoncore.commands.economy.*;
+import net.skyprison.skyprisoncore.commands.referral.Referral;
+import net.skyprison.skyprisoncore.commands.referral.ReferralList;
+import net.skyprison.skyprisoncore.commands.secrets.*;
 import net.skyprison.skyprisoncore.utils.*;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -38,9 +40,9 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
-import net.skyprison.skyprisoncore.Commands.donations.DonorAdd;
-import net.skyprison.skyprisoncore.Commands.donations.DonorBulk;
-import net.skyprison.skyprisoncore.Commands.donations.Purchases;
+import net.skyprison.skyprisoncore.commands.donations.DonorAdd;
+import net.skyprison.skyprisoncore.commands.donations.DonorBulk;
+import net.skyprison.skyprisoncore.commands.donations.Purchases;
 import me.NoChance.PvPManager.Events.PlayerTagEvent;
 import me.NoChance.PvPManager.Events.PlayerUntagEvent;
 import me.NoChance.PvPManager.Managers.PlayerHandler;
@@ -50,8 +52,6 @@ import me.clip.placeholderapi.PlaceholderAPI;
 import net.brcdev.shopgui.event.ShopPostTransactionEvent;
 import net.brcdev.shopgui.event.ShopPreTransactionEvent;
 import net.brcdev.shopgui.shop.ShopManager;
-import net.goldtreeservers.worldguardextraflags.flags.Flags;
-import net.skyprison.skyprisoneco.SkyPrisonEco;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -64,27 +64,42 @@ import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockDamageEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.block.LeavesDecayEvent;
+import org.bukkit.event.block.*;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
+import org.maxgamer.quickshop.api.event.ShopCreateEvent;
+import org.maxgamer.quickshop.api.event.ShopPurchaseEvent;
 
 
 public class SkyPrisonCore extends JavaPlugin implements Listener {
     public HashMap<String, String> hexColour = new HashMap<>();
     public HashMap<UUID, Boolean> flyPvP = new HashMap<>();
+    public HashMap<UUID, Integer> teleportMove = new HashMap<>();
+    public Map<String, Integer> tokensData = new HashMap<>();
+
+    public HashMap<UUID, Boolean> italicConfirm = new HashMap<>();
+
+    public Map<String, Integer> blockBreaks = new HashMap<>();
+
+    public Connection conn;
+
+    private File infoFile;
+    private FileConfiguration infoConf;
+
+    @Inject public Tokens tokens;
+    @Inject private TransportPass transportPass;
+    @Inject private TabCompleter tabCompleter;
 
     @Inject private ConfigCreator configCreator;
     @Inject private LangCreator langCreator;
@@ -97,68 +112,147 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
     @Inject private Referral Referral;
 
     @Inject private Bounty Bounty;
-    @Inject private net.skyprison.skyprisoncore.Commands.KillInfo KillInfo;
+    @Inject private KillInfo KillInfo;
 
     @Inject private Sword Sword;
     @Inject private Bow Bow;
     @Inject private Contraband Contraband;
 
-    @Inject private net.skyprison.skyprisoncore.Commands.GuardDuty GuardDuty;
+    @Inject private net.skyprison.skyprisoncore.commands.guard.GuardDuty GuardDuty;
 
     @Inject private EndUpgrade EndUpgrade;
 
     @Inject private BuyBack BuyBack;
 
-    @Inject private net.skyprison.skyprisoncore.Commands.economy.EconomyCheck EconomyCheck;
-    @Inject private net.skyprison.skyprisoncore.Commands.economy.PermShop PermShop;
+    @Inject private EconomyCheck EconomyCheck;
+    @Inject private PermShop PermShop;
 
-    @Inject private net.skyprison.skyprisoncore.Commands.secrets.SecretsGUI SecretsGUI;
-    @Inject private net.skyprison.skyprisoncore.Commands.secrets.SecretFound SecretFound;
+    @Inject private SecretsGUI SecretsGUI;
+    @Inject private SecretFound SecretFound;
 
-    @Inject private net.skyprison.skyprisoncore.Commands.economy.Bartender Bartender;
+    @Inject private Bartender Bartender;
 
     @Inject private IgnoreTP IgnoreTP;
 
     @Inject private Safezone Safezone;
 
-    @Inject private net.skyprison.skyprisoncore.Commands.economy.DontSell DontSell;
+    @Inject private DontSell DontSell;
 
-    @Inject private net.skyprison.skyprisoncore.Commands.DropChest DropChest;
-    @Inject private net.skyprison.skyprisoncore.Commands.SpongeLoc SpongeLoc;
-    @Inject private net.skyprison.skyprisoncore.Commands.FirstjoinTop FirstjoinTop;
+    @Inject private DropChest DropChest;
+    @Inject private SpongeLoc SpongeLoc;
+    @Inject private FirstjoinTop FirstjoinTop;
+
+
+    @Inject private ShopBan shopBan;
+
+    @Inject private Daily daily;
+
+
+    @Inject private EnchTable enchTable;
+    @Inject private RemoveItalics removeItalics;
+    @Inject private BottledExp bottledExp;
+
+
+    @Inject private plots plots;
+    @Inject private PlotTeleport plotTeleport;
 
     FileConfiguration config = this.getConfig();
+    
+    public SkyPrisonClaims claimPlugin;
 
-    public SkyPrisonEco ecoPlugin;
-
+    HashMap<Material, Double> minPrice = new HashMap<>();
 
     public void onEnable() {
+        minPrice.put(Material.BIRCH_LOG, 4.0);
+        minPrice.put(Material.BIRCH_PLANKS, 1.0);
+        minPrice.put(Material.BIRCH_SAPLING, 4.0);
+        minPrice.put(Material.COAL, 8.0);
+        minPrice.put(Material.COBBLESTONE, 1.0);
+        minPrice.put(Material.STONE, 3.0);
+        minPrice.put(Material.SANDSTONE, 1.0);
+        minPrice.put(Material.SMOOTH_SANDSTONE, 3.0);
+        minPrice.put(Material.SNOW_BLOCK, 0.5);
+        minPrice.put(Material.GLOWSTONE, 2.0);
+        minPrice.put(Material.NETHERRACK, 1.0);
+        minPrice.put(Material.PUMPKIN, 5.0);
+        minPrice.put(Material.NETHER_WART_BLOCK, 9.0);
+        minPrice.put(Material.IRON_INGOT, 32.0);
+        minPrice.put(Material.LAPIS_LAZULI, 4.5);
+        minPrice.put(Material.BAMBOO, 1.0);
+        minPrice.put(Material.STICK, 0.5);
+        minPrice.put(Material.GOLD_NUGGET, 5.0);
+        minPrice.put(Material.GOLD_INGOT, 45.0);
+        minPrice.put(Material.EMERALD, 50.0);
+        minPrice.put(Material.GREEN_DYE, 10.0);
+        minPrice.put(Material.SUGAR_CANE, 2.0);
+        minPrice.put(Material.SUGAR, 5.0);
+        minPrice.put(Material.DIAMOND, 65.0);
+        minPrice.put(Material.CHARCOAL, 5.5);
+        minPrice.put(Material.NETHER_WART, 2.0);
+        minPrice.put(Material.BEEF, 15.0);
+        minPrice.put(Material.PORKCHOP, 15.0);
+        minPrice.put(Material.SALMON, 5.0);
+        minPrice.put(Material.TROPICAL_FISH, 45.0);
+        minPrice.put(Material.LEATHER, 5.0);
+        minPrice.put(Material.BONE, 15.0);
+        minPrice.put(Material.ROTTEN_FLESH, 15.0);
+        minPrice.put(Material.COOKED_BEEF, 20.0);
+        minPrice.put(Material.COOKED_PORKCHOP, 20.0);
+        minPrice.put(Material.COOKED_SALMON, 15.0);
+        minPrice.put(Material.PUFFERFISH, 30.0);
+        minPrice.put(Material.SPIDER_EYE, 15.0);
+        minPrice.put(Material.STRING, 15.0);
+        minPrice.put(Material.COD, 5.0);
+        minPrice.put(Material.COOKED_COD, 15.0);
+        minPrice.put(Material.MELON_SLICE, 1.0);
+        minPrice.put(Material.APPLE, 4.0);
+
         Bukkit.getServer().getPluginManager().registerEvents(this, this);
 
         PluginReceiver module = new PluginReceiver(this);
         Injector injector = module.createInjector();
         injector.injectMembers(this);
 
-        this.configCreator.init();
-        this.langCreator.init();
+        configCreator.init();
+        langCreator.init();
 
-        ArrayList<String> files = new ArrayList<>();
-        files.add("bounties.yml");
-        files.add("spongelocations.yml");
-        files.add("dropchest.yml");
-        files.add("secrets.yml");
-        files.add("donations");
-        files.add("recentkills.yml");
-        files.add("referrals.yml");
-        files.add("rewardsdata.yml");
-        files.add("secretsdata.yml");
+/*        String url = "jdbc:sqlite:" + this.getDataFolder() + File.separator + "SkyPrisonCore.db";
+        File dbFile = new File(this.getDataFolder() + File.separator + "SkyPrisonCore.db");
+        if(!dbFile.exists()) {
+            ArrayList<String> tables = new ArrayList<>();
+            tables.add("bounties");
+            tables.add("spongelocations");
+            tables.add("dropchest");
+            tables.add("recentkills");
+            tables.add("referrals");
+            tables.add("rewardsdata");
+            tables.add("secretsdata");
+            tables.add("spongedata");
+            tables.add("blocksells");
+            tables.add("firstjoindata");
+            tables.add("recentsells");
+            tables.add("teleportignore");
+            tables.add("dailyreward");
+            tables.add("blocksmined");
+            tables.add("shopban");
+            tables.add("brewsdrank");
+            for(String table : tables) {
+                try {
+                    conn = DriverManager.getConnection(url);
+                    String sql = "CREATE TABLE bounties (" +
+                            "user_id varchar(255)," +
+                            "prize float(53)" +
+                            ")";
+                    conn.prepareStatement(sql).executeQuery();
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                }
+            }
+        }*/
+/*        ArrayList<String> files = new ArrayList<>();
         files.add("bartender.yml");
-        files.add("spongedata.yml");
-        files.add("blocksells.yml");
-        files.add("firstjoindata.yml");
-        files.add("recentsells.yml");
-        files.add("teleportignore.yml");
-        files.add("tokensdata.yml");
+        files.add("donations");
+        files.add("secrets.yml");
         for (String file : files) {
             File f = new File(this.getDataFolder() + File.separator + file);
             if(!f.exists()) {
@@ -175,17 +269,21 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
                     getLogger().info("Folder " + file + " successfully created");
                 }
             }
-        }
-
+        }*/
 
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new Placeholders(this).register();
             getLogger().info("Placeholders registered");
         }
-
-        if(Bukkit.getPluginManager().getPlugin("SkyPrisonEco") != null) {
-            ecoPlugin = (SkyPrisonEco) Bukkit.getPluginManager().getPlugin("SkyPrisonEco");
+        
+        if(Bukkit.getPluginManager().getPlugin("SkyPrisonClaims") != null) {
+            claimPlugin = (SkyPrisonClaims) Bukkit.getPluginManager().getPlugin("SkyPrisonClaims");
         }
+
+        Objects.requireNonNull(getCommand("tokens")).setExecutor(tokens);
+        Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
+        Objects.requireNonNull(getCommand("tokens")).setTabCompleter(tabCompleter);
+        Objects.requireNonNull(getCommand("token")).setTabCompleter(tabCompleter);
 
         Objects.requireNonNull(getCommand("donoradd")).setExecutor(DonorAdd);
         Objects.requireNonNull(getCommand("donorbulk")).setExecutor(DonorBulk);
@@ -225,6 +323,19 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
 
         Objects.requireNonNull(getCommand("buyback")).setExecutor(BuyBack);
 
+        Objects.requireNonNull(getCommand("daily")).setExecutor(daily);
+
+        Objects.requireNonNull(getCommand("shopban")).setExecutor(shopBan);
+
+        Objects.requireNonNull(getCommand("enchtable")).setExecutor(enchTable);
+
+        Objects.requireNonNull(getCommand("removeitalics")).setExecutor(removeItalics);
+
+        Objects.requireNonNull(getCommand("bottledexp")).setExecutor(bottledExp);
+
+
+        Objects.requireNonNull(getCommand("plots")).setExecutor(plots);
+        Objects.requireNonNull(getCommand("plot")).setExecutor(plotTeleport);
         String line;
         String splitBy = ",";
         try {
@@ -237,6 +348,70 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        Plugin sPlugin = this;
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                try {
+                    checkDailies(sPlugin);
+                } catch (IOException | ParseException e) {
+                    e.printStackTrace();
+                }
+            }
+        }.runTaskTimerAsynchronously(this, 20 * 600, 20 * 600);
+
+
+        infoFile = new File(this.getDataFolder() + File.separator + "info.yml");
+        infoConf = YamlConfiguration.loadConfiguration(infoFile);
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if(Bukkit.getServer().getOnlinePlayers().size() > 0) {
+                    announcer();
+                }
+            }
+        }.runTaskTimerAsynchronously(this, 20*900, 20*900);
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                try {
+                    if(tokensData != null && !tokensData.isEmpty()) {
+                        File tData = new File(sPlugin.getDataFolder() + File.separator + "tokensdata.yml");
+                        YamlConfiguration tokenConf = YamlConfiguration.loadConfiguration(tData);
+                        for (String pUUID : tokensData.keySet()) {
+                            tokenConf.set(pUUID, tokensData.get(pUUID));
+                        }
+                        tokenConf.save(tData);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }.runTaskTimerAsynchronously(this, 20 * 600, 20 * 600);
+
+    }
+
+    private void announcer() {
+        ArrayList<String> prison = new ArrayList<>(infoConf.getStringList("general"));
+        ArrayList<String> free = new ArrayList<>(infoConf.getStringList("general"));
+        prison.addAll(infoConf.getStringList("prison"));
+        free.addAll(infoConf.getStringList("free"));
+
+        for(Player player : Bukkit.getServer().getOnlinePlayers()){
+            String msg;
+            Random rand = new Random();
+            if(player.hasPermission("group.free")) {
+                msg = free.get(rand.nextInt(free.size()));
+            } else {
+                msg = prison.get(rand.nextInt(free.size()));
+            }
+            String nMsg = msg.replaceAll("\\%player\\%", player.getName());
+            asConsole(nMsg);
+        }
     }
 
     @Override
@@ -245,11 +420,49 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
     }
 
 
+    public boolean isInt(String str) {
+        try {
+            Integer.parseInt(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
     public String colourMessage(String message) {
         message = translateHexColorCodes(ChatColor.translateAlternateColorCodes('&', message));
         return message;
     }
 
+
+
+    public void checkDailies(Plugin plugin) throws IOException, ParseException {
+        File f = new File(plugin.getDataFolder() + File.separator + "dailyreward.yml");
+        YamlConfiguration dailyConf = YamlConfiguration.loadConfiguration(f);
+        Set<String> dailyPlayers = dailyConf.getConfigurationSection("players").getKeys(false);
+        Date date = new Date();
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+        String currDate = formatter.format(date);
+        Date newDate = formatter.parse(currDate);
+
+        String lastDay = dailyConf.getString("current-day");
+
+        if(!lastDay.equalsIgnoreCase(currDate)) {
+            dailyConf.set("current-day", currDate);
+            for(String dPlayer : dailyPlayers) {
+                String collectedDay = dailyConf.getString("players." + dPlayer + ".last-collected");
+                Date collectedDate = formatter.parse(collectedDay);
+                long daysSinceLast = Math.round((newDate.getTime() - collectedDate.getTime()) / (double) 86400000);
+
+                int rewardStreak = dailyConf.getInt("players." + dPlayer + ".current-streak");
+                if (daysSinceLast >= 2 && rewardStreak != 1) {
+                    dailyConf.set("players." + dPlayer + ".current-streak", 1);
+                    dailyConf.set("players." + dPlayer + ".total-streak", 0);
+                }
+            }
+            dailyConf.save(f);
+        }
+    }
 
     public void tellConsole(String message){
         Bukkit.getConsoleSender().sendMessage(message);
@@ -286,9 +499,8 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
         return matcher.appendTail(buffer).toString();
     }
 
-
     @EventHandler
-    public void firstJoinCheck(PlayerJoinEvent event) throws ParseException, IOException {
+    public void playerJoin(PlayerJoinEvent event) throws ParseException, IOException {
         File fData = new File(this.getDataFolder() + File.separator + "firstjoindata.yml");
         YamlConfiguration firstJoinConf = YamlConfiguration.loadConfiguration(fData);
         String pUUID = event.getPlayer().getUniqueId().toString();
@@ -300,8 +512,52 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
             firstJoinConf.set(pUUID + ".firstjoin", firstJoinMilli);
             firstJoinConf.save(fData);
         }
+        File tokenMine = new File(this.getDataFolder() + File.separator + "blocksmined.yml");
+        FileConfiguration mineConf = YamlConfiguration.loadConfiguration(tokenMine);
+
+        if(mineConf.contains(pUUID)) {
+            blockBreaks.put(pUUID, mineConf.getInt(pUUID));
+        } else {
+            blockBreaks.put(pUUID, 0);
+        }
+
+        File tData = new File(this.getDataFolder() + File.separator + "tokensdata.yml");
+        YamlConfiguration tokenConf = YamlConfiguration.loadConfiguration(tData);
+
+        if(mineConf.contains(pUUID)) {
+            tokensData.put(pUUID, tokenConf.getInt("players." + pUUID));
+        } else {
+            tokensData.put(pUUID, 0);
+        }
+
+        RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+
+        Player player = event.getPlayer();
+        com.sk89q.worldedit.util.Location locWE = BukkitAdapter.adapt(player.getLocation());
+        LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
+        RegionQuery query = container.createQuery();
+        if(!player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
+            player.setAllowFlight(query.testState(locWE, localPlayer, claimPlugin.FLY));
+        }
     }
 
+    @EventHandler
+    public void playerLeave(PlayerQuitEvent event) throws IOException {
+        String pUUID = event.getPlayer().getUniqueId().toString();
+
+        File tokenMine = new File(this.getDataFolder() + File.separator
+                + "blocksmined.yml");
+        FileConfiguration mineConf = YamlConfiguration.loadConfiguration(tokenMine);
+        mineConf.set(pUUID, blockBreaks.get(pUUID));
+        blockBreaks.remove(pUUID);
+        mineConf.save(tokenMine);
+
+        File tData = new File(this.getDataFolder() + File.separator + "tokensdata.yml");
+        YamlConfiguration tokenConf = YamlConfiguration.loadConfiguration(tData);
+        tokenConf.set("players." + pUUID, tokensData.get(pUUID));
+        tokensData.remove(pUUID);
+        tokenConf.save(tData);
+    }
 
     @EventHandler
     public void onTeleportRequest(CMIPlayerTeleportRequestEvent event) {
@@ -319,11 +575,6 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
         }
     }
 
-
-    //
-    // Creates lists of people that have been /cb, and also creates the list containing all of the contraband
-    //
-
     public Map<Player, Map.Entry<Player, Long>> hitcd = new HashMap<>();
     public boolean isGuardGear(ItemStack i) {
         if (i != null) {
@@ -338,7 +589,7 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
         return false;
     }
 
-    private void InvGuardGearDelPlyr(Player player) {
+    public void InvGuardGearDelPlyr(Player player) {
         for (int n = 0; n < player.getInventory().getSize(); n++) {
             ItemStack i = player.getInventory().getItem(n);
             if (i != null && isGuardGear(i)) {
@@ -366,8 +617,8 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
             RegionQuery query = container.createQuery();
             if(flyPvP.containsKey(damager.getUniqueId()) && !flyPvP.containsKey(damagee.getUniqueId())) {
                 flyPvP.remove(damager.getUniqueId());
-            } else if(query.testState(damagerLoc, localDamager, Flags.FLY) && !query.testState(damageeLoc, localDamagee, Flags.FLY)) {
-                getServer().getScheduler().scheduleSyncDelayedTask(this, () -> flyPvP.remove(damager.getUniqueId()), 1L);
+            } else if(query.testState(damagerLoc, localDamager, claimPlugin.FLY) && !query.testState(damageeLoc, localDamagee, claimPlugin.FLY)) {
+                getServer().getScheduler().runTaskLaterAsynchronously(this, () -> flyPvP.remove(damager.getUniqueId()), 1L);
             }
             if(damager.hasPermission("skyprisoncore.guard.onduty") && damagee.hasPermission("skyprisoncore.guard.onduty")) {
                 event.setCancelled(true);
@@ -391,8 +642,8 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
                 RegionQuery query = container.createQuery();
                 if(flyPvP.containsKey(damager.getUniqueId()) && !flyPvP.containsKey(damagee.getUniqueId())) {
                     flyPvP.remove(damager.getUniqueId());
-                } else if(query.testState(damagerLoc, localDamager, Flags.FLY) && !query.testState(damageeLoc, localDamagee, Flags.FLY)) {
-                    getServer().getScheduler().scheduleSyncDelayedTask(this, () -> flyPvP.remove(damager.getUniqueId()), 1L);
+                } else if(query.testState(damagerLoc, localDamager, claimPlugin.FLY) && !query.testState(damageeLoc, localDamagee, claimPlugin.FLY)) {
+                    getServer().getScheduler().runTaskLaterAsynchronously(this, () -> flyPvP.remove(damager.getUniqueId()), 1L);
                 }
                 if (damager.hasPermission("skyprisoncore.guard.onduty") && damagee.hasPermission("skyprisoncore.guard.onduty")) {
                     event.setCancelled(true);
@@ -408,28 +659,143 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void teleportTest(CMIPlayerTeleportEvent event) {
+    public void shopMinPrice(ShopCreateEvent event) {
+        Material itemMaterial = event.getShop().getItem().getType();
+        if(minPrice.containsKey(itemMaterial)) {
+            double minItemPrice = minPrice.get(itemMaterial);
+            double setPrice = event.getShop().getPrice();
+            if(setPrice < minItemPrice) {
+                Bukkit.getPlayer(event.getCreator()).sendMessage(colourMessage("&cMinimum price for this item is $" + minItemPrice + "!"));
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
+    public void shopBanned(ShopPurchaseEvent event) {
+        File f = new File(this.getDataFolder() + File.separator + "shopban.yml");
+        YamlConfiguration shopConf = YamlConfiguration.loadConfiguration(f);
+        if(shopConf.isConfigurationSection(event.getShop().getOwner().toString())) {
+            ArrayList<String> bannedPlayers = (ArrayList<String>) shopConf.getStringList(event.getShop().getOwner() + ".banned-players");
+            if(bannedPlayers.contains(event.getPurchaser().toString())) {
+                Bukkit.getPlayer(event.getPurchaser()).sendMessage(colourMessage("&cThis player has banned you from their shops!"));
+                event.setCancelled(true);
+            }
+        }
+    }
+
+
+
+    @EventHandler
+    public void flightDeath(PlayerPostRespawnEvent event) {
         Player player = event.getPlayer();
-        PvPManager pvpmanager = (PvPManager) Bukkit.getPluginManager().getPlugin("PvPManager");
-        PlayerHandler playerHandler = Objects.requireNonNull(pvpmanager).getPlayerHandler();
-        PvPlayer pvpPlayer = playerHandler.get(player);
-        if(!pvpPlayer.isInCombat() && event.getSafe().getTpCondition().equals(Teleportations.TpCondition.Good)) {
-            Location toLoc = event.getSafe().getSafeLoc();
+        if(player.getWorld().getName().equalsIgnoreCase("world_prison")) {
+            Location toLoc = player.getLocation();
             RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
             RegionManager regions = container.get(BukkitAdapter.adapt(player.getWorld()));
             final ApplicableRegionSet regionListTo = Objects.requireNonNull(regions).getApplicableRegions(BlockVector3.at(toLoc.getBlockX(),
                     toLoc.getBlockY(), toLoc.getBlockZ()));
             boolean flyFalse = true;
             for (ProtectedRegion region : regionListTo) {
-                if(region.getId().contains("fly") && !region.getId().contains("nofly") && !region.getId().contains("no-fly")) {
+                if (region.getId().contains("fly") && !region.getId().contains("nofly") && !region.getId().contains("no-fly")) {
                     flyFalse = false;
-                    getServer().getScheduler().scheduleSyncDelayedTask(this, () -> player.setAllowFlight(true), 1L);
+                    player.setAllowFlight(true);
                     break;
                 }
             }
-            if(flyFalse) {
-                if(!player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
+            if (flyFalse) {
+                if (!player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
                     player.setAllowFlight(false);
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void flightTeleport(PlayerTeleportEvent event) {
+        Player player = event.getPlayer();
+        PvPManager pvpmanager = (PvPManager) Bukkit.getPluginManager().getPlugin("PvPManager");
+        PlayerHandler playerHandler = Objects.requireNonNull(pvpmanager).getPlayerHandler();
+        PvPlayer pvpPlayer = playerHandler.get(player);
+        Location toLoc = event.getTo();
+        Location fromLoc = event.getFrom();
+/*        if(toLoc.getWorld() != fromLoc.getWorld()) {
+            if(fromLoc.getWorld().getName().equalsIgnoreCase("world_prison")) {
+                player.getAttribute(Attribute.GENERIC_ATTACK_SPEED).setBaseValue(player.getAttribute(Attribute.GENERIC_ATTACK_SPEED).getDefaultValue());
+            } else if (toLoc.getWorld().getName().equalsIgnoreCase("world_prison")) {
+                player.getAttribute(Attribute.GENERIC_ATTACK_SPEED).setBaseValue(1000);
+            }
+        }*/
+
+        if(!pvpPlayer.isInCombat() && !event.isCancelled() && !player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
+            RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+            RegionManager regionsTo = container.get(BukkitAdapter.adapt(toLoc.getWorld()));
+            RegionManager regionsFrom = container.get(BukkitAdapter.adapt(fromLoc.getWorld()));
+            final ApplicableRegionSet regionListTo = Objects.requireNonNull(regionsTo).getApplicableRegions(BlockVector3.at(toLoc.getBlockX(),
+                    toLoc.getBlockY(), toLoc.getBlockZ()));
+            final ApplicableRegionSet regionListFrom = Objects.requireNonNull(regionsFrom).getApplicableRegions(BlockVector3.at(fromLoc.getBlockX(),
+                    fromLoc.getBlockY(), fromLoc.getBlockZ()));
+
+            com.sk89q.worldedit.util.Location fromLocWE = BukkitAdapter.adapt(event.getFrom());
+            com.sk89q.worldedit.util.Location toLocWE = BukkitAdapter.adapt(toLoc);
+            LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
+            RegionQuery query = container.createQuery();
+
+            if(!regionListTo.getRegions().isEmpty() && !regionListFrom.getRegions().isEmpty()) {
+                ProtectedRegion toRegion = null;
+                for (final ProtectedRegion rg : regionListTo) {
+                    if(toRegion == null)
+                        toRegion = rg;
+                    if(rg.getPriority() > toRegion.getPriority()) {
+                        toRegion = rg;
+                    }
+                }
+                ProtectedRegion fromRegion = null;
+                for (final ProtectedRegion rg : regionListFrom) {
+                    if(fromRegion == null)
+                        fromRegion = rg;
+                    if(rg.getPriority() > fromRegion.getPriority()) {
+                        fromRegion = rg;
+                    }
+                }
+                if (query.testState(toLocWE, localPlayer, claimPlugin.FLY) || (toRegion.getId().contains("fly") && !toRegion.getId().contains("nofly") && !toRegion.getId().contains("no-fly"))) {
+                    getServer().getScheduler().runTaskLaterAsynchronously(this, () -> player.setAllowFlight(true), 1L);
+                    if (!query.testState(fromLocWE, localPlayer, claimPlugin.FLY)) {
+                        player.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "You can fly now!");
+                    }
+                } else if (query.testState(fromLocWE, localPlayer, claimPlugin.FLY) || (fromRegion.getId().contains("fly") && !fromRegion.getId().contains("nofly") && !fromRegion.getId().contains("no-fly"))) {
+                    getServer().getScheduler().runTaskLaterAsynchronously(this, () -> player.setAllowFlight(false), 1L);
+                    if (!player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
+                        player.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "You can no longer fly!");
+                    }
+                }
+            } else {
+                if (query.testState(toLocWE, localPlayer, claimPlugin.FLY)) {
+                    getServer().getScheduler().runTaskLaterAsynchronously(this, () -> player.setAllowFlight(true), 1L);
+                    if (!query.testState(fromLocWE, localPlayer, claimPlugin.FLY)) {
+                        player.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "You can fly now!");
+                    }
+                } else if (query.testState(fromLocWE, localPlayer, claimPlugin.FLY)) {
+                    getServer().getScheduler().runTaskLaterAsynchronously(this, () -> player.setAllowFlight(false), 1L);
+                    if (!player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
+                        player.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "You can no longer fly!");
+                    }
+                }
+                if(!regionListFrom.getRegions().isEmpty()) {
+                    ProtectedRegion fromRegion = null;
+                    for (final ProtectedRegion rg : regionListFrom) {
+                        if(fromRegion == null)
+                            fromRegion = rg;
+                        if(rg.getPriority() > fromRegion.getPriority()) {
+                            fromRegion = rg;
+                        }
+                    }
+                    if (query.testState(fromLocWE, localPlayer, claimPlugin.FLY) || (fromRegion.getId().contains("fly") && !fromRegion.getId().contains("nofly") && !fromRegion.getId().contains("no-fly"))) {
+                        getServer().getScheduler().runTaskLaterAsynchronously(this, () -> player.setAllowFlight(false), 1L);
+                        if (!player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
+                            player.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "You can no longer fly!");
+                        }
+                    }
                 }
             }
         }
@@ -456,7 +822,7 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
         LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
         RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
         RegionQuery query = container.createQuery();
-        if (query.testState(toLoc, localPlayer, Flags.FLY)) {
+        if (query.testState(toLoc, localPlayer, claimPlugin.FLY)) {
             player.setAllowFlight(true);
         }
     }
@@ -468,7 +834,7 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
         LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
         RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
         RegionQuery query = container.createQuery();
-        if (query.testState(toLoc, localPlayer, Flags.FLY)) {
+        if (query.testState(toLoc, localPlayer, claimPlugin.FLY)) {
             flyPvP.put(player.getUniqueId(), true);
         }
     }
@@ -497,41 +863,20 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
             File f = new File(this.getDataFolder() + File.separator + "recentsells.yml");
             FileConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
             if(yamlf.isConfigurationSection(player.getUniqueId().toString())) {
-                Set<String> soldItems = Objects.requireNonNull(yamlf.getConfigurationSection(player.getUniqueId().toString())).getKeys(false);
-                if(soldItems.size() < 5) {
-                    for(int i = 0; i < 5; i++) {
-                        if(!yamlf.contains(player.getUniqueId() + "." + i)) {
-                            yamlf.set(player.getUniqueId() + "." + i + ".time", System.currentTimeMillis());
-                            yamlf.set(player.getUniqueId() + "." + i + ".price", event.getResult().getPrice());
-                            yamlf.set(player.getUniqueId() + "." + i + ".amount", event.getResult().getAmount());
-                            yamlf.set(player.getUniqueId() + "." + i + ".type", event.getResult().getShopItem().getItem().getType().toString());
-                            yamlf.save(f);
-                            break;
-                        }
-                    }
-                } else {
-                    long time = Long.MAX_VALUE;
-                    String oldestSold = "";
-                    for(String soldItem : soldItems) {
-                        long newTime = yamlf.getLong(player.getUniqueId() + "." + soldItem + ".time");
-                        if(newTime <= time) {
-                            time = newTime;
-                            oldestSold = soldItem;
-                        }
-                    }
-                    yamlf.set(player.getUniqueId() + "." + oldestSold + ".time", System.currentTimeMillis());
-                    yamlf.set(player.getUniqueId() + "." + oldestSold + ".price", event.getResult().getPrice());
-                    yamlf.set(player.getUniqueId() + "." + oldestSold + ".amount", event.getResult().getAmount());
-                    yamlf.set(player.getUniqueId() + "." + oldestSold + ".type", event.getResult().getShopItem().getItem().getType().toString());
-                    yamlf.save(f);
+                ArrayList<String> soldItems = (ArrayList<String>) Objects.requireNonNull(yamlf.getStringList(player.getUniqueId() + ".sold-items"));
+                soldItems.add(0, event.getResult().getShopItem().getItem().getType()
+                        + "/" + event.getResult().getAmount()
+                        + "/" + event.getResult().getPrice());
+                if(soldItems.size() > 5) {
+                    soldItems.remove(5);
                 }
+                yamlf.set(player.getUniqueId() + ".sold-items", soldItems);
             } else {
-                yamlf.set(player.getUniqueId() + ".0.time", System.currentTimeMillis());
-                yamlf.set(player.getUniqueId() + ".0.price", event.getResult().getPrice());
-                yamlf.set(player.getUniqueId() + ".0.amount", event.getResult().getAmount());
-                yamlf.set(player.getUniqueId() + ".0.type", event.getResult().getShopItem().getItem().getType().toString());
-                yamlf.save(f);
+                yamlf.set(player.getUniqueId() + ".sold-items", Lists.newArrayList(event.getResult().getShopItem().getItem().getType()
+                        + "/" + event.getResult().getAmount()
+                        + "/" + event.getResult().getPrice()));
             }
+            yamlf.save(f);
         }
     }
 
@@ -542,6 +887,15 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
         PvPManager pvpmanager = (PvPManager) Bukkit.getPluginManager().getPlugin("PvPManager");
         PlayerHandler playerHandler = Objects.requireNonNull(pvpmanager).getPlayerHandler();
         PvPlayer pvpPlayer = playerHandler.get(player);
+        if(teleportMove.containsKey(player.getUniqueId())) {
+            Location toLoc = event.getTo();
+            Location fromLoc = event.getFrom();
+            if(toLoc.getBlockX() != fromLoc.getBlockX() || toLoc.getBlockZ() != fromLoc.getBlockZ()) {
+                getServer().getScheduler().cancelTask(teleportMove.get(player.getUniqueId()));
+                teleportMove.remove(player.getUniqueId());
+                player.sendMessage(colourMessage("&cTeleport Cancelled!"));
+            }
+        }
         if(player.getWorld().getName().equalsIgnoreCase("world_prison")) {
             if(!player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
                 Location toLoc = event.getTo();
@@ -637,10 +991,45 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
     }
 
     @EventHandler
+    public void brewConsume(BrewDrinkEvent event) throws IOException {
+        Player player = event.getPlayer();
+        File brewData = new File(this.getDataFolder() + File.separator + "brewsdrank.yml");
+        YamlConfiguration brewConf = YamlConfiguration.loadConfiguration(brewData);
+        int totalBrews = 0;
+        if(brewConf.contains(player.getUniqueId().toString())) {
+            totalBrews = brewConf.getInt(player.getUniqueId().toString());
+        }
+        brewConf.set(player.getUniqueId().toString(), totalBrews + 1);
+        brewConf.save(brewData);
+    }
+
+    @EventHandler
+    public void expBottleConsume(PlayerInteractEvent event) {
+        if(event.getItem() != null && event.getItem().getType().equals(Material.EXPERIENCE_BOTTLE) && event.getHand().equals(EquipmentSlot.HAND)) {
+            ItemStack expBottle = event.getItem();
+            ItemMeta expMeta = expBottle.getItemMeta();
+            NamespacedKey key = new NamespacedKey(this, "exp-amount");
+            if (expMeta.getPersistentDataContainer().has(key, PersistentDataType.INTEGER)) {
+                event.setCancelled(true);
+                int expToGive = expMeta.getPersistentDataContainer().get(key, PersistentDataType.INTEGER);
+                Player player = event.getPlayer();
+                player.giveExp(expToGive);
+                player.sendMessage(colourMessage("&2&l+" + formatNumber(expToGive)) + " XP");
+                if (expBottle.getAmount() - 1 > 0) {
+                    expBottle.setAmount(expBottle.getAmount() - 1);
+                } else {
+                    player.getInventory().removeItem(expBottle);
+                }
+            }
+        }
+    }
+
+    @EventHandler
     public void invClick(InventoryClickEvent event) throws IOException {
         if(event.getWhoClicked() instanceof Player) {
             Player player = (Player) event.getWhoClicked();
             CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
+            user.getCMIPlayTime().getPlayDayOfToday().getTotalTime();
             Inventory clickInv = event.getClickedInventory();
             if (clickInv != null && !clickInv.isEmpty() && clickInv.getItem(0) != null) {
                 ItemStack fItem = clickInv.getItem(0);
@@ -649,6 +1038,9 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
                 NamespacedKey key = new NamespacedKey(this, "stop-click");
                 NamespacedKey key1 = new NamespacedKey(this, "gui-type");
                 if (fData.has(key, PersistentDataType.INTEGER) && fData.has(key1, PersistentDataType.STRING)) {
+                    if(clickInv.getItem(event.getSlot()) == null) {
+                        event.setCancelled(true);
+                    }
                     int clickCheck = fData.get(key, PersistentDataType.INTEGER);
                     String guiType = fData.get(key1, PersistentDataType.STRING);
                     if (clickCheck == 1) {
@@ -688,31 +1080,35 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
                             case "buyback":
                                 NamespacedKey typeKey = new NamespacedKey(this, "sold-type");
                                 ItemStack buyItem = event.getCurrentItem();
-                                ItemMeta buyMeta = Objects.requireNonNull(buyItem).getItemMeta();
-                                PersistentDataContainer buyData = buyMeta.getPersistentDataContainer();
-                                if(buyData.has(typeKey, PersistentDataType.STRING)) {
-                                    NamespacedKey amKey = new NamespacedKey(this, "sold-amount");
-                                    NamespacedKey priKey = new NamespacedKey(this, "sold-price");
-                                    String itemType = buyData.get(typeKey, PersistentDataType.STRING);
-                                    int itemAmount = buyData.get(amKey, PersistentDataType.INTEGER);
-                                    Double itemPrice = buyData.get(priKey, PersistentDataType.DOUBLE);
-                                    ItemStack iSold = new ItemStack(Objects.requireNonNull(Material.getMaterial(Objects.requireNonNull(itemType))), itemAmount);
-                                    if(user.getInventory().canFit(iSold)) {
-                                        if(user.getBalance() >= itemPrice) {
-                                            File buyFile = new File(this.getDataFolder() + File.separator + "recentsells.yml");
-                                            FileConfiguration buyConf = YamlConfiguration.loadConfiguration(buyFile);
-                                            NamespacedKey posKey = new NamespacedKey(this, "sold-pos");
-                                            String buyPos = buyData.get(posKey, PersistentDataType.STRING);
-                                            buyConf.set(player.getUniqueId() + "." + buyPos, null);
-                                            buyConf.save(buyFile);
-                                            asConsole("give " + player.getName() + " " + itemType + " " + itemAmount);
-                                            asConsole("money take " + player.getName() + " " + itemPrice);
-                                            BuyBack.openGUI(player);
+                                if(buyItem != null) {
+                                    ItemMeta buyMeta = buyItem.getItemMeta();
+                                    PersistentDataContainer buyData = buyMeta.getPersistentDataContainer();
+                                    if(buyData.has(typeKey, PersistentDataType.STRING)) {
+                                        NamespacedKey amKey = new NamespacedKey(this, "sold-amount");
+                                        NamespacedKey priKey = new NamespacedKey(this, "sold-price");
+                                        String itemType = buyData.get(typeKey, PersistentDataType.STRING);
+                                        int itemAmount = buyData.get(amKey, PersistentDataType.INTEGER);
+                                        Double itemPrice = buyData.get(priKey, PersistentDataType.DOUBLE);
+                                        ItemStack iSold = new ItemStack(Objects.requireNonNull(Material.getMaterial(Objects.requireNonNull(itemType))), itemAmount);
+                                        if(user.getInventory().canFit(iSold)) {
+                                            if(user.getBalance() >= itemPrice) {
+                                                File buyFile = new File(this.getDataFolder() + File.separator + "recentsells.yml");
+                                                FileConfiguration buyConf = YamlConfiguration.loadConfiguration(buyFile);
+                                                ArrayList<String> soldItems = (ArrayList<String>) Objects.requireNonNull(buyConf.getStringList(player.getUniqueId() + ".sold-items"));
+                                                NamespacedKey posKey = new NamespacedKey(this, "sold-pos");
+                                                int buyPos = buyData.get(posKey, PersistentDataType.INTEGER);
+                                                soldItems.remove(buyPos);
+                                                buyConf.set(player.getUniqueId() + ".sold-items", soldItems);
+                                                buyConf.save(buyFile);
+                                                asConsole("give " + player.getName() + " " + itemType + " " + itemAmount);
+                                                asConsole("money take " + player.getName() + " " + itemPrice);
+                                                BuyBack.openGUI(player);
+                                            } else {
+                                                player.sendMessage(colourMessage("&cYou do not have enough money!"));
+                                            }
                                         } else {
-                                            player.sendMessage(colourMessage("&cYou do not have enough money!"));
+                                            player.sendMessage(colourMessage("&cYou do not have enough space in your inventory!"));
                                         }
-                                    } else {
-                                        player.sendMessage(colourMessage("&cYou do not have enough space in your inventory!"));
                                     }
                                 }
                                 break;
@@ -819,12 +1215,12 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
                                             }
                                         }
                                         if (repCheck == 1) {
-                                            pMain.setDamage(0);
+                                            pMain.setRepairCost(0);
                                         }
 
                                         if(!player.hasPermission("skyprisoncore.command.endupgrade.first-time")) {
                                             asConsole("money take " + player.getName() + " " + cost);
-                                            player.sendMessage(colourMessage("&f[&aBlacksmith&f] &7Your item" + clickInv.getItem(4).getType() + " &7has been upgraded for &a$" + formatNumber(cost) + "&7!"));
+                                            player.sendMessage(colourMessage("&f[&aBlacksmith&f] &7Your &3" + clickInv.getItem(4).getType() + " &7has been upgraded for &a$" + formatNumber(cost) + "&7!"));
                                         } else {
                                             asConsole("lp user " + player.getName() + " permission unset skyprisoncore.command.endupgrade.first-time");
                                             player.sendMessage(colourMessage("&f[&aBlacksmith&f] &7Your &3" + clickInv.getItem(4).getType() + " &7has been upgraded!"));
@@ -834,6 +1230,65 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
                                     }
                                 } else if (event.getSlot() == 15) {
                                     player.closeInventory();
+                                }
+                                break;
+                            case "daily-reward":
+                                if(event.getClickedInventory().getItem(event.getSlot()).getType().equals(Material.BARRIER)) {
+                                    player.sendMessage(colourMessage("&cYou've already collected this reward!"));
+                                } else if(event.getClickedInventory().getItem(event.getSlot()).getType().equals(Material.MINECART)) {
+                                    player.sendMessage(colourMessage("&cYou can't collect this reward yet!"));
+                                } else if(event.getClickedInventory().getItem(event.getSlot()).getType().equals(Material.CHEST_MINECART)) {
+                                    File dailyFile = new File(this.getDataFolder() + File.separator + "dailyreward.yml");
+                                    FileConfiguration dailyConf = YamlConfiguration.loadConfiguration(dailyFile);
+                                    int currStreak = 1;
+                                    int totalStreak = 0;
+                                    if (dailyConf.isConfigurationSection("players." + player.getUniqueId())) {
+                                        currStreak = dailyConf.getInt("players." + player.getUniqueId() + ".current-streak");
+                                    }
+                                    if (dailyConf.isConfigurationSection("players." + player.getUniqueId())) {
+                                        totalStreak = dailyConf.getInt("players." + player.getUniqueId() + ".total-streak");
+                                    }
+                                    int tReward = 25;
+                                    tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tReward * currStreak);
+                                    dailyConf.set("players." + player.getUniqueId() + ".current-streak", currStreak + 1);
+                                    dailyConf.set("players." + player.getUniqueId() + ".total-streak", totalStreak + 1);
+
+                                    Date date = new Date();
+                                    SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+                                    String currDate = formatter.format(date);
+
+                                    dailyConf.set("players." + player.getUniqueId() + ".last-collected", currDate);
+                                    dailyConf.save(dailyFile);
+                                    daily.openGUI(player);
+                                }
+                                break;
+                            case "plotteleport":
+                                ItemStack itemClick = clickInv.getItem(event.getSlot());
+                                PersistentDataContainer plotData = Objects.requireNonNull(itemClick).getPersistentDataContainer();
+                                NamespacedKey plotKey = new NamespacedKey(this, "x");
+                                if(plotData.has(plotKey, PersistentDataType.DOUBLE)) {
+                                    NamespacedKey plotKey1 = new NamespacedKey(this, "y");
+                                    NamespacedKey plotKey2 = new NamespacedKey(this, "z");
+                                    NamespacedKey plotKey3 = new NamespacedKey(this, "world");
+                                    double x = plotData.get(plotKey, PersistentDataType.DOUBLE);
+                                    double y = plotData.get(plotKey1, PersistentDataType.DOUBLE);
+                                    double z = plotData.get(plotKey2, PersistentDataType.DOUBLE);
+                                    World world = Bukkit.getWorld(plotData.get(plotKey3, PersistentDataType.STRING));
+                                    Location loc = new Location(world, x, y, z);
+                                    if(player.getWorld().getName().equalsIgnoreCase("world_skycity") || player.hasPermission("cmi.command.tpa.warmupbypass")) {
+                                        player.teleportAsync(loc);
+                                        player.sendMessage(colourMessage("&aTeleported to plot!"));
+                                    } else {
+                                        player.closeInventory();
+                                        player.sendMessage(colourMessage("&aTeleporting to your plot in 5 seconds, Don't move!"));
+                                        BukkitTask task = getServer().getScheduler().runTaskLater(this, () -> {
+                                            teleportMove.remove(player.getUniqueId());
+                                            player.teleport(loc);
+                                            player.sendMessage(colourMessage("&aTeleported to plot!"));
+                                        }, 100L);
+                                        teleportMove.put(player.getUniqueId(), task.getTaskId());
+
+                                    }
                                 }
                                 break;
                         }
@@ -923,7 +1378,7 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
                                     SecretsGUI.openGUI(player, "rewards");
                                 } else if(Objects.requireNonNull(rData.getString(foundValue + ".reward-type")).equalsIgnoreCase("tokens")) {
                                     int tokenAmount = rData.getInt(foundValue + ".reward");
-                                    ecoPlugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tokenAmount);
+                                    tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tokenAmount);
                                     pData.set(player.getUniqueId() + ".rewards." + foundValue + ".collected", true);
                                     try {
                                         pData.save(secretsDataFile);
@@ -1042,7 +1497,7 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
     //
 
     @EventHandler
-    public void voidFall(EntityRemoveEvent event) {
+    public void voidFall(EntityRemoveFromWorldEvent event) {
         if (event.getEntity().getLocation().getY() < -63) {
             if(event.getEntity().getWorld().getName().equalsIgnoreCase("world_prison")) {
                 if (event.getEntityType() == EntityType.DROPPED_ITEM) {
@@ -1095,15 +1550,6 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
     // EventHandlers regarding Sponge Event
     //
 
-    public boolean isInt(String str) {
-        try {
-            Integer.parseInt(str);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
-
     @EventHandler
     public void spongeEvent(BlockDamageEvent event) throws IOException {
         Block b = event.getBlock();
@@ -1145,10 +1591,7 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
                                     }
                                     sDataConf.save(spongeData);
 
-                                    ecoPlugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(event.getPlayer()), 25);
-
-                                    event.getPlayer().sendMessage(ChatColor.BLUE + "Tokens" + ChatColor.DARK_GRAY + " » " + ChatColor.AQUA + "25 tokens "
-                                            + ChatColor.GRAY + "has been added to your balance.");
+                                    tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(event.getPlayer()), 25);
                                     break;
                                 }
                             }
@@ -1166,11 +1609,30 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
     //
 
     @EventHandler
+    public void CustomVillagerTrades(VillagerAcquireTradeEvent event) {
+        AbstractVillager villager = event.getEntity();
+        List<MerchantRecipe> vSales = Lists.newArrayList(villager.getRecipes());
+
+        vSales.removeIf(recipe -> recipe.getResult().getType().equals(Material.EMERALD));
+
+        ItemStack wham = new ItemStack(Material.BOOK, 1);
+        ItemMeta whams = wham.getItemMeta();
+        whams.setDisplayName("Ur a potat");
+        wham.setItemMeta(whams);
+        MerchantRecipe newRecipe = new MerchantRecipe(wham, 5);
+        newRecipe.addIngredient(new ItemStack(Material.COOKED_PORKCHOP, 69));
+        vSales.add(newRecipe);
+        villager.setRecipes(vSales);
+    }
+
+    @EventHandler
     public void villagerTrade(InventoryOpenEvent event) {
         if (event.getInventory().getType().equals(InventoryType.MERCHANT)) {
             Player player = (Player) event.getPlayer();
             player.sendMessage(ChatColor.RED + "Villager trading has been disabled");
-            event.setCancelled(true);
+            if(!player.isOp()) {
+                event.setCancelled(true);
+            }
         } else if(event.getInventory().getType().equals(InventoryType.SMITHING)) {
             event.setCancelled(true);
         }
@@ -1194,78 +1656,105 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
 
 
     @EventHandler
-    public void blockBreak(BlockBreakEvent event) {
+    public void blockBreak(BlockBreakEvent event) throws IOException {
         Block b = event.getBlock();
         Location loc = b.getLocation();
         if(!event.isCancelled()) {
-            if (b.getType() == Material.SNOW_BLOCK && loc.getWorld().getName().equalsIgnoreCase("world_prison")) {
-                event.setDropItems(false);
-                Location cob = loc.add(0.5D, 0.0D, 0.5D);
-                ItemStack snowblock = new ItemStack(Material.SNOW_BLOCK, 1);
-                loc.getWorld().dropItem(cob, snowblock);
-            } else if (b.getType() == Material.SNOW_BLOCK && loc.getWorld().getName().equalsIgnoreCase("world_event")) {
-                event.setDropItems(false);
-            } else if (b.getType() == Material.BIRCH_LOG && loc.getWorld().getName().equalsIgnoreCase("world_prison")) {
-                ArrayList<Material> axes = new ArrayList<>();
-                axes.add(Material.DIAMOND_AXE);
-                axes.add(Material.GOLDEN_AXE);
-                axes.add(Material.IRON_AXE);
-                axes.add(Material.STONE_AXE);
-                axes.add(Material.WOODEN_AXE);
-                axes.add(Material.NETHERITE_AXE);
-                if(axes.contains(event.getPlayer().getInventory().getItemInMainHand().getType())) {
-                    if (!event.getPlayer().isSneaking()) {
-                        boolean birchDown = true;
-                        int birchDrops = 0;
-                        Location birchLoc;
-                        Location saplingLoc;
-                        int i = 0;
-                        while (birchDown) {
-                            birchLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - i, loc.getBlockZ());
-                            if (birchLoc.getBlock().getType() == Material.BIRCH_LOG) {
-                                birchLoc.getBlock().breakNaturally();
-                                birchDrops++;
-                                i++;
-                            } else {
-                                saplingLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - i + 1, loc.getBlockZ());
-                                Location finalSaplingLoc = saplingLoc;
-                                if (birchLoc.getBlock().getType() == Material.GRASS_BLOCK || birchLoc.getBlock().getType() == Material.DIRT) {
-                                    getServer().getScheduler().scheduleSyncDelayedTask(this, () -> finalSaplingLoc.getBlock().setType(Material.BIRCH_SAPLING), 2L);
+            if(loc.getWorld().getName().equalsIgnoreCase("world_event")) {
+                if(!event.getPlayer().isOp()) {
+                    if(b.getType().equals(Material.TNT)) {
+                        event.setCancelled(true);
+                    }
+                }
+            } else {
+                if (!CoreProtect.getInstance().getAPI().hasPlaced(event.getPlayer().getName(), event.getBlock(), 300, 0)) {
+                    String pUUID = event.getPlayer().getUniqueId().toString();
+                    int brokeBlocks = blockBreaks.get(pUUID);
+                    if (brokeBlocks >= 2000) {
+                        blockBreaks.put(pUUID, 0);
+                        Random rand = new Random();
+                        int tReward = rand.nextInt(25 - 10 + 1) + 10;
+                        tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(event.getPlayer()), tReward);
+                        event.getPlayer().sendMessage(ChatColor.GRAY + "You've mined 2,000 blocks and have received some tokens!");
+                    } else {
+                        blockBreaks.put(pUUID, brokeBlocks + 1);
+                    }
+                }
+                if (b.getType() == Material.SNOW_BLOCK && loc.getWorld().getName().equalsIgnoreCase("world_prison")) {
+                    event.setDropItems(false);
+                    Location cob = loc.add(0.5D, 0.0D, 0.5D);
+                    ItemStack snowblock = new ItemStack(Material.SNOW_BLOCK, 1);
+                    loc.getWorld().dropItem(cob, snowblock);
+                } else if (b.getType() == Material.SNOW_BLOCK && loc.getWorld().getName().equalsIgnoreCase("world_event")) {
+                    event.setDropItems(false);
+                } else if (b.getType() == Material.BIRCH_LOG && loc.getWorld().getName().equalsIgnoreCase("world_prison")) {
+                    ArrayList<Material> axes = new ArrayList<>();
+                    axes.add(Material.DIAMOND_AXE);
+                    axes.add(Material.GOLDEN_AXE);
+                    axes.add(Material.IRON_AXE);
+                    axes.add(Material.STONE_AXE);
+                    axes.add(Material.WOODEN_AXE);
+                    axes.add(Material.NETHERITE_AXE);
+                    if (axes.contains(event.getPlayer().getInventory().getItemInMainHand().getType())) {
+                        if (!event.getPlayer().isSneaking()) {
+                            boolean birchDown = true;
+                            int birchDrops = 0;
+                            Location birchLoc;
+                            Location saplingLoc;
+                            int i = 0;
+                            while (birchDown) {
+                                birchLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - i, loc.getBlockZ());
+                                if (birchLoc.getBlock().getType() == Material.BIRCH_LOG) {
+                                    birchLoc.getBlock().breakNaturally();
+                                    birchDrops++;
+                                    i++;
+                                } else {
+                                    saplingLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - i + 1, loc.getBlockZ());
+                                    Location finalSaplingLoc = saplingLoc;
+                                    if (birchLoc.getBlock().getType() == Material.GRASS_BLOCK || birchLoc.getBlock().getType() == Material.DIRT) {
+                                        getServer().getScheduler().scheduleSyncDelayedTask(this, () -> finalSaplingLoc.getBlock().setType(Material.BIRCH_SAPLING), 2L);
+                                    }
+                                    birchDown = false;
                                 }
-                                birchDown = false;
                             }
-                        }
-                        boolean birchUp = true;
-                        int x = 1;
-                        while (birchUp) {
-                            birchLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() + x, loc.getBlockZ());
-                            if (birchLoc.getBlock().getType() == Material.BIRCH_LOG) {
-                                birchLoc.getBlock().breakNaturally();
-                                birchDrops++;
-                                x++;
-                            } else {
-                                birchUp = false;
+                            boolean birchUp = true;
+                            int x = 1;
+                            while (birchUp) {
+                                birchLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() + x, loc.getBlockZ());
+                                if (birchLoc.getBlock().getType() == Material.BIRCH_LOG) {
+                                    birchLoc.getBlock().breakNaturally();
+                                    birchDrops++;
+                                    x++;
+                                } else {
+                                    birchUp = false;
+                                }
                             }
-                        }
 
-                        ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
-                        Damageable im = (Damageable) item.getItemMeta();
-                        Material axe = item.getType();
-                        int dmg = im.getDamage();
-                        if (item.containsEnchantment(Enchantment.DURABILITY)) {
-                            int enchantLevel = item.getEnchantmentLevel(Enchantment.DURABILITY);
-                            if (birchDrops / enchantLevel + dmg > axe.getMaxDurability()) {
-                                event.getPlayer().getInventory().remove(item);
+                            ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
+                            Damageable im = (Damageable) item.getItemMeta();
+                            Material axe = item.getType();
+                            int dmg = im.getDamage();
+                            if (item.containsEnchantment(Enchantment.DURABILITY)) {
+                                int enchantLevel = item.getEnchantmentLevel(Enchantment.DURABILITY);
+                                if (birchDrops / enchantLevel + dmg > axe.getMaxDurability()) {
+                                    event.getPlayer().getInventory().remove(item);
+                                } else {
+                                    im.setDamage(birchDrops / enchantLevel + dmg);
+                                    item.setItemMeta((ItemMeta) im);
+                                }
                             } else {
-                                im.setDamage(birchDrops / enchantLevel + dmg);
-                                item.setItemMeta((ItemMeta) im);
+                                if (birchDrops + dmg > axe.getMaxDurability()) {
+                                    event.getPlayer().getInventory().remove(item);
+                                } else {
+                                    im.setDamage(birchDrops + dmg);
+                                    item.setItemMeta((ItemMeta) im);
+                                }
                             }
                         } else {
-                            if (birchDrops + dmg > axe.getMaxDurability()) {
-                                event.getPlayer().getInventory().remove(item);
-                            } else {
-                                im.setDamage(birchDrops + dmg);
-                                item.setItemMeta((ItemMeta) im);
+                            Location newLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - 1, loc.getBlockZ());
+                            if (newLoc.getBlock().getType() == Material.GRASS_BLOCK || newLoc.getBlock().getType() == Material.DIRT) {
+                                getServer().getScheduler().scheduleSyncDelayedTask(this, () -> loc.getBlock().setType(Material.BIRCH_SAPLING), 2L);
+
                             }
                         }
                     } else {
@@ -1274,27 +1763,22 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
                             getServer().getScheduler().scheduleSyncDelayedTask(this, () -> loc.getBlock().setType(Material.BIRCH_SAPLING), 2L);
                         }
                     }
-                } else {
-                    Location newLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - 1, loc.getBlockZ());
-                    if (newLoc.getBlock().getType() == Material.GRASS_BLOCK || newLoc.getBlock().getType() == Material.DIRT) {
-                        getServer().getScheduler().scheduleSyncDelayedTask(this, () -> loc.getBlock().setType(Material.BIRCH_SAPLING), 2L);
-                    }
-                }
-            } else if (b.getType() == Material.WHEAT && loc.getWorld().getName().equalsIgnoreCase("world_prison")) {
-                if (!event.getPlayer().isOp()) {
-                    BlockData bdata = b.getBlockData();
-                    if (bdata instanceof Ageable) {
-                        Ageable age = (Ageable) bdata;
-                        if (age.getAge() != age.getMaximumAge()) {
-                            event.setCancelled(true);
-                            event.getPlayer().sendMessage(ChatColor.RED + "" + ChatColor.ITALIC + "This wheat isn't ready for harvest..");
-                        } else {
-                            getServer().getScheduler().scheduleSyncDelayedTask(this, () -> loc.getBlock().setType(Material.WHEAT), 2L);
+                } else if (b.getType() == Material.WHEAT && loc.getWorld().getName().equalsIgnoreCase("world_prison")) {
+                    if (!event.getPlayer().isOp()) {
+                        BlockData bdata = b.getBlockData();
+                        if (bdata instanceof Ageable) {
+                            Ageable age = (Ageable) bdata;
+                            if (age.getAge() != age.getMaximumAge()) {
+                                event.setCancelled(true);
+                                event.getPlayer().sendMessage(ChatColor.RED + "" + ChatColor.ITALIC + "This wheat isn't ready for harvest..");
+                            } else {
+                                getServer().getScheduler().scheduleSyncDelayedTask(this, () -> loc.getBlock().setType(Material.WHEAT), 2L);
+                            }
                         }
                     }
+                } else if (b.getType() == Material.BIRCH_SAPLING && loc.getWorld().getName().equalsIgnoreCase("world_prison") && !event.getPlayer().isOp()) {
+                    event.setCancelled(true);
                 }
-            } else if (b.getType() == Material.BIRCH_SAPLING && loc.getWorld().getName().equalsIgnoreCase("world_prison") && !event.getPlayer().isOp()) {
-                event.setCancelled(true);
             }
         }
     }
@@ -1316,9 +1800,9 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
         File f = new File(this.getDataFolder() + File.separator + "recentkills.yml");
         FileConfiguration kills = YamlConfiguration.loadConfiguration(f);
 
-        int pKills = kills.getInt(killer.getUniqueId() + ".pvpkills")+1;
-        int pDeaths = kills.getInt(killed.getUniqueId() + ".pvpdeaths")+1;
-        int pKillerStreak = kills.getInt(killer.getUniqueId() + ".pvpkillstreak")+1;
+        int pKills = kills.getInt(killer.getUniqueId() + ".pvpkills") + 1;
+        int pDeaths = kills.getInt(killed.getUniqueId() + ".pvpdeaths") + 1;
+        int pKillerStreak = kills.getInt(killer.getUniqueId() + ".pvpkillstreak") + 1;
         if(!kills.contains(killer.getUniqueId() + ".pvpdeaths")) {
             kills.set(killer.getUniqueId() + ".pvpdeaths", 0);
         }
@@ -1332,10 +1816,10 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
             kills.save(f);
             if(killed.hasPermission("skyprisoncore.guard.onduty")) {
                 killer.sendMessage(ChatColor.GRAY + "You killed " + ChatColor.RED + killed.getName() + ChatColor.GRAY + " and received " + ChatColor.RED + "15" + ChatColor.GRAY + " token!");
-                ecoPlugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 15);
+                tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 15);
             } else {
                 killer.sendMessage(ChatColor.GRAY + "You killed " + ChatColor.RED + killed.getName() + ChatColor.GRAY + " and received " + ChatColor.RED + "1" + ChatColor.GRAY + " token!");
-                ecoPlugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 1);
+                tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 1);
             }
 
             if(pDeaths == 1000) {
@@ -1350,10 +1834,10 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
 
             if(pKillerStreak % 5 == 0 && pKillerStreak <= 100) {
                 killer.sendMessage(colourMessage("&7You've hit a kill streak of &c&l" + pKillerStreak + "&7! You have received &c&l15 &7tokens as a reward!"));
-                ecoPlugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 15);
+                tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 15);
             } else if(pKillerStreak % 50 == 0 && pKillerStreak > 100) {
                 killer.sendMessage(colourMessage("&7You've hit a kill streak of &c&l" + pKillerStreak + "&7! You have received &c&l30 &7tokens as a reward!"));
-                ecoPlugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 30);
+                tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 30);
             }
         } catch (final IOException e) {
             e.printStackTrace();
@@ -1362,6 +1846,13 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
 
     @EventHandler
     public void playerDeath(EntityDeathEvent event) {
+        if(event.getEntity() instanceof Player) {
+            Player player = (Player) event.getEntity();
+            if(Safezone.safezoneViolators.containsKey(player.getUniqueId())) {
+                Safezone.safezoneViolators.remove(player.getUniqueId());
+            }
+        }
+
         if(event.getEntity() instanceof Player && event.getEntity().getKiller() != null) {
             Player killed = (Player) event.getEntity();
             Player killer = killed.getKiller();
@@ -1429,16 +1920,16 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
 
                                                 if(pKills == 1000) {
                                                     asConsole("lp user " + killer.getName() + " permission set deluxetags.tag.kills");
-                                                    killed.sendMessage(colourMessage(colourMessage("&7You have killed players &c&l1000 &7times! Therefore, you get a special tag!")));
+                                                    killed.sendMessage(colourMessage(colourMessage("&7You have killed &c&l1000 &7players! Therefore, you get a special tag!")));
                                                 }
 
                                                 if(pKillStreak % 5 == 0 && pKillStreak <= 100) {
                                                     killer.sendMessage(colourMessage("&7You've hit a kill streak of &c&l" + pKillStreak + "&7! You have received &c&l15 &7tokens as a reward!"));
-                                                    ecoPlugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 15);
+                                                    tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 15);
 
                                                 } else if(pKillStreak % 50 == 0 && pKillStreak > 100) {
                                                     killer.sendMessage(colourMessage("&7You've hit a kill streak of &c&l" + pKillStreak + "&7! You have received &c&l30 &7tokens as a reward!"));
-                                                    ecoPlugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 30);
+                                                    tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 30);
                                                 }
 
                                                 try {
