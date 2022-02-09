@@ -54,11 +54,15 @@ public class Placeholders extends PlaceholderExpansion {
 		if(dist < 10) {
 			return ChatColor.GRAY + "" + ChatColor.ITALIC + "You Are Here";
 		} else {
-			if(user.getWorld().getTime() > 0 && user.getWorld().getTime() < 12300) {
-				return ChatColor.GRAY + "Price: " + ChatColor.YELLOW + "$" + dist;
+			if(!player.hasPermission("skyprisoncore.command.transportpass.bus")) {
+				if (user.getWorld().getTime() > 0 && user.getWorld().getTime() < 12300) {
+					return ChatColor.GRAY + "Price: " + ChatColor.YELLOW + "$" + dist;
+				} else {
+					int nightDist = (int) (dist * 1.5);
+					return ChatColor.GRAY + "Price: " + ChatColor.YELLOW + "$" + nightDist;
+				}
 			} else {
-				int nightDist = (int) (dist*1.5);
-				return ChatColor.GRAY + "Price: " + ChatColor.YELLOW + "$" + nightDist;
+				return ChatColor.GRAY + "Price: " + ChatColor.YELLOW + "FREE";
 			}
 		}
 	}
@@ -70,11 +74,15 @@ public class Placeholders extends PlaceholderExpansion {
 		if(dist < 10) {
 			return "0";
 		} else {
-			if(user.getWorld().getTime() > 0 && user.getWorld().getTime() < 12300) {
-				return String.valueOf(dist);
+			if(!player.hasPermission("skyprisoncore.command.transportpass.bus")) {
+				if (user.getWorld().getTime() > 0 && user.getWorld().getTime() < 12300) {
+					return String.valueOf(dist);
+				} else {
+					int nightDist = (int) (dist * 1.5);
+					return String.valueOf(nightDist);
+				}
 			} else {
-				int nightDist = (int) (dist*1.5);
-				return String.valueOf(nightDist);
+				return "0";
 			}
 		}
 	}
@@ -86,7 +94,10 @@ public class Placeholders extends PlaceholderExpansion {
 		if(dist < 50) {
 			return ChatColor.GRAY + "" + ChatColor.ITALIC + "You Are Here";
 		} else {
-			return ChatColor.GRAY + "Price: " + ChatColor.YELLOW + "$" + dist;
+			if(!player.hasPermission("skyprisoncore.command.transportpass.train"))
+				return ChatColor.GRAY + "Price: " + ChatColor.YELLOW + "$" + dist;
+			else
+				return ChatColor.GRAY + "Price: " + ChatColor.YELLOW + "FREE";
 		}
 	}
 
@@ -97,7 +108,10 @@ public class Placeholders extends PlaceholderExpansion {
 		if(dist < 50) {
 			return "0";
 		} else {
-			return String.valueOf(dist);
+			if(!player.hasPermission("skyprisoncore.command.transportpass.train"))
+				return String.valueOf(dist);
+			else
+				return "0";
 		}
 	}
 
@@ -244,6 +258,29 @@ public class Placeholders extends PlaceholderExpansion {
 				} else {
 					return parkourPlaceholder;
 				}
+			}
+		}
+
+		if(identifier.equalsIgnoreCase("bus_pass_time")) {
+			String timePlaceholder = PlaceholderAPI.setPlaceholders(player, "%luckperms_expiry_time_skyprisoncore.command.transportpass.bus%");
+			String availableMessage = ChatColor.RED + "You don't have a bus pass!";
+			String hasPassMessage = plugin.colourMessage("&7Expires In: &a" + timePlaceholder);
+			if(timePlaceholder.equalsIgnoreCase("")) {
+				return availableMessage;
+			} else {
+				return hasPassMessage;
+			}
+		}
+
+
+		if(identifier.equalsIgnoreCase("train_pass_time")) {
+			String timePlaceholder = PlaceholderAPI.setPlaceholders(player, "%luckperms_expiry_time_skyprisoncore.command.transportpass.train%");
+			String availableMessage = ChatColor.RED + "You don't have a train pass!";
+			String hasPassMessage = plugin.colourMessage("&7Expires In: &a" + timePlaceholder);
+			if(timePlaceholder.equalsIgnoreCase("")) {
+				return availableMessage;
+			} else {
+				return hasPassMessage;
 			}
 		}
 

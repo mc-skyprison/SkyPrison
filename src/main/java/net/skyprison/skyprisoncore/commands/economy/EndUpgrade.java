@@ -144,6 +144,66 @@ public class EndUpgrade implements CommandExecutor {
 		}
 	}
 
+	public void netheriteGUI(Player player) {
+		CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
+		Inventory netheriteGUI = Bukkit.createInventory(null, 27, ChatColor.RED + "End Upgrade Shop");
+		ItemStack whitePane = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
+		ItemMeta whiteMeta = whitePane.getItemMeta();
+		whiteMeta.setDisplayName(" ");
+		whitePane.setItemMeta(whiteMeta);
+		ItemStack grayPane = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+		ItemMeta grayMeta = grayPane.getItemMeta();
+		grayMeta.setDisplayName(" ");
+		grayPane.setItemMeta(grayMeta);
+
+		for (int i = 0; i < 27; i++) {
+			if(i == 0) {
+				NamespacedKey key = new NamespacedKey(plugin, "stop-click");
+				grayMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
+				NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
+				grayMeta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "netheriteupgrade");
+				grayPane.setItemMeta(grayMeta);
+				netheriteGUI.setItem(i, grayPane);
+			} else if (i == 8 || i == 9 || i == 17 || i == 18 || i == 26) {
+				netheriteGUI.setItem(i, grayPane);
+			} else if(i == 11) {
+				if(user.getBalance() >= 500000) {
+					ItemStack confirmUpgrade = new ItemStack(Material.GREEN_CONCRETE);
+					ArrayList<String> lore = new ArrayList<>();
+					ItemMeta confirmMeta = confirmUpgrade.getItemMeta();
+					confirmMeta.setDisplayName(plugin.colourMessage("&3&lReset Repair Cost"));
+					lore.add(plugin.colourMessage("&7Total Cost: &a$500,000"));
+					confirmMeta.setLore(lore);
+					confirmUpgrade.setItemMeta(confirmMeta);
+					netheriteGUI.setItem(i, confirmUpgrade);
+				} else {
+					ItemStack confirmUpgrade = new ItemStack(Material.RED_CONCRETE);
+					ArrayList<String> lore = new ArrayList<>();
+					ItemMeta confirmMeta = confirmUpgrade.getItemMeta();
+					confirmMeta.setDisplayName(plugin.colourMessage("&3&lReset Repair Cost"));
+					lore.add(plugin.colourMessage("&7Total Cost: &a$500,000"));
+					lore.add(plugin.colourMessage("&8-------"));
+					lore.add(plugin.colourMessage("&cYou can't afford this!"));
+					confirmMeta.setLore(lore);
+					confirmUpgrade.setItemMeta(confirmMeta);
+					netheriteGUI.setItem(i, confirmUpgrade);
+				}
+			} else if(i == 13) {
+				ItemStack hand = player.getInventory().getItemInMainHand();
+				netheriteGUI.setItem(i, hand);
+			} else if(i == 15) {
+				ItemStack cancelUpgrade = new ItemStack(Material.RED_CONCRETE);
+				ItemMeta cancelMeta = cancelUpgrade.getItemMeta();
+				cancelMeta.setDisplayName(plugin.colourMessage("&3&lCancel Repair Reset"));
+				cancelUpgrade.setItemMeta(cancelMeta);
+				netheriteGUI.setItem(i, cancelUpgrade);
+			} else {
+				netheriteGUI.setItem(i, whitePane);
+			}
+		}
+		player.openInventory(netheriteGUI);
+	}
+
 	public void openGUI(Player player, Boolean enchTransfer, Boolean repairReset) {
 
 		CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
@@ -276,7 +336,13 @@ public class EndUpgrade implements CommandExecutor {
 						confirmGUI(player, true, true);
 					}
 				} else {
-					player.sendMessage(plugin.colourMessage("&cYou can't upgrade this item!"));
+					List<Material> nethItems = Arrays.asList(Material.NETHERITE_HELMET, Material.NETHERITE_CHESTPLATE, Material.NETHERITE_LEGGINGS, Material.NETHERITE_BOOTS,
+							Material.NETHERITE_PICKAXE, Material.NETHERITE_AXE, Material.NETHERITE_HOE, Material.NETHERITE_SHOVEL);
+					if (nethItems.contains(iMat)) {
+						netheriteGUI(player);
+					} else {
+						player.sendMessage(plugin.colourMessage("&cYou can't upgrade this item!"));
+					}
 				}
 			} else {
 				player.sendMessage(plugin.colourMessage("&cYou need to finish the Blacksmith quest before you can use this shop!"));

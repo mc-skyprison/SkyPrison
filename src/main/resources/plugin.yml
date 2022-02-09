@@ -7,6 +7,27 @@ api-version: 1.17
 website: https://skyprison.net/
 depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin, CMI, Parkour, ShopGUIPlus, CoreProtect, SkyPrisonClaims]
 commands:
+  transportpass:
+    description: bus/train pass
+    usage: /<command>
+    permission: skyprisoncore.command.transportpass
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  moneyhistory:
+    description: money history
+    usage: /<command>
+    aliases: [mhistory]
+    permission: skyprisoncore.command.transportpass
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  casino:
+    description: Buying casino chips
+    usage: /<command>
+    permission: skyprisoncore.command.casino
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  bail:
+    description: Bail out of jail
+    usage: /<command>
+    permission: skyprisoncore.command.bail
+    permission-message: §4Error:§c You do not have permission to execute this command...
   tokens:
     description: Token related stuff
     usage: /<command>
@@ -314,11 +335,11 @@ permissions:
     description: Gives access to /referral
 
   skyprisoncore.command.firstjointop:
-    description: Gives access to /referral
+    description: Gives access to /firstjointop
   skyprisoncore.command.permshop:
-    description: Gives access to /referral
+    description: Gives access to /permshop
   skyprisoncore.command.econcheck:
-    description: Gives access to /referral
+    description: Gives access to /econcheck
   skyprisoncore.command.buyback:
     description: Gives access to /buyback
   skyprisoncore.command.bartender:
@@ -340,14 +361,24 @@ permissions:
   skyprisoncore.command.bottledexp:
     description: Gives access to /removeitalics
   skyprisoncore.command.bottledexp.tier1:
-    description: Gives access to /removeitalics
+    description: Gives access to 10,000 XP /xpb
   skyprisoncore.command.bottledexp.tier2:
-    description: Gives access to /removeitalics
+    description: Gives access to ANY XP /xpb
+  skyprisoncore.command.bottledexp.tier3:
+    description: Gives access to /xpb <exp> <amount of bottles>
   skyprisoncore.command.plots:
     description: Gives access to /plots
   skyprisoncore.command.plotteleport:
     description: Gives access to /plot
   skyprisoncore.command.tokens:
-    description: Bypasses Item Removal and that kind of stuff
+    description: Gives access to /tokens
   skyprisoncore.command.tokens.admin:
-    description: Bypasses Item Removal and that kind of stuff
+    description: Gives access to admin tokens commands
+  skyprisoncore.command.bail:
+    description: Gives access to /bail
+  skyprisoncore.command.casino:
+    description: Gives access to /casino
+  skyprisoncore.command.transportpass:
+    description: Gives access to /transportpass
+  skyprisoncore.command.moneyhistory:
+    description: Gives access to /moneyhistory

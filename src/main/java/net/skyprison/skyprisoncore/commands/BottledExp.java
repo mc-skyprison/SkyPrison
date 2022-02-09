@@ -44,6 +44,28 @@ public class BottledExp implements CommandExecutor {
 		}
 	}
 
+
+	public void createMultipleBottles(Player player, Integer amount, Integer bAmount, Integer tAmount) {
+		ItemStack expBottle = new ItemStack(Material.EXPERIENCE_BOTTLE, bAmount);
+		ItemMeta expMeta = expBottle.getItemMeta();
+		expMeta.setDisplayName(plugin.colourMessage("&5Experience Bottle &7(Throw)"));
+		ArrayList<String> lore = new ArrayList<>();
+		lore.add(plugin.colourMessage("&7Experience: &e" + plugin.formatNumber(amount)));
+		expMeta.setLore(lore);
+		NamespacedKey key = new NamespacedKey(plugin, "exp-amount");
+		expMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, amount);
+		expBottle.setItemMeta(expMeta);
+		CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
+		if (user.getInventory().canFit(expBottle)) {
+			user.takeExp(tAmount);
+			user.getInventory().addItem(expBottle);
+			plugin.asConsole("money take " + player.getName() + " " + tAmount * 0.25);
+			player.sendMessage(plugin.colourMessage("&4&l-" + plugin.formatNumber(tAmount)) + " XP");
+		} else {
+			player.sendMessage(plugin.colourMessage("&cYou do not have space in your inventory!"));
+		}
+	}
+
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if(sender instanceof Player) {
 			Player player = (Player) sender;
@@ -59,7 +81,7 @@ public class BottledExp implements CommandExecutor {
 									allowedExpWithdraw = 10000;
 								}
 								if (player.hasPermission("skyprisoncore.command.bottledexp.tier2")) {
-									allowedExpWithdraw = 1000000;
+									allowedExpWithdraw = 10000000;
 								}
 
 								if (expToWithdraw <= allowedExpWithdraw) {
@@ -89,8 +111,37 @@ public class BottledExp implements CommandExecutor {
 						}
 					} else {
 						player.sendMessage(plugin.colourMessage("&cYou do not have permission to /xpb all"));
-
 					}
+				} else {
+					player.sendMessage(plugin.colourMessage("&cCorrect usage: /xpb <experience/all>"));
+				}
+			} else if(args.length == 2) {
+				CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
+				if(plugin.isInt(args[0]) && plugin.isInt(args[1])) {
+					if(player.hasPermission("skyprisoncore.command.bottledexp.tier3")) {
+						int expToWithdraw = Integer.parseInt(args[0]);
+						int bottlesToMake = Integer.parseInt(args[1]);
+						if (expToWithdraw > 0 && bottlesToMake > 0) {
+							if(bottlesToMake <= 64) {
+								if (player.getTotalExperience() >= expToWithdraw) {
+									int actualExpWithdraw = expToWithdraw * bottlesToMake;
+									if (user.getBalance() >= actualExpWithdraw * 0.25) {
+										createMultipleBottles(player, expToWithdraw, bottlesToMake, actualExpWithdraw);
+									}
+								} else {
+									player.sendMessage(plugin.colourMessage("&cYou do not have that amount of experience!"));
+								}
+							} else {
+								player.sendMessage(plugin.colourMessage("&cYou can only withdraw a max of 64 bottles at a time!"));
+							}
+						} else {
+							player.sendMessage(plugin.colourMessage("&cYou can't withdraw 0 or less experience!"));
+						}
+					} else {
+						player.sendMessage(plugin.colourMessage("&cYou do not have permission to /xpb <experience (bottle amount)"));
+					}
+				} else {
+					player.sendMessage(plugin.colourMessage("&cCorrect usage: /xpb <experience> (how many bottles to make)"));
 				}
 			} else {
 				player.sendMessage(plugin.colourMessage("&7Current Experience: &e" + plugin.formatNumber(player.getTotalExperience()) + "\n&c/xpb <amount>"));

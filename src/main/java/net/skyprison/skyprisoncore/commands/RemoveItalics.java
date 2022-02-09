@@ -7,6 +7,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.command.Command;
@@ -31,8 +32,9 @@ public class RemoveItalics implements CommandExecutor {
 
 	public void doTheThing(Player player, ItemStack item) {
 		if(player.getInventory().contains(item)) {
+			TextComponent newName = Component.text(item.getDisplayName()).decoration(TextDecoration.ITALIC, false);
 			ItemMeta iMeta = item.getItemMeta();
-			iMeta.displayName().decoration(TextDecoration.ITALIC, false);
+			iMeta.displayName(newName);
 			item.setItemMeta(iMeta);
 			plugin.asConsole("money take " + player.getName() + " " + 50000);
 			player.sendMessage(plugin.colourMessage("&aSuccessfully removed italics from item name!"));
@@ -56,7 +58,11 @@ public class RemoveItalics implements CommandExecutor {
 							ItemMeta iMeta = item.getItemMeta();
 							if (!iMeta.displayName().hasDecoration(TextDecoration.ITALIC)) {
 								confirmItalics.put(player.getUniqueId(), item);
-								TextComponent confirm = Component.text("CLICK TO CONFIRM ITALICS REMOVAL").color(NamedTextColor.YELLOW).clickEvent(ClickEvent.runCommand("/removeitalics confirm"));
+								Component confirm = Component.text("Click here to confirm italics removal")
+										.color(NamedTextColor.YELLOW)
+										.decorate(TextDecoration.BOLD)
+										.clickEvent(ClickEvent.runCommand("/removeitalics confirm"))
+										.hoverEvent(Component.text(plugin.colourMessage("&eClick me!")));
 								player.sendMessage(confirm);
 							} else {
 								player.sendMessage(plugin.colourMessage("&cItalics has already been removed from this item!"));
