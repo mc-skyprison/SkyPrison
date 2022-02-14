@@ -16,7 +16,7 @@ commands:
     description: money history
     usage: /<command>
     aliases: [mhistory]
-    permission: skyprisoncore.command.transportpass
+    permission: skyprisoncore.command.moneyhistory
     permission-message: §4Error:§c You do not have permission to execute this command...
   casino:
     description: Buying casino chips

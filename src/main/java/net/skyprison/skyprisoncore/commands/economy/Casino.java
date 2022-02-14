@@ -12,8 +12,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class Casino implements CommandExecutor {
     private final SkyPrisonCore plugin;

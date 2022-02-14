@@ -1,8 +1,6 @@
 package net.skyprison.skyprisoncore;
 
-import java.awt.*;
 import java.io.*;
-import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -24,8 +22,6 @@ import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent;
 import com.dre.brewery.api.events.brew.BrewDrinkEvent;
 import com.google.common.collect.Lists;
-import com.onarandombox.MultiverseCore.MultiverseCore;
-import com.onarandombox.MultiverseCore.api.MVWorldManager;
 import net.alex9849.arm.events.UnsellRegionEvent;
 import net.coreprotect.CoreProtect;
 import net.skyprison.skyprisonclaims.SkyPrisonClaims;
@@ -176,7 +172,7 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
             wMan.addWorld("world_minigames_bingo_" + generatedString + "_the_end", World.Environment.THE_END, null, WorldType.NORMAL, true, null);
     World world = event.getRegion().getRegionworld();*/
 
-    @Inject private plots plots;
+    @Inject private SkyPlot skyPlot;
     @Inject private PlotTeleport plotTeleport;
 
     FileConfiguration config = this.getConfig();
@@ -361,7 +357,7 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
         Objects.requireNonNull(getCommand("bail")).setExecutor(bail);
         Objects.requireNonNull(getCommand("casino")).setExecutor(casino);
 
-        Objects.requireNonNull(getCommand("plots")).setExecutor(plots);
+        Objects.requireNonNull(getCommand("skyplot")).setExecutor(skyPlot);
         Objects.requireNonNull(getCommand("plot")).setExecutor(plotTeleport);
         Objects.requireNonNull(getCommand("moneyhistory")).setExecutor(moneyHistory);
         String line;
@@ -569,8 +565,12 @@ public class SkyPrisonCore extends JavaPlugin implements Listener {
             String currDate = formatter.format(date);
 
             for(Player player : Bukkit.getOnlinePlayers()) {
-                String lastDay = dailyConf.getString("players." + player.getUniqueId() + ".last-collected");
-                if(lastDay == null || !lastDay.equalsIgnoreCase(currDate)) {
+                if(dailyConf.contains("players." + player.getUniqueId() + ".last-collected")) {
+                    String lastDay = dailyConf.getString("players." + player.getUniqueId() + ".last-collected");
+                    if (!lastDay.equalsIgnoreCase(currDate)) {
+                        player.sendMessage(colourMessage("&aYou can collect your &l/daily&l!"));
+                    }
+                } else {
                     player.sendMessage(colourMessage("&aYou can collect your &l/daily&l!"));
                 }
             }
