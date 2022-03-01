@@ -2,7 +2,6 @@ package net.skyprison.skyprisoncore.commands.economy;
 
 import com.Zrips.CMI.CMI;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -25,7 +24,6 @@ import java.util.*;
 public class EconomyCheck implements CommandExecutor {
 	private SkyPrisonCore plugin;
 
-	@Inject
 	public EconomyCheck(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

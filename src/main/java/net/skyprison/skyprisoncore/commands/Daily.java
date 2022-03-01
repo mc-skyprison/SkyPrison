@@ -1,6 +1,5 @@
 package net.skyprison.skyprisoncore.commands;
 
-import com.google.inject.Inject;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -11,10 +10,8 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -22,14 +19,12 @@ import org.bukkit.persistence.PersistentDataType;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 
 public class Daily implements CommandExecutor {
 
 	private SkyPrisonCore plugin;
 
-	@Inject
 	public Daily(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

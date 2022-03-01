@@ -1,7 +1,6 @@
 package net.skyprison.skyprisoncore.commands.economy;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -24,7 +23,6 @@ import java.util.*;
 public class BuyBack implements CommandExecutor {
 	private SkyPrisonCore plugin;
 
-	@Inject
 	public BuyBack(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

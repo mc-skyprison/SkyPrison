@@ -1,7 +1,6 @@
 package net.skyprison.skyprisoncore.commands.guard;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -14,7 +13,6 @@ import java.util.*;
 public class Safezone implements CommandExecutor {
 	private SkyPrisonCore plugin;
 
-	@Inject
 	public Safezone(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

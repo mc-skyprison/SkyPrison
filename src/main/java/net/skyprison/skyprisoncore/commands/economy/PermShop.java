@@ -2,7 +2,6 @@ package net.skyprison.skyprisoncore.commands.economy;
 
 import net.brcdev.shopgui.ShopGuiPlugin;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import net.brcdev.shopgui.ShopGuiPlusApi;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -13,7 +12,6 @@ import org.bukkit.entity.Player;
 public class PermShop implements CommandExecutor {
 	private SkyPrisonCore plugin;
 
-	@Inject
 	public PermShop(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

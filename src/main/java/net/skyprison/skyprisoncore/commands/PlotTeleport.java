@@ -1,6 +1,5 @@
 package net.skyprison.skyprisoncore.commands;
 
-import com.google.inject.Inject;
 import net.alex9849.arm.AdvancedRegionMarket;
 import net.alex9849.arm.regions.Region;
 import net.alex9849.arm.regions.SellType;
@@ -20,7 +19,6 @@ import java.util.*;
 public class PlotTeleport implements CommandExecutor {
 	private SkyPrisonCore plugin;
 
-	@Inject
 	public PlotTeleport(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

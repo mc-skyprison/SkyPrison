@@ -3,7 +3,6 @@ package net.skyprison.skyprisoncore.commands.economy;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.*;
 import org.bukkit.command.Command;
@@ -22,7 +21,6 @@ import java.util.List;
 public class EndUpgrade implements CommandExecutor {
 	private SkyPrisonCore plugin;
 
-	@Inject
 	public EndUpgrade(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

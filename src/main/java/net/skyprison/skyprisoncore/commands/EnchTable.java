@@ -1,6 +1,5 @@
 package net.skyprison.skyprisoncore.commands;
 
-import com.google.inject.Inject;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -11,7 +10,7 @@ import org.bukkit.entity.Player;
 
 public class EnchTable implements CommandExecutor {
 	private final SkyPrisonCore plugin;
-	@Inject
+
 	public EnchTable(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

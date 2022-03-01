@@ -2,7 +2,6 @@ package net.skyprison.skyprisoncore.commands;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
-import com.google.inject.Inject;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -18,7 +17,7 @@ import java.util.ArrayList;
 
 public class BottledExp implements CommandExecutor {
 	private final SkyPrisonCore plugin;
-	@Inject
+
 	public BottledExp(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

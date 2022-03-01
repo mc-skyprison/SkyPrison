@@ -1,6 +1,5 @@
 package net.skyprison.skyprisoncore.utils;
 
-import com.google.inject.Inject;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -15,7 +14,7 @@ import java.util.List;
 public class TabCompleter implements org.bukkit.command.TabCompleter {
     private final SkyPrisonCore plugin;
 
-    @Inject public TabCompleter(SkyPrisonCore plugin) {
+    public TabCompleter(SkyPrisonCore plugin) {
         this.plugin = plugin;
     }
 

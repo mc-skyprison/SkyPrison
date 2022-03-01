@@ -2,7 +2,6 @@ package net.skyprison.skyprisoncore.commands.economy;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
-import com.google.inject.Inject;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.CooldownManager;
 import org.bukkit.Bukkit;
@@ -24,17 +23,13 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class Bounty implements CommandExecutor {
 	private SkyPrisonCore plugin;
 	private Connection conn;
 
-	@Inject
 	public Bounty(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 		this.conn = plugin.conn;

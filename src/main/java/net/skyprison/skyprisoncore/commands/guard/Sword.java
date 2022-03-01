@@ -1,7 +1,6 @@
 package net.skyprison.skyprisoncore.commands.guard;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -16,7 +15,7 @@ import java.util.TimerTask;
 
 public class Sword implements CommandExecutor {
 	private SkyPrisonCore plugin;
-	@Inject
+
 	public Sword(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

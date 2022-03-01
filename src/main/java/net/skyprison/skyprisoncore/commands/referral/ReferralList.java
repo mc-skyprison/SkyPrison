@@ -1,7 +1,6 @@
 package net.skyprison.skyprisoncore.commands.referral;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -22,7 +21,7 @@ import java.util.*;
 
 public class ReferralList implements CommandExecutor {
 	private SkyPrisonCore plugin;
-	@Inject
+
 	public ReferralList(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

@@ -1,6 +1,5 @@
 package net.skyprison.skyprisoncore.commands.economy;
 
-import com.google.inject.Inject;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -11,7 +10,6 @@ import org.bukkit.entity.Player;
 public class TransportPass implements CommandExecutor {
     private final SkyPrisonCore plugin;
 
-    @Inject
     public TransportPass(SkyPrisonCore plugin) {
         this.plugin = plugin;
     }

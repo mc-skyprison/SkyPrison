@@ -2,7 +2,6 @@ package net.skyprison.skyprisoncore.commands.economy;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
-import com.google.inject.Inject;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
@@ -18,7 +17,7 @@ import java.util.UUID;
 
 public class Bail implements CommandExecutor {
     private final SkyPrisonCore plugin;
-    @Inject
+
     public Bail(SkyPrisonCore plugin) {
         this.plugin = plugin;
     }

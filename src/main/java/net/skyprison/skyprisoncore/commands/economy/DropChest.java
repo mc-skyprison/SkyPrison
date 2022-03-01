@@ -1,7 +1,6 @@
 package net.skyprison.skyprisoncore.commands.economy;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -22,7 +21,7 @@ import java.util.Set;
 
 public class DropChest implements CommandExecutor {
 	private SkyPrisonCore plugin;
-	@Inject
+
 	public DropChest(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

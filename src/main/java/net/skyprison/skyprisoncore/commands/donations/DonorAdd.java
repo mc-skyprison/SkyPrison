@@ -1,7 +1,6 @@
 package net.skyprison.skyprisoncore.commands.donations;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -16,7 +15,7 @@ import java.io.IOException;
 public class DonorAdd implements CommandExecutor {
 	private SkyPrisonCore plugin;
 
-	@Inject
+
 	public DonorAdd(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

@@ -2,7 +2,6 @@ package net.skyprison.skyprisoncore.commands.economy;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
-import com.google.inject.Inject;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -16,7 +15,6 @@ import java.io.IOException;
 public class Casino implements CommandExecutor {
     private final SkyPrisonCore plugin;
 
-    @Inject
     public Casino(SkyPrisonCore plugin) {
         this.plugin = plugin;
     }

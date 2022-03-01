@@ -3,7 +3,6 @@ package net.skyprison.skyprisoncore.utils;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.ChatColor;
@@ -17,7 +16,6 @@ import java.util.Set;
 public class Placeholders extends PlaceholderExpansion {
 	private SkyPrisonCore plugin;
 
-	@Inject
 	public Placeholders(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

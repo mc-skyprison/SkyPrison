@@ -1,7 +1,6 @@
 package net.skyprison.skyprisoncore.commands;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
@@ -18,7 +17,6 @@ import java.util.*;
 public class FirstjoinTop implements CommandExecutor {
 	private SkyPrisonCore plugin;
 
-	@Inject
 	public FirstjoinTop(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

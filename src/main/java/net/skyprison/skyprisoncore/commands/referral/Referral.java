@@ -3,7 +3,6 @@ package net.skyprison.skyprisoncore.commands.referral;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.dependencies.jda.api.entities.Member;
 import github.scarsz.discordsrv.dependencies.jda.api.entities.Role;
@@ -25,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Referral implements CommandExecutor {
 	private final SkyPrisonCore plugin;
-	@Inject
+
 	public Referral(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

@@ -1,7 +1,6 @@
 package net.skyprison.skyprisoncore.commands.economy;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import net.brcdev.shopgui.ShopGuiPlusApi;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -19,7 +18,6 @@ import java.util.ArrayList;
 public class DontSell implements CommandExecutor {
 	private SkyPrisonCore plugin;
 
-	@Inject
 	public DontSell(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

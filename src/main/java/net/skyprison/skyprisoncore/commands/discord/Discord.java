@@ -1,6 +1,6 @@
 package net.skyprison.skyprisoncore.commands.discord;
 
-import com.google.inject.Inject;
+
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 
 public class Discord implements CommandExecutor {
     private final SkyPrisonCore plugin;
-    @Inject
+
     public Discord(SkyPrisonCore plugin) {
         this.plugin = plugin;
     }

@@ -2,7 +2,6 @@ package net.skyprison.skyprisoncore.commands.economy;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
-import com.google.inject.Inject;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -23,7 +22,7 @@ import java.util.*;
 public class MoneyHistory implements CommandExecutor {
 
     private final SkyPrisonCore plugin;
-    @Inject
+
     public MoneyHistory(SkyPrisonCore plugin) {
         this.plugin = plugin;
     }

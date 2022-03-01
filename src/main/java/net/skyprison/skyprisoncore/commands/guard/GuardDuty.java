@@ -1,6 +1,6 @@
 package net.skyprison.skyprisoncore.commands.guard;
+
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 
 public class GuardDuty implements CommandExecutor {
 	private SkyPrisonCore plugin;
-	@Inject
+
 	public GuardDuty(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

@@ -2,7 +2,6 @@ package net.skyprison.skyprisoncore.commands.economy;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
-import com.google.inject.Inject;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -17,7 +16,6 @@ import java.io.IOException;
 public class Tokens implements CommandExecutor {
     private final SkyPrisonCore plugin;
 
-    @Inject
     public Tokens(SkyPrisonCore plugin) {
         this.plugin = plugin;
     }

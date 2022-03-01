@@ -1,7 +1,6 @@
 package net.skyprison.skyprisoncore.commands.secrets;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -17,7 +16,6 @@ import java.util.Set;
 public class SecretFound implements CommandExecutor {
 	private final SkyPrisonCore plugin;
 
-	@Inject
 	public SecretFound(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

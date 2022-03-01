@@ -1,14 +1,12 @@
 package net.skyprison.skyprisoncore.utils;
 
 import com.google.common.collect.Lists;
-import com.google.inject.Inject;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.configuration.file.FileConfiguration;
 
 public class ConfigCreator {
 	private SkyPrisonCore plugin;
 
-	@Inject
 	public ConfigCreator(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

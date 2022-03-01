@@ -4,7 +4,6 @@ import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import com.google.common.collect.Lists;
-import com.google.inject.Inject;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
@@ -20,7 +19,6 @@ import java.util.List;
 public class IgnoreTP implements CommandExecutor {
 	private final SkyPrisonCore plugin;
 
-	@Inject
 	public IgnoreTP(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

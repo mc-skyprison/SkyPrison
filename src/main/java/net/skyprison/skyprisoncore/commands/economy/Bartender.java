@@ -1,7 +1,6 @@
 package net.skyprison.skyprisoncore.commands.economy;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.*;
 import org.bukkit.command.Command;
@@ -23,7 +22,7 @@ import java.util.Set;
 
 public class Bartender implements CommandExecutor {
 	private SkyPrisonCore plugin;
-	@Inject
+
 	public Bartender(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

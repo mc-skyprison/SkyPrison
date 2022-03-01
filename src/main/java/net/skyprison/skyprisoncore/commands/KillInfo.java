@@ -1,7 +1,6 @@
 package net.skyprison.skyprisoncore.commands;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -18,7 +17,6 @@ import java.math.RoundingMode;
 public class KillInfo implements CommandExecutor {
 	private SkyPrisonCore plugin;
 
-	@Inject
 	public KillInfo(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

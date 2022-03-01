@@ -240,17 +240,47 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.fixips
     permission-message: §4Error:§c You do not have permission to execute this command...
-  plots:
+  skyplot:
     description: Opens the daily reward GUI
     usage: /<command>
-    permission: skyprisoncore.command.plots
+    permission: skyprisoncore.command.skyplot
     permission-message: §4Error:§c You do not have permission to execute this command...
   plot:
     description: Opens plot TP GUI
     usage: /<command>
+    aliases: [plottp, plotteleport]
     permission: skyprisoncore.command.plotteleport
     permission-message: §4Error:§c You do not have permission to execute this command...
+  g:
+    description: Guard Chat
+    usage: /<command>
+    permission: skyprisoncore.command.guard
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  b:
+    description: Builder Chat
+    usage: /<command>
+    permission: skyprisoncore.command.build
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  a:
+    description: Admin Chat
+    usage: /<command>
+    permission: skyprisoncore.command.admin
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  s:
+    description: Staff Chat
+    usage: /<command>
+    permission: skyprisoncore.command.staff
+    permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
+  skyprisoncore.command.build:
+    description: Gives access to buildchat
+  skyprisoncore.command.guard:
+    description: Gives access to guardchat
+  skyprisoncore.command.admin:
+    description: Gives access to adminchat
+  skyprisoncore.command.staff:
+    description: Gives access to staffchat
+
   #
   # Guard Permissions
   #
@@ -366,8 +396,8 @@ permissions:
     description: Gives access to ANY XP /xpb
   skyprisoncore.command.bottledexp.tier3:
     description: Gives access to /xpb <exp> <amount of bottles>
-  skyprisoncore.command.plots:
-    description: Gives access to /plots
+  skyprisoncore.command.skyplot:
+    description: Gives access to /skyplot
   skyprisoncore.command.plotteleport:
     description: Gives access to /plot
   skyprisoncore.command.tokens:

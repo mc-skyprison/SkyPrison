@@ -1,7 +1,6 @@
 package net.skyprison.skyprisoncore.commands.secrets;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.inject.Inject;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.WorldGuard;
@@ -28,7 +27,6 @@ import java.util.*;
 public class SecretsGUI implements CommandExecutor {
 	private final SkyPrisonCore plugin;
 
-	@Inject
 	public SecretsGUI(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}
