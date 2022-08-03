@@ -14,7 +14,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class Bow implements CommandExecutor {
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
 
 	public Bow(SkyPrisonCore plugin) {
 		this.plugin = plugin;

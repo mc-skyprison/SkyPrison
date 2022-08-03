@@ -10,12 +10,12 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class ShopPreTransaction implements Listener {
 
-    private SkyPrisonCore plugin;
+    private final SkyPrisonCore plugin;
 
     public ShopPreTransaction(SkyPrisonCore plugin) {
         this.plugin = plugin;
@@ -29,7 +29,7 @@ public class ShopPreTransaction implements Listener {
             FileConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
             if(yamlf.isConfigurationSection(player.getUniqueId().toString())) {
                 String iName = event.getShopItem().getItem().getType().name();
-                ArrayList blockedSales = (ArrayList) yamlf.getList(player.getUniqueId() + ".blocked");
+                List<String> blockedSales = yamlf.getStringList(player.getUniqueId() + ".blocked");
                 if(Objects.requireNonNull(blockedSales).contains(iName)) {
                     event.setCancelled(true);
                 }

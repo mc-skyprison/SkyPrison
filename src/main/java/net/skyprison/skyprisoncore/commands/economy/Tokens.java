@@ -3,21 +3,28 @@ package net.skyprison.skyprisoncore.commands.economy;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Tokens implements CommandExecutor {
     private final SkyPrisonCore plugin;
+    private final DatabaseHook hook;
 
-    public Tokens(SkyPrisonCore plugin) {
+    public Tokens(SkyPrisonCore plugin, DatabaseHook hook) {
         this.plugin = plugin;
+        this.hook = hook;
     }
 
 
@@ -42,26 +49,17 @@ public class Tokens implements CommandExecutor {
             plugin.tokensData.put(player.getUniqueId().toString(), tokens);
             player.sendMessage(plugin.colourMessage("&bTokens &8» &b" + plugin.formatNumber(amount) + " tokens &7has been added to your balance"));
         } else {
-            File fData = new File(plugin.getDataFolder() + File.separator + "tokensdata.yml");
-            YamlConfiguration tokenConf = YamlConfiguration.loadConfiguration(fData);
-
-            int tokens = amount;
-            if (tokenConf.contains("players." + player.getUniqueId().toString())) {
-                tokens += tokenConf.getInt("players." + player.getUniqueId());
-            }
-            tokenConf.set("players." + player.getUniqueId(), tokens);
-            try {
-                tokenConf.save(fData);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            String sql = "UPDATE users SET tokens = tokens + ? WHERE user_id = ?";
+            List<Object> params = new ArrayList<Object>() {{
+                add(amount);
+                add(player.getUniqueId().toString());
+            }};
+            hook.sqlUpdate(sql, params);
         }
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        File fData = new File(plugin.getDataFolder() + File.separator + "tokensdata.yml");
-        YamlConfiguration tokenConf = YamlConfiguration.loadConfiguration(fData);
         if(sender instanceof Player) {
             Player player = (Player) sender;
             if(args.length > 0) {
@@ -135,26 +133,33 @@ public class Tokens implements CommandExecutor {
                                             player.sendMessage(plugin.colourMessage("&cYou can't remove tokens from soneone with 0 tokens!"));
                                         }
                                     } else {
-                                        if (tokenConf.contains("players." + oPlayer.getUniqueId().toString())) {
-                                            int tokens = tokenConf.getInt("players." + oPlayer.getUniqueId());
-                                            if (tokens != 0) {
-                                                if (plugin.isInt(args[2])) {
-                                                    tokens -= Integer.parseInt(args[2]);
-                                                    tokenConf.set("players." + oPlayer.getUniqueId(), Math.max(tokens, 0));
-                                                    try {
-                                                        tokenConf.save(fData);
-                                                        player.sendMessage(plugin.colourMessage("&bTokens &8» &7Removed &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens &7from " + oPlayer.getName()));
-                                                    } catch (IOException e) {
-                                                        e.printStackTrace();
-                                                    }
-                                                } else {
-                                                    player.sendMessage(plugin.colourMessage("&cThe amount must be a number!"));
+                                        if (plugin.isInt(args[2])) {
+                                            try {
+                                                Connection conn = hook.getSQLConnection();
+                                                PreparedStatement ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = '" + oPlayer.getUniqueId() + "'");
+                                                ResultSet rs = ps.executeQuery();
+                                                int tokens = 0;
+                                                while(rs.next()) {
+                                                    tokens = rs.getInt(1);
                                                 }
-                                            } else {
-                                                player.sendMessage(plugin.colourMessage("&cYou can't remove tokens from soneone with 0 tokens!"));
+                                                hook.close(ps, rs, conn);
+
+                                                tokens -= Integer.parseInt(args[2]);
+                                                tokens = Math.max(tokens, 0);
+
+                                                String sql = "UPDATE users SET tokens = ? WHERE user_id = ?";
+                                                int finalTokens = tokens;
+                                                List<Object> params = new ArrayList<Object>() {{
+                                                    add(finalTokens);
+                                                    add(oPlayer.getUniqueId().toString());
+                                                }};
+                                                hook.sqlUpdate(sql, params);
+                                                player.sendMessage(plugin.colourMessage("&bTokens &8» &7Removed &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens &7from " + oPlayer.getName()));
+                                            } catch (SQLException e) {
+                                                e.printStackTrace();
                                             }
                                         } else {
-                                            player.sendMessage(plugin.colourMessage("&cYou can't remove tokens from soneone with 0 tokens!"));
+                                            player.sendMessage(plugin.colourMessage("&cThe amount must be a number!"));
                                         }
                                     }
                                 }
@@ -177,13 +182,13 @@ public class Tokens implements CommandExecutor {
                                                 player.sendMessage(plugin.colourMessage("&bTokens &8» &7Set " + oPlayer.getName() + "'s tokens to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
                                                 oPlayer.sendMessage(plugin.colourMessage("&bTokens &8» &7Your token balance was set to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
                                             } else {
-                                                tokenConf.set("players." + oPlayer.getUniqueId(), Integer.parseInt(args[2]));
-                                                try {
-                                                    tokenConf.save(fData);
-                                                    player.sendMessage(plugin.colourMessage("&bTokens &8» &7Set " + oPlayer.getName() + "'s tokens to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
-                                                } catch (IOException e) {
-                                                    e.printStackTrace();
-                                                }
+                                                String sql = "UPDATE users SET tokens = ? WHERE user_id = ?";
+                                                List<Object> params = new ArrayList<Object>() {{
+                                                    add(Integer.parseInt(args[2]));
+                                                    add(player.getUniqueId().toString());
+                                                }};
+                                                hook.sqlUpdate(sql, params);
+                                                player.sendMessage(plugin.colourMessage("&bTokens &8» &7Set " + oPlayer.getName() + "'s tokens to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
                                             }
                                         } else {
                                             player.sendMessage(plugin.colourMessage("&cYou can't set the token balance to a negative number!"));
@@ -205,23 +210,27 @@ public class Tokens implements CommandExecutor {
                             if(CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
                                 CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
                                 if(oPlayer.isOnline()) {
-                                    player.sendMessage(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'s token balance is &b" + plugin.formatNumber(plugin.tokensData.get(oPlayer.getUniqueId().toString())) + " tokens"));
+                                    player.sendMessage(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'s token balance is &b" + plugin.formatNumber(plugin.tokensData.get(oPlayer.getUniqueId().toString())) + " &7tokens"));
                                 } else {
-                                    if (tokenConf.contains("players." + oPlayer.getUniqueId().toString())) {
-                                        player.sendMessage(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'s token balance is &b" + plugin.formatNumber(tokenConf.getInt("players." + oPlayer.getUniqueId())) + " tokens"));
-                                    } else {
-                                        player.sendMessage(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'s token balance is &b0 tokens"));
+                                    try {
+                                        Connection conn = hook.getSQLConnection();
+                                        PreparedStatement ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = '" + oPlayer.getUniqueId() + "'");
+                                        ResultSet rs = ps.executeQuery();
+                                        if(rs.next()) {
+                                            player.sendMessage(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'s token balance is &b" + plugin.formatNumber(rs.getInt(1)) + " &7tokens"));
+                                        } else {
+                                            player.sendMessage(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'s token balance is &b0 &7tokens"));
+                                        }
+                                        hook.close(ps, rs, conn);
+                                    } catch (SQLException e) {
+                                        e.printStackTrace();
                                     }
                                 }
                             } else {
                                 player.sendMessage(plugin.colourMessage("&cPlayer does not exist!"));
                             }
                         } else {
-                            if(tokenConf.contains("players." + player.getUniqueId())) {
-                                player.sendMessage(plugin.colourMessage("&bTokens &8» &7Your token balance is &b" + plugin.formatNumber(plugin.tokensData.get(player.getUniqueId().toString())) + " tokens"));
-                            } else {
-                                player.sendMessage(plugin.colourMessage("&bTokens &8» &7Your token balance is &b0 tokens"));
-                            }
+                            player.sendMessage(plugin.colourMessage("&bTokens &8» &7Your token balance is &b" + plugin.formatNumber(plugin.tokensData.get(player.getUniqueId().toString())) + " &7tokens"));
                         }
                         break;
                     case "shop":
@@ -294,26 +303,33 @@ public class Tokens implements CommandExecutor {
                                         plugin.tellConsole(plugin.colourMessage("&cYou can't remove tokens from soneone with 0 tokens!"));
                                     }
                                 } else {
-                                    if (tokenConf.contains("players." + oPlayer.getUniqueId().toString())) {
-                                        int tokens = tokenConf.getInt("players." + oPlayer.getUniqueId());
-                                        if (tokens != 0) {
-                                            if (plugin.isInt(args[2])) {
-                                                tokens -= Integer.parseInt(args[2]);
-                                                tokenConf.set("players." + oPlayer.getUniqueId(), Math.max(tokens, 0));
-                                                try {
-                                                    tokenConf.save(fData);
-                                                    plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7Removed &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens &7from " + oPlayer.getName()));
-                                                } catch (IOException e) {
-                                                    e.printStackTrace();
-                                                }
-                                            } else {
-                                                plugin.tellConsole(plugin.colourMessage("&cThe amount must be a number!"));
+                                    if (plugin.isInt(args[2])) {
+                                        try {
+                                            Connection conn = hook.getSQLConnection();
+                                            PreparedStatement ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = '" + oPlayer.getUniqueId() + "'");
+                                            ResultSet rs = ps.executeQuery();
+                                            int tokens = 0;
+                                            while(rs.next()) {
+                                                tokens = rs.getInt(1);
                                             }
-                                        } else {
-                                            plugin.tellConsole(plugin.colourMessage("&cYou can't remove tokens from soneone with 0 tokens!"));
+                                            hook.close(ps, rs, conn);
+
+                                            tokens -= Integer.parseInt(args[2]);
+                                            tokens = Math.max(tokens, 0);
+
+                                            String sql = "UPDATE users SET tokens = ? WHERE user_id = ?";
+                                            int finalTokens = tokens;
+                                            List<Object> params = new ArrayList<Object>() {{
+                                                add(finalTokens);
+                                                add(oPlayer.getUniqueId().toString());
+                                            }};
+                                            hook.sqlUpdate(sql, params);
+                                            plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7Removed &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens &7from " + oPlayer.getName()));
+                                        } catch (SQLException e) {
+                                            e.printStackTrace();
                                         }
                                     } else {
-                                        plugin.tellConsole(plugin.colourMessage("&cYou can't remove tokens from soneone with 0 tokens!"));
+                                        plugin.tellConsole(plugin.colourMessage("&cThe amount must be a number!"));
                                     }
                                 }
                             }
@@ -332,13 +348,13 @@ public class Tokens implements CommandExecutor {
                                             plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7Set " + oPlayer.getName() + "'s tokens to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
                                             oPlayer.sendMessage(plugin.colourMessage("&bTokens &8» &7Your token balance was set to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
                                         } else {
-                                            tokenConf.set("players." + oPlayer.getUniqueId(), Integer.parseInt(args[2]));
-                                            try {
-                                                tokenConf.save(fData);
-                                                plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7Set " + oPlayer.getName() + "'s tokens to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
+                                            String sql = "UPDATE users SET tokens = ? WHERE user_id = ?";
+                                            List<Object> params = new ArrayList<Object>() {{
+                                                add(Integer.parseInt(args[2]));
+                                                add(oPlayer.getUniqueId().toString());
+                                            }};
+                                            hook.sqlUpdate(sql, params);
+                                            oPlayer.sendMessage(plugin.colourMessage("&bTokens &8» &7Set " + oPlayer.getName() + "'s tokens to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
                                         }
                                     } else {
                                         plugin.tellConsole(plugin.colourMessage("&cYou can't set the token balance to a negative number!"));
@@ -359,10 +375,18 @@ public class Tokens implements CommandExecutor {
                                 if(oPlayer.isOnline()) {
                                     plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'S token balance is &b" + plugin.formatNumber(plugin.tokensData.get(oPlayer.getUniqueId().toString())) + "tokens"));
                                 } else {
-                                    if(tokenConf.contains("players." + oPlayer.getUniqueId().toString())) {
-                                        plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'S token balance is &b" + plugin.formatNumber(tokenConf.getInt("players." + oPlayer.getUniqueId())) + "tokens"));
-                                    } else {
-                                        plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'S token balance is &b0 tokens"));
+                                    try {
+                                        Connection conn = hook.getSQLConnection();
+                                        PreparedStatement ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = '" + oPlayer.getUniqueId() + "'");
+                                        ResultSet rs = ps.executeQuery();
+                                        if(rs.next()) {
+                                            plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'s token balance is &b" + plugin.formatNumber(rs.getInt(1)) + " &7tokens"));
+                                        } else {
+                                            plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'s token balance is &b0 &7tokens"));
+                                        }
+                                        hook.close(ps, rs, conn);
+                                    } catch (SQLException e) {
+                                        e.printStackTrace();
                                     }
                                 }
                             } else {

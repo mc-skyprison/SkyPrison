@@ -11,10 +11,7 @@ import me.NoChance.PvPManager.Managers.PlayerHandler;
 import me.NoChance.PvPManager.PvPManager;
 import me.NoChance.PvPManager.PvPlayer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -25,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 public class PlayerMove implements Listener {
-    private SkyPrisonCore plugin;
+    private final SkyPrisonCore plugin;
 
     public PlayerMove(SkyPrisonCore plugin) {
         this.plugin = plugin;
@@ -64,7 +61,7 @@ public class PlayerMove implements Listener {
                     for (int i = 0; i <= toLoc.getBlockY(); i++) {
                         Location blockCheck = new Location(toLoc.getWorld(), toLoc.getBlockX(), toLoc.getBlockY() - i, toLoc.getBlockZ());
                         Block block = blockCheck.getBlock();
-                        if (block.isSolid() && !block.isLiquid()  && !block.isPassable()) {
+                        if (block.isSolid() && !block.getType().equals(Material.BARRIER) && !block.isLiquid()  && !block.isPassable()) {
                             toFly = false;
                             break;
                         }
@@ -72,7 +69,7 @@ public class PlayerMove implements Listener {
                     for (int i = 0; i <= fromLoc.getBlockY(); i++) {
                         Location blockCheck = new Location(fromLoc.getWorld(), fromLoc.getBlockX(), fromLoc.getBlockY() - i, fromLoc.getBlockZ());
                         Block block = blockCheck.getBlock();
-                        if (block.isSolid() && !block.isLiquid()  && !block.isPassable()) {
+                        if (block.isSolid() && !block.getType().equals(Material.BARRIER) && !block.isLiquid() && !block.isPassable()) {
                             fromFly = false;
                             break;
                         }
@@ -111,22 +108,6 @@ public class PlayerMove implements Listener {
             boolean inWorld = false;
             for(String guardWorld : Objects.requireNonNull(guardWorlds)) {
                 if(player.getWorld().getName().equalsIgnoreCase(guardWorld)) {
-                    inWorld = true;
-                    break;
-                }
-            }
-            if(!inWorld) {
-                if((event.getFrom().getBlockX() != event.getTo().getBlockX()) || (event.getFrom().getBlockZ() != event.getTo().getBlockZ())) {
-                    event.setCancelled(true);
-                    player.sendMessage(ChatColor.RED + "Please go off duty!");
-                }
-            }
-        }
-        if(player.hasPermission("skyprisoncore.builder.onduty") && !player.isOp()) {
-            ArrayList<String> buildWorlds = (ArrayList<String>) plugin.getConfig().getStringList("builder-worlds");
-            boolean inWorld = false;
-            for(String buildWorld : Objects.requireNonNull(buildWorlds)) {
-                if(player.getWorld().getName().equalsIgnoreCase(buildWorld)) {
                     inWorld = true;
                     break;
                 }

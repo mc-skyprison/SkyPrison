@@ -5,7 +5,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.configuration.file.FileConfiguration;
 
 public class ConfigCreator {
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
 
 	public ConfigCreator(SkyPrisonCore plugin) {
 		this.plugin = plugin;

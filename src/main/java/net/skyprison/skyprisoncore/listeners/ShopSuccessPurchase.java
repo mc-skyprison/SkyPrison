@@ -15,7 +15,7 @@ import java.util.Date;
 import java.util.UUID;
 
 public class ShopSuccessPurchase implements Listener {
-    private SkyPrisonCore plugin;
+    private final SkyPrisonCore plugin;
 
     public ShopSuccessPurchase(SkyPrisonCore plugin) {
         this.plugin = plugin;

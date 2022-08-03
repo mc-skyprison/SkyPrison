@@ -15,7 +15,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class CMIUserBalanceChange implements Listener {
-    private SkyPrisonCore plugin;
+    private final SkyPrisonCore plugin;
 
     public CMIUserBalanceChange(SkyPrisonCore plugin) {
         this.plugin = plugin;

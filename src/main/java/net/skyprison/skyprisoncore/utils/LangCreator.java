@@ -8,7 +8,7 @@ import java.io.File;
 import java.io.IOException;
 
 public class LangCreator {
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
 
 	public LangCreator(SkyPrisonCore plugin) {
 		this.plugin = plugin;
@@ -31,9 +31,6 @@ public class LangCreator {
 
 			langConf.addDefault("chat.guard.format", "&8&l(&4&lRoyal&9&lGuard&8&l) &6[name]&7: &3[message]");
 			langConf.addDefault("chat.guard.wrong-usage", "&cWrong Usage! /k <message>");
-
-			langConf.addDefault("chat.discord.format", "&8&l(&9&lDISCORD&8&l) &8[name]: &7[message]");
-			langConf.addDefault("chat.discord.wrong-usage", "&cWrong Usage! /d <message>");
 
 			langConf.addDefault("chat.build.format", "&8&l(&a&lBUILDER&8&l) &7[name]: &9[message]");
 			langConf.addDefault("chat.build.wrong-usage", "&cWrong Usage! /b <message>");

@@ -4,6 +4,7 @@ import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.guard.Safezone;
+import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -15,18 +16,22 @@ import org.bukkit.event.entity.EntityDeathEvent;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class EntityDeath implements Listener {
-    private SkyPrisonCore plugin;
-    private Safezone safezone;
+    private final SkyPrisonCore plugin;
+    private final Safezone safezone;
+    private final DatabaseHook hook;
 
-    public EntityDeath(SkyPrisonCore plugin, Safezone safezone) {
+    public EntityDeath(SkyPrisonCore plugin, Safezone safezone, DatabaseHook hook) {
         this.plugin = plugin;
         this.safezone = safezone;
+        this.hook = hook;
     }
     @EventHandler
     public void playerDeath(EntityDeathEvent event) {
@@ -45,97 +50,180 @@ public class EntityDeath implements Listener {
                     //
                     // Bounty Stuff
                     //
-                    File f = new File(plugin.getDataFolder() + File.separator + "bounties.yml");
-                    FileConfiguration bounty = YamlConfiguration.loadConfiguration(f);
-                    Set<String> bountyList = bounty.getKeys(false);
-                    for (String bountyPlayer : bountyList) {
-                        if (killed.getUniqueId().equals(UUID.fromString(bountyPlayer))) {
-                            try {
-                                Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money give " + killer.getName() + " " + bounty.getDouble(bountyPlayer + ".bounty-prize"));
-                                Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + killer.getName() + " increment bounties_collected +1 -s");
-                                bounty.set(bountyPlayer, null);
-                                bounty.save(f);
-                                for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-                                    if (!online.hasPermission("skyprisoncore.bounty.silent")) {
-                                        online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "]" + ChatColor.YELLOW + " " + killer.getName() + " has claimed the bounty on " + killed.getName() + "!");
-                                    }
-                                }
-                            } catch (final IOException e) {
-                                e.printStackTrace();
-                            }
-                            break;
+                    double bounty = 0.0;
+                    boolean hasBounty = false;
+                    try {
+                        Connection conn = hook.getSQLConnection();
+                        PreparedStatement ps = conn.prepareStatement("SELECT prize FROM bounties WHERE user_id = '" + killed.getUniqueId() + "'");
+                        ResultSet rs = ps.executeQuery();
+                        while(rs.next()) {
+                            bounty = rs.getDouble(1);
+                            hasBounty = true;
                         }
+                        hook.close(ps, rs, conn);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
                     }
+
+                    if(hasBounty) {
+                        Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money give " + killer.getName() + " " + bounty);
+                        Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + killer.getName() + " increment bounties_collected +1 -s");
+                        for (Player online : Bukkit.getServer().getOnlinePlayers()) {
+                            if (!online.hasPermission("skyprisoncore.bounty.silent")) {
+                                online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "]" + ChatColor.YELLOW + " " + killer.getName() + " has claimed the bounty on " + killed.getName() + "!");
+                            }
+                        }
+                        String sql = "DELETE FROM bounties WHERE user_id = ?";
+                        List<Object> params = new ArrayList<Object>() {{
+                            add(killed.getUniqueId().toString());
+                        }};
+                        hook.sqlUpdate(sql, params);
+                    }
+
                     //
                     // Token Kills Stuff
                     //
-                    f = new File(plugin.getDataFolder() + File.separator + "recentkills.yml");
-                    FileConfiguration kills = YamlConfiguration.loadConfiguration(f);
+
+
+                    long killedOn = 0;
+                    boolean hasKilled = false;
+                    int deaths = 0;
+                    int kills = 0;
+                    int killstreak = 0;
+                    try {
+                        Connection conn = hook.getSQLConnection();
+                        PreparedStatement ps = conn.prepareStatement("SELECT pvp_kills, pvp_killstreak FROM users WHERE user_id = '" + killer.getUniqueId() + "'");
+                        ResultSet rs = ps.executeQuery();
+                        while(rs.next()) {
+                            kills = rs.getInt(1);
+                            killstreak = rs.getInt(2);
+                        }
+                        hook.close(ps, rs, conn);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+
+                    try {
+                        Connection conn = hook.getSQLConnection();
+                        PreparedStatement ps = conn.prepareStatement("SELECT killed_on FROM recently_killed WHERE killer_id = '" + killer.getUniqueId() + "' AND killed_id = '" + killed.getUniqueId() + "'");
+                        ResultSet rs = ps.executeQuery();
+                        while(rs.next()) {
+                            hasKilled = true;
+                            killedOn = rs.getLong(1);
+                        }
+                        hook.close(ps, rs, conn);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+
+
+                    try {
+                        Connection conn = hook.getSQLConnection();
+                        PreparedStatement ps = conn.prepareStatement("SELECT pvp_deaths FROM users WHERE user_id = '" + killed.getUniqueId() + "'");
+                        ResultSet rs = ps.executeQuery();
+                        while(rs.next()) {
+                            deaths = rs.getInt(1);
+                        }
+                        hook.close(ps, rs, conn);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+
                     CMIUser userK = CMI.getInstance().getPlayerManager().getUser(killer);
                     CMIUser userD = CMI.getInstance().getPlayerManager().getUser(killed);
                     if (!userD.getLastIp().equalsIgnoreCase(userK.getLastIp())) {
-                        if (kills.contains(killer.getUniqueId() + ".kills")) {
-                            Set<String> killsList = Objects.requireNonNull(kills.getConfigurationSection(killer.getUniqueId() + ".kills")).getKeys(false);
-                            if (killsList.contains(killed.getUniqueId().toString())) {
-                                for (String killedPlayer : killsList) {
-                                    if (killed.getUniqueId().equals(UUID.fromString(killedPlayer))) {
-                                        long time = kills.getLong(killer.getUniqueId() + ".kills." + killedPlayer + ".time");
-                                        long timeLeft = System.currentTimeMillis() - time;
-                                        if (TimeUnit.MILLISECONDS.toSeconds(timeLeft) >= 300) {
-                                            plugin.PvPSet(killed, killer);
-                                        } else {
-                                            if (killer.getWorld().getName().equalsIgnoreCase("world_prison")
-                                                    || killer.getWorld().getName().equalsIgnoreCase("world_free")
-                                                    || killer.getWorld().getName().equalsIgnoreCase("world_free_nether")
-                                                    || killer.getWorld().getName().equalsIgnoreCase("world_free_nether")) {
-                                                int pKills = kills.getInt(killer.getUniqueId() + ".pvpkills") + 1;
-                                                int pDeaths = kills.getInt(killed.getUniqueId() + ".pvpdeaths") + 1;
-                                                int pKillStreak = kills.getInt(killer.getUniqueId() + ".pvpkillstreak") + 1;
-                                                kills.set(killer.getUniqueId() + ".pvpkills", pKills);
-                                                kills.set(killer.getUniqueId() + ".pvpkillstreak", pKillStreak);
-
-                                                kills.set(killed.getUniqueId() + ".pvpkillstreak", 0);
-                                                kills.set(killed.getUniqueId() + ".pvpdeaths", pDeaths);
-
-                                                if(pDeaths == 1000) {
-                                                    plugin.asConsole("lp user " + killed.getName() + " permission set deluxetags.tag.death");
-                                                    killer.sendMessage(plugin.colourMessage("&7You have died a whopping &c&l1000 &7times! Therefore, you get a special tag!"));
-                                                }
-
-                                                if(pKills == 1000) {
-                                                    plugin.asConsole("lp user " + killer.getName() + " permission set deluxetags.tag.kills");
-                                                    killed.sendMessage(plugin.colourMessage("&7You have killed &c&l1000 &7players! Therefore, you get a special tag!"));
-                                                }
-
-                                                if(pKillStreak % 5 == 0 && pKillStreak <= 100) {
-                                                    killer.sendMessage(plugin.colourMessage("&7You've hit a kill streak of &c&l" + pKillStreak + "&7! You have received &c&l15 &7tokens as a reward!"));
-                                                    plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 15);
-
-                                                } else if(pKillStreak % 50 == 0 && pKillStreak > 100) {
-                                                    killer.sendMessage(plugin.colourMessage("&7You've hit a kill streak of &c&l" + pKillStreak + "&7! You have received &c&l30 &7tokens as a reward!"));
-                                                    plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 30);
-                                                }
-
-                                                try {
-                                                    kills.save(f);
-                                                    long timeRem = 300 - TimeUnit.MILLISECONDS.toSeconds(timeLeft);
-                                                    killer.sendMessage(ChatColor.GRAY + "You have to wait " + ChatColor.RED + timeRem + ChatColor.GRAY + " seconds before receiving tokens from this player!");
-                                                } catch (IOException e) {
-                                                    e.printStackTrace();
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                        if (hasKilled) {
+                            long timeLeft = System.currentTimeMillis() - killedOn;
+                            if (TimeUnit.MILLISECONDS.toSeconds(timeLeft) >= 300) {
+                                pvpSet(killed, killer, true);
                             } else {
-                                plugin.PvPSet(killed, killer);
+                                if (killer.getWorld().getName().equalsIgnoreCase("world_prison")
+                                        || killer.getWorld().getName().equalsIgnoreCase("world_free")
+                                        || killer.getWorld().getName().equalsIgnoreCase("world_free_nether")
+                                        || killer.getWorld().getName().equalsIgnoreCase("world_free_nether")) {
+
+                                    updateKills(killer, killed, kills, deaths, killstreak);
+
+                                    long timeRem = 300 - TimeUnit.MILLISECONDS.toSeconds(timeLeft);
+                                    killer.sendMessage(ChatColor.GRAY + "You have to wait " + ChatColor.RED + timeRem + ChatColor.GRAY + " seconds before receiving tokens from this player!");
+                                }
                             }
                         } else {
-                            plugin.PvPSet(killed, killer);
+                            pvpSet(killed, killer, false);
                         }
                     }
                 }
             }
         }
+    }
+
+    public void updateKills(Player killer, Player killed, int kills, int deaths, int killstreak) {
+        int pKills = kills + 1;
+        int pDeaths = deaths + 1;
+        int pKillStreak = killstreak + 1;
+
+        if(pDeaths == 1000) {
+            plugin.asConsole("lp user " + killed.getName() + " permission set deluxetags.tag.death");
+            killer.sendMessage(plugin.colourMessage("&7You have died a whopping &c&l1000 &7times! Therefore, you get a special tag!"));
+        }
+
+        if(pKills == 1000) {
+            plugin.asConsole("lp user " + killer.getName() + " permission set deluxetags.tag.kills");
+            killed.sendMessage(plugin.colourMessage("&7You have killed &c&l1000 &7players! Therefore, you get a special tag!"));
+        }
+
+        if(pKillStreak % 5 == 0 && pKillStreak <= 100) {
+            killer.sendMessage(plugin.colourMessage("&7You've hit a kill streak of &c&l" + pKillStreak + "&7! You have received &c&l15 &7tokens as a reward!"));
+            plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 15);
+        } else if(pKillStreak % 50 == 0) {
+            killer.sendMessage(plugin.colourMessage("&7You've hit a kill streak of &c&l" + pKillStreak + "&7! You have received &c&l30 &7tokens as a reward!"));
+            plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 30);
+        }
+
+        String sql = "UPDATE users SET pvp_kills = pvp_kills + ?, pvp_killstreak = pvp_killstreak + ? WHERE user_id = ?";
+        List<Object> params = new ArrayList<Object>() {{
+            add(pKills);
+            add(pKillStreak);
+            add(killer.getUniqueId().toString());
+        }};
+        hook.sqlUpdate(sql, params);
+
+        sql = "UPDATE users SET pvp_deaths = pvp_deaths + ?, pvp_killstreak = 0 WHERE user_id = ?";
+        params = new ArrayList<Object>() {{
+            add(pDeaths);
+            add(killed.getUniqueId().toString());
+        }};
+        hook.sqlUpdate(sql, params);
+    }
+
+    public void pvpSet(Player killed, Player killer, boolean hasKilled) {
+        if(killed.hasPermission("skyprisoncore.guard.onduty")) {
+            killer.sendMessage(ChatColor.GRAY + "You killed " + ChatColor.RED + killed.getName() + ChatColor.GRAY + " and received " + ChatColor.RED + "15" + ChatColor.GRAY + " token!");
+            plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 15);
+        } else {
+            killer.sendMessage(ChatColor.GRAY + "You killed " + ChatColor.RED + killed.getName() + ChatColor.GRAY + " and received " + ChatColor.RED + "1" + ChatColor.GRAY + " token!");
+            plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 1);
+        }
+
+
+        String sql;
+        List<Object> params;
+        if(hasKilled) {
+            sql = "UPDATE recently_killed SET killed_on = ? WHERE killer_id = ? AND killed_id = ?";
+            params = new ArrayList<Object>() {{
+                add(System.currentTimeMillis());
+                add(killer.getUniqueId().toString());
+                add(killed.getUniqueId().toString());
+            }};
+        } else {
+            sql = "INSERT INTO recently_killed (killer_id, killed_id, killed_on) VALUES (?, ?, ?)";
+            params = new ArrayList<Object>() {{
+                add(killer.getUniqueId().toString());
+                add(killed.getUniqueId().toString());
+                add(System.currentTimeMillis());
+            }};
+        }
+
+        hook.sqlUpdate(sql, params);
     }
 }

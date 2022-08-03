@@ -13,7 +13,7 @@ import java.util.ArrayList;
 
 public class ShopPurchase implements Listener {
 
-    private SkyPrisonCore plugin;
+    private final SkyPrisonCore plugin;
 
     public ShopPurchase(SkyPrisonCore plugin) {
             this.plugin = plugin;

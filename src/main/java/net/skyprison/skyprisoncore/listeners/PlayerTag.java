@@ -14,7 +14,7 @@ import org.bukkit.event.Listener;
 
 public class PlayerTag implements Listener {
 
-    private SkyPrisonCore plugin;
+    private final SkyPrisonCore plugin;
 
     public PlayerTag(SkyPrisonCore plugin) {
         this.plugin = plugin;

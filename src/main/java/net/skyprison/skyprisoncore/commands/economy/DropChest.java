@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.Set;
 
 public class DropChest implements CommandExecutor {
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
 
 	public DropChest(SkyPrisonCore plugin) {
 		this.plugin = plugin;

@@ -19,7 +19,7 @@ import java.util.AbstractMap;
 import java.util.Map;
 
 public class EntityDamageByEntity implements Listener {
-    private SkyPrisonCore plugin;
+    private final SkyPrisonCore plugin;
 
     public EntityDamageByEntity (SkyPrisonCore plugin) {
         this.plugin = plugin;

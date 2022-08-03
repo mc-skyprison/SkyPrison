@@ -1,6 +1,7 @@
 package net.skyprison.skyprisoncore.commands;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -17,36 +18,57 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.io.File;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 public class Daily implements CommandExecutor {
 
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
+	private final DatabaseHook hook;
 
-	public Daily(SkyPrisonCore plugin) {
+	public Daily(SkyPrisonCore plugin, DatabaseHook hook) {
 		this.plugin = plugin;
+		this.hook = hook;
 	}
 
 	public void openGUI(Player player) {
-		File f = new File(plugin.getDataFolder() + File.separator + "dailyreward.yml");
-		FileConfiguration dailyConf = YamlConfiguration.loadConfiguration(f);
+		int currStreak = 0;
+		int highestStreak = 0;
+		String lastCollected = "";
+
+		try {
+			Connection conn = hook.getSQLConnection();
+			PreparedStatement ps = conn.prepareStatement("SELECT current_streak, highest_streak, last_collected FROM dailies WHERE user_id = '" + player.getUniqueId() + "'");
+			ResultSet rs = ps.executeQuery();
+			while(rs.next()) {
+				currStreak = rs.getInt(1);
+				highestStreak = rs.getInt(2);
+				lastCollected = rs.getString(3);
+			}
+			hook.close(ps, rs, conn);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
 		Inventory dailyGUI = Bukkit.createInventory(null, 27, ChatColor.RED + "Daily Reward");
 
 		ItemStack pane = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
 		ItemMeta paneMeta = pane.getItemMeta();
 		paneMeta.setDisplayName(" ");
 		pane.setItemMeta(paneMeta);
-		int currStreak = dailyConf.getInt("players." + player.getUniqueId() + ".current-streak");
-		int highestStreak = dailyConf.getInt("players." + player.getUniqueId() + ".highest-streak");
 		boolean hasCollected = false;
-		if(dailyConf.isConfigurationSection("players." + player.getUniqueId())) {
-			String collectedDay = dailyConf.getString("players." + player.getUniqueId() + ".last-collected");
+		if(!lastCollected.isEmpty()) {
 			Date date = new Date();
 			SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
 			String currDate = formatter.format(date);
-			if(currDate.equalsIgnoreCase(collectedDay)) {
+			if(currDate.equalsIgnoreCase(lastCollected)) {
 				hasCollected = true;
 			}
 		}
@@ -81,9 +103,7 @@ public class Daily implements CommandExecutor {
 					}
 					lore.add("");
 					lore.add(plugin.colourMessage("&7Current Streak: &f&l" + currStreak));
-					if(highestStreak != currStreak) {
-						lore.add(plugin.colourMessage("&7Highest Streak: &f&l" + highestStreak));
-					}
+					lore.add(plugin.colourMessage("&7Highest Streak: &f&l" + highestStreak));
 					dMeta.setLore(lore);
 					dReward.setItemMeta(dMeta);
 					dailyGUI.setItem(i, dReward);
@@ -101,6 +121,10 @@ public class Daily implements CommandExecutor {
 		if(sender instanceof Player) {
 			Player player = (Player) sender;
 			openGUI(player);
+		} else if (args.length == 1) {
+			hook.convertToSql();
+		} else {
+			hook.createDatabase();
 		}
 		return true;
 	}

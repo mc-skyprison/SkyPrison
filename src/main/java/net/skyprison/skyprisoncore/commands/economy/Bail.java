@@ -10,6 +10,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import net.kyori.adventure.text.Component;
+import org.jetbrains.annotations.NotNull;
 
 
 import java.util.HashMap;
@@ -26,7 +27,7 @@ public class Bail implements CommandExecutor {
 
     private HashMap<UUID, Long> coolDown = new HashMap<>();
 
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if(sender instanceof Player) {
             Player player = (Player) sender;
             CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
@@ -36,8 +37,8 @@ public class Bail implements CommandExecutor {
                     long currTime = System.currentTimeMillis();
                     if(releaseTime > currTime) {
                         long timeTill = releaseTime - currTime;
-                        int minutes = (int) Math.floor((timeTill % (1000 * 60 * 60)) / (1000 * 60));
-                        int seconds = (int) Math.floor((timeTill % (1000 * 60)) / 1000);
+                        int minutes = (int) Math.floor((timeTill % (1000.0 * 60.0 * 60.0)) / (1000.0 * 60.0));
+                        int seconds = (int) Math.floor((timeTill % (1000.0 * 60.0)) / 1000.0);
                         if(minutes != 0.0) {
                             user.sendMessage(plugin.colourMessage("&cYou've recently bailed yourself out! Wait " + minutes + " min " + seconds + " sec"));
                         } else {

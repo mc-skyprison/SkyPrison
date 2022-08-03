@@ -13,7 +13,7 @@ import java.util.List;
 
 public class CMIPlayerTeleportRequest implements Listener {
 
-    private SkyPrisonCore plugin;
+    private final SkyPrisonCore plugin;
 
     public CMIPlayerTeleportRequest(SkyPrisonCore plugin) {
         this.plugin = plugin;

@@ -40,12 +40,13 @@ import org.bukkit.persistence.PersistentDataType;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.UUID;
 
 public class SkyPlot implements CommandExecutor {
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
 
 	HashMap<UUID, Boolean> createConfirm = new HashMap<>();
 
@@ -90,6 +91,8 @@ public class SkyPlot implements CommandExecutor {
 						fData.set(player.getUniqueId() + ".x", i-0.5);
 						fData.set(player.getUniqueId() + ".y", 66);
 						fData.set(player.getUniqueId() + ".z", j-8.5);
+						fData.set(player.getUniqueId() + ".visit", false);
+						fData.set(player.getUniqueId() + ".banned", new ArrayList<>());
 
 						fData.save(f);
 						Location loc = new Location(w, i-0.5, 66, j-8.5);
@@ -119,32 +122,41 @@ public class SkyPlot implements CommandExecutor {
 
 		switch(page.toLowerCase()) {
 			case "main":
-				skyplotInv = Bukkit.createInventory(null, 27, Component.text(plugin.colourMessage("&bSky Plots")));
+				skyplotInv = Bukkit.createInventory(null, 45, Component.text(plugin.colourMessage("&bSky Plots")));
 				for(int i = 0; i < skyplotInv.getSize(); i++) {
-					if(i <= 9) {
+					if(i <= 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35) {
 						skyplotInv.setItem(i, whitePane);
-					} else if (i == 17) {
-						skyplotInv.setItem(i, whitePane);
-					} else if (i > 17) {
+					} else if (i > 35) {
 						skyplotInv.setItem(i, grayPane);
-					} else if(i == 15) {
+					} else if(i == 24) {
 						ItemStack visit = hAPI.getItemHead("38200");
-						SkullMeta visitMeta = (SkullMeta) visit.getItemMeta();
-						visitMeta.setOwningPlayer(player);
-						visitMeta.displayName(Component.text(plugin.colourMessage("&eVisit Other SkyPlots")));
+						ItemMeta visitMeta = visit.getItemMeta();
+						visitMeta.displayName(Component.text(plugin.colourMessage("&eVisit Public SkyPlots")));
 						visit.setItemMeta(visitMeta);
 						skyplotInv.setItem(i, visit);
-					} else if(i == 11) {
-						ItemStack pHead = new ItemStack(Material.PLAYER_HEAD);
-						SkullMeta pMeta = (SkullMeta) pHead.getItemMeta();
-						pMeta.setOwningPlayer(player);
-						pMeta.displayName(Component.text(plugin.colourMessage("&eYour SkyPlot")));
-						pHead.setItemMeta(pMeta);
-						skyplotInv.setItem(i, pHead);
+					} else if(i == 20) {
+						ItemStack expand = hAPI.getItemHead("18243");
+						ItemMeta expMeta = expand.getItemMeta();
+						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
+						expand.setItemMeta(expMeta);
+						skyplotInv.setItem(i, expand);
+					} else if(i == 13) {
+						ItemStack plotStats = new ItemStack(Material.PLAYER_HEAD);
+						SkullMeta plotMeta = (SkullMeta) plotStats.getItemMeta();
+						plotMeta.setOwningPlayer(player);
+						plotMeta.displayName(Component.text(plugin.colourMessage("&eYour SkyPlot")));
+						plotStats.setItemMeta(plotMeta);
+						skyplotInv.setItem(i, plotStats);
+					} else if(i == 31) {
+						ItemStack settings = new ItemStack(Material.REPEATER);
+						ItemMeta setMeta = settings.getItemMeta();
+						setMeta.displayName(Component.text(plugin.colourMessage("&eSkyPlot Settings")));
+						settings.setItemMeta(setMeta);
+						skyplotInv.setItem(i, settings);
 					}
 				}
 				break;
-			case "skyplot":
+			case "expand":
 				skyplotInv = Bukkit.createInventory(null, 27, Component.text(plugin.colourMessage("&bYour SkyPlot")));
 				for(int i = 0; i < skyplotInv.getSize(); i++) {
 					if(i <= 9) {
@@ -153,27 +165,49 @@ public class SkyPlot implements CommandExecutor {
 						skyplotInv.setItem(i, whitePane);
 					} else if (i > 17 && i != 22) {
 						skyplotInv.setItem(i, grayPane);
+					} else if(i == 10) {
+						ItemStack expand = hAPI.getItemHead("18243");
+						ItemMeta expMeta = expand.getItemMeta();
+						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
+						expand.setItemMeta(expMeta);
+						skyplotInv.setItem(i, expand);
 					} else if(i == 11) {
-						ItemStack pHead = new ItemStack(Material.PLAYER_HEAD);
-						SkullMeta pMeta = (SkullMeta) pHead.getItemMeta();
-						pMeta.setOwningPlayer(player);
-						pMeta.displayName(Component.text(plugin.colourMessage("&eSkyPlot Members")));
-						pHead.setItemMeta(pMeta);
-						skyplotInv.setItem(i, pHead);
+						ItemStack expand = hAPI.getItemHead("18243");
+						ItemMeta expMeta = expand.getItemMeta();
+						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
+						expand.setItemMeta(expMeta);
+						skyplotInv.setItem(i, expand);
+					} else if(i == 12) {
+						ItemStack expand = hAPI.getItemHead("18243");
+						ItemMeta expMeta = expand.getItemMeta();
+						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
+						expand.setItemMeta(expMeta);
+						skyplotInv.setItem(i, expand);
 					} else if(i == 13) {
-						ItemStack settings = new ItemStack(Material.REPEATER);
-						ItemMeta setMeta = settings.getItemMeta();
-						setMeta.displayName(Component.text(plugin.colourMessage("&cSkyPlot Settings")));
-						settings.setItemMeta(setMeta);
-						skyplotInv.setItem(i, settings);
+						ItemStack expand = hAPI.getItemHead("18243");
+						ItemMeta expMeta = expand.getItemMeta();
+						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
+						expand.setItemMeta(expMeta);
+						skyplotInv.setItem(i, expand);
+					} else if(i == 14) {
+						ItemStack expand = hAPI.getItemHead("18243");
+						ItemMeta expMeta = expand.getItemMeta();
+						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
+						expand.setItemMeta(expMeta);
+						skyplotInv.setItem(i, expand);
 					} else if(i == 15) {
-						ItemStack pHead = new ItemStack(Material.PLAYER_HEAD);
-						SkullMeta pMeta = (SkullMeta) pHead.getItemMeta();
-						pMeta.setOwningPlayer(player);
-						pMeta.displayName(Component.text(plugin.colourMessage("&eBanned Players")));
-						pHead.setItemMeta(pMeta);
-						skyplotInv.setItem(i, pHead);
-					} else if(i == 22) {
+						ItemStack expand = hAPI.getItemHead("18243");
+						ItemMeta expMeta = expand.getItemMeta();
+						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
+						expand.setItemMeta(expMeta);
+						skyplotInv.setItem(i, expand);
+					} else if(i == 16) {
+						ItemStack expand = hAPI.getItemHead("18243");
+						ItemMeta expMeta = expand.getItemMeta();
+						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
+						expand.setItemMeta(expMeta);
+						skyplotInv.setItem(i, expand);
+					} else {
 						ItemStack backButton = new ItemStack(Material.NETHER_STAR);
 						ItemMeta backMeta = backButton.getItemMeta();
 						backMeta.displayName(Component.text(plugin.colourMessage("&cPrevious Page")));
@@ -181,13 +215,33 @@ public class SkyPlot implements CommandExecutor {
 				}
 				break;
 			case "settings":
-				skyplotInv = Bukkit.createInventory(null, 54, Component.text(plugin.colourMessage("&bSkyPlot Settings")));
+				skyplotInv = Bukkit.createInventory(null, 27, Component.text(plugin.colourMessage("&bSkyPlot Settings")));
 				for(int i = 0; i < skyplotInv.getSize(); i++) {
-					if(i <= 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35 || i == 36 || i == 44) {
+					if(i <= 9) {
 						skyplotInv.setItem(i, whitePane);
-					} else if (i > 44 && i != 49) {
+					} else if (i == 17) {
+						skyplotInv.setItem(i, whitePane);
+					} else if (i > 17 && i != 22) {
 						skyplotInv.setItem(i, grayPane);
-					}else if(i == 49) {
+					} else if(i == 11) {
+						ItemStack expand = new ItemStack(Material.BARRIER);
+						ItemMeta expMeta = expand.getItemMeta();
+						expMeta.displayName(Component.text(plugin.colourMessage("&eBanned Players")));
+						expand.setItemMeta(expMeta);
+						skyplotInv.setItem(i, expand);
+					} else if(i == 15) {
+						ItemStack expand = hAPI.getItemHead("38200");
+						ItemMeta expMeta = expand.getItemMeta();
+						expMeta.displayName(Component.text(plugin.colourMessage("&ePlot Visit Status")));
+						ArrayList<Component> lore = new ArrayList<>();
+						if(canVisit(player)) {
+							lore.add(Component.text(plugin.colourMessage("&7Visitng is &2ENABLED")));
+						} else {
+							lore.add(Component.text(plugin.colourMessage("&7Visitng is &4DISABLED")));
+						}
+						expand.setItemMeta(expMeta);
+						skyplotInv.setItem(i, expand);
+					} else if(i == 22) {
 						ItemStack backButton = new ItemStack(Material.NETHER_STAR);
 						ItemMeta backMeta = backButton.getItemMeta();
 						backMeta.displayName(Component.text(plugin.colourMessage("&cPrevious Page")));
@@ -222,20 +276,6 @@ public class SkyPlot implements CommandExecutor {
 					}
 				}
 				break;
-			case "members":
-				skyplotInv = Bukkit.createInventory(null, 54, Component.text(plugin.colourMessage("&bSkyPlot Members")));
-				for(int i = 0; i < skyplotInv.getSize(); i++) {
-					if(i <= 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35 || i == 36 || i == 44) {
-						skyplotInv.setItem(i, whitePane);
-					} else if (i > 44 && i != 49) {
-						skyplotInv.setItem(i, grayPane);
-					}else if(i == 49) {
-						ItemStack backButton = new ItemStack(Material.NETHER_STAR);
-						ItemMeta backMeta = backButton.getItemMeta();
-						backMeta.displayName(Component.text(plugin.colourMessage("&cPrevious Page")));
-					}
-				}
-				break;
 		}
 		assert skyplotInv != null;
 
@@ -254,6 +294,32 @@ public class SkyPlot implements CommandExecutor {
 
 		skyplotInv.setItem(0, blankPane);
 		player.openInventory(skyplotInv);
+	}
+
+	public Location getIsleLoc(String player) {
+		File f = new File(plugin.getDataFolder() + File.separator + "skyplots.yml");
+		FileConfiguration fData = YamlConfiguration.loadConfiguration(f);
+		Location loc = new Location(Bukkit.getWorld("world_skplots"), fData.getDouble(player + ".x"), fData.getDouble(player + ".y"), fData.getDouble(player + ".z"));
+		return loc;
+	}
+
+	public void setVisit(Player player) {
+		File f = new File(plugin.getDataFolder() + File.separator + "skyplots.yml");
+		FileConfiguration fData = YamlConfiguration.loadConfiguration(f);
+
+		try {
+			fData.set(player.getUniqueId() + ".visit", !fData.getBoolean(player.getUniqueId() + ".visit"));
+			fData.save(f);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private boolean canVisit(Player player) {
+		File f = new File(plugin.getDataFolder() + File.separator + "skyplots.yml");
+		FileConfiguration fData = YamlConfiguration.loadConfiguration(f);
+
+		return fData.getBoolean(player.getUniqueId() + ".visit");
 	}
 
 

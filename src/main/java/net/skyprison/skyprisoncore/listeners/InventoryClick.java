@@ -2,10 +2,21 @@ package net.skyprison.skyprisoncore.listeners;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
+import net.kyori.adventure.text.Component;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.Daily;
+import net.skyprison.skyprisoncore.commands.SkyPlot;
 import net.skyprison.skyprisoncore.commands.economy.*;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
+import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -25,24 +36,29 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 
 public class InventoryClick implements Listener {
-    private SkyPrisonCore plugin;
-    private EconomyCheck econCheck;
-    private DropChest chestDrop;
-    private Bounty bounty;
-    private SecretsGUI secretsGUI;
-    private Daily daily;
-    private MoneyHistory moneyHistory;
-    private EndUpgrade endUpgrade;
-    private BuyBack buyBack;
+    private final SkyPrisonCore plugin;
+    private final EconomyCheck econCheck;
+    private final DropChest chestDrop;
+    private final Bounty bounty;
+    private final SecretsGUI secretsGUI;
+    private final Daily daily;
+    private final MoneyHistory moneyHistory;
+    private final EndUpgrade endUpgrade;
+    private final BuyBack buyBack;
+    private final SkyPlot skyPlot;
+    private final DatabaseHook hook;
 
-    public InventoryClick(SkyPrisonCore plugin, EconomyCheck econCheck, DropChest dropChest, Bounty bounty, SecretsGUI secretsGUI, Daily daily, MoneyHistory moneyHistory, EndUpgrade endUpgrade, BuyBack buyBack) {
+    public InventoryClick(SkyPrisonCore plugin, EconomyCheck econCheck, DropChest dropChest, Bounty bounty,
+                          SecretsGUI secretsGUI, Daily daily, MoneyHistory moneyHistory, EndUpgrade endUpgrade,
+                          BuyBack buyBack, SkyPlot skyPlot, DatabaseHook hook) {
         this.plugin = plugin;
         this.econCheck = econCheck;
         this.chestDrop = dropChest;
@@ -52,12 +68,40 @@ public class InventoryClick implements Listener {
         this.moneyHistory = moneyHistory;
         this.endUpgrade = endUpgrade;
         this.buyBack = buyBack;
+        this.skyPlot = skyPlot;
+        this.hook = hook;
+    }
+
+    public boolean isStick(ItemStack i) {
+        if (i != null) {
+            return i.getType() == Material.STICK && i.getItemMeta().hasDisplayName()
+                    && i.getItemMeta().getDisplayName().contains("Santa's")
+                    && (i.getItemMeta().hasEnchant(Enchantment.KNOCKBACK) && (i.getItemMeta().getEnchantLevel(Enchantment.KNOCKBACK) > 1));
+        }
+        return false;
+    }
+
+    public void InvStickFix(Player player) {
+        for (int n = 0; n < player.getInventory().getSize(); n++) {
+            ItemStack i = player.getInventory().getItem(n);
+            if (isStick(i)) {
+                ItemMeta asd = i.getItemMeta();
+                asd.removeEnchant(Enchantment.KNOCKBACK);
+                asd.addEnchant(Enchantment.KNOCKBACK, 1, true);
+                i.setItemMeta(asd);
+            }
+        }
     }
 
     @EventHandler
     public void invClick(InventoryClickEvent event) throws IOException {
         if(event.getWhoClicked() instanceof Player) {
             Player player = (Player) event.getWhoClicked();
+
+            if(event.getClickedInventory() instanceof PlayerInventory) {
+                InvStickFix(player);
+            }
+
             CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
             user.getCMIPlayTime().getPlayDayOfToday().getTotalTime();
             Inventory clickInv = event.getClickedInventory();
@@ -68,9 +112,6 @@ public class InventoryClick implements Listener {
                 NamespacedKey key = new NamespacedKey(plugin, "stop-click");
                 NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
                 if (fData.has(key, PersistentDataType.INTEGER) && fData.has(key1, PersistentDataType.STRING)) {
-                    if(clickInv.getItem(event.getSlot()) == null) {
-                        event.setCancelled(true);
-                    }
                     int clickCheck = fData.get(key, PersistentDataType.INTEGER);
                     String guiType = fData.get(key1, PersistentDataType.STRING);
                     if (clickCheck == 1) {
@@ -122,14 +163,33 @@ public class InventoryClick implements Listener {
                                         ItemStack iSold = new ItemStack(Objects.requireNonNull(Material.getMaterial(Objects.requireNonNull(itemType))), itemAmount);
                                         if(user.getInventory().canFit(iSold)) {
                                             if(user.getBalance() >= itemPrice) {
-                                                File buyFile = new File(plugin.getDataFolder() + File.separator + "recentsells.yml");
-                                                FileConfiguration buyConf = YamlConfiguration.loadConfiguration(buyFile);
-                                                ArrayList<String> soldItems = (ArrayList<String>) Objects.requireNonNull(buyConf.getStringList(player.getUniqueId() + ".sold-items"));
+                                                String recentSells = "";
+
+                                                try {
+                                                    Connection conn = hook.getSQLConnection();
+                                                    PreparedStatement ps = conn.prepareStatement("SELECT recent_sells FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+                                                    ResultSet rs = ps.executeQuery();
+                                                    while(rs.next()) {
+                                                        recentSells = rs.getString(1);
+                                                        recentSells = recentSells.replace("[", "");
+                                                        recentSells = recentSells.replace("]", "");
+                                                        recentSells = recentSells.replace(" ", "");
+                                                    }
+                                                    hook.close(ps, rs, conn);
+                                                } catch (SQLException e) {
+                                                    e.printStackTrace();
+                                                }
+
+                                                List<String> soldItems = new ArrayList<>(Arrays.asList(recentSells.split(",")));
                                                 NamespacedKey posKey = new NamespacedKey(plugin, "sold-pos");
                                                 int buyPos = buyData.get(posKey, PersistentDataType.INTEGER);
                                                 soldItems.remove(buyPos);
-                                                buyConf.set(player.getUniqueId() + ".sold-items", soldItems);
-                                                buyConf.save(buyFile);
+                                                String sql = "UPDATE users SET recent_sells = ? WHERE user_id = ?";
+                                                List<Object> params = new ArrayList<Object>() {{
+                                                    add(soldItems);
+                                                    add(player.getUniqueId());
+                                                }};
+                                                hook.sqlUpdate(sql, params);
                                                 plugin.asConsole("give " + player.getName() + " " + itemType + " " + itemAmount);
                                                 plugin.asConsole("money take " + player.getName() + " " + itemPrice);
                                                 buyBack.openGUI(player);
@@ -282,50 +342,185 @@ public class InventoryClick implements Listener {
                                     player.closeInventory();
                                 }
                                 break;
+                            case "bounties":
+                                if(event.getClickedInventory().getItem(event.getSlot()) != null) {
+                                    Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
+
+                                    NamespacedKey tKey2 = new NamespacedKey(plugin, "page");
+                                    int transPage = fData.get(tKey2, PersistentDataType.INTEGER);
+                                    if (clickedMat.equals(Material.PAPER)) {
+                                        if (event.getSlot() == 46) {
+                                            bounty.openGUI(player, transPage - 1);
+                                        } else if (event.getSlot() == 52) {
+                                            bounty.openGUI(player, transPage + 1);
+                                        }
+                                    }
+                                }
                             case "transaction-history":
-                                Material clickedMat = Objects.requireNonNull(event.getClickedInventory().getItem(event.getSlot())).getType();
+                                if(event.getClickedInventory().getItem(event.getSlot()) != null) {
+                                    Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
 
-                                NamespacedKey tKey = new NamespacedKey(plugin, "sort");
-                                NamespacedKey tKey1 = new NamespacedKey(plugin, "toggle");
-                                NamespacedKey tKey2 = new NamespacedKey(plugin, "page");
-                                Boolean transSort = Boolean.parseBoolean(fData.get(tKey, PersistentDataType.STRING));
-                                String transToggle = fData.get(tKey1, PersistentDataType.STRING);
-                                int transPage = fData.get(tKey2, PersistentDataType.INTEGER);
-                                if(clickedMat.equals(Material.PAPER)) {
-                                    if (event.getSlot() == 45) {
-                                        moneyHistory.openGUI(player, transSort, transToggle, transPage-1);
-                                    } else if (event.getSlot() == 53) {
-                                        moneyHistory.openGUI(player, transSort, transToggle, transPage+1);
+                                    NamespacedKey tKey = new NamespacedKey(plugin, "sort");
+                                    NamespacedKey tKey1 = new NamespacedKey(plugin, "toggle");
+                                    NamespacedKey tKey2 = new NamespacedKey(plugin, "page");
+                                    Boolean transSort = Boolean.parseBoolean(fData.get(tKey, PersistentDataType.STRING));
+                                    String transToggle = fData.get(tKey1, PersistentDataType.STRING);
+                                    int transPage = fData.get(tKey2, PersistentDataType.INTEGER);
+                                    if (clickedMat.equals(Material.PAPER)) {
+                                        if (event.getSlot() == 45) {
+                                            moneyHistory.openGUI(player, transSort, transToggle, transPage - 1);
+                                        } else if (event.getSlot() == 53) {
+                                            moneyHistory.openGUI(player, transSort, transToggle, transPage + 1);
+                                        }
+                                    } else if (clickedMat.equals(Material.CLOCK)) {
+                                        if (transSort)
+                                            moneyHistory.openGUI(player, false, transToggle, transPage);
+                                        else
+                                            moneyHistory.openGUI(player, true, transToggle, transPage);
+                                    } else if (clickedMat.equals(Material.COMPASS)) {
+                                        if (transToggle.equalsIgnoreCase("null")) {
+                                            moneyHistory.openGUI(player, transSort, "true", 1);
+                                        } else if (transToggle.equalsIgnoreCase("true")) {
+                                            moneyHistory.openGUI(player, transSort, "false", 1);
+                                        } else if (transToggle.equalsIgnoreCase("false")) {
+                                            moneyHistory.openGUI(player, transSort, "null", 1);
+
+                                        }
+
                                     }
-                                } else if(clickedMat.equals(Material.CLOCK)) {
-                                    if(transSort)
-                                        moneyHistory.openGUI(player, false, transToggle, transPage);
-                                    else
-                                        moneyHistory.openGUI(player, true, transToggle, transPage);
-                                } else if (clickedMat.equals(Material.COMPASS)) {
-                                    if(transToggle.equalsIgnoreCase("null")) {
-                                        moneyHistory.openGUI(player, transSort, "true", 1);
-                                    } else if(transToggle.equalsIgnoreCase("true")) {
-                                        moneyHistory.openGUI(player, transSort, "false", 1);
-                                    } else if(transToggle.equalsIgnoreCase("false")) {
-                                        moneyHistory.openGUI(player, transSort, "null", 1);
-
-                                    }
-
                                 }
                                 break;
                             case "skyplot-gui":
+                                NamespacedKey skyKey = new NamespacedKey(plugin, "skyplot-type");
+                                String page = fData.get(skyKey, PersistentDataType.STRING);
+                                switch(page.toLowerCase()) {
+                                    case "main":
+                                        switch(event.getSlot()) {
+                                            case 13:
+                                                break;
+                                            case 20:
+                                                skyPlot.skyPlotGUI(player, "expand", 1);
+                                                break;
+                                            case 24:
+                                                skyPlot.skyPlotGUI(player, "other", 1);
+                                                break;
+                                            case 31:
+                                                skyPlot.skyPlotGUI(player, "settings", 1);
+                                                break;
+                                        }
+                                        break;
+                                    case "settings":
+                                        if(event.getSlot() == 11) {
+                                            skyPlot.skyPlotGUI(player, "banned", 1);
+                                        } else if(event.getSlot() == 15) {
+                                            skyPlot.setVisit(player);
+                                            skyPlot.skyPlotGUI(player, "settings", 1);
+                                        } else if(event.getSlot() == 22) {
+                                            skyPlot.skyPlotGUI(player, "main", 1);
+                                        }
+                                        break;
+                                    case "expand":
+                                        clickedItem = event.getClickedInventory().getItem(event.getSlot());
+                                        RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+                                        RegionManager regions = container.get(BukkitAdapter.adapt(player.getWorld()));
+                                        ApplicableRegionSet regionList = regions.getApplicableRegions(BlockVector3.at(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ()));
+                                        ProtectedRegion region = regionList.getRegions().iterator().next();
+                                        if(clickedItem.getType().equals(Material.PLAYER_HEAD)) {
+                                            switch (event.getSlot()) { // Default Size = 14 x 24 x 14
+                                                case 10: // increase to 20 x 30 x 20
+                                                    ProtectedRegion newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(3, -3 ,-3), region.getMaximumPoint().add(-3, 3 ,3));
+                                                    newRegion.copyFrom(region);
+                                                    regions.removeRegion(region.getId());
+                                                    regions.addRegion(newRegion);
+                                                    break;
+                                                case 11: // increase by 30 x 40 x 30
+                                                    newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1 ,-1), region.getMaximumPoint().add(-1, 1 ,1));
+                                                    newRegion.copyFrom(region);
+                                                    regions.removeRegion(region.getId());
+                                                    regions.addRegion(newRegion);
+                                                    break;
+                                                case 12: // increase by 6
+                                                    newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1 ,-1), region.getMaximumPoint().add(-1, 1 ,1));
+                                                    newRegion.copyFrom(region);
+                                                    regions.removeRegion(region.getId());
+                                                    regions.addRegion(newRegion);
+                                                    break;
+                                                case 13: // increase by 8
+                                                    newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1 ,-1), region.getMaximumPoint().add(-1, 1 ,1));
+                                                    newRegion.copyFrom(region);
+                                                    regions.removeRegion(region.getId());
+                                                    regions.addRegion(newRegion);
+                                                    break;
+                                                case 14: // increase by 10
+                                                    newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1 ,-1), region.getMaximumPoint().add(-1, 1 ,1));
+                                                    newRegion.copyFrom(region);
+                                                    regions.removeRegion(region.getId());
+                                                    regions.addRegion(newRegion);
+                                                    break;
+                                                case 15: // increase by 12
+                                                    newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1 ,-1), region.getMaximumPoint().add(-1, 1 ,1));
+                                                    newRegion.copyFrom(region);
+                                                    regions.removeRegion(region.getId());
+                                                    regions.addRegion(newRegion);
+                                                    break;
+                                                case 16: // increase by 14
+                                                    newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1 ,-1), region.getMaximumPoint().add(-1, 1 ,1));
+                                                    newRegion.copyFrom(region);
+                                                    regions.removeRegion(region.getId());
+                                                    regions.addRegion(newRegion);
+                                                    break;
+                                            }
+                                        }
+                                        break;
+                                    case "banned":
+                                        break;
+                                    case "other":
+                                        if(event.getClickedInventory().getItem(event.getSlot()) != null) {
+                                            ItemStack clickItem = event.getClickedInventory().getItem(event.getSlot());
+                                            PersistentDataContainer clickData = clickItem.getPersistentDataContainer();
+
+                                            NamespacedKey pageKey = new NamespacedKey(plugin, "skyplot-page");
+                                            int pageNum = fData.get(pageKey, PersistentDataType.INTEGER);
+
+                                            if(clickItem.getType().equals(Material.PLAYER_HEAD)) {
+                                                NamespacedKey isleKey = new NamespacedKey(plugin, "skyplot-owner");
+                                                String isleOwner = clickData.get(isleKey, PersistentDataType.STRING);
+                                                Location loc = skyPlot.getIsleLoc(isleOwner);
+                                                player.teleportAsync(loc);
+
+                                            } else if(event.getSlot() == 48 && clickItem.getType().equals(Material.PAPER)) {
+                                                skyPlot.skyPlotGUI(player, "main", pageNum-1);
+                                            } else if(event.getSlot() == 49) {
+                                                skyPlot.skyPlotGUI(player, "main", 1);
+                                            } else if(event.getSlot() == 50 && clickItem.getType().equals(Material.PAPER)) {
+                                                skyPlot.skyPlotGUI(player, "main", pageNum+1);
+                                            }
+                                        }
+                                        break;
+                                }
 
                                 break;
                             case "daily-reward":
                                 if(event.getClickedInventory().getItem(event.getSlot()).getType().equals(Material.MINECART)) {
                                     player.sendMessage(plugin.colourMessage("&cYou've already collected the daily reward!"));
                                 } else if(event.getClickedInventory().getItem(event.getSlot()).getType().equals(Material.CHEST_MINECART)) {
-                                    File dailyFile = new File(plugin.getDataFolder() + File.separator + "dailyreward.yml");
-                                    FileConfiguration dailyConf = YamlConfiguration.loadConfiguration(dailyFile);
-                                    int currStreak = dailyConf.getInt("players." + player.getUniqueId() + ".current-streak");
-                                    int highestStreak = dailyConf.getInt("players." + player.getUniqueId() + ".highest-streak");
-                                    int totalCollected = dailyConf.getInt("players." + player.getUniqueId() + ".total-collected");
+                                    int currStreak = 0;
+                                    int highestStreak = 0;
+                                    int totalCollected = 0;
+
+                                    try {
+                                        Connection conn = hook.getSQLConnection();
+                                        PreparedStatement ps = conn.prepareStatement("SELECT current_streak, highest_streak, total_collected FROM dailies WHERE user_id = '" + player.getUniqueId() + "'");
+                                        ResultSet rs = ps.executeQuery();
+                                        while(rs.next()) {
+                                            currStreak = rs.getInt(1);
+                                            highestStreak = rs.getInt(2);
+                                            totalCollected = rs.getInt(3);
+                                        }
+                                        hook.close(ps, rs, conn);
+                                    } catch (SQLException e) {
+                                        e.printStackTrace();
+                                    }
 
                                     Random rand = new Random();
                                     int tReward = rand.nextInt(25) + 25;
@@ -341,51 +536,124 @@ public class InventoryClick implements Listener {
                                     }
 
                                     plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tReward);
-                                    dailyConf.set("players." + player.getUniqueId() + ".current-streak", currStreak + 1);
-                                    dailyConf.set("players." + player.getUniqueId() + ".total-collected", totalCollected + 1);
 
-                                    if(currStreak >= highestStreak) {
-                                        dailyConf.set("players." + player.getUniqueId() + ".highest-streak", currStreak + 1);
-                                    }
+                                    int nCurrStreak = currStreak + 1;
+                                    int nTotalCollected = totalCollected + 1;
 
                                     Date date = new Date();
                                     SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
                                     String currDate = formatter.format(date);
 
-                                    dailyConf.set("players." + player.getUniqueId() + ".last-collected", currDate);
-                                    dailyConf.save(dailyFile);
+                                    String sql;
+                                    List<Object> params;
+
+                                    if(currStreak >= highestStreak) {
+                                        sql = "UPDATE dailies SET current_streak = ?, highest_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?";
+                                        params = new ArrayList<Object>() {{
+                                            add(nCurrStreak);
+                                            add(nCurrStreak);
+                                            add(currDate);
+                                            add(nTotalCollected);
+                                            add(user.getUniqueId().toString());
+                                        }};
+                                    } else {
+                                        sql = "UPDATE dailies SET current_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?";
+                                        params = new ArrayList<Object>() {{
+                                            add(nCurrStreak);
+                                            add(currDate);
+                                            add(nTotalCollected);
+                                            add(user.getUniqueId().toString());
+                                        }};
+                                    }
+
+                                    hook.sqlUpdate(sql, params);
                                     daily.openGUI(player);
                                 }
                                 break;
                             case "plotteleport":
-                                ItemStack itemClick = clickInv.getItem(event.getSlot());
-                                PersistentDataContainer plotData = Objects.requireNonNull(itemClick).getPersistentDataContainer();
-                                NamespacedKey plotKey = new NamespacedKey(plugin, "x");
-                                if(plotData.has(plotKey, PersistentDataType.DOUBLE)) {
-                                    NamespacedKey plotKey1 = new NamespacedKey(plugin, "y");
-                                    NamespacedKey plotKey2 = new NamespacedKey(plugin, "z");
-                                    NamespacedKey plotKey3 = new NamespacedKey(plugin, "world");
-                                    double x = plotData.get(plotKey, PersistentDataType.DOUBLE);
-                                    double y = plotData.get(plotKey1, PersistentDataType.DOUBLE);
-                                    double z = plotData.get(plotKey2, PersistentDataType.DOUBLE);
-                                    World world = Bukkit.getWorld(plotData.get(plotKey3, PersistentDataType.STRING));
-                                    Location loc = new Location(world, x, y, z);
-                                    if(player.getWorld().getName().equalsIgnoreCase("world_skycity") || player.hasPermission("cmi.command.tpa.warmupbypass")) {
-                                        player.teleportAsync(loc);
-                                        player.sendMessage(plugin.colourMessage("&aTeleported to plot!"));
-                                    } else {
-                                        player.closeInventory();
-                                        player.sendMessage(plugin.colourMessage("&aTeleporting to your plot in 5 seconds, Don't move!"));
-                                        BukkitTask task = plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                                            plugin.teleportMove.remove(player.getUniqueId());
-                                            player.teleport(loc);
+                                if(clickInv.getItem(event.getSlot()) != null) {
+                                    ItemStack itemClick = clickInv.getItem(event.getSlot());
+                                    PersistentDataContainer plotData = Objects.requireNonNull(itemClick).getPersistentDataContainer();
+                                    NamespacedKey plotKey = new NamespacedKey(plugin, "x");
+                                    if (plotData.has(plotKey, PersistentDataType.DOUBLE)) {
+                                        NamespacedKey plotKey1 = new NamespacedKey(plugin, "y");
+                                        NamespacedKey plotKey2 = new NamespacedKey(plugin, "z");
+                                        NamespacedKey plotKey3 = new NamespacedKey(plugin, "world");
+                                        double x = plotData.get(plotKey, PersistentDataType.DOUBLE);
+                                        double y = plotData.get(plotKey1, PersistentDataType.DOUBLE);
+                                        double z = plotData.get(plotKey2, PersistentDataType.DOUBLE);
+                                        World world = Bukkit.getWorld(plotData.get(plotKey3, PersistentDataType.STRING));
+                                        Location loc = new Location(world, x, y, z);
+                                        if (player.getWorld().getName().equalsIgnoreCase("world_skycity") || player.hasPermission("cmi.command.tpa.warmupbypass")) {
+                                            player.teleportAsync(loc);
                                             player.sendMessage(plugin.colourMessage("&aTeleported to plot!"));
-                                        }, 100L);
-                                        plugin.teleportMove.put(player.getUniqueId(), task.getTaskId());
+                                        } else {
+                                            player.closeInventory();
+                                            player.sendMessage(plugin.colourMessage("&aTeleporting to your plot in 5 seconds, Don't move!"));
+                                            BukkitTask task = plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                                                plugin.teleportMove.remove(player.getUniqueId());
+                                                player.teleport(loc);
+                                                player.sendMessage(plugin.colourMessage("&aTeleported to plot!"));
+                                            }, 100L);
+                                            plugin.teleportMove.put(player.getUniqueId(), task.getTaskId());
 
+                                        }
                                     }
                                 }
                                 break;
+                        }
+                    } else if(clickCheck == 0) {
+                        if ("blacksmith-gui".equals(Objects.requireNonNull(guiType))) {
+                            if (event.getSlot() != 13) {
+                                event.setCancelled(true);
+                                if (event.getSlot() == 22) {
+                                    ItemStack item = clickInv.getItem(13);
+                                    if (item != null && !item.getType().isAir()) {
+                                        NamespacedKey enchKey = new NamespacedKey(plugin, "telekinesis");
+                                        List<Component> lore = new ArrayList<>();
+                                        ItemMeta iMeta = item.getItemMeta();
+                                        iMeta.getPersistentDataContainer().set(enchKey, PersistentDataType.INTEGER, 1);
+                                        if (iMeta.lore() != null)
+                                            lore = iMeta.lore();
+                                        lore.add(Component.text(plugin.colourMessage("&7Telekinesis")));
+                                        iMeta.lore(lore);
+                                        item.setItemMeta(iMeta);
+                                    }
+                                }
+                            } else if (event.getSlot() == 13) {
+                                ItemStack item = clickInv.getItem(13);
+                                if (item != null && item.getType().isAir()) {
+                                    ArrayList<Material> allowedItems = new ArrayList<>();
+                                    allowedItems.add(Material.WOODEN_AXE);
+                                    allowedItems.add(Material.WOODEN_PICKAXE);
+                                    allowedItems.add(Material.WOODEN_HOE);
+                                    allowedItems.add(Material.WOODEN_SHOVEL);
+                                    allowedItems.add(Material.WOODEN_SWORD);
+                                    allowedItems.add(Material.STONE_AXE);
+                                    allowedItems.add(Material.STONE_PICKAXE);
+                                    allowedItems.add(Material.STONE_HOE);
+                                    allowedItems.add(Material.STONE_SHOVEL);
+                                    allowedItems.add(Material.STONE_SWORD);
+                                    allowedItems.add(Material.IRON_AXE);
+                                    allowedItems.add(Material.IRON_PICKAXE);
+                                    allowedItems.add(Material.IRON_HOE);
+                                    allowedItems.add(Material.IRON_SHOVEL);
+                                    allowedItems.add(Material.IRON_SWORD);
+                                    allowedItems.add(Material.DIAMOND_AXE);
+                                    allowedItems.add(Material.DIAMOND_PICKAXE);
+                                    allowedItems.add(Material.DIAMOND_HOE);
+                                    allowedItems.add(Material.DIAMOND_SHOVEL);
+                                    allowedItems.add(Material.DIAMOND_SWORD);
+                                    allowedItems.add(Material.NETHERITE_AXE);
+                                    allowedItems.add(Material.NETHERITE_PICKAXE);
+                                    allowedItems.add(Material.NETHERITE_HOE);
+                                    allowedItems.add(Material.NETHERITE_SHOVEL);
+                                    allowedItems.add(Material.NETHERITE_SWORD);
+                                    if (!allowedItems.contains(item.getType())) {
+                                        event.setCancelled(true);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -534,20 +802,6 @@ public class InventoryClick implements Listener {
             }
         }
 
-        if (ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("bounties")) {
-            if (event.getCurrentItem() != null) {
-                event.setCancelled(true);
-                if(event.getCurrentItem().getType() == Material.PAPER) {
-                    if(event.getSlot() == 46) {
-                        int page = Integer.parseInt(dropChest[4])-1;
-                        bounty.openGUI((Player) event.getWhoClicked(), page);
-                    } else if(event.getSlot() == 52) {
-                        int page = Integer.parseInt(dropChest[4])+1;
-                        bounty.openGUI((Player) event.getWhoClicked(), page);
-                    }
-                }
-            }
-        }
         if (ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("Referral List")) {
             if (event.getCurrentItem() != null) {
                 event.setCancelled(true);

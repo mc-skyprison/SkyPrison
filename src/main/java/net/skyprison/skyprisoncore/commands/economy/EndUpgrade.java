@@ -19,7 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class EndUpgrade implements CommandExecutor {
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
 
 	public EndUpgrade(SkyPrisonCore plugin) {
 		this.plugin = plugin;

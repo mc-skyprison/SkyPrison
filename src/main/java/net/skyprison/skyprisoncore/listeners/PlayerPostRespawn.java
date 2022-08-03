@@ -19,7 +19,7 @@ import java.util.Objects;
 
 public class PlayerPostRespawn implements Listener {
 
-    private SkyPrisonCore plugin;
+    private final SkyPrisonCore plugin;
 
     public PlayerPostRespawn(SkyPrisonCore plugin) {
         this.plugin = plugin;

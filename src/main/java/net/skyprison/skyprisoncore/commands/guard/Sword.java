@@ -14,7 +14,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class Sword implements CommandExecutor {
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
 
 	public Sword(SkyPrisonCore plugin) {
 		this.plugin = plugin;

@@ -1,49 +1,67 @@
 package net.skyprison.skyprisoncore.listeners;
 
-import com.google.common.collect.Lists;
 import net.brcdev.shopgui.event.ShopPostTransactionEvent;
 import net.brcdev.shopgui.shop.ShopManager;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
+import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.flywaydb.core.internal.util.jdbc.JdbcUtils;
 
-import java.io.File;
-import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Objects;
+import java.util.Arrays;
+import java.util.List;
 
 public class ShopPostTransaction implements Listener {
-    private SkyPrisonCore plugin;
+    private final DatabaseHook hook;
 
-    public ShopPostTransaction(SkyPrisonCore plugin) {
-        this.plugin = plugin;
+    public ShopPostTransaction(DatabaseHook hook) {
+        this.hook = hook;
     }
 
     @EventHandler
-    public void onShopPostTransaction(ShopPostTransactionEvent event) throws IOException {
+    public void onShopPostTransaction(ShopPostTransactionEvent event) {
         if(event.getResult().getShopAction() == ShopManager.ShopAction.SELL
                 || event.getResult().getShopAction() == ShopManager.ShopAction.SELL_ALL) {
             Player player = event.getResult().getPlayer();
-            File f = new File(plugin.getDataFolder() + File.separator + "recentsells.yml");
-            FileConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
-            if(yamlf.isConfigurationSection(player.getUniqueId().toString())) {
-                ArrayList<String> soldItems = (ArrayList<String>) Objects.requireNonNull(yamlf.getStringList(player.getUniqueId() + ".sold-items"));
-                soldItems.add(0, event.getResult().getShopItem().getItem().getType()
-                        + "/" + event.getResult().getAmount()
-                        + "/" + event.getResult().getPrice());
-                if(soldItems.size() > 5) {
-                    soldItems.remove(5);
+
+            String recentSells = "";
+
+            try {
+                Connection conn = hook.getSQLConnection();
+                PreparedStatement ps = conn.prepareStatement("SELECT recent_sells FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+                ResultSet rs = ps.executeQuery();
+                while(rs.next()) {
+                    recentSells = rs.getString(1);
+                    recentSells = recentSells.replace("[", "");
+                    recentSells = recentSells.replace("]", "");
+                    recentSells = recentSells.replace(" ", "");
                 }
-                yamlf.set(player.getUniqueId() + ".sold-items", soldItems);
-            } else {
-                yamlf.set(player.getUniqueId() + ".sold-items", Lists.newArrayList(event.getResult().getShopItem().getItem().getType()
-                        + "/" + event.getResult().getAmount()
-                        + "/" + event.getResult().getPrice()));
+                hook.close(ps, rs, conn);
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
-            yamlf.save(f);
+
+            List<String> soldItems = new ArrayList<>(Arrays.asList(recentSells.split(",")));
+
+            soldItems.add(0, event.getResult().getShopItem().getItem().getType()
+                    + "/" + event.getResult().getAmount()
+                    + "/" + event.getResult().getPrice());
+            if(soldItems.size() > 5) {
+                soldItems.remove(5);
+            }
+
+            String sql = "UPDATE users SET recent_sells = ? WHERE user_id = ?";
+            List<Object> params = new ArrayList<Object>() {{
+                add(soldItems);
+                add(player.getUniqueId());
+            }};
+            hook.sqlUpdate(sql, params);
         }
     }
 }

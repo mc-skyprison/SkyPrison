@@ -1,6 +1,7 @@
 package net.skyprison.skyprisoncore.commands;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
@@ -11,14 +12,20 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 import java.io.File;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class FirstjoinTop implements CommandExecutor {
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
+	private final DatabaseHook hook;
 
-	public FirstjoinTop(SkyPrisonCore plugin) {
+	public FirstjoinTop(SkyPrisonCore plugin, DatabaseHook hook) {
 		this.plugin = plugin;
+		this.hook = hook;
 	}
 
 	public static boolean isInteger(String s) {
@@ -40,25 +47,31 @@ public class FirstjoinTop implements CommandExecutor {
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {
 			Player player = (Player) sender;
-			File f = new File(plugin.getDataFolder() + File.separator + "firstjoindata.yml");
-			YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
-			Set<String> setList = yamlf.getKeys(false);
+
 			LinkedHashMap<String, Long> firstJoins = new LinkedHashMap<>();
-			for (String pUUID : setList) {
-				Long firstJoinTime = yamlf.getLong(pUUID + ".firstjoin");
-				firstJoins.put(pUUID, firstJoinTime);
+			try {
+				Connection conn = hook.getSQLConnection();
+				PreparedStatement ps = conn.prepareStatement("SELECT user_id, first_join FROM users");
+				ResultSet rs = ps.executeQuery();
+				while(rs.next()) {
+					firstJoins.put(rs.getString(1), rs.getLong(2));
+				}
+				hook.close(ps, rs, conn);
+			} catch (SQLException e) {
+				e.printStackTrace();
 			}
+
 			List<Map.Entry<String, Long>> entries =
 					new ArrayList<>(firstJoins.entrySet());
-			Collections.sort(entries, Comparator.comparing(Map.Entry::getValue));
+			entries.sort(Map.Entry.comparingByValue());
 			Map<String, Long> sortedMap = new LinkedHashMap<>();
 			for (Map.Entry<String, Long> entry : entries) {
 				sortedMap.put(entry.getKey(), entry.getValue());
 			}
 
-			Boolean playerDone = false;
-			ArrayList<String> playerFirstJoin = new ArrayList();
-			ArrayList<Long> timeFirstJoin = new ArrayList();
+			boolean playerDone = false;
+			ArrayList<String> playerFirstJoin = new ArrayList<>();
+			ArrayList<Long> timeFirstJoin = new ArrayList<>();
 			for(String playerUUID : sortedMap.keySet()) {
 				playerFirstJoin.add(playerUUID);
 				timeFirstJoin.add(sortedMap.get(playerUUID));

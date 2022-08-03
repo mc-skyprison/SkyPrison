@@ -10,7 +10,7 @@ import org.bukkit.util.Vector;
 
 public class BlockPlace implements Listener {
 
-    private SkyPrisonCore plugin;
+    private final SkyPrisonCore plugin;
 
     public BlockPlace(SkyPrisonCore plugin) {
         this.plugin = plugin;

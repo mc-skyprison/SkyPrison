@@ -2,6 +2,7 @@ package net.skyprison.skyprisoncore.commands.economy;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.brcdev.shopgui.ShopGuiPlusApi;
+import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -13,13 +14,22 @@ import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 public class DontSell implements CommandExecutor {
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
+	private final DatabaseHook hook;
 
-	public DontSell(SkyPrisonCore plugin) {
+	public DontSell(SkyPrisonCore plugin, DatabaseHook hook) {
 		this.plugin = plugin;
+		this.hook = hook;
 	}
 
 	@Override
@@ -27,12 +37,29 @@ public class DontSell implements CommandExecutor {
 		if(sender instanceof Player) {
 			Player player = (Player) sender;
 			if(player.hasPermission("shopguiplus.sell.all")) {
-				File f = new File(plugin.getDataFolder() + File.separator + "blocksells.yml");
-				FileConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
+				String sellBlocks = "";
+
+				try {
+					Connection conn = hook.getSQLConnection();
+					PreparedStatement ps = conn.prepareStatement("SELECT sell_blocks FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+					ResultSet rs = ps.executeQuery();
+					while(rs.next()) {
+						sellBlocks = rs.getString(1);
+						sellBlocks = sellBlocks.replace("[", "");
+						sellBlocks = sellBlocks.replace("]", "");
+						sellBlocks = sellBlocks.replace(" ", "");
+					}
+					hook.close(ps, rs, conn);
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+
+				List<String> blockedSales = new ArrayList<>(Arrays.asList(sellBlocks.split(",")));
+
+
 				if(args.length >= 1) {
 					if(args[0].equalsIgnoreCase("list")) {
-						if(yamlf.isConfigurationSection(player.getUniqueId().toString())) {
-							ArrayList<String> blockedSales = (ArrayList) yamlf.getList(player.getUniqueId().toString() + ".blocked");
+						if(!blockedSales.isEmpty()) {
 							String blockedFormatted = "&b---=== &c&lBlocked Items &b===---";
 							for(String blockedSale : blockedSales) {
 								blockedFormatted += "\n&b- &3" + blockedSale;
@@ -43,16 +70,9 @@ public class DontSell implements CommandExecutor {
 						}
 					} else {
 						if (Material.getMaterial(args[0].toUpperCase()) != null) {
-							ItemStack item = new ItemStack(Material.getMaterial(args[0].toUpperCase()), 1);
+							ItemStack item = new ItemStack(Objects.requireNonNull(Material.getMaterial(args[0].toUpperCase())), 1);
 							if(ShopGuiPlusApi.getItemStackShopItem(item) != null) {
 								String iName = item.getType().name();
-
-								ArrayList blockedSales;
-								if (yamlf.getList(player.getUniqueId().toString() + ".blocked") != null && !yamlf.getList(player.getUniqueId().toString() + ".blocked").isEmpty()) {
-									blockedSales = (ArrayList) yamlf.getList(player.getUniqueId().toString() + ".blocked");
-								} else {
-									blockedSales = new ArrayList();
-								}
 
 								if (!blockedSales.contains(iName)) {
 									blockedSales.add(iName);
@@ -61,12 +81,12 @@ public class DontSell implements CommandExecutor {
 									blockedSales.remove(iName);
 									player.sendMessage(plugin.colourMessage("&aSuccessfully &lREMOVED &aitem from the dont sell list!"));
 								}
-								yamlf.set(player.getUniqueId().toString() + ".blocked", blockedSales);
-								try {
-									yamlf.save(f);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
+								String sql = "UPDATE users SET sell_blocks = ? WHERE user_id = ?";
+								List<Object> params = new ArrayList<Object>() {{
+									add(blockedSales);
+									add(player.getUniqueId().toString());
+								}};
+								hook.sqlUpdate(sql, params);
 							} else {
 								player.sendMessage(plugin.colourMessage("&cThis item can't be sold!"));
 							}
@@ -76,16 +96,9 @@ public class DontSell implements CommandExecutor {
 					}
 				} else {
 					ItemStack item = player.getInventory().getItemInMainHand();
-					if (item != null && !item.getType().equals(Material.AIR)) {
+					if (!item.getType().equals(Material.AIR)) {
 						if(ShopGuiPlusApi.getItemStackShopItem(item) != null) {
 							String iName = item.getType().name();
-
-							ArrayList blockedSales;
-							if (yamlf.getList(player.getUniqueId().toString() + ".blocked") != null && !yamlf.getList(player.getUniqueId().toString() + ".blocked").isEmpty()) {
-								blockedSales = (ArrayList) yamlf.getList(player.getUniqueId().toString() + ".blocked");
-							} else {
-								blockedSales = new ArrayList();
-							}
 
 							if (!blockedSales.contains(iName)) {
 								blockedSales.add(iName);
@@ -94,12 +107,12 @@ public class DontSell implements CommandExecutor {
 								blockedSales.remove(iName);
 								player.sendMessage(plugin.colourMessage("&aSuccessfully &lREMOVED &aitem from the dont sell list!"));
 							}
-							yamlf.set(player.getUniqueId().toString() + ".blocked", blockedSales);
-							try {
-								yamlf.save(f);
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
+							String sql = "UPDATE users SET sell_blocks = ? WHERE user_id = ?";
+							List<Object> params = new ArrayList<Object>() {{
+								add(blockedSales);
+								add(player.getUniqueId().toString());
+							}};
+							hook.sqlUpdate(sql, params);
 						} else {
 							player.sendMessage(plugin.colourMessage("&cThis item can't be sold!"));
 						}

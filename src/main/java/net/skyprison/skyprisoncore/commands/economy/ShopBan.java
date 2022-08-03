@@ -3,6 +3,7 @@ package net.skyprison.skyprisoncore.commands.economy;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -12,13 +13,20 @@ import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class ShopBan implements CommandExecutor {
+	private final DatabaseHook hook;
 	private final SkyPrisonCore plugin;
 
-	public ShopBan(SkyPrisonCore plugin) {
+	public ShopBan(DatabaseHook hook, SkyPrisonCore plugin) {
+		this.hook = hook;
 		this.plugin = plugin;
 	}
 
@@ -26,12 +34,27 @@ public class ShopBan implements CommandExecutor {
 		if(sender instanceof Player) {
 			Player player = (Player) sender;
 			if(args.length > 0) {
-				File f = new File(plugin.getDataFolder() + File.separator + "shopban.yml");
-				YamlConfiguration shopConf = YamlConfiguration.loadConfiguration(f);
+				String bannedUsers = "";
+
+				try {
+					Connection conn = hook.getSQLConnection();
+					PreparedStatement ps = conn.prepareStatement("SELECT shop_banned FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+					ResultSet rs = ps.executeQuery();
+					while(rs.next()) {
+						bannedUsers = rs.getString(1);
+						bannedUsers = bannedUsers.replace("[", "");
+						bannedUsers = bannedUsers.replace("]", "");
+						bannedUsers = bannedUsers.replace(" ", "");
+					}
+					hook.close(ps, rs, conn);
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+
 				switch(args[0]) {
 					case "list":
-						if (shopConf.getList(player.getUniqueId() + ".banned-players") != null && !shopConf.getList(player.getUniqueId() + ".banned-players").isEmpty()) {
-							ArrayList<String> bannedPlayers = (ArrayList<String>) shopConf.getStringList(player.getUniqueId() + ".banned-players");
+						if (!bannedUsers.isEmpty()) {
+							String[] bannedPlayers = bannedUsers.split(",");
 							player.sendMessage(plugin.colourMessage("&e---=== &6ShopBan &e===---"));
 							for(String bannedPlayer : bannedPlayers) {
 								player.sendMessage(plugin.colourMessage("&e" + Bukkit.getOfflinePlayer(UUID.fromString(bannedPlayer)).getName()));
@@ -45,20 +68,19 @@ public class ShopBan implements CommandExecutor {
 							if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
 								CMIUser banUser = CMI.getInstance().getPlayerManager().getUser(args[1]);
 								if(!banUser.getPlayer().equals(player)) {
-									ArrayList<String> bannedPlayers = new ArrayList<>();
-									if (shopConf.isConfigurationSection(player.getUniqueId().toString())) {
-										bannedPlayers = (ArrayList<String>) shopConf.getStringList(player.getUniqueId() + ".banned-players");
-									}
+									if (!bannedUsers.contains(banUser.getUniqueId().toString())) {
+										if(!bannedUsers.isEmpty())
+											bannedUsers += ",";
+										bannedUsers += banUser.getUniqueId();
+										String sql = "UPDATE users SET shop_banned = ? WHERE user_id = ?";
+										String finalBannedUsers = bannedUsers;
+										List<Object> params = new ArrayList<Object>() {{
+											add(finalBannedUsers);
+											add(player.getUniqueId().toString());
+										}};
+										hook.sqlUpdate(sql, params);
 
-									if (!bannedPlayers.contains(banUser.getUniqueId().toString())) {
-										bannedPlayers.add(banUser.getUniqueId().toString());
 										player.sendMessage(plugin.colourMessage("&f[&2Market&f] &7" + banUser.getName() + " &acan no longer buy/sell from your shops!"));
-										shopConf.set(player.getUniqueId() + ".banned-players", bannedPlayers);
-										try {
-											shopConf.save(f);
-										} catch (IOException e) {
-											e.printStackTrace();
-										}
 									} else {
 										player.sendMessage(plugin.colourMessage("&cThat player is already banned from your shops!"));
 									}
@@ -76,20 +98,19 @@ public class ShopBan implements CommandExecutor {
 						if(args.length > 1) {
 							if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
 								CMIUser banUser = CMI.getInstance().getPlayerManager().getUser(args[1]);
-								ArrayList<String> bannedPlayers = new ArrayList<>();
-								if (shopConf.isConfigurationSection(player.getUniqueId().toString())) {
-									bannedPlayers = (ArrayList<String>) shopConf.getStringList(player.getUniqueId() + ".banned-players");
-								}
 
-								if (bannedPlayers.contains(banUser.getUniqueId().toString())) {
-									bannedPlayers.remove(banUser.getUniqueId().toString());
+								if (bannedUsers.contains(banUser.getUniqueId().toString())) {
+									bannedUsers = bannedUsers.replace(banUser.getUniqueId().toString(), "");
+									bannedUsers = bannedUsers.replace(",,", ",");
+									String sql = "UPDATE users SET shop_banned = ? WHERE user_id = ?";
+									String finalBannedUsers = bannedUsers;
+									List<Object> params = new ArrayList<Object>() {{
+										add(finalBannedUsers);
+										add(player.getUniqueId().toString());
+									}};
+									hook.sqlUpdate(sql, params);
+
 									player.sendMessage(plugin.colourMessage("&f[&2Market&f] &7" + banUser.getName() + " &acan now buy/sell from your shops!"));
-									shopConf.set(player.getUniqueId() + ".banned-players", bannedPlayers);
-									try {
-										shopConf.save(f);
-									} catch (IOException e) {
-										e.printStackTrace();
-									}
 								} else {
 									player.sendMessage(plugin.colourMessage("&cThat player isnt banned from your shops!"));
 								}

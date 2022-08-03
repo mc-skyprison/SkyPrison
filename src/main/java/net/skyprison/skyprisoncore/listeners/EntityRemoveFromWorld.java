@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.Set;
 
 public class EntityRemoveFromWorld implements Listener {
-    private SkyPrisonCore plugin;
+    private final SkyPrisonCore plugin;
 
     public EntityRemoveFromWorld(SkyPrisonCore plugin) {
         this.plugin = plugin;

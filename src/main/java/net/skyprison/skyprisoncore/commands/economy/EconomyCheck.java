@@ -22,7 +22,7 @@ import java.text.NumberFormat;
 import java.util.*;
 
 public class EconomyCheck implements CommandExecutor {
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
 
 	public EconomyCheck(SkyPrisonCore plugin) {
 		this.plugin = plugin;

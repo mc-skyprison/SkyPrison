@@ -2,6 +2,7 @@ package net.skyprison.skyprisoncore.commands.economy;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import me.clip.placeholderapi.PlaceholderAPI;
+import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -9,28 +10,46 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.io.File;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 public class BuyBack implements CommandExecutor {
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
+	private final DatabaseHook hook;
 
-	public BuyBack(SkyPrisonCore plugin) {
+	public BuyBack(SkyPrisonCore plugin, DatabaseHook hook) {
 		this.plugin = plugin;
+		this.hook = hook;
 	}
 
 	public void openGUI(Player player) {
-		File f = new File(plugin.getDataFolder() + File.separator + "recentsells.yml");
-		FileConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
-		ArrayList<String> soldItems = (ArrayList<String>) Objects.requireNonNull(yamlf.getStringList(player.getUniqueId() + ".sold-items"));
+		String recentSells = "";
+
+		try {
+			Connection conn = hook.getSQLConnection();
+			PreparedStatement ps = conn.prepareStatement("SELECT recent_sells FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+			ResultSet rs = ps.executeQuery();
+			while(rs.next()) {
+				recentSells = rs.getString(1);
+				recentSells = recentSells.replace("[", "");
+				recentSells = recentSells.replace("]", "");
+				recentSells = recentSells.replace(" ", "");
+			}
+			hook.close(ps, rs, conn);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		List<String> soldItems = Arrays.asList(recentSells.split(","));
 		Inventory buyBackGUI = Bukkit.createInventory(null, 27, ChatColor.GOLD + "Buyback Shop");
 		ItemStack whitePane = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
 		ItemStack grayPane = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
@@ -66,6 +85,7 @@ public class BuyBack implements CommandExecutor {
 		for (String soldItem : soldItems) {
 			String[] soldSplit = soldItem.split("/");
 			String itemType = soldSplit[0];
+			if (Material.getMaterial(itemType) == null) break;
 			ItemStack iSold = new ItemStack(Material.getMaterial(itemType), 1);
 			ItemMeta iSoldMeta = iSold.getItemMeta();
 			List lore = new ArrayList();
@@ -97,13 +117,7 @@ public class BuyBack implements CommandExecutor {
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if(sender instanceof Player) {
 			Player player = (Player) sender;
-			File f = new File(plugin.getDataFolder() + File.separator + "recentsells.yml");
-			FileConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
-			if(yamlf.isConfigurationSection(player.getUniqueId().toString())) {
-				openGUI(player);
-			} else {
-				player.sendMessage(plugin.colourMessage("&cYou havn't sold anything!"));
-			}
+			openGUI(player);
 		}
 		return true;
 	}

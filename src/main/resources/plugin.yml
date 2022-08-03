@@ -3,9 +3,9 @@ authors: [DrakePork, Redhelmet8]
 description: All the Custom Stuffs for SkyPrison
 version: ${project.version}
 main: net.skyprison.skyprisoncore.SkyPrisonCore
-api-version: 1.17
+api-version: 1.18
 website: https://skyprison.net/
-depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin, CMI, Parkour, ShopGUIPlus, CoreProtect, SkyPrisonClaims]
+depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin, CMI, Parkour, ShopGUIPlus, CoreProtect, SkyPrisonClaims, PvPManager, QuickShop, AdvancedRegionMarket]
 commands:
   transportpass:
     description: bus/train pass
@@ -37,11 +37,6 @@ commands:
     description: Token related stuff
     usage: /<command>
     permission: skyprisoncore.command.tokens
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  test:
-    description: Go on and off duty as a guard
-    usage: /<command>
-    permission: skyprisoncore.command.econcheck
     permission-message: §4Error:§c You do not have permission to execute this command...
   econcheck:
     description: Check the state of the economy
@@ -183,16 +178,10 @@ commands:
   # Cheese?
   #
   referral:
-    description: Give tokens to the guy who refered you to the server
+    description: Give tokens to the guy who reffered you to the server
     usage: /<command>
-    aliases: [refer]
+    aliases: [refer, ref]
     permission: skyprisoncore.command.referral
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  referrallist:
-    description: See everyone who has referred you
-    usage: /<command>
-    aliases: [referlist, reflist]
-    permission: skyprisoncore.command.referrallist
     permission-message: §4Error:§c You do not have permission to execute this command...
   enchtable:
     description: Open portable enchant table
@@ -271,6 +260,21 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.staff
     permission-message: §4Error:§c You do not have permission to execute this command...
+  discord:
+    description: commands relating to discord
+    usage: /<command>
+    permission: skyprisoncore.command.discord
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  donorreset:
+    description: command relating to donor mine reset
+    usage: /<command>
+    permission: skyprisoncore.command.donorreset
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  customenchant:
+    description: command relating to donor mine reset
+    usage: /<command>
+    permission: skyprisoncore.command.customenchant
+    permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
   skyprisoncore.command.build:
     description: Gives access to buildchat
@@ -280,6 +284,14 @@ permissions:
     description: Gives access to adminchat
   skyprisoncore.command.staff:
     description: Gives access to staffchat
+
+  skyprisoncore.command.customenchant:
+    description: Gives access to buildchat
+
+  skyprisoncore.command.discord:
+    description: Gives access to discord
+  skyprisoncore.command.donorreset:
+    description: Gives access to discord
 
   #
   # Guard Permissions

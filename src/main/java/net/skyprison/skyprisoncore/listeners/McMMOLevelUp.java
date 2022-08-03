@@ -8,7 +8,7 @@ import org.bukkit.event.Listener;
 
 public class McMMOLevelUp implements Listener {
 
-    private SkyPrisonCore plugin;
+    private final SkyPrisonCore plugin;
 
     public McMMOLevelUp(SkyPrisonCore plugin) {
         this.plugin = plugin;

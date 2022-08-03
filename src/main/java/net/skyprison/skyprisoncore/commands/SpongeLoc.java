@@ -15,7 +15,7 @@ import java.util.Random;
 import java.util.Set;
 
 public class SpongeLoc implements CommandExecutor {
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
 
 	public SpongeLoc(SkyPrisonCore plugin) {
 		this.plugin = plugin;
@@ -55,12 +55,12 @@ public class SpongeLoc implements CommandExecutor {
 				}
 				setList = yamlf.getConfigurationSection("locations").getKeys(false);
 				String world;
-				Double x;
-				Double y;
-				Double z;
+				double x;
+				double y;
+				double z;
 				ArrayList<ArrayList> arr = new ArrayList<>();
 				for (String spongeOrder : setList) {
-					ArrayList arr2 = new ArrayList<String>();
+					ArrayList<Object> arr2 = new ArrayList<>();
 					world = yamlf.getString("locations." + spongeOrder + ".world");
 					x = yamlf.getDouble("locations." + spongeOrder + ".x");
 					y = yamlf.getDouble("locations." + spongeOrder + ".y");
@@ -103,13 +103,13 @@ public class SpongeLoc implements CommandExecutor {
 					try {
 						yamlf.save(f);
 						Set<String> setList = yamlf.getConfigurationSection("locations").getKeys(false);
-						String world = "";
-						Double x = 0.0;
-						Double y = 0.0;
-						Double z = 0.0;
+						String world;
+						double x;
+						double y;
+						double z;
 						ArrayList<ArrayList> arr = new ArrayList<>();
 						for (String spongeOrder : setList) {
-							ArrayList arr2 = new ArrayList<String>();
+							ArrayList<Object> arr2 = new ArrayList<>();
 							world = yamlf.getString("locations." + spongeOrder + ".world");
 							x = yamlf.getDouble("locations." + spongeOrder + ".x");
 							y = yamlf.getDouble("locations." + spongeOrder + ".y");
@@ -155,7 +155,7 @@ public class SpongeLoc implements CommandExecutor {
 			} else if (args[0].equalsIgnoreCase("help")) {
 				player.sendMessage("/spongeloc\n/spongeloc tp <id>\n/spongeloc list\n/spongeloc delete <id>");
 			} else if (args[0].equalsIgnoreCase(("place"))) {
-				Set setList = yamlf.getConfigurationSection("locations").getKeys(false);
+				Set<String> setList = yamlf.getConfigurationSection("locations").getKeys(false);
 				for(int i = 0; i < setList.size(); i++) {
 					if (yamlf.contains("locations." + i)) {
 						World w = Bukkit.getServer().getWorld(yamlf.getString("locations." + i + ".world"));
@@ -179,7 +179,7 @@ public class SpongeLoc implements CommandExecutor {
 			if (args[0].equalsIgnoreCase(("place"))) {
 				File f = new File(plugin.getDataFolder() + File.separator + "spongelocations.yml");
 				YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
-				Set setList = yamlf.getConfigurationSection("locations").getKeys(false);
+				Set<String> setList = yamlf.getConfigurationSection("locations").getKeys(false);
 				for (int i = 0; i < setList.size(); i++) {
 					if (yamlf.contains("locations." + i)) {
 						World w = Bukkit.getServer().getWorld(yamlf.getString("locations." + i + ".world"));

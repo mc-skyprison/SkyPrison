@@ -5,44 +5,63 @@ import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.javacord.api.DiscordApi;
+import org.javacord.api.entity.message.embed.EmbedBuilder;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PlayerQuit implements Listener {
 
-    private SkyPrisonCore plugin;
-    private DatabaseHook db;
+    private final SkyPrisonCore plugin;
+    private final DatabaseHook db;
+    private final DiscordApi discApi;
 
-    public PlayerQuit(SkyPrisonCore plugin, DatabaseHook db) {
+    public PlayerQuit(SkyPrisonCore plugin, DatabaseHook db, DiscordApi discApi) {
         this.plugin = plugin;
         this.db = db;
+        this.discApi = discApi;
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            String pUUID = event.getPlayer().getUniqueId().toString();
+            Player player = event.getPlayer();
 
-            File tokenMine = new File(plugin.getDataFolder() + File.separator
-                    + "blocksmined.yml");
-            FileConfiguration mineConf = YamlConfiguration.loadConfiguration(tokenMine);
-            mineConf.set(pUUID, plugin.blockBreaks.get(pUUID));
-            plugin.blockBreaks.remove(pUUID);
+            if(discApi != null) {
+                EmbedBuilder embedJoin = new EmbedBuilder()
+                        .setAuthor(player.getName() + " left the server", "", "https://minotar.net/helm/" + player.getName())
+                        .setColor(Color.RED);
 
-            File tData = new File(plugin.getDataFolder() + File.separator + "tokensdata.yml");
-            FileConfiguration tokenConf = YamlConfiguration.loadConfiguration(tData);
-            tokenConf.set("players." + pUUID, plugin.tokensData.get(pUUID));
-            plugin.tokensData.remove(pUUID);
-            try {
-                mineConf.save(tokenMine);
-                tokenConf.save(tData);
-            } catch (IOException e) {
-                e.printStackTrace();
+                discApi.getTextChannelById("788108242797854751").get().sendMessage(embedJoin);
             }
+
+            String pUUID = player.getUniqueId().toString();
+
+            String sql;
+            List<Object> params;
+            sql = "UPDATE users SET blocks_mined = ? WHERE user_id = ?";
+            params = new ArrayList<Object>() {{
+                add(plugin.blockBreaks.get(pUUID));
+                add(pUUID);
+            }};
+            db.sqlUpdate(sql, params);
+
+            sql = "UPDATE users SET tokens = ? WHERE user_id = ?";
+            params = new ArrayList<Object>() {{
+                add(plugin.tokensData.get(pUUID));
+                add(pUUID);
+            }};
+            db.sqlUpdate(sql, params);
         });
     }
 }

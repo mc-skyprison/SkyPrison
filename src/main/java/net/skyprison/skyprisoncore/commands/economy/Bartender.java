@@ -13,15 +13,13 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class Bartender implements CommandExecutor {
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
 
 	public Bartender(SkyPrisonCore plugin) {
 		this.plugin = plugin;
@@ -57,16 +55,16 @@ public class Bartender implements CommandExecutor {
 				ItemStack balance = new ItemStack(Material.NETHER_STAR);
 				ItemMeta bMeta = balance.getItemMeta();
 				bMeta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Your Balance");
-				bMeta.setLore(Arrays.asList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
+				bMeta.setLore(Collections.singletonList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
 				balance.setItemMeta(bMeta);
 				bartenderGUI.setItem(i, balance);
 			}
 		}
-		if(alchohols != null && !alchohols.isEmpty()) {
+		if(!alchohols.isEmpty()) {
 			for (String dropItem : alchohols) {
 				ItemStack alcohol = yamlf.getItemStack(bar + "." + dropItem + ".item");
 				ItemMeta alcMeta = alcohol.getItemMeta();
-				List lore = new ArrayList();
+				List<String> lore = new ArrayList<>();
 				if(alcMeta.getLore() != null && !alcMeta.getLore().isEmpty()) {
 					lore = alcMeta.getLore();
 				}
@@ -85,7 +83,7 @@ public class Bartender implements CommandExecutor {
 	}
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
 		if (sender instanceof Player) {
 			Player player = (Player) sender;
 			if (args.length == 1) {

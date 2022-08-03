@@ -11,14 +11,13 @@ import org.bukkit.entity.Player;
 import java.util.*;
 
 public class Safezone implements CommandExecutor {
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
 
 	public Safezone(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}
 
 	public HashMap<UUID, Integer> safezoneViolators = new HashMap<>();
-
 
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {

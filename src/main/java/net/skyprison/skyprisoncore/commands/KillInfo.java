@@ -1,24 +1,24 @@
 package net.skyprison.skyprisoncore.commands;
 
-import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-import java.io.File;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class KillInfo implements CommandExecutor {
-	private SkyPrisonCore plugin;
+	private final DatabaseHook hook;
 
-	public KillInfo(SkyPrisonCore plugin) {
-		this.plugin = plugin;
+	public KillInfo(DatabaseHook hook) {
+		this.hook = hook;
 	}
 
 
@@ -32,21 +32,24 @@ public class KillInfo implements CommandExecutor {
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {
 			Player player = (Player) sender;
-			File f = new File(plugin.getDataFolder() + File.separator + "recentkills.yml");
-			FileConfiguration kills = YamlConfiguration.loadConfiguration(f);
-			if(!kills.isConfigurationSection(player.getUniqueId().toString())) {
-				kills.set(player.getUniqueId() + ".pvpdeaths", 0);
-				kills.set(player.getUniqueId() + ".pvpkills", 0);
-				kills.set(player.getUniqueId() + ".pvpkillstreak", 0);
-				try {
-					kills.save(f);
-				} catch (IOException e) {
-					e.printStackTrace();
+
+			int deaths = 0;
+			int pKills = 0;
+			int streak = 0;
+			try {
+				Connection conn = hook.getSQLConnection();
+				PreparedStatement ps = conn.prepareStatement("SELECT pvp_deaths, pvp_kills, pvp_killstreak FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+				ResultSet rs = ps.executeQuery();
+				while(rs.next()) {
+					deaths = rs.getInt(1);
+					pKills = rs.getInt(2);
+					streak = rs.getInt(3);
 				}
+				hook.close(ps, rs, conn);
+			} catch (SQLException e) {
+				e.printStackTrace();
 			}
-			int deaths = kills.getInt(player.getUniqueId() + ".pvpdeaths");
-			int pKills = kills.getInt(player.getUniqueId() + ".pvpkills");
-			int streak = kills.getInt(player.getUniqueId() + ".pvpkillstreak");
+
 			double KSRatio;
 			if(deaths == 0 && pKills == 0) {
 				KSRatio = 0.0;

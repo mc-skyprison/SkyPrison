@@ -9,7 +9,7 @@ import org.maxgamer.quickshop.api.event.ShopCreateEvent;
 
 public class ShopCreate implements Listener {
 
-    private SkyPrisonCore plugin;
+    private final SkyPrisonCore plugin;
 
     public ShopCreate(SkyPrisonCore plugin) {
         this.plugin = plugin;

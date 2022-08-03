@@ -14,10 +14,12 @@ import java.io.File;
 import java.util.Set;
 
 public class Placeholders extends PlaceholderExpansion {
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
+	private DailyMissions dailyMissions;
 
-	public Placeholders(SkyPrisonCore plugin) {
+	public Placeholders(SkyPrisonCore plugin, DailyMissions dailyMissions) {
 		this.plugin = plugin;
+		this.dailyMissions = dailyMissions;
 	}
 
 	@Override
@@ -119,6 +121,57 @@ public class Placeholders extends PlaceholderExpansion {
 
 		if(player == null) {
 			return "";
+		}
+
+		if(identifier.equalsIgnoreCase("daily_highest_streak")) {
+			File dailyFile = new File(plugin.getDataFolder() + File.separator
+					+ "dailyreward.yml");
+			YamlConfiguration dailyConf = YamlConfiguration.loadConfiguration(dailyFile);
+
+			int streak = dailyConf.getInt("players." + player.getUniqueId() + "highest-streak");
+
+			return "" + streak;
+		}
+
+
+		if(identifier.equalsIgnoreCase("daily_total_collected")) {
+			File dailyFile = new File(plugin.getDataFolder() + File.separator
+					+ "dailyreward.yml");
+			YamlConfiguration dailyConf = YamlConfiguration.loadConfiguration(dailyFile);
+
+			int collected = dailyConf.getInt("players." + player.getUniqueId() + "total-collected");
+
+			return "" + collected;
+		}
+
+		if(identifier.equalsIgnoreCase("daily_mission_one")) {
+			if(dailyMissions.getPlayerMissions(player).isEmpty()) {
+				return "&7-";
+			}
+			String[] mission = dailyMissions.getPlayerMissions(player).get(0).split("-");
+			int amountNeeded = Integer.parseInt(mission[3]);
+			int currAmount = Integer.parseInt(mission[4]);
+			String missionTitle = mission[2];
+			if(amountNeeded == currAmount) {
+				return plugin.colourMessage("{#ACBED8}&m" + missionTitle + " &f&m" + currAmount + "/" + amountNeeded);
+			} else {
+				return plugin.colourMessage("{#ACBED8}" + missionTitle + " &f" + currAmount + "/" + amountNeeded);
+			}
+		}
+
+		if(identifier.equalsIgnoreCase("daily_mission_two")) {
+			if(dailyMissions.getPlayerMissions(player).isEmpty()) {
+				return "&7-";
+			}
+			String[] mission = dailyMissions.getPlayerMissions(player).get(1).split("-");
+			int amountNeeded = Integer.parseInt(mission[3]);
+			int currAmount = Integer.parseInt(mission[4]);
+			String missionTitle = mission[2];
+			if(amountNeeded == currAmount) {
+				return plugin.colourMessage("{#ACBED8}&m" + missionTitle + " &f&m" + currAmount + "/" + amountNeeded);
+			} else {
+				return plugin.colourMessage("{#ACBED8}" + missionTitle + " &f" + currAmount + "/" + amountNeeded);
+			}
 		}
 
 		if(identifier.equalsIgnoreCase("token_balance_formatted")) {

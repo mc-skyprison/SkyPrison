@@ -17,7 +17,7 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.*;
 
 public class PlotTeleport implements CommandExecutor {
-	private SkyPrisonCore plugin;
+	private final SkyPrisonCore plugin;
 
 	public PlotTeleport(SkyPrisonCore plugin) {
 		this.plugin = plugin;

@@ -122,7 +122,7 @@ public class BottledExp implements CommandExecutor {
 						int bottlesToMake = Integer.parseInt(args[1]);
 						if (expToWithdraw > 0 && bottlesToMake > 0) {
 							if(bottlesToMake <= 64) {
-								if (player.getTotalExperience() >= expToWithdraw) {
+								if (player.getTotalExperience() >= expToWithdraw * bottlesToMake) {
 									int actualExpWithdraw = expToWithdraw * bottlesToMake;
 									if (user.getBalance() >= actualExpWithdraw * 0.25) {
 										createMultipleBottles(player, expToWithdraw, bottlesToMake, actualExpWithdraw);

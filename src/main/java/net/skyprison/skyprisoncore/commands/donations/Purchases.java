@@ -1,73 +1,58 @@
 package net.skyprison.skyprisoncore.commands.donations;
 
-import org.bukkit.Bukkit;
+import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.ChatColor;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Set;
-import java.util.UUID;
 
 public class Purchases implements CommandExecutor {
+	private final DatabaseHook hook;
+	private final SkyPrisonCore plugin;
+
+	public Purchases(DatabaseHook hook, SkyPrisonCore plugin) {
+		this.hook = hook;
+		this.plugin = plugin;
+	}
+
 	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
 		if (sender instanceof Player) {
 			Player player = (Player) sender;
-			if (args.length < 1){
-				File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
-						.getDataFolder() + "/donations/" + player.getUniqueId().toString() + ".yml");
-				if (!f.exists()) {
-					player.sendMessage(ChatColor.RED + "You have not donated!");
-				} else {
-					FileConfiguration playerPurchases = YamlConfiguration.loadConfiguration(f);
-					Set setList = playerPurchases.getKeys(false);
-					player.sendMessage(ChatColor.YELLOW + "----====" + ChatColor.GOLD + " Purchases " + ChatColor.YELLOW + "====-----");
-					double total = 0;
-					for (int i = 0; i < setList.size()-1; i++) {
-						if (playerPurchases.contains(i + ".item-bought")) {
-							String itemBought = playerPurchases.getString(i + ".item-bought");
-							double itemPrice = playerPurchases.getDouble(i + ".item-price");
-							String[] boughtDate = playerPurchases.getString(i + ".bought-date").split(" ");
-							// String itemQuantity = playerPurchases.getString(i + ".item-quantity"); + " " + ChatColor.GOLD + itemQuantity + "x"
-							player.sendMessage(ChatColor.DARK_AQUA + itemBought + ChatColor.WHITE + " -" + ChatColor.GREEN + " $" + itemPrice + ChatColor.YELLOW + " " + boughtDate[0]);
-							total += playerPurchases.getDouble(i + ".item-price");
-						}
-					}
+			if (args.length < 1) {
+				double totalDonor = 0;
+				ArrayList<String> donations = new ArrayList<>();
 
-					player.sendMessage(ChatColor.YELLOW + "Total: " + ChatColor.GOLD + "$" + total);
+				try {
+					Connection conn = hook.getSQLConnection();
+					PreparedStatement ps = conn.prepareStatement("SELECT item_bought, price, date FROM donations WHERE user_id = '" + player.getUniqueId() + "'");
+					ResultSet rs = ps.executeQuery();
+					while(rs.next()) {
+						totalDonor += rs.getDouble(2);
+						donations.add("&3" + rs.getString(1) + " &f&l- &a" + rs.getDouble(2) + " &e" + rs.getString(3));
+					}
+					hook.close(ps, rs, conn);
+				} catch (SQLException e) {
+					e.printStackTrace();
 				}
-			} else if(args[0].equalsIgnoreCase("giveranks")) {
-				if(player.hasPermission("skyprisoncore.donations.giveranks")) {
-					File f = new File(Bukkit.getServer().getPluginManager().getPlugin("SkyPrisonCore")
-							.getDataFolder() + "/donations");
-					File[] donorFiles = f.listFiles();
-					for (File file : donorFiles) {
-						String playerUUID = file.getName().split("\\.")[0];
-						if (!playerUUID.equalsIgnoreCase("test")) {
-							double total = 0;
-							FileConfiguration playerPurchases = YamlConfiguration.loadConfiguration(file);
-							Set setList = playerPurchases.getKeys(false);
-							for (int i = 0; i < setList.size(); i++) {
-								if (playerPurchases.contains(i + ".item-bought")) {
-									total += playerPurchases.getDouble(i + ".item-price");
-								} else {
-									break;
-								}
-							}
-							OfflinePlayer donor = Bukkit.getOfflinePlayer(UUID.fromString(playerUUID));
-							if (total >= 0) {
-								Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + donor.getName() + " parent add donor");
 
-							}
-						}
+				if (!donations.isEmpty()) {
+					player.sendMessage(ChatColor.YELLOW + "----====" + ChatColor.GOLD + " Purchases " + ChatColor.YELLOW + "====-----");
+					for(String donation : donations) {
+						player.sendMessage(plugin.colourMessage(donation));
 					}
+					player.sendMessage(ChatColor.YELLOW + "Total: " + ChatColor.GOLD + "$" + totalDonor);
+				} else {
+					player.sendMessage(ChatColor.RED + "You have not donated!");
 				}
 			}
 		}

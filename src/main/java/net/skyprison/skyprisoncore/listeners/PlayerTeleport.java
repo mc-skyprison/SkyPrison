@@ -27,7 +27,7 @@ import java.util.Objects;
 
 public class PlayerTeleport implements Listener {
 
-    private SkyPrisonCore plugin;
+    private final SkyPrisonCore plugin;
 
     public PlayerTeleport(SkyPrisonCore plugin) {
         this.plugin = plugin;

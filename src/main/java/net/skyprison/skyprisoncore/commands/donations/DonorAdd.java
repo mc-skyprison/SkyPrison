@@ -1,41 +1,36 @@
 package net.skyprison.skyprisoncore.commands.donations;
 
-import net.skyprison.skyprisoncore.SkyPrisonCore;
+import com.Zrips.CMI.CMI;
+import com.Zrips.CMI.Containers.CMIUser;
+import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DonorAdd implements CommandExecutor {
-	private SkyPrisonCore plugin;
+	private final DatabaseHook hook;
 
 
-	public DonorAdd(SkyPrisonCore plugin) {
-		this.plugin = plugin;
+	public DonorAdd(DatabaseHook hook) {
+		this.hook = hook;
 	}
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
 		if (args.length > 6) {
-			if(Bukkit.getPlayer(args[0]).isValid()) {
-				Player player = Bukkit.getPlayer(args[0]);
-				File f = new File(plugin.getDataFolder() + File.separator
-						+ "donations" + File.separator + player.getUniqueId() + ".yml");
-				if (!f.exists()) {
-					try {
-						f.createNewFile();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-				FileConfiguration playerPurchases = YamlConfiguration.loadConfiguration(f);
-				boolean stuff = false;
+			CMIUser user = CMI.getInstance().getPlayerManager().getUser(args[0]);
+			if(user != null) {
+				Player player = user.getPlayer();
 				StringBuilder itemBought = new StringBuilder();
 				for (int i = 6; i < args.length; i++) {
 					if (i != 6) {
@@ -44,42 +39,40 @@ public class DonorAdd implements CommandExecutor {
 						itemBought.append(args[i]);
 					}
 				}
-				int i = 0;
-				while (!stuff) {
-					// /donoradd <player> <item-currency> <item-price> <date> <time> <amount of it bought> <item-bought>
-					if (!playerPurchases.contains(i + ".item-bought")) {
-						playerPurchases.set(i + ".item-price", Double.parseDouble(args[2]));
-						playerPurchases.set(i + ".item-currency", args[1]);
-						playerPurchases.set(i + ".bought-date", args[3] + " " + args[4]);
-						playerPurchases.set(i + ".item-quantity", Integer.parseInt(args[5]));
-						playerPurchases.set(i + ".item-bought", String.valueOf(itemBought));
-						try {
-							playerPurchases.save(f);
-						} catch (final IOException e) {
-							e.printStackTrace();
-						}
-						stuff = true;
-					} else {
-						i++;
-					}
-				}
 
-				double totalDonations = playerPurchases.getDouble("totalDonationAmount");
-				double newTotalDonations = totalDonations + Double.parseDouble(args[2]);
-				playerPurchases.set("totalDonationAmount", newTotalDonations);
+				double totalDonor = Double.parseDouble(args[2]);
+
 				try {
-					playerPurchases.save(f);
-				} catch (IOException e) {
+					Connection conn = hook.getSQLConnection();
+					PreparedStatement ps = conn.prepareStatement("SELECT price FROM donations WHERE user_id = '" + player.getUniqueId() + "'");
+					ResultSet rs = ps.executeQuery();
+					while(rs.next()) {
+						totalDonor += rs.getDouble(1);
+					}
+					hook.close(ps, rs, conn);
+				} catch (SQLException e) {
 					e.printStackTrace();
 				}
 
-				if (newTotalDonations >= 10.0) {
+				// /donoradd <player> <item-currency> <item-price> <date> <time> <amount of it bought> <item-bought>
+				String sql = "INSERT INTO donations (user_id, item_bought, price, currency, amount, date) VALUES (?, ?, ?, ?, ?, ?)";
+				List<Object> params = new ArrayList<Object>() {{
+					add(player.getUniqueId().toString());
+					add(String.valueOf(itemBought));
+					add(Double.parseDouble(args[2]));
+					add(args[1]);
+					add(Integer.parseInt(args[5]));
+					add(args[3] + " " + args[4]);
+				}};
+				hook.sqlUpdate(sql, params);
+
+				if (totalDonor >= 10.0) {
 					if(!player.hasPermission("group.donor1")) {
 						Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + args[0] + " parent add donor1");
-					} else if (newTotalDonations >= 50.0) {
+					} else if (totalDonor >= 50.0) {
 						if(!player.hasPermission("group.donor2")) {
 							Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + args[0] + " parent add donor2");
-						} else if (newTotalDonations >= 100.0) {
+						} else if (totalDonor >= 100.0) {
 							if(!player.hasPermission("group.donor3")) {
 								Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + args[0] + " parent add donor3");
 							}
