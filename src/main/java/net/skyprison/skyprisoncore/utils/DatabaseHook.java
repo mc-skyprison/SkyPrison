@@ -147,10 +147,27 @@ public class DatabaseHook {
                                 "sell_blocks LONGTEXT, " + // DONZO
                                 "discord_id long, " + // DONZO
                                 "casino_cooldowns LONGTEXT, " + // DONZO
-                                "pvp_deaths int," +
-                                "pvp_kills int," +
-                                "pvp_killstreak int," +
                                 "PRIMARY KEY (user_id)" +
+                                ")";
+                        break;
+                    case "rewards_data": // ALL DONZO
+                        sql = "CREATE TABLE recently_killed (" +
+                                "rewards_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+                                "user_id varchar(255), " +
+                                "reward_name archar(255), " +
+                                "reward_collected TINYINT, " +
+                                "PRIMARY KEY (rewards_id)" +
+                                "FOREIGN KEY (user_id) REFERENCES users(user_id)" +
+                                ")";
+                        break;
+                    case "secrets_data": // ALL DONZO
+                        sql = "CREATE TABLE recently_killed (" +
+                                "secret_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+                                "user_id varchar(255), " +
+                                "secret_name archar(255), " +
+                                "secret_amount int, " +
+                                "PRIMARY KEY (secret_id)" +
+                                "FOREIGN KEY (user_id) REFERENCES users(user_id)" +
                                 ")";
                         break;
                     case "teleport_ignore": // ALL DONZO
@@ -159,6 +176,7 @@ public class DatabaseHook {
                                 "user_id varchar(255), " +
                                 "ignore_id archar(255), " +
                                 "PRIMARY KEY (teleport_id)" +
+                                "FOREIGN KEY (user_id) REFERENCES users(user_id)" +
                                 ")";
                         break;
                     case "recently_killed": // ALL DONZO
@@ -168,6 +186,8 @@ public class DatabaseHook {
                                 "killed_id archar(255), " +
                                 "killed_on long," +
                                 "PRIMARY KEY (killing_id)," +
+                                "FOREIGN KEY (killer_id) REFERENCES users(user_id)" +
+                                "FOREIGN KEY (killed_id) REFERENCES users(user_id)" +
                                 ")";
                         break;
                     case "bounties": // ALL DONZO
@@ -176,6 +196,7 @@ public class DatabaseHook {
                                 "prize float, " +
                                 "bountied_by LONGTEXT," +
                                 "PRIMARY KEY (user_id)" +
+                                "FOREIGN KEY (user_id) REFERENCES users(user_id)" +
                                 ")";
                         break;
                     case "referrals": // ALL DONZO
@@ -185,6 +206,7 @@ public class DatabaseHook {
                                 "referred_by varchar(255), " +
                                 "refer_date TEXT," +
                                 "PRIMARY KEY (refer_id)" +
+                                "FOREIGN KEY (user_id) REFERENCES users(user_id)" +
                                 ")";
                         break;
                     case "dailies": // ALL DONZO
@@ -194,7 +216,8 @@ public class DatabaseHook {
                                 "total_collected int, " +
                                 "highest_streak int, " +
                                 "last_collected varchar(255), " +
-                                "PRIMARY KEY (user_id)" +
+                                "PRIMARY KEY (user_id), " +
+                                "FOREIGN KEY (user_id) REFERENCES users(user_id)" +
                                 ")";
                         break;
                     case "donations": // ALL DONZO
@@ -414,10 +437,49 @@ public class DatabaseHook {
                             }};
                             sqlUpdate(sql, params);
                         }
+                        break;
+                    case "rewards_data":
+                        File rewardsData = new File(plugin.getDataFolder() + File.separator + "secretsdata.yml");
+                        YamlConfiguration rewardConf = YamlConfiguration.loadConfiguration(rewardsData);
+                        Set<String> rewardInfo = rewardConf.getKeys(false);
 
+                        for(String user : rewardInfo) {
+                            Set<String> rewards = rewardConf.getConfigurationSection(user + ".rewards").getKeys(false);
+                            for(String reward : rewards) {
+                                int boolToInt = 0;
+                                boolean hasColl = rewardConf.getBoolean(user + ".rewards." + reward + ".collected");
+                                if (hasColl) boolToInt = 1;
 
+                                sql = "INSERT INTO rewards_data (user_id, reward_name, reward_collected) VALUES (?, ?, ?)";
+                                int finalBoolToInt = boolToInt;
+                                params = new ArrayList<Object>() {{
+                                    add(user);
+                                    add(reward);
+                                    add(finalBoolToInt);
+                                }};
+                                sqlUpdate(sql, params);
+                            }
+                        }
+                        break;
+                    case "secrets_data":
+                        File secretsData = new File(plugin.getDataFolder() + File.separator + "secretsdata.yml");
+                        YamlConfiguration secretConf = YamlConfiguration.loadConfiguration(secretsData);
+                        Set<String> secretInfo = secretConf.getKeys(false);
 
-
+                        for(String user : secretInfo) {
+                            Set<String> secrets = secretConf.getConfigurationSection(user + ".secrets-found").getKeys(true);
+                            secrets.removeIf(n -> (!n.matches(".*\\d.*")));
+                            for(String secret : secrets) {
+                                String secretArea = secret.substring(0, secret.length() - 1);
+                                sql = "INSERT INTO secrets_data (user_id, secret_name, secret_amount) VALUES (?, ?, ?)";
+                                params = new ArrayList<Object>() {{
+                                    add(user);
+                                    add(secret);
+                                    add(secretConf.getInt(user + ".secrets-found." + secretArea + "." + secret + ".times-found"));
+                                }};
+                                sqlUpdate(sql, params);
+                            }
+                        }
                         break;
                     case "recently_killed":
                         killsFile = new File(plugin.getDataFolder() + File.separator + "recentkills.yml");
