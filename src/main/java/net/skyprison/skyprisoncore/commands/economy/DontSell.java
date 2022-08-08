@@ -37,24 +37,20 @@ public class DontSell implements CommandExecutor {
 		if(sender instanceof Player) {
 			Player player = (Player) sender;
 			if(player.hasPermission("shopguiplus.sell.all")) {
-				String sellBlocks = "";
+				List<String> blockedSales = new ArrayList<>();
 
 				try {
 					Connection conn = hook.getSQLConnection();
-					PreparedStatement ps = conn.prepareStatement("SELECT sell_blocks FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+					PreparedStatement ps = conn.prepareStatement("SELECT block_item FROM block_sells WHERE user_id = '" + player.getUniqueId() + "'");
 					ResultSet rs = ps.executeQuery();
 					while(rs.next()) {
-						sellBlocks = rs.getString(1);
-						sellBlocks = sellBlocks.replace("[", "");
-						sellBlocks = sellBlocks.replace("]", "");
-						sellBlocks = sellBlocks.replace(" ", "");
+						blockedSales.add(rs.getString(1));
 					}
 					hook.close(ps, rs, conn);
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
 
-				List<String> blockedSales = new ArrayList<>(Arrays.asList(sellBlocks.split(",")));
 
 
 				if(args.length >= 1) {
@@ -103,16 +99,25 @@ public class DontSell implements CommandExecutor {
 							if (!blockedSales.contains(iName)) {
 								blockedSales.add(iName);
 								player.sendMessage(plugin.colourMessage("&aSuccessfully &lADDED &aitem to the dont sell list!"));
+
+								String sql = "INSERT INTO block_sells (user_id, block_item) VALUES (?, ?)";
+								List<Object> params = new ArrayList<Object>() {{
+									add(player.getUniqueId().toString());
+									add(iName);
+								}};
+								hook.sqlUpdate(sql, params);
 							} else {
 								blockedSales.remove(iName);
 								player.sendMessage(plugin.colourMessage("&aSuccessfully &lREMOVED &aitem from the dont sell list!"));
+
+								String sql = "DELETE FROM block_sells WHERE user_id = ? AND block_item = ?";
+								List<Object> params = new ArrayList<Object>() {{
+									add(player.getUniqueId().toString());
+									add(iName);
+								}};
+								hook.sqlUpdate(sql, params);
 							}
-							String sql = "UPDATE users SET sell_blocks = ? WHERE user_id = ?";
-							List<Object> params = new ArrayList<Object>() {{
-								add(blockedSales);
-								add(player.getUniqueId().toString());
-							}};
-							hook.sqlUpdate(sql, params);
+
 						} else {
 							player.sendMessage(plugin.colourMessage("&cThis item can't be sold!"));
 						}

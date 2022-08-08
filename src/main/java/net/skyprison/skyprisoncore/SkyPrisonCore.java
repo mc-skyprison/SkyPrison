@@ -1,15 +1,21 @@
 package net.skyprison.skyprisoncore;
 
 import java.io.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
+import jdk.vm.ci.meta.Local;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -33,6 +39,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.*;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -86,7 +93,7 @@ public class SkyPrisonCore extends JavaPlugin {
             new BukkitRunnable() {
                 @Override
                 public void run() {
-                    updateDiscordRoles(sPlugin, discApi);
+                    updateDiscordRoles(discApi);
                 }
             }.runTaskTimerAsynchronously(this, 20 * 1800, 20 * 1800);
         }
@@ -103,7 +110,7 @@ public class SkyPrisonCore extends JavaPlugin {
         new LangCreator(this).init();
 
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            new Placeholders(this, dailyMissions).register();
+            new Placeholders(this, dailyMissions, getDatabase()).register();
             getLogger().info("Placeholders registered");
         }
         
@@ -128,13 +135,9 @@ public class SkyPrisonCore extends JavaPlugin {
         new BukkitRunnable() {
             @Override
             public void run() {
-                try {
-                    checkDailies(sPlugin);
-                } catch (IOException | ParseException e) {
-                    e.printStackTrace();
-                }
+                checkDailies();
             }
-        }.runTaskTimerAsynchronously(this, 20 * 1815, 20 * 1815);
+        }.runTaskTimerAsynchronously(this, 20 * 3800, 20 * 3800);
 
         File infoFile = new File(this.getDataFolder() + File.separator + "info.yml");
         infoConf = YamlConfiguration.loadConfiguration(infoFile);
@@ -151,22 +154,18 @@ public class SkyPrisonCore extends JavaPlugin {
         new BukkitRunnable() {
             @Override
             public void run() {
-                try {
-                    updateTopic();
-                    checkOnlineDailies(sPlugin);
-                    if(tokensData != null && !tokensData.isEmpty()) {
-                        Map<String, Integer> token = tokensData;
-                        for (String pUUID : token.keySet()) {
-                            String sql = "UPDATE users SET tokens = ? WHERE user_id = ?";
-                            List<Object> params = new ArrayList<Object>() {{
-                                add(tokensData.get(pUUID));
-                                add(pUUID);
-                            }};
-                            getDatabase().sqlUpdate(sql, params);
-                        }
+                updateTopic();
+                checkOnlineDailies();
+                if(tokensData != null && !tokensData.isEmpty()) {
+                    Map<String, Integer> token = tokensData;
+                    for (String pUUID : token.keySet()) {
+                        String sql = "UPDATE users SET tokens = ? WHERE user_id = ?";
+                        List<Object> params = new ArrayList<Object>() {{
+                            add(tokensData.get(pUUID));
+                            add(pUUID);
+                        }};
+                        getDatabase().sqlUpdate(sql, params);
                     }
-                } catch (ParseException e) {
-                    e.printStackTrace();
                 }
             }
         }.runTaskTimerAsynchronously(this, 20 * 635, 20 * 635);
@@ -199,16 +198,27 @@ public class SkyPrisonCore extends JavaPlugin {
     }
 
 
-    public void updateDiscordRoles(Plugin plugin, DiscordApi discApi) {
-        File file = new File(plugin.getDataFolder() + File.separator + "discord.yml");
-        FileConfiguration fData = YamlConfiguration.loadConfiguration(file);
+    public void updateDiscordRoles(DiscordApi discApi) {
         for(Player player : Bukkit.getOnlinePlayers()) {
-            if(fData.contains(player.getUniqueId().toString())) {
+            long discordId = 0;
+            try {
+                Connection conn = getDatabase().getSQLConnection();
+                PreparedStatement ps = conn.prepareStatement("SELECT discord_id FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+                ResultSet rs = ps.executeQuery();
+                while(rs.next()) {
+                    discordId = rs.getLong(1);
+                }
+                getDatabase().close(ps, rs, conn);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            if(discordId != 0) {
                 CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
                 String roleName = user.getRank().getName();
                 Role role = discApi.getRolesByName(roleName).iterator().next();
                 try {
-                    User discUser = discApi.getUserById(fData.getLong(user.getUniqueId().toString())).get();
+                    User discUser = discApi.getUserById(discordId).get();
                     Server server = discApi.getServerById("782795465632251955").get();
                     if(!discUser.getRoles(server).contains(role)) {
                         discUser.addRole(role);
@@ -279,15 +289,15 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("dropchest")).setExecutor(new DropChest(this));
         Objects.requireNonNull(getCommand("dontsell")).setExecutor(new DontSell(this, getDatabase()));
         Objects.requireNonNull(getCommand("endupgrade")).setExecutor(new EndUpgrade(this));
-        Objects.requireNonNull(getCommand("secretfound")).setExecutor(new SecretFound(this, dailyMissions));
-        Objects.requireNonNull(getCommand("rewards")).setExecutor(new SecretsGUI(this));
+        Objects.requireNonNull(getCommand("secretfound")).setExecutor(new SecretFound(this, dailyMissions, getDatabase()));
+        Objects.requireNonNull(getCommand("rewards")).setExecutor(new SecretsGUI(this, getDatabase()));
         Objects.requireNonNull(getCommand("bounty")).setExecutor(new Bounty(getDatabase(), this));
         Objects.requireNonNull(getCommand("killinfo")).setExecutor(new KillInfo(getDatabase()));
         Objects.requireNonNull(getCommand("firstjointop")).setExecutor(new FirstjoinTop(this, getDatabase()));
         Objects.requireNonNull(getCommand("referral")).setExecutor(new Referral(this, discApi, getDatabase()));
         Objects.requireNonNull(getCommand("bartender")).setExecutor(new Bartender(this));
         Objects.requireNonNull(getCommand("sword")).setExecutor(new Sword(this));
-        Objects.requireNonNull(getCommand("discord")).setExecutor(new Discord(this, getDatabase()));
+        Objects.requireNonNull(getCommand("discord")).setExecutor(new Discord(this, getDatabase(), discApi));
         Objects.requireNonNull(getCommand("bow")).setExecutor(new Bow(this));
         Objects.requireNonNull(getCommand("contraband")).setExecutor(new Contraband(this));
         Objects.requireNonNull(getCommand("ignoretp")).setExecutor(new IgnoreTeleport(this, getDatabase()));
@@ -321,14 +331,14 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new BlockDamage(this, getDatabase()), this);
         pm.registerEvents(new BlockPlace(this), this);
         pm.registerEvents(new BrewDrink(this, getDatabase()), this);
-        pm.registerEvents(new CMIPlayerTeleportRequest(this), this);
+        pm.registerEvents(new CMIPlayerTeleportRequest(this, getDatabase()), this);
         pm.registerEvents(new CMIUserBalanceChange(this), this);
         pm.registerEvents(new EntityDamageByEntity(this), this);
         pm.registerEvents(new EntityDeath(this, new Safezone(this), getDatabase()), this);
         pm.registerEvents(new EntityPickupItem(this), this);
         pm.registerEvents(new EntityRemoveFromWorld(this), this);
         pm.registerEvents(new InventoryClick(this, new EconomyCheck(this), new DropChest(this), new Bounty(getDatabase(), this),
-                new SecretsGUI(this), new Daily(this, new DatabaseHook(this)), new MoneyHistory(this), new EndUpgrade(this),
+                new SecretsGUI(this, getDatabase()), new Daily(this, new DatabaseHook(this)), new MoneyHistory(this), new EndUpgrade(this),
                 new BuyBack(this, getDatabase()), new SkyPlot(this), getDatabase()), this);
         pm.registerEvents(new InventoryOpen(), this);
         pm.registerEvents(new LeavesDecay(), this);
@@ -347,8 +357,8 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PlayerUntag(this), this);
         pm.registerEvents(new ShopCreate(this), this);
         pm.registerEvents(new ShopPostTransaction(getDatabase()), this);
-        pm.registerEvents(new ShopPreTransaction(this), this);
-        pm.registerEvents(new ShopPurchase(this), this);
+        pm.registerEvents(new ShopPreTransaction(getDatabase()), this);
+        pm.registerEvents(new ShopPurchase(this, getDatabase()), this);
         pm.registerEvents(new ShopSuccessPurchase(this), this);
         pm.registerEvents(new UnsellRegion(), this);
         pm.registerEvents(new PlayerFish(this, dailyMissions), this);
@@ -566,45 +576,62 @@ public class SkyPrisonCore extends JavaPlugin {
         return message;
     }
 
-    public void checkOnlineDailies(Plugin plugin) throws ParseException {
-        File f = new File(plugin.getDataFolder() + File.separator + "dailyreward.yml");
-        FileConfiguration dailyConf = YamlConfiguration.loadConfiguration(f);
+    public void checkOnlineDailies() {
         Date date = new Date();
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
         String currDate = formatter.format(date);
 
         for(Player player : Bukkit.getOnlinePlayers()) {
-            String lastDay = dailyConf.getString("players." + player.getUniqueId() + ".last-collected");
+            String lastDay = "";
+            try {
+                Connection conn = getDatabase().getSQLConnection();
+                PreparedStatement ps = conn.prepareStatement("SELECT last_collected FROM dailies WHERE user_id = '" + player.getUniqueId() + "'");
+                ResultSet rs = ps.executeQuery();
+                while(rs.next()) {
+                    lastDay = rs.getString(1);
+                }
+                getDatabase().close(ps, rs, conn);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
             if(lastDay != null && !lastDay.equalsIgnoreCase(currDate)) {
                 player.sendMessage(colourMessage("&aYou can collect your &l/daily&l!"));
             }
         }
     }
 
-    public void checkDailies(Plugin plugin) throws IOException, ParseException {
-        File f = new File(plugin.getDataFolder() + File.separator + "dailyreward.yml");
-        FileConfiguration dailyConf = YamlConfiguration.loadConfiguration(f);
-        Set<String> dailyPlayers = dailyConf.getConfigurationSection("players").getKeys(false);
-        Date date = new Date();
+    public void checkDailies() {
+        ArrayList<String> dailyPlayers = new ArrayList<>();
+
+        LocalDate today = LocalDate.now();
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-        String currDate = formatter.format(date);
-        Date newDate = formatter.parse(currDate);
+        String currDate = formatter.format(today);
 
-        String lastDay = dailyConf.getString("current-day");
+        LocalDate yesterday = LocalDate.now().minusDays(2);
+        String yesterDate = formatter.format(yesterday);
 
-        if (!currDate.equalsIgnoreCase(lastDay)) {
-            dailyConf.set("current-day", currDate);
-            for (String dPlayer : dailyPlayers) {
-                String collectedDay = dailyConf.getString("players." + dPlayer + ".last-collected");
-                Date collectedDate = formatter.parse(collectedDay);
-                long daysSinceLast = Math.round((newDate.getTime() - collectedDate.getTime()) / (double) 86400000);
 
-                int rewardStreak = dailyConf.getInt("players." + dPlayer + ".current-streak");
-                if (daysSinceLast >= 2 && rewardStreak != 1) {
-                    dailyConf.set("players." + dPlayer + ".current-streak", 0);
-                }
+        try {
+            Connection conn = getDatabase().getSQLConnection();
+            PreparedStatement ps = conn.prepareStatement("SELECT user_id, current_streak FROM dailies WHERE last_collected = '" + yesterDate + "'");
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()) {
+                if(rs.getInt(2) > 0) dailyPlayers.add(rs.getString(1));
             }
-            dailyConf.save(f);
+            getDatabase().close(ps, rs, conn);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+
+
+        for(String player : dailyPlayers) {
+            String sql = "UPDATE dailies SET current_streak = 0 WHERE user_id = ?";
+            List<Object> params = new ArrayList<Object>() {{
+                add(player);
+            }};
+            getDatabase().sqlUpdate(sql, params);
         }
     }
 

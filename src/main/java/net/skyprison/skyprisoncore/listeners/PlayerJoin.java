@@ -76,22 +76,6 @@ public class PlayerJoin implements Listener {
                 dailyMissions.setPlayerMissions(player);
             }
 
-
-            File f = new File(plugin.getDataFolder() + File.separator + "dailyreward.yml");
-            FileConfiguration dailyConf = YamlConfiguration.loadConfiguration(f);
-            Date date = new Date();
-            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-            String currDate = formatter.format(date);
-
-            if(dailyConf.contains("players." + player.getUniqueId() + ".last-collected")) {
-                String lastDay = dailyConf.getString("players." + player.getUniqueId() + ".last-collected");
-                if (!lastDay.equalsIgnoreCase(currDate)) {
-                    player.sendMessage(plugin.colourMessage("&aYou can collect your &l/daily&l!"));
-                }
-            } else {
-                player.sendMessage(plugin.colourMessage("&aYou can collect your &l/daily&l!"));
-            }
-
             RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
 
             com.sk89q.worldedit.util.Location locWE = BukkitAdapter.adapt(player.getLocation());

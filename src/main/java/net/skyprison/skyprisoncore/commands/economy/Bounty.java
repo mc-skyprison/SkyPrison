@@ -22,7 +22,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Connection;

@@ -128,6 +128,12 @@ public class DatabaseHook {
             tables.add("donations");
             tables.add("recently_killed");
             tables.add("teleport_ignore");
+            tables.add("rewards_data");
+            tables.add("secrets_data");
+            tables.add("recent_sells");
+            tables.add("block_sells");
+            tables.add("shop_banned");
+            tables.add("casino_cooldowns");
             for(String table : tables) {
                 Connection conn;
                 PreparedStatement ps;
@@ -140,43 +146,76 @@ public class DatabaseHook {
                                 "first_join long, " + // DONZO
                                 "tokens int, " + // DONZO
                                 "sponges_found int, " + // DONZO
-                                "recent_sells LONGTEXT, " +  // DONZO
-                                "shop_banned LONGTEXT, " + // DONZO
                                 "blocks_mined int, " + // DONZO
                                 "brews_drank int, " + // DONZO
-                                "sell_blocks LONGTEXT, " + // DONZO
                                 "discord_id long, " + // DONZO
-                                "casino_cooldowns LONGTEXT, " + // DONZO
+                                "pvp_deaths int, " + // DONZO
+                                "pvp_kills int, " + // DONZO
+                                "pvp_killstreak int, " + // DONZO
                                 "PRIMARY KEY (user_id)" +
                                 ")";
                         break;
+                    case "casino_cooldowns": // ALL DONZO
+                        sql = "CREATE TABLE casino_cooldowns (" +
+                                "casino_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+                                "user_id varchar(255), " +
+                                "casino_name varchar(255), " +
+                                "casino_cooldown long, " +
+                                "FOREIGN KEY (user_id) REFERENCES users(user_id)" +
+                                ")";
+                        break;
+                    case "shop_banned": // ALL DONZO
+                        sql = "CREATE TABLE shop_banned (" +
+                                "banned_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+                                "user_id varchar(255), " +
+                                "banned_user varchar(255), " +
+                                "FOREIGN KEY (user_id) REFERENCES users(user_id), " +
+                                "FOREIGN KEY (banned_user) REFERENCES users(user_id)" +
+                                ")";
+                        break;
+                    case "block_sells": // ALL DONZO
+                        sql = "CREATE TABLE block_sells (" +
+                                "block_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+                                "user_id varchar(255), " +
+                                "block_item varchar(255), " +
+                                "FOREIGN KEY (user_id) REFERENCES users(user_id)" +
+                                ")";
+                        break;
+                    case "recent_sells": // ALL DONZO
+                        sql = "CREATE TABLE recent_sells (" +
+                                "recent_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
+                                "user_id varchar(255), " +
+                                "recent_item varchar(255), " +
+                                "recent_amount int, " +
+                                "recent_price float, " +
+                                "FOREIGN KEY (user_id) REFERENCES users(user_id)" +
+                                ")";
+                        break;
                     case "rewards_data": // ALL DONZO
-                        sql = "CREATE TABLE recently_killed (" +
+                        sql = "CREATE TABLE rewards_data (" +
                                 "rewards_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
                                 "user_id varchar(255), " +
-                                "reward_name archar(255), " +
+                                "reward_name varchar(255), " +
                                 "reward_collected TINYINT, " +
-                                "PRIMARY KEY (rewards_id)" +
                                 "FOREIGN KEY (user_id) REFERENCES users(user_id)" +
                                 ")";
                         break;
                     case "secrets_data": // ALL DONZO
-                        sql = "CREATE TABLE recently_killed (" +
+                        sql = "CREATE TABLE secrets_data (" +
                                 "secret_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
                                 "user_id varchar(255), " +
-                                "secret_name archar(255), " +
+                                "secret_name varchar(255), " +
                                 "secret_amount int, " +
-                                "PRIMARY KEY (secret_id)" +
                                 "FOREIGN KEY (user_id) REFERENCES users(user_id)" +
                                 ")";
                         break;
                     case "teleport_ignore": // ALL DONZO
-                        sql = "CREATE TABLE recently_killed (" +
+                        sql = "CREATE TABLE teleport_ignore (" +
                                 "teleport_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
                                 "user_id varchar(255), " +
                                 "ignore_id archar(255), " +
-                                "PRIMARY KEY (teleport_id)" +
-                                "FOREIGN KEY (user_id) REFERENCES users(user_id)" +
+                                "FOREIGN KEY (user_id) REFERENCES users(user_id), " +
+                                "FOREIGN KEY (ignore_id) REFERENCES users(user_id)" +
                                 ")";
                         break;
                     case "recently_killed": // ALL DONZO
@@ -184,9 +223,8 @@ public class DatabaseHook {
                                 "killing_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
                                 "killer_id varchar(255), " +
                                 "killed_id archar(255), " +
-                                "killed_on long," +
-                                "PRIMARY KEY (killing_id)," +
-                                "FOREIGN KEY (killer_id) REFERENCES users(user_id)" +
+                                "killed_on long, " +
+                                "FOREIGN KEY (killer_id) REFERENCES users(user_id), " +
                                 "FOREIGN KEY (killed_id) REFERENCES users(user_id)" +
                                 ")";
                         break;
@@ -194,8 +232,8 @@ public class DatabaseHook {
                         sql = "CREATE TABLE bounties (" +
                                 "user_id varchar(255), " +
                                 "prize float, " +
-                                "bountied_by LONGTEXT," +
-                                "PRIMARY KEY (user_id)" +
+                                "bountied_by LONGTEXT, " +
+                                "PRIMARY KEY (user_id), " +
                                 "FOREIGN KEY (user_id) REFERENCES users(user_id)" +
                                 ")";
                         break;
@@ -204,8 +242,7 @@ public class DatabaseHook {
                                 "refer_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
                                 "user_id varchar(255), " +
                                 "referred_by varchar(255), " +
-                                "refer_date TEXT," +
-                                "PRIMARY KEY (refer_id)" +
+                                "refer_date TEXT, " +
                                 "FOREIGN KEY (user_id) REFERENCES users(user_id)" +
                                 ")";
                         break;
@@ -242,6 +279,7 @@ public class DatabaseHook {
                     throwables.printStackTrace();
                 }
             }
+            Bukkit.getLogger().info("donzo!");
         }
 
         public void convertToSql() {
@@ -251,6 +289,13 @@ public class DatabaseHook {
             tables.add("dailies");
             tables.add("referrals");
             tables.add("donations");
+            tables.add("recently_killed");
+            tables.add("teleport_ignore");
+            tables.add("rewards_data");
+            tables.add("secrets_data");
+            tables.add("block_sells");
+            tables.add("shop_banned");
+            tables.add("casino_cooldowns");
             for(String table : tables) {
                 String sql;
                 List<Object> params;
@@ -290,23 +335,6 @@ public class DatabaseHook {
                             sqlUpdate(sql, params);
                         }
 
-                        File recentSellsFile = new File(plugin.getDataFolder() + File.separator + "recentsells.yml");
-                        YamlConfiguration recentSellConf = YamlConfiguration.loadConfiguration(recentSellsFile);
-                        Set<String> recentSellInfo = recentSellConf.getKeys(false);
-
-                        for(String recent : recentSellInfo) {
-                            List<String> soldItems = recentSellConf.getStringList(recent + ".sold-items");
-
-                            sql = "INSERT INTO users (user_id, current_name, first_join, recent_sells) VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET recent_sells = '" + soldItems + "'";
-                            params = new ArrayList<Object>() {{
-                                add(recent);
-                                add(Bukkit.getOfflinePlayer(UUID.fromString(recent)).getName());
-                                add(Bukkit.getOfflinePlayer(UUID.fromString(recent)).getFirstPlayed());
-                                add(soldItems);
-                            }};
-                            sqlUpdate(sql, params);
-                        }
-
                         File blocksFile = new File(plugin.getDataFolder() + File.separator + "blocksmined.yml");
                         YamlConfiguration blockConf = YamlConfiguration.loadConfiguration(blocksFile);
                         Set<String> blockInfo = blockConf.getKeys(false);
@@ -324,22 +352,23 @@ public class DatabaseHook {
                             sqlUpdate(sql, params);
                         }
 
-                        File tpIgnore = new File(plugin.getDataFolder() + File.separator + "teleportignore.yml");
-                        YamlConfiguration tpConf = YamlConfiguration.loadConfiguration(tpIgnore);
-                        Set<String> tpInfo = blockConf.getKeys(false);
+                        File discFile = new File(plugin.getDataFolder() + File.separator + "discord.yml");
+                        YamlConfiguration discConf = YamlConfiguration.loadConfiguration(discFile);
+                        Set<String> discInfo = discConf.getKeys(false);
 
-                        for(String tp : tpInfo) {
-                            List<String> ignoreList = tpConf.getStringList(tp + ".ignores");
+                        for(String player : discInfo) {
+                            long discId = discConf.getLong(player);
 
-                            sql = "INSERT INTO users (user_id, current_name, first_join, teleport_ignore) VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET teleport_ignore = '" + ignoreList + "'";
+                            sql = "INSERT INTO users (user_id, current_name, first_join, discord_id) VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET discord_id = '" + discId + "'";
                             params = new ArrayList<Object>() {{
-                                add(tp);
-                                add(Bukkit.getOfflinePlayer(UUID.fromString(tp)).getName());
-                                add(Bukkit.getOfflinePlayer(UUID.fromString(tp)).getFirstPlayed());
-                                add(ignoreList);
+                                add(player);
+                                add(Bukkit.getOfflinePlayer(UUID.fromString(player)).getName());
+                                add(Bukkit.getOfflinePlayer(UUID.fromString(player)).getFirstPlayed());
+                                add(discId);
                             }};
                             sqlUpdate(sql, params);
                         }
+
 
                         File brewsFile = new File(plugin.getDataFolder() + File.separator + "brewsdrank.yml");
                         YamlConfiguration brewConf = YamlConfiguration.loadConfiguration(brewsFile);
@@ -354,46 +383,6 @@ public class DatabaseHook {
                                 add(Bukkit.getOfflinePlayer(UUID.fromString(brew)).getName());
                                 add(Bukkit.getOfflinePlayer(UUID.fromString(brew)).getFirstPlayed());
                                 add(brews);
-                            }};
-                            sqlUpdate(sql, params);
-                        }
-
-                        File sellBlocksFile = new File(plugin.getDataFolder() + File.separator + "blocksells.yml");
-                        YamlConfiguration sellBlockConf = YamlConfiguration.loadConfiguration(sellBlocksFile);
-                        Set<String> sellBlockInfo = sellBlockConf.getKeys(false);
-
-                        for(String sellBlock : sellBlockInfo) {
-                            List<String> sellBlocks = sellBlockConf.getStringList(sellBlock + ".blocked");
-
-                            sql = "INSERT INTO users (user_id, current_name, first_join, sell_blocks) VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET sell_blocks = '" + sellBlocks + "'";
-                            params = new ArrayList<Object>() {{
-                                add(sellBlock);
-                                add(Bukkit.getOfflinePlayer(UUID.fromString(sellBlock)).getName());
-                                add(Bukkit.getOfflinePlayer(UUID.fromString(sellBlock)).getFirstPlayed());
-                                add(sellBlocks);
-                            }};
-                            sqlUpdate(sql, params);
-                        }
-
-                        File casinoFile = new File(plugin.getDataFolder() + File.separator + "casinocooldown.yml");
-                        YamlConfiguration casinoConf = YamlConfiguration.loadConfiguration(casinoFile);
-                        Set<String> casinoInfo = casinoConf.getKeys(false);
-
-                        for(String casino : casinoInfo) {
-                            long end = casinoConf.getLong(casino + ".casino_end");
-                            long basic = casinoConf.getLong(casino + ".casino_basic");
-                            long superCool = casinoConf.getLong(casino + ".casino_super");
-                            long diamond = casinoConf.getLong(casino + ".casino_diamond");
-                            long enchant = casinoConf.getLong(casino + ".casino_enchant");
-
-                            List<String> casinoes = Arrays.asList(String.valueOf(end), String.valueOf(basic), String.valueOf(superCool), String.valueOf(diamond), String.valueOf(enchant));
-
-                            sql = "INSERT INTO users (user_id, current_name, first_join, casino_cooldowns) VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET casino_cooldowns = '" + casinoes + "'";
-                            params = new ArrayList<Object>() {{
-                                add(casino);
-                                add(Bukkit.getOfflinePlayer(UUID.fromString(casino)).getName());
-                                add(Bukkit.getOfflinePlayer(UUID.fromString(casino)).getFirstPlayed());
-                                add(casinoes);
                             }};
                             sqlUpdate(sql, params);
                         }
@@ -419,23 +408,88 @@ public class DatabaseHook {
                             }};
                             sqlUpdate(sql, params);
                         }
+                        break;
+                    case "teleport_ignore":
+                        File tpIgnore = new File(plugin.getDataFolder() + File.separator + "teleportignore.yml");
+                        YamlConfiguration tpConf = YamlConfiguration.loadConfiguration(tpIgnore);
+                        Set<String> tpInfo = tpConf.getKeys(false);
 
+                        for(String player : tpInfo) {
+                            List<String> ignoreList = tpConf.getStringList(player + ".ignores");
 
+                            for(String ignorePlayer : ignoreList) {
+                                sql = "INSERT INTO teleport_ignore (user_id, ignore_id) VALUES (?, ?)";
+                                params = new ArrayList<Object>() {{
+                                    add(player);
+                                    add(ignorePlayer);
+                                }};
+                                sqlUpdate(sql, params);
+                            }
+                        }
+                        break;
+                    case "casino_cooldowns":
+                        File casinoFile = new File(plugin.getDataFolder() + File.separator + "casinocooldown.yml");
+                        YamlConfiguration casinoConf = YamlConfiguration.loadConfiguration(casinoFile);
+                        Set<String> casinoInfo = casinoConf.getKeys(false);
+
+                        for(String player : casinoInfo) {
+                            long end = casinoConf.getLong(player + ".casino_end");
+                            long basic = casinoConf.getLong(player + ".casino_basic");
+                            long superCool = casinoConf.getLong(player + ".casino_super");
+                            long diamond = casinoConf.getLong(player + ".casino_diamond");
+                            long enchant = casinoConf.getLong(player + ".casino_enchant");
+
+                            HashMap<String, Long> casinoes = new HashMap<>();
+                            casinoes.put("casino_end", end);
+                            casinoes.put("casino_basic", basic);
+                            casinoes.put("casino_super", superCool);
+                            casinoes.put("casino_diamond", diamond);
+                            casinoes.put("casino_enchant", enchant);
+
+                            for(String casino : casinoes.keySet()) {
+                                sql = "INSERT INTO casino_cooldowns (user_id, casino_name, casino_cooldown) VALUES (?, ?, ?)";
+                                params = new ArrayList<Object>() {{
+                                    add(player);
+                                    add(casino);
+                                    add(casinoes.get(casino));
+                                }};
+                                sqlUpdate(sql, params);
+                            }
+                        }
+                        break;
+                    case "shop_banned":
                         File bannedFile = new File(plugin.getDataFolder() + File.separator + "shopban.yml");
                         YamlConfiguration bannedConf = YamlConfiguration.loadConfiguration(bannedFile);
                         Set<String> bannedInfo = bannedConf.getKeys(false);
 
-                        for(String banned : bannedInfo) {
-                            List<String> bannedPlayers = bannedConf.getStringList(banned + ".banned-players");
+                        for(String player : bannedInfo) {
+                            List<String> bannedPlayers = bannedConf.getStringList(player + ".banned-players");
 
-                            sql = "INSERT INTO users (user_id, current_name, first_join, shop_banned) VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET shop_banned = '" + bannedPlayers + "'";
-                            params = new ArrayList<Object>() {{
-                                add(banned);
-                                add(Bukkit.getOfflinePlayer(UUID.fromString(banned)).getName());
-                                add(Bukkit.getOfflinePlayer(UUID.fromString(banned)).getFirstPlayed());
-                                add(bannedPlayers);
-                            }};
-                            sqlUpdate(sql, params);
+                            for(String banned : bannedPlayers) {
+                                sql = "INSERT INTO shop_banned (user_id, banned_user) VALUES (?, ?)";
+                                params = new ArrayList<Object>() {{
+                                    add(player);
+                                    add(banned);
+                                }};
+                                sqlUpdate(sql, params);
+                            }
+                        }
+                        break;
+                    case "block_sells":
+                        File sellBlocksFile = new File(plugin.getDataFolder() + File.separator + "blocksells.yml");
+                        YamlConfiguration sellBlockConf = YamlConfiguration.loadConfiguration(sellBlocksFile);
+                        Set<String> sellBlockInfo = sellBlockConf.getKeys(false);
+
+                        for(String player : sellBlockInfo) {
+                            List<String> sellBlocks = sellBlockConf.getStringList(player + ".blocked");
+                            for(String sellBlock : sellBlocks) {
+                                sql = "INSERT INTO block_sells (user_id, block_item) VALUES (?, ?)";
+                                params = new ArrayList<Object>() {{
+                                    add(player);
+                                    add(sellBlock);
+                                }};
+                                sqlUpdate(sql, params);
+                            }
                         }
                         break;
                     case "rewards_data":
@@ -444,20 +498,22 @@ public class DatabaseHook {
                         Set<String> rewardInfo = rewardConf.getKeys(false);
 
                         for(String user : rewardInfo) {
-                            Set<String> rewards = rewardConf.getConfigurationSection(user + ".rewards").getKeys(false);
-                            for(String reward : rewards) {
-                                int boolToInt = 0;
-                                boolean hasColl = rewardConf.getBoolean(user + ".rewards." + reward + ".collected");
-                                if (hasColl) boolToInt = 1;
+                            if(rewardConf.isConfigurationSection(user + ".rewards")) {
+                                Set<String> rewards = rewardConf.getConfigurationSection(user + ".rewards").getKeys(false);
+                                for (String reward : rewards) {
+                                    int boolToInt = 0;
+                                    boolean hasColl = rewardConf.getBoolean(user + ".rewards." + reward + ".collected");
+                                    if (hasColl) boolToInt = 1;
 
-                                sql = "INSERT INTO rewards_data (user_id, reward_name, reward_collected) VALUES (?, ?, ?)";
-                                int finalBoolToInt = boolToInt;
-                                params = new ArrayList<Object>() {{
-                                    add(user);
-                                    add(reward);
-                                    add(finalBoolToInt);
-                                }};
-                                sqlUpdate(sql, params);
+                                    sql = "INSERT INTO rewards_data (user_id, reward_name, reward_collected) VALUES (?, ?, ?)";
+                                    int finalBoolToInt = boolToInt;
+                                    params = new ArrayList<Object>() {{
+                                        add(user);
+                                        add(reward);
+                                        add(finalBoolToInt);
+                                    }};
+                                    sqlUpdate(sql, params);
+                                }
                             }
                         }
                         break;
@@ -468,8 +524,23 @@ public class DatabaseHook {
 
                         for(String user : secretInfo) {
                             Set<String> secrets = secretConf.getConfigurationSection(user + ".secrets-found").getKeys(true);
-                            secrets.removeIf(n -> (!n.matches(".*\\d.*")));
+                            ArrayList<String> allSecrets = new ArrayList<>();
+
                             for(String secret : secrets) {
+                                String[] split = secret.split("\\.");
+                                for(String splitted : split) {
+                                    allSecrets.add(splitted);
+                                }
+                            }
+
+                            allSecrets.removeIf(n -> (!n.matches(".*\\d.*")));
+
+                            Set<String> secretNoDups = new LinkedHashSet<>(allSecrets);
+                            allSecrets.clear();
+
+                            allSecrets.addAll(secretNoDups);
+
+                            for(String secret : allSecrets) {
                                 String secretArea = secret.substring(0, secret.length() - 1);
                                 sql = "INSERT INTO secrets_data (user_id, secret_name, secret_amount) VALUES (?, ?, ?)";
                                 params = new ArrayList<Object>() {{
@@ -482,20 +553,25 @@ public class DatabaseHook {
                         }
                         break;
                     case "recently_killed":
-                        killsFile = new File(plugin.getDataFolder() + File.separator + "recentkills.yml");
-                        killsConf = YamlConfiguration.loadConfiguration(killsFile);
-                        killsInfo = killsConf.getKeys(false);
-
-                        for(String killer : killsInfo) {
-                            List<String> recentKills = killsConf.getStringList(killer + ".kills");
-                            for(String user : recentKills) {
-                                sql = "INSERT INTO recently_killed (killer_id, killed_id, killed_on) VALUES (?, ?, ?)";
-                                params = new ArrayList<Object>() {{
-                                    add(killer);
-                                    add(user);
-                                    add(killsConf.getString(killer + ".kills." + user + ".time"));
-                                }};
-                                sqlUpdate(sql, params);
+                        File killsFile2 = new File(plugin.getDataFolder() + File.separator + "recentkills.yml");
+                        YamlConfiguration killsConf2 = YamlConfiguration.loadConfiguration(killsFile2);
+                        Set<String> killsInfo2 = killsConf2.getKeys(false);
+                        int asd = 0;
+                        for(String killer : killsInfo2) {
+                            if(killsConf2.isConfigurationSection(killer + ".kills")) {
+                                Set<String> recentKills = killsConf2.getConfigurationSection(killer + ".kills").getKeys(false);
+                                for (String user : recentKills) {
+                                    if (asd == 0) {
+                                        asd += 1;
+                                    }
+                                    sql = "INSERT INTO recently_killed (killer_id, killed_id, killed_on) VALUES (?, ?, ?)";
+                                    params = new ArrayList<Object>() {{
+                                        add(killer);
+                                        add(user);
+                                        add(killsConf2.getString(killer + ".kills." + user + ".time"));
+                                    }};
+                                    sqlUpdate(sql, params);
+                                }
                             }
                         }
                         break;
@@ -571,6 +647,7 @@ public class DatabaseHook {
                         break;
                 }
             }
+            Bukkit.getLogger().info("donzo!");
         }
 
     //Processing

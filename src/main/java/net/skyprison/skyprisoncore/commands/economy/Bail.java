@@ -10,7 +10,6 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import net.kyori.adventure.text.Component;
-import org.jetbrains.annotations.NotNull;
 
 
 import java.util.HashMap;
@@ -27,7 +26,7 @@ public class Bail implements CommandExecutor {
 
     private HashMap<UUID, Long> coolDown = new HashMap<>();
 
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if(sender instanceof Player) {
             Player player = (Player) sender;
             CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);

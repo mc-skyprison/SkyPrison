@@ -30,83 +30,81 @@ public class Casino implements CommandExecutor {
         args[1] = key
         args[2] = price
         args[3] = cooldown
-
-        -= ORDER =-
-         end
-         basic
-         superCool
-         diamond
-         enchant
          */
 
         CMIUser user = CMI.getInstance().getPlayerManager().getUser(args[0]);
 
-        String casinoCooldowns = "";
+        HashMap<String, Long> casinoCools = new HashMap<>();
         try {
             Connection conn = hook.getSQLConnection();
-            PreparedStatement ps = conn.prepareStatement("SELECT casino_cooldowns FROM users WHERE user_id = '" + user.getUniqueId() + "'");
+            PreparedStatement ps = conn.prepareStatement("SELECT casino_name, casino_cooldown FROM casino_cooldowns WHERE user_id = '" + user.getUniqueId() + "'");
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
-                casinoCooldowns = rs.getString(1);
-                casinoCooldowns = casinoCooldowns.replace("[", "");
-                casinoCooldowns = casinoCooldowns.replace("]", "");
-                casinoCooldowns = casinoCooldowns.replace(" ", "");
+                casinoCools.put(rs.getString(1), rs.getLong(2));
             }
             hook.close(ps, rs, conn);
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        List<String> casinoCools = Arrays.asList(casinoCooldowns.split(","));
-
-        HashMap<String, Integer> getPos = new HashMap<>();
-        getPos.put("casino_end", 0);
-        getPos.put("casino_basic", 1);
-        getPos.put("casino_super", 2);
-        getPos.put("casino_diamond", 3);
-        getPos.put("casino_enchant", 4);
-
+        long nCooldown = (Long.parseLong(args[3]) * 1000) + System.currentTimeMillis();
         if(!casinoCools.isEmpty()) {
-            String cooldown = casinoCools.get(getPos.get(args[1]));
-            long dateFinish = Long.parseLong(cooldown);
-            if(dateFinish < System.currentTimeMillis()) {
-                if (user.getBalance() >= Integer.parseInt(args[2])) {
-                    plugin.asConsole("money take " + user.getName() + " " + args[2]);
-                    plugin.asConsole("crates key give " + user.getName() + " " + args[1] + " 1");
-                    long nCooldown = (Long.parseLong(args[3]) * 1000) + System.currentTimeMillis();
-                    String sql = "UPDATE users SET casino_cooldowns = ? WHERE user_id = ?";
+            if(casinoCools.containsKey(args[1])) {
+                long cooldown = casinoCools.get(args[1]);
+                if (cooldown < System.currentTimeMillis()) {
+                    if (user.getBalance() >= Integer.parseInt(args[2])) {
+                        plugin.asConsole("money take " + user.getName() + " " + args[2]);
+                        plugin.asConsole("crates key give " + user.getName() + " " + args[1] + " 1");
 
-                    casinoCools.set(getPos.get(args[1]), String.valueOf(nCooldown));
-                    List<Object> params = new ArrayList<Object>() {{
-                        add(casinoCools);
-                        add(user.getUniqueId().toString());
-                    }};
-                    hook.sqlUpdate(sql, params);
-                }
-            } else {
-                long distance = dateFinish - System.currentTimeMillis();
-                int days = (int) Math.floor(distance / (1000.0 * 60.0 * 60.0 * 24.0));
-                int hours = (int) Math.floor((distance % (1000.0 * 60.0 * 60.0 * 24.0)) / (1000.0 * 60.0 * 60.0));
-                int minutes = (int) Math.floor((distance % (1000.0 * 60.0 * 60.0)) / (1000.0 * 60.0));
-                int seconds = (int) Math.floor((distance % (1000.0 * 60.0)) / 1000.0);
-                if(days != 0.0) {
-                    user.sendMessage(plugin.colourMessage("&cYou are still on cooldown, please wait " + days + " day " + hours + " hours " + minutes + " min " + seconds + " sec"));
+
+                        String sql = "UPDATE casino_cooldowns SET casino_cooldown = ? WHERE user_id = ? AND casino_name = ?";
+                        List<Object> params = new ArrayList<Object>() {{
+                            add(nCooldown);
+                            add(user.getUniqueId().toString());
+                            add(args[1]);
+                        }};
+                        hook.sqlUpdate(sql, params);
+                    }
                 } else {
-                    if(hours != 0.0) {
-                        user.sendMessage(plugin.colourMessage("&cYou are still on cooldown, please wait " + hours + " hours " + minutes + " min " + seconds + " sec"));
+                    long distance = cooldown - System.currentTimeMillis();
+                    int days = (int) Math.floor(distance / (1000.0 * 60.0 * 60.0 * 24.0));
+                    int hours = (int) Math.floor((distance % (1000.0 * 60.0 * 60.0 * 24.0)) / (1000.0 * 60.0 * 60.0));
+                    int minutes = (int) Math.floor((distance % (1000.0 * 60.0 * 60.0)) / (1000.0 * 60.0));
+                    int seconds = (int) Math.floor((distance % (1000.0 * 60.0)) / 1000.0);
+                    if (days != 0.0) {
+                        user.sendMessage(plugin.colourMessage("&cYou are still on cooldown, please wait " + days + " day " + hours + " hours " + minutes + " min " + seconds + " sec"));
                     } else {
-                        if(minutes != 0.0) {
-                            user.sendMessage(plugin.colourMessage("&cYou are still on cooldown, please wait " + minutes + " min " + seconds + " sec"));
+                        if (hours != 0.0) {
+                            user.sendMessage(plugin.colourMessage("&cYou are still on cooldown, please wait " + hours + " hours " + minutes + " min " + seconds + " sec"));
                         } else {
-                            user.sendMessage(plugin.colourMessage("&cYou are still on cooldown, please wait " + seconds + " sec"));
+                            if (minutes != 0.0) {
+                                user.sendMessage(plugin.colourMessage("&cYou are still on cooldown, please wait " + minutes + " min " + seconds + " sec"));
+                            } else {
+                                user.sendMessage(plugin.colourMessage("&cYou are still on cooldown, please wait " + seconds + " sec"));
+                            }
                         }
                     }
                 }
+            } else {
+                String sql = "INSERT INTO casino_cooldowns (user_id, casino_name, casino_cooldown) VALUES (?, ?, ?)";
+                List<Object> params = new ArrayList<Object>() {{
+                    add(user.getUniqueId().toString());
+                    add(args[1]);
+                    add(nCooldown);
+                }};
+                hook.sqlUpdate(sql, params);
             }
         } else {
             if (user.getBalance() >= Integer.parseInt(args[2])) {
                 plugin.asConsole("money take " + user.getName() + " " + args[2]);
                 plugin.asConsole("crates key give " + user.getName() + " " + args[1] + " 1");
+
+                String sql = "INSERT INTO casino_cooldowns (user_id, casino_name, casino_cooldown) VALUES (?, ?, ?)";
+                List<Object> params = new ArrayList<Object>() {{
+                    add(user.getUniqueId().toString());
+                    add(args[1]);
+                    add(nCooldown);
+                }};
+                hook.sqlUpdate(sql, params);
             }
         }
         return true;

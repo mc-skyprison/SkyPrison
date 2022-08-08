@@ -38,27 +38,23 @@ public class IgnoreTeleport implements CommandExecutor {
 		if(sender instanceof Player) {
 			Player player = (Player) sender;
 			if(args.length == 1) {
-				String ignoredUsers = "";
+				ArrayList<String> ignoredPlayers = new ArrayList<>();
 
 				try {
 					Connection conn = hook.getSQLConnection();
-					PreparedStatement ps = conn.prepareStatement("SELECT teleport_ignore FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+					PreparedStatement ps = conn.prepareStatement("SELECT ignore_id FROM teleport_ignore WHERE user_id = '" + player.getUniqueId() + "'");
 					ResultSet rs = ps.executeQuery();
 					while (rs.next()) {
-						ignoredUsers = rs.getString(1);
-						ignoredUsers = ignoredUsers.replace("[", "");
-						ignoredUsers = ignoredUsers.replace("]", "");
-						ignoredUsers = ignoredUsers.replace(" ", "");
+						ignoredPlayers.add(rs.getString(1));
 					}
 					hook.close(ps, rs, conn);
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
 
-				ArrayList<String> ignoredPlayers = new ArrayList<>(Arrays.asList(ignoredUsers.split(",")));
 
 				if(args[0].equalsIgnoreCase("list")) {
-					if (!ignoredUsers.isEmpty()) {
+					if (!ignoredPlayers.isEmpty()) {
 						player.sendMessage(plugin.colourMessage("&e---=== &6Ignoring Teleports &e===---"));
 						for(String ignoredPlayer : ignoredPlayers) {
 							player.sendMessage(plugin.colourMessage("&e" + Bukkit.getOfflinePlayer(UUID.fromString(ignoredPlayer)).getName()));
@@ -74,16 +70,24 @@ public class IgnoreTeleport implements CommandExecutor {
 							if (ignoredPlayers.contains(ignorePlayer.getUniqueId().toString())) {
 								ignoredPlayers.remove(ignorePlayer.getUniqueId().toString());
 								player.sendMessage(plugin.colourMessage("&aSuccessfully removed " + ignorePlayer.getName() + " from your ignore list!"));
+
+								String sql = "DELETE FROM teleport_ignore WHERE user_id = ? AND ignore_id = ?";
+								List<Object> params = new ArrayList<Object>() {{
+									add(player.getUniqueId().toString());
+									add(ignorePlayer.getUniqueId().toString());
+								}};
+								hook.sqlUpdate(sql, params);
 							} else {
 								ignoredPlayers.add(ignorePlayer.getUniqueId().toString());
 								player.sendMessage(plugin.colourMessage("&aSuccessfully added " + ignorePlayer.getName() + " to your ignore list!"));
+
+								String sql = "INSERT INTO teleport_ignore (user_id, ignore_id) VALUES (?, ?)";
+								List<Object> params = new ArrayList<Object>() {{
+									add(player.getUniqueId().toString());
+									add(ignorePlayer.getUniqueId().toString());
+								}};
+								hook.sqlUpdate(sql, params);
 							}
-							String sql = "UPDATE users SET teleport_ignore = ? WHERE user_id = ?";
-							List<Object> params = new ArrayList<Object>() {{
-								add(ignoredPlayers);
-								add(player.getUniqueId().toString());
-							}};
-							hook.sqlUpdate(sql, params);
 						} else {
 							player.sendMessage(plugin.colourMessage("&cYou cannot ignore this player!"));
 						}
@@ -92,7 +96,7 @@ public class IgnoreTeleport implements CommandExecutor {
 					}
 				}
 			} else {
-				player.sendMessage(plugin.colourMessage("&c/ignoretp <player> / list"));
+				player.sendMessage(plugin.colourMessage("&c/ignoretp <player> /list"));
 			}
 		}
 		return true;

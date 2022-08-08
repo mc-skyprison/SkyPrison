@@ -34,17 +34,14 @@ public class ShopBan implements CommandExecutor {
 		if(sender instanceof Player) {
 			Player player = (Player) sender;
 			if(args.length > 0) {
-				String bannedUsers = "";
+				ArrayList<String> bannedUsers = new ArrayList<>();
 
 				try {
 					Connection conn = hook.getSQLConnection();
-					PreparedStatement ps = conn.prepareStatement("SELECT shop_banned FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+					PreparedStatement ps = conn.prepareStatement("SELECT banned_user FROM shop_banned WHERE user_id = '" + player.getUniqueId() + "'");
 					ResultSet rs = ps.executeQuery();
 					while(rs.next()) {
-						bannedUsers = rs.getString(1);
-						bannedUsers = bannedUsers.replace("[", "");
-						bannedUsers = bannedUsers.replace("]", "");
-						bannedUsers = bannedUsers.replace(" ", "");
+						bannedUsers.add(rs.getString(1));
 					}
 					hook.close(ps, rs, conn);
 				} catch (SQLException e) {
@@ -54,9 +51,8 @@ public class ShopBan implements CommandExecutor {
 				switch(args[0]) {
 					case "list":
 						if (!bannedUsers.isEmpty()) {
-							String[] bannedPlayers = bannedUsers.split(",");
 							player.sendMessage(plugin.colourMessage("&e---=== &6ShopBan &e===---"));
-							for(String bannedPlayer : bannedPlayers) {
+							for(String bannedPlayer : bannedUsers) {
 								player.sendMessage(plugin.colourMessage("&e" + Bukkit.getOfflinePlayer(UUID.fromString(bannedPlayer)).getName()));
 							}
 						} else {
@@ -69,14 +65,10 @@ public class ShopBan implements CommandExecutor {
 								CMIUser banUser = CMI.getInstance().getPlayerManager().getUser(args[1]);
 								if(!banUser.getPlayer().equals(player)) {
 									if (!bannedUsers.contains(banUser.getUniqueId().toString())) {
-										if(!bannedUsers.isEmpty())
-											bannedUsers += ",";
-										bannedUsers += banUser.getUniqueId();
-										String sql = "UPDATE users SET shop_banned = ? WHERE user_id = ?";
-										String finalBannedUsers = bannedUsers;
+										String sql = "INSERT INTO shop_banned (user_id, banned_user) VALUES (?, ?)";
 										List<Object> params = new ArrayList<Object>() {{
-											add(finalBannedUsers);
 											add(player.getUniqueId().toString());
+											add(banUser.getUniqueId().toString());
 										}};
 										hook.sqlUpdate(sql, params);
 
@@ -98,15 +90,11 @@ public class ShopBan implements CommandExecutor {
 						if(args.length > 1) {
 							if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
 								CMIUser banUser = CMI.getInstance().getPlayerManager().getUser(args[1]);
-
 								if (bannedUsers.contains(banUser.getUniqueId().toString())) {
-									bannedUsers = bannedUsers.replace(banUser.getUniqueId().toString(), "");
-									bannedUsers = bannedUsers.replace(",,", ",");
-									String sql = "UPDATE users SET shop_banned = ? WHERE user_id = ?";
-									String finalBannedUsers = bannedUsers;
+									String sql = "DELETE FROM shop_banned WHERE user_id = ? AND banned_user = ?";
 									List<Object> params = new ArrayList<Object>() {{
-										add(finalBannedUsers);
 										add(player.getUniqueId().toString());
+										add(banUser.getUniqueId().toString());
 									}};
 									hook.sqlUpdate(sql, params);
 

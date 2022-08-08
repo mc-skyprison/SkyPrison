@@ -11,15 +11,21 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 import java.io.File;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Set;
 
 public class Placeholders extends PlaceholderExpansion {
 	private final SkyPrisonCore plugin;
-	private DailyMissions dailyMissions;
+	private final DailyMissions dailyMissions;
+	private final DatabaseHook hook;
 
-	public Placeholders(SkyPrisonCore plugin, DailyMissions dailyMissions) {
+	public Placeholders(SkyPrisonCore plugin, DailyMissions dailyMissions, DatabaseHook hook) {
 		this.plugin = plugin;
 		this.dailyMissions = dailyMissions;
+		this.hook = hook;
 	}
 
 	@Override
@@ -124,24 +130,38 @@ public class Placeholders extends PlaceholderExpansion {
 		}
 
 		if(identifier.equalsIgnoreCase("daily_highest_streak")) {
-			File dailyFile = new File(plugin.getDataFolder() + File.separator
-					+ "dailyreward.yml");
-			YamlConfiguration dailyConf = YamlConfiguration.loadConfiguration(dailyFile);
+			int highestStreak = 0;
+			try {
+				Connection conn = hook.getSQLConnection();
+				PreparedStatement ps = conn.prepareStatement("SELECT highest_streak FROM dailies WHERE user_id = '" + player.getUniqueId() + "'");
+				ResultSet rs = ps.executeQuery();
+				while(rs.next()) {
+					highestStreak = rs.getInt(1);
+				}
+				hook.close(ps, rs, conn);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 
-			int streak = dailyConf.getInt("players." + player.getUniqueId() + "highest-streak");
-
-			return "" + streak;
+			return String.valueOf(highestStreak);
 		}
 
 
 		if(identifier.equalsIgnoreCase("daily_total_collected")) {
-			File dailyFile = new File(plugin.getDataFolder() + File.separator
-					+ "dailyreward.yml");
-			YamlConfiguration dailyConf = YamlConfiguration.loadConfiguration(dailyFile);
+			int totalColl = 0;
+			try {
+				Connection conn = hook.getSQLConnection();
+				PreparedStatement ps = conn.prepareStatement("SELECT total_collected FROM dailies WHERE user_id = '" + player.getUniqueId() + "'");
+				ResultSet rs = ps.executeQuery();
+				while(rs.next()) {
+					totalColl = rs.getInt(1);
+				}
+				hook.close(ps, rs, conn);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 
-			int collected = dailyConf.getInt("players." + player.getUniqueId() + "total-collected");
-
-			return "" + collected;
+			return String.valueOf(totalColl);
 		}
 
 		if(identifier.equalsIgnoreCase("daily_mission_one")) {
@@ -191,24 +211,19 @@ public class Placeholders extends PlaceholderExpansion {
 		}
 
 		if(identifier.equalsIgnoreCase("total_secrets")) {
-			File secretsDataFile = new File(plugin.getDataFolder() + File.separator
-					+ "secretsdata.yml");
-			YamlConfiguration pData = YamlConfiguration.loadConfiguration(secretsDataFile);
-			CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-			if (pData.isConfigurationSection(user.getUniqueId().toString())) {
-				Set<String> secretCats = pData.getConfigurationSection(user.getUniqueId().toString() + ".secrets-found").getKeys(false);
-				int totalFound = 0;
-				for(String secretCat : secretCats) {
-					Set<String> secretsFound = pData.getConfigurationSection(user.getUniqueId().toString() + ".secrets-found." + secretCat).getKeys(false);
-
-					for(String secret : secretsFound) {
-						totalFound += pData.getInt(user.getUniqueId().toString() + ".secrets-found." + secretCat + "." + secret + ".times-found");
-					}
+			int totalFound = 0;
+			try {
+				Connection conn = hook.getSQLConnection();
+				PreparedStatement ps = conn.prepareStatement("SELECT secret_name FROM secrets_data WHERE user_id = '" + player.getUniqueId() + "'");
+				ResultSet rs = ps.executeQuery();
+				while(rs.next()) {
+					totalFound += rs.getInt(1);
 				}
-				return String.valueOf(totalFound);
-			} else {
-				return "0";
+				hook.close(ps, rs, conn);
+			} catch (SQLException e) {
+				e.printStackTrace();
 			}
+			return String.valueOf(totalFound);
 		}
 
 		if(identifier.equalsIgnoreCase("mod_tag")) {
@@ -258,13 +273,20 @@ public class Placeholders extends PlaceholderExpansion {
 		}
 
 		if(identifier.equalsIgnoreCase("brews_drank")) {
-			File brewData = new File(plugin.getDataFolder() + File.separator + "brewsdrank.yml");
-			YamlConfiguration brewConf = YamlConfiguration.loadConfiguration(brewData);
-			if(brewConf.contains(player.getUniqueId().toString())) {
-				return String.valueOf(brewConf.getInt(player.getUniqueId().toString()));
-			} else {
-				return "0";
+			int brewsDrank = 0;
+			try {
+				Connection conn = hook.getSQLConnection();
+				PreparedStatement ps = conn.prepareStatement("SELECT brews_drank FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+				ResultSet rs = ps.executeQuery();
+				while(rs.next()) {
+					brewsDrank = rs.getInt(1);
+				}
+				hook.close(ps, rs, conn);
+			} catch (SQLException e) {
+				e.printStackTrace();
 			}
+
+			return String.valueOf(brewsDrank);
 		}
 
 		if(identifier.equalsIgnoreCase("silence_private")) {

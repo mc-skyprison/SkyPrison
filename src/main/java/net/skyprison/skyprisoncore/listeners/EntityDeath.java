@@ -142,7 +142,6 @@ public class EntityDeath implements Listener {
                                         || killer.getWorld().getName().equalsIgnoreCase("world_free_nether")
                                         || killer.getWorld().getName().equalsIgnoreCase("world_free_nether")) {
 
-                                    updateKills(killer, killed, kills, deaths, killstreak);
 
                                     long timeRem = 300 - TimeUnit.MILLISECONDS.toSeconds(timeLeft);
                                     killer.sendMessage(ChatColor.GRAY + "You have to wait " + ChatColor.RED + timeRem + ChatColor.GRAY + " seconds before receiving tokens from this player!");
@@ -151,6 +150,7 @@ public class EntityDeath implements Listener {
                         } else {
                             pvpSet(killed, killer, false);
                         }
+                        updateKills(killer, killed, kills, deaths, killstreak);
                     }
                 }
             }
@@ -182,15 +182,15 @@ public class EntityDeath implements Listener {
 
         String sql = "UPDATE users SET pvp_kills = pvp_kills + ?, pvp_killstreak = pvp_killstreak + ? WHERE user_id = ?";
         List<Object> params = new ArrayList<Object>() {{
-            add(pKills);
-            add(pKillStreak);
+            add(1);
+            add(1);
             add(killer.getUniqueId().toString());
         }};
         hook.sqlUpdate(sql, params);
 
         sql = "UPDATE users SET pvp_deaths = pvp_deaths + ?, pvp_killstreak = 0 WHERE user_id = ?";
         params = new ArrayList<Object>() {{
-            add(pDeaths);
+            add(1);
             add(killed.getUniqueId().toString());
         }};
         hook.sqlUpdate(sql, params);

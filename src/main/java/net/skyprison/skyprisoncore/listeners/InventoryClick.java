@@ -717,9 +717,7 @@ public class InventoryClick implements Listener {
                             File rewardsDataFile = new File(plugin.getDataFolder() + File.separator
                                     + "rewardsdata.yml");
                             FileConfiguration rData = YamlConfiguration.loadConfiguration(rewardsDataFile);
-                            File secretsDataFile = new File(plugin.getDataFolder() + File.separator
-                                    + "secretsdata.yml");
-                            FileConfiguration pData = YamlConfiguration.loadConfiguration(secretsDataFile);
+
                             ItemStack currItem = event.getCurrentItem();
                             NamespacedKey key = new NamespacedKey(plugin, "reward");
                             ItemMeta itemMeta = currItem.getItemMeta();
@@ -730,12 +728,15 @@ public class InventoryClick implements Listener {
                                 if(Objects.requireNonNull(rData.getString(foundValue + ".reward-type")).equalsIgnoreCase("tokens")) {
                                     int tokenAmount = rData.getInt(foundValue + ".reward");
                                     plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tokenAmount);
-                                    pData.set(player.getUniqueId() + ".rewards." + foundValue + ".collected", true);
-                                    try {
-                                        pData.save(secretsDataFile);
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
+
+                                    String sql = "UPDATE rewards_data SET reward_collected = ? WHERE user_id = ? AND reward_name = ?";
+                                    List<Object> params = new ArrayList<Object>() {{
+                                        add(1);
+                                        add(player.getUniqueId().toString());
+                                        add(foundValue);
+                                    }};
+                                    hook.sqlUpdate(sql, params);
+
                                     player.sendMessage(plugin.colourMessage("&f[&eSecrets&f] &aYou received " + tokenAmount + " tokens!"));
                                     secretsGUI.openGUI(player, "rewards");
                                 }
