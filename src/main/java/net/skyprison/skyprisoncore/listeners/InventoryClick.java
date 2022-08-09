@@ -163,31 +163,12 @@ public class InventoryClick implements Listener {
                                         ItemStack iSold = new ItemStack(Objects.requireNonNull(Material.getMaterial(Objects.requireNonNull(itemType))), itemAmount);
                                         if(user.getInventory().canFit(iSold)) {
                                             if(user.getBalance() >= itemPrice) {
-                                                String recentSells = "";
+                                                NamespacedKey posKey = new NamespacedKey(plugin, "sold-id");
+                                                int buyId = buyData.get(posKey, PersistentDataType.INTEGER);
 
-                                                try {
-                                                    Connection conn = hook.getSQLConnection();
-                                                    PreparedStatement ps = conn.prepareStatement("SELECT recent_sells FROM users WHERE user_id = '" + player.getUniqueId() + "'");
-                                                    ResultSet rs = ps.executeQuery();
-                                                    while(rs.next()) {
-                                                        recentSells = rs.getString(1);
-                                                        recentSells = recentSells.replace("[", "");
-                                                        recentSells = recentSells.replace("]", "");
-                                                        recentSells = recentSells.replace(" ", "");
-                                                    }
-                                                    hook.close(ps, rs, conn);
-                                                } catch (SQLException e) {
-                                                    e.printStackTrace();
-                                                }
-
-                                                List<String> soldItems = new ArrayList<>(Arrays.asList(recentSells.split(",")));
-                                                NamespacedKey posKey = new NamespacedKey(plugin, "sold-pos");
-                                                int buyPos = buyData.get(posKey, PersistentDataType.INTEGER);
-                                                soldItems.remove(buyPos);
-                                                String sql = "UPDATE users SET recent_sells = ? WHERE user_id = ?";
+                                                String sql = "DELETE FROM recent_sells WHERE recent_id = ?";
                                                 List<Object> params = new ArrayList<Object>() {{
-                                                    add(soldItems);
-                                                    add(player.getUniqueId());
+                                                    add(buyId);
                                                 }};
                                                 hook.sqlUpdate(sql, params);
                                                 plugin.asConsole("give " + player.getName() + " " + itemType + " " + itemAmount);

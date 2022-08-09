@@ -36,10 +36,10 @@ public class BuyBack implements CommandExecutor {
 
 		try {
 			Connection conn = hook.getSQLConnection();
-			PreparedStatement ps = conn.prepareStatement("SELECT recent_item, recent_amount, recent_price FROM recent_sells WHERE user_id = '" + player.getUniqueId() + "'");
+			PreparedStatement ps = conn.prepareStatement("SELECT recent_item, recent_amount, recent_price, recent_id FROM recent_sells WHERE user_id = '" + player.getUniqueId() + "'");
 			ResultSet rs = ps.executeQuery();
 			while(rs.next()) {
-				soldItems.add(rs.getString(1) + "/" + rs.getInt(2) + "/" + rs.getFloat(3));
+				soldItems.add(rs.getString(1) + "/" + rs.getInt(2) + "/" + rs.getFloat(3) + "/" + rs.getInt(4));
 			}
 			hook.close(ps, rs, conn);
 		} catch (SQLException e) {
@@ -98,8 +98,8 @@ public class BuyBack implements CommandExecutor {
 			iSoldMeta.getPersistentDataContainer().set(key1, PersistentDataType.INTEGER, amount);
 			NamespacedKey key2 = new NamespacedKey(plugin, "sold-price");
 			iSoldMeta.getPersistentDataContainer().set(key2, PersistentDataType.DOUBLE, newPrice);
-			NamespacedKey key3 = new NamespacedKey(plugin, "sold-pos");
-			iSoldMeta.getPersistentDataContainer().set(key3, PersistentDataType.INTEGER, soldItems.indexOf(soldItem));
+			NamespacedKey key3 = new NamespacedKey(plugin, "sold-id");
+			iSoldMeta.getPersistentDataContainer().set(key3, PersistentDataType.INTEGER, Integer.parseInt(soldSplit[3]));
 			iSold.setItemMeta(iSoldMeta);
 			buyBackGUI.setItem(availableNums.get(0), iSold);
 			availableNums.remove(0);

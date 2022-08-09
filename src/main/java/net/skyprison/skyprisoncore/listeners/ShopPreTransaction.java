@@ -3,7 +3,6 @@ package net.skyprison.skyprisoncore.listeners;
 import net.brcdev.shopgui.event.ShopPreTransactionEvent;
 import net.brcdev.shopgui.shop.ShopManager;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;

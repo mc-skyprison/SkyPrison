@@ -2,7 +2,6 @@ package net.skyprison.skyprisoncore.commands.discord;
 
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
