@@ -6,16 +6,15 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
-import jdk.vm.ci.meta.Local;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -39,7 +38,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.*;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -604,13 +602,9 @@ public class SkyPrisonCore extends JavaPlugin {
     public void checkDailies() {
         ArrayList<String> dailyPlayers = new ArrayList<>();
 
-        LocalDate today = LocalDate.now();
-        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-        String currDate = formatter.format(today);
-
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         LocalDate yesterday = LocalDate.now().minusDays(2);
-        String yesterDate = formatter.format(yesterday);
-
+        String yesterDate = yesterday.format(formatter);
 
         try {
             Connection conn = getDatabase().getSQLConnection();
@@ -623,8 +617,6 @@ public class SkyPrisonCore extends JavaPlugin {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-
 
         for(String player : dailyPlayers) {
             String sql = "UPDATE dailies SET current_streak = 0 WHERE user_id = ?";
