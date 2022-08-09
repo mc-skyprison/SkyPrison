@@ -54,7 +54,9 @@ public class FirstjoinTop implements CommandExecutor {
 				PreparedStatement ps = conn.prepareStatement("SELECT user_id, first_join FROM users");
 				ResultSet rs = ps.executeQuery();
 				while(rs.next()) {
-					firstJoins.put(rs.getString(1), rs.getLong(2));
+					if(rs.getLong(2) != 0) {
+						firstJoins.put(rs.getString(1), rs.getLong(2));
+					}
 				}
 				hook.close(ps, rs, conn);
 			} catch (SQLException e) {
