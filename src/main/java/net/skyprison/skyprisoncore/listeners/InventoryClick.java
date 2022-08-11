@@ -488,15 +488,17 @@ public class InventoryClick implements Listener {
                                     int currStreak = 0;
                                     int highestStreak = 0;
                                     int totalCollected = 0;
+                                    String lastColl = "";
 
                                     try {
                                         Connection conn = hook.getSQLConnection();
-                                        PreparedStatement ps = conn.prepareStatement("SELECT current_streak, highest_streak, total_collected FROM dailies WHERE user_id = '" + player.getUniqueId() + "'");
+                                        PreparedStatement ps = conn.prepareStatement("SELECT current_streak, highest_streak, total_collected, last_collected FROM dailies WHERE user_id = '" + player.getUniqueId() + "'");
                                         ResultSet rs = ps.executeQuery();
                                         while(rs.next()) {
                                             currStreak = rs.getInt(1);
                                             highestStreak = rs.getInt(2);
                                             totalCollected = rs.getInt(3);
+                                            lastColl = rs.getString(4);
                                         }
                                         hook.close(ps, rs, conn);
                                     } catch (SQLException e) {
@@ -528,23 +530,35 @@ public class InventoryClick implements Listener {
                                     String sql;
                                     List<Object> params;
 
-                                    if(currStreak >= highestStreak) {
-                                        sql = "UPDATE dailies SET current_streak = ?, highest_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?";
-                                        params = new ArrayList<Object>() {{
-                                            add(nCurrStreak);
-                                            add(nCurrStreak);
-                                            add(currDate);
-                                            add(nTotalCollected);
-                                            add(user.getUniqueId().toString());
-                                        }};
+                                    if(!lastColl.isEmpty()) {
+                                        if (currStreak >= highestStreak) {
+                                            sql = "UPDATE dailies SET current_streak = ?, highest_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?";
+                                            params = new ArrayList<Object>() {{
+                                                add(nCurrStreak);
+                                                add(nCurrStreak);
+                                                add(currDate);
+                                                add(nTotalCollected);
+                                                add(user.getUniqueId().toString());
+                                            }};
+                                        } else {
+                                            sql = "UPDATE dailies SET current_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?";
+                                            params = new ArrayList<Object>() {{
+                                                add(nCurrStreak);
+                                                add(currDate);
+                                                add(nTotalCollected);
+                                                add(user.getUniqueId().toString());
+                                            }};
+                                        }
                                     } else {
-                                        sql = "UPDATE dailies SET current_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?";
+                                        sql = "INSERT INTO dailies (user_id, current_streak, total_collected, highest_streak, last_collected) VALUES (?, ?, ?, ?, ?)";
                                         params = new ArrayList<Object>() {{
+                                            add(user.getUniqueId().toString());
+                                            add(nCurrStreak);
+                                            add(nTotalCollected);
                                             add(nCurrStreak);
                                             add(currDate);
-                                            add(nTotalCollected);
-                                            add(user.getUniqueId().toString());
                                         }};
+                                        hook.sqlUpdate(sql, params);
                                     }
 
                                     hook.sqlUpdate(sql, params);

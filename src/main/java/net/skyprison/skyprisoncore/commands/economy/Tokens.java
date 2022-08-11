@@ -178,14 +178,14 @@ public class Tokens implements CommandExecutor {
                                     if (plugin.isInt(args[2])) {
                                         if(Integer.parseInt(args[2]) >= 0) {
                                             if(oPlayer.isOnline()) {
-                                                plugin.tokensData.put(player.getUniqueId().toString(), Integer.parseInt(args[2]));
+                                                plugin.tokensData.put(oPlayer.getUniqueId().toString(), Integer.parseInt(args[2]));
                                                 player.sendMessage(plugin.colourMessage("&bTokens &8» &7Set " + oPlayer.getName() + "'s tokens to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
                                                 oPlayer.sendMessage(plugin.colourMessage("&bTokens &8» &7Your token balance was set to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
                                             } else {
                                                 String sql = "UPDATE users SET tokens = ? WHERE user_id = ?";
                                                 List<Object> params = new ArrayList<Object>() {{
                                                     add(Integer.parseInt(args[2]));
-                                                    add(player.getUniqueId().toString());
+                                                    add(oPlayer.getUniqueId().toString());
                                                 }};
                                                 hook.sqlUpdate(sql, params);
                                                 player.sendMessage(plugin.colourMessage("&bTokens &8» &7Set " + oPlayer.getName() + "'s tokens to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
