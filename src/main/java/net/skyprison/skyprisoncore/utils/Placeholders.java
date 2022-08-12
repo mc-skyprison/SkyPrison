@@ -214,7 +214,7 @@ public class Placeholders extends PlaceholderExpansion {
 			int totalFound = 0;
 			try {
 				Connection conn = hook.getSQLConnection();
-				PreparedStatement ps = conn.prepareStatement("SELECT secret_name FROM secrets_data WHERE user_id = '" + player.getUniqueId() + "'");
+				PreparedStatement ps = conn.prepareStatement("SELECT secret_amount FROM secrets_data WHERE user_id = '" + player.getUniqueId() + "'");
 				ResultSet rs = ps.executeQuery();
 				while(rs.next()) {
 					totalFound += rs.getInt(1);
