@@ -344,27 +344,29 @@ public class InventoryClick implements Listener {
                                     NamespacedKey tKey = new NamespacedKey(plugin, "sort");
                                     NamespacedKey tKey1 = new NamespacedKey(plugin, "toggle");
                                     NamespacedKey tKey2 = new NamespacedKey(plugin, "page");
+                                    NamespacedKey tKey3 = new NamespacedKey(plugin, "lookup-user");
                                     Boolean transSort = Boolean.parseBoolean(fData.get(tKey, PersistentDataType.STRING));
                                     String transToggle = fData.get(tKey1, PersistentDataType.STRING);
                                     int transPage = fData.get(tKey2, PersistentDataType.INTEGER);
+                                    String userId = fData.get(tKey3, PersistentDataType.STRING);
                                     if (clickedMat.equals(Material.PAPER)) {
                                         if (event.getSlot() == 45) {
-                                            moneyHistory.openGUI(player, transSort, transToggle, transPage - 1);
+                                            moneyHistory.openGUI(player, transSort, transToggle, transPage - 1, userId);
                                         } else if (event.getSlot() == 53) {
-                                            moneyHistory.openGUI(player, transSort, transToggle, transPage + 1);
+                                            moneyHistory.openGUI(player, transSort, transToggle, transPage + 1, userId);
                                         }
                                     } else if (clickedMat.equals(Material.CLOCK)) {
                                         if (transSort)
-                                            moneyHistory.openGUI(player, false, transToggle, transPage);
+                                            moneyHistory.openGUI(player, false, transToggle, transPage, userId);
                                         else
-                                            moneyHistory.openGUI(player, true, transToggle, transPage);
+                                            moneyHistory.openGUI(player, true, transToggle, transPage, userId);
                                     } else if (clickedMat.equals(Material.COMPASS)) {
                                         if (transToggle.equalsIgnoreCase("null")) {
-                                            moneyHistory.openGUI(player, transSort, "true", 1);
+                                            moneyHistory.openGUI(player, transSort, "true", 1, userId);
                                         } else if (transToggle.equalsIgnoreCase("true")) {
-                                            moneyHistory.openGUI(player, transSort, "false", 1);
+                                            moneyHistory.openGUI(player, transSort, "false", 1, userId);
                                         } else if (transToggle.equalsIgnoreCase("false")) {
-                                            moneyHistory.openGUI(player, transSort, "null", 1);
+                                            moneyHistory.openGUI(player, transSort, "null", 1, userId);
 
                                         }
 
