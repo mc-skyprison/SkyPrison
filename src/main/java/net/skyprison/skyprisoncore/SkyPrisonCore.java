@@ -319,6 +319,7 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("s")).setExecutor(new Staff(new ChatUtils(this, discApi)));
         Objects.requireNonNull(getCommand("donorreset")).setExecutor(new DonorReset(this));
         Objects.requireNonNull(getCommand("customenchant")).setExecutor(new CustomEnchant(this));
+        Objects.requireNonNull(getCommand("sptags")).setExecutor(new Tags(this));
     }
 
 
@@ -362,6 +363,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PlayerFish(this, dailyMissions), this);
         pm.registerEvents(new InventoryClose(this), this);
         pm.registerEvents(new EntityDamage(this), this);
+        pm.registerEvents(new PlayerCommandPreprocess(this), this);
     }
 
 

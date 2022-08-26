@@ -19,7 +19,7 @@ import java.util.regex.Matcher;
 
 public class AsyncPlayerChat implements Listener {
     private final SkyPrisonCore plugin;
-    private DiscordApi discApi;
+    private final DiscordApi discApi;
 
     public AsyncPlayerChat(SkyPrisonCore plugin, DiscordApi discApi) {
         this.plugin = plugin;
