@@ -90,21 +90,23 @@ public class Tags implements CommandExecutor {
 
         Inventory bounties = Bukkit.createInventory(null, 54, ChatColor.RED + "Tags | Page " + page);
         int j = 0;
-        for (List tag : tags) {
+        for (List tag : tags) {  // id, display, lore, effect
             if(j == 45) break;
             ArrayList<String> lore = new ArrayList<>();
-            ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-            SkullMeta meta = (SkullMeta) head.getItemMeta();
-            meta.setOwningPlayer(Bukkit.getOfflinePlayer(bountyPlayer));
-            meta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + Bukkit.getOfflinePlayer(bountyPlayer).getName());
-            lore.add(ChatColor.YELLOW + "Prize: $" + sortedMap.get(bountyPlayer));
+            ItemStack head = new ItemStack(Material.NAME_TAG);
+            ItemMeta meta = head.getItemMeta();
+            meta.setDisplayName((String) tag.get(1));
+            lore.add((String) tag.get(2));
             meta.setLore(lore);
+
+            NamespacedKey key3 = new NamespacedKey(plugin, "tag-id");
+            meta.getPersistentDataContainer().set(key3, PersistentDataType.INTEGER, (Integer) tag.get(0));
 
             if(j == 0) {
                 NamespacedKey key = new NamespacedKey(plugin, "stop-click");
                 meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
                 NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
-                meta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "bounties");
+                meta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "tags");
 
                 NamespacedKey key4 = new NamespacedKey(plugin, "page");
                 meta.getPersistentDataContainer().set(key4, PersistentDataType.INTEGER, page);
