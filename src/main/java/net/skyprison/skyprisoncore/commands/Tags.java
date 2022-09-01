@@ -84,9 +84,7 @@ public class Tags implements CommandExecutor {
             b++;
         }
 
-        for(List beGone : toBeRemoved) {
-            tags.remove(beGone);
-        }
+        tags.removeAll(toBeRemoved);
 
         Inventory bounties = Bukkit.createInventory(null, 54, ChatColor.RED + "Tags | Page " + page);
         int j = 0;
@@ -107,7 +105,6 @@ public class Tags implements CommandExecutor {
                 meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
                 NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
                 meta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "tags");
-
                 NamespacedKey key4 = new NamespacedKey(plugin, "page");
                 meta.getPersistentDataContainer().set(key4, PersistentDataType.INTEGER, page);
             }
@@ -116,7 +113,6 @@ public class Tags implements CommandExecutor {
             bounties.setItem(j, head);
             j++;
         }
-
 
         ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         ItemStack nextPage = new ItemStack(Material.PAPER);
@@ -143,9 +139,175 @@ public class Tags implements CommandExecutor {
         player.openInventory(bounties);
     }
 
+    public void openSpecificGUI(Player player, Integer tag_id) {
+        String name = "";
+        String lore = "";
+        String effect = "";
+
+        try {
+            Connection conn = hook.getSQLConnection();
+            PreparedStatement ps = conn.prepareStatement("SELECT tags_display, tags_lore, tags_effect FROM tags WHERE tags_id = '" + tag_id + "'");
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()) {
+                name = rs.getString(1);
+                lore = rs.getString(2);
+                effect = rs.getString(3);
+            }
+            hook.close(ps, rs, conn);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        Inventory bounties = Bukkit.createInventory(null, 27, ChatColor.RED + "Tags | " + name);
+        for (int i = 0; i < 27; i++) {
+            if(i == 9) {
+                ItemStack head = new ItemStack(Material.NAME_TAG);
+                ItemMeta meta = head.getItemMeta();
+                meta.setDisplayName(plugin.colourMessage(name));
+                ArrayList<String> loreList = new ArrayList<>();
+                loreList.add(plugin.colourMessage(lore));
+                loreList.add(" ");
+                if (!effect.isEmpty())
+                    loreList.add(plugin.colourMessage("&6Effect: " + effect));
+                else
+                    loreList.add(plugin.colourMessage("&6Effect: &lNONE"));
+
+                meta.setLore(loreList);
+                head.setItemMeta(meta);
+                bounties.setItem(i, head);
+            } else if(i == 11) {
+                ItemStack head = new ItemStack(Material.OAK_SIGN);
+                ItemMeta meta = head.getItemMeta();
+                meta.setDisplayName(plugin.colourMessage("&7Edit Tag Displayname"));
+                ArrayList<String> loreList = new ArrayList<>();
+                loreList.add(plugin.colourMessage("Current name: " + name));
+                meta.setLore(loreList);
+                head.setItemMeta(meta);
+                bounties.setItem(i, head);
+            } else if(i == 13) {
+                ItemStack head = new ItemStack(Material.SPRUCE_SIGN);
+                ItemMeta meta = head.getItemMeta();
+                meta.setDisplayName(plugin.colourMessage("&7Edit Tag Lore"));
+                ArrayList<String> loreList = new ArrayList<>();
+                loreList.add(plugin.colourMessage("Current lore: " + name));
+                meta.setLore(loreList);
+                head.setItemMeta(meta);
+                bounties.setItem(i, head);
+            } else if(i == 15) {
+                ItemStack head = new ItemStack(Material.ENCHANTED_BOOK);
+                ItemMeta meta = head.getItemMeta();
+                meta.setDisplayName(plugin.colourMessage("&7Edit Tag Effect"));
+                ArrayList<String> loreList = new ArrayList<>();
+                if (!effect.isEmpty())
+                    loreList.add(plugin.colourMessage("&6Current Effect: " + effect));
+                else
+                    loreList.add(plugin.colourMessage("&6Current Effect: &lNONE"));
+                meta.setLore(loreList);
+                head.setItemMeta(meta);
+                bounties.setItem(i, head);
+            } else {
+                ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+                ItemMeta paneMeta = pane.getItemMeta();
+                paneMeta.setDisplayName("&f");
+                if(i == 0) {
+                    NamespacedKey key = new NamespacedKey(plugin, "stop-click");
+                    paneMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
+                    NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
+                    paneMeta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "tag-edit-specific");
+                    NamespacedKey key3 = new NamespacedKey(plugin, "tag-id");
+                    paneMeta.getPersistentDataContainer().set(key3, PersistentDataType.INTEGER, tag_id);
+                }
+                pane.setItemMeta(paneMeta);
+                bounties.setItem(i, pane);
+            }
+        }
+
+
+        player.openInventory(bounties);
+    }
 
     public void openEditGUI(Player player, Integer page) {
+        ArrayList<List> tags = new ArrayList<>();
 
+        try {
+            Connection conn = hook.getSQLConnection();
+            PreparedStatement ps = conn.prepareStatement("SELECT tags_id, tags_display, tags_lore, tags_effect FROM tags");
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()) {
+                tags.add(Arrays.asList(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4)));
+            }
+            hook.close(ps, rs, conn);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        double totalPages = Math.ceil(tags.size() / 45.0);
+
+        int toRemove = 45 * (page - 1);
+        if(toRemove != 0) {
+            toRemove -= 1;
+        }
+        int b = 0;
+        ArrayList<List> toBeRemoved = new ArrayList<>();
+
+        for(List tag : tags) {
+            if(b == toRemove) break;
+            toBeRemoved.add(tag);
+            b++;
+        }
+        tags.removeAll(toBeRemoved);
+
+        Inventory bounties = Bukkit.createInventory(null, 54, ChatColor.RED + "Tags | Page " + page);
+        int j = 0;
+        for (List tag : tags) {  // id, display, lore, effect
+            if(j == 45) break;
+            ArrayList<String> lore = new ArrayList<>();
+            ItemStack head = new ItemStack(Material.NAME_TAG);
+            ItemMeta meta = head.getItemMeta();
+            meta.setDisplayName((String) tag.get(1));
+            lore.add((String) tag.get(2));
+            meta.setLore(lore);
+
+            NamespacedKey key3 = new NamespacedKey(plugin, "tag-id");
+            meta.getPersistentDataContainer().set(key3, PersistentDataType.INTEGER, (Integer) tag.get(0));
+
+            if(j == 0) {
+                NamespacedKey key = new NamespacedKey(plugin, "stop-click");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
+                NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
+                meta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "tags-edit-all");
+                NamespacedKey key4 = new NamespacedKey(plugin, "page");
+                meta.getPersistentDataContainer().set(key4, PersistentDataType.INTEGER, page);
+            }
+
+            head.setItemMeta(meta);
+            bounties.setItem(j, head);
+            j++;
+        }
+
+        ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemStack nextPage = new ItemStack(Material.PAPER);
+        ItemMeta nextMeta = nextPage.getItemMeta();
+        nextMeta.setDisplayName(ChatColor.GREEN + "Next Page");
+        nextPage.setItemMeta(nextMeta);
+        ItemStack prevPage = new ItemStack(Material.PAPER);
+        ItemMeta prevMeta = prevPage.getItemMeta();
+        prevMeta.setDisplayName(ChatColor.GREEN + "Previous Page");
+        prevPage.setItemMeta(prevMeta);
+        for(int i = 45; i < 54; i++) {
+            bounties.setItem(i, pane);
+        }
+
+        if(page == totalPages && page > 1) {
+            bounties.setItem(46, prevPage);
+        } else if(page != totalPages && page == 1) {
+            bounties.setItem(52, nextPage);
+        } else if (page != 1) {
+            bounties.setItem(46, prevPage);
+            bounties.setItem(52, nextPage);
+        }
+
+        player.openInventory(bounties);
     }
 
     @Override
