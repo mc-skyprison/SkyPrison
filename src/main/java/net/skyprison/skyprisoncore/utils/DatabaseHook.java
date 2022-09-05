@@ -135,6 +135,7 @@ public class DatabaseHook {
                                 "tags_display varchar(255), " +
                                 "tags_lore varchar(255), " +
                                 "tags_effect varchar(255) " +
+                                "tags_permission varchar(255) " +
                                 ")";
                         break;
                     case "tags_user":
@@ -175,11 +176,13 @@ public class DatabaseHook {
 
                         for(String tag : tagsInfo) {
                             String display = tagsConf.getString("deluxetags." + tag + ".tag");
-                            sql = "INSERT INTO tags (tags_display, tags_lore, tags_effect) VALUES (?, ?, ?)";
+                            String permission = tagsConf.getString("deluxetags." + tag + ".permission");
+                            sql = "INSERT INTO tags (tags_display, tags_lore, tags_effect, tags_permission) VALUES (?, ?, ?, ?)";
                             params = new ArrayList<Object>() {{
                                 add(display);
                                 add("");
                                 add("");
+                                add(permission);
                             }};
                             sqlUpdate(sql, params);
                         }

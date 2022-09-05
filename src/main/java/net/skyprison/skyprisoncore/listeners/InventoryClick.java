@@ -34,9 +34,12 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
+import se.file14.procosmetics.ProCosmetics;
+import se.file14.procosmetics.api.ProCosmeticsProvider;
+import se.file14.procosmetics.cosmetic.AbstractCosmeticType;
+import se.file14.procosmetics.cosmetic.CosmeticCategory;
 
 import java.io.File;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -616,23 +619,38 @@ public class InventoryClick implements Listener {
                                     ItemStack clickItem = event.getClickedInventory().getItem(event.getSlot());
                                     PersistentDataContainer clickData = clickItem.getPersistentDataContainer();
 
-
                                     if(clickItem.getType().equals(Material.NAME_TAG)) {
                                         NamespacedKey tagKey = new NamespacedKey(plugin, "tag-id");
                                         int tag_id = clickData.get(tagKey, PersistentDataType.INTEGER);
                                         String tagsDisplay = "";
+                                        String tagsEffect = "";
 
                                         try {
                                             Connection conn = hook.getSQLConnection();
-                                            PreparedStatement ps = conn.prepareStatement("SELECT tags_display FROM tags WHERE tags_id = '" + tag_id + "'");
+                                            PreparedStatement ps = conn.prepareStatement("SELECT tags_display, tags_effect FROM tags WHERE tags_id = '" + tag_id + "'");
                                             ResultSet rs = ps.executeQuery();
                                             while(rs.next()) {
                                                 tagsDisplay = rs.getString(1);
+                                                tagsEffect = rs.getString(2);
                                             }
                                             hook.close(ps, rs, conn);
                                         } catch (SQLException e) {
                                             e.printStackTrace();
                                         }
+                                        ProCosmetics api = ProCosmeticsProvider.get();
+
+                                        if(tagsEffect != null && !tagsEffect.isEmpty()) {
+                                            for(Object cosmeticObject : CosmeticCategory.PARTICLE_EFFECTS.getCosmeticTypes()) {
+                                                AbstractCosmeticType cosmetic = (AbstractCosmeticType) cosmeticObject;
+                                                String name = ChatColor.stripColor(cosmetic.getName());
+                                                if(name.equalsIgnoreCase(tagsEffect)) {
+                                                    cosmetic.equip(api.getUserManager().getUser(player), true);
+                                                }
+                                            }
+                                        } else {
+                                            api.getUserManager().getUser(player).unequipCosmetics(true);
+                                        }
+
 
                                         String sql = "UPDATE users SET active_tag = ? WHERE user_id = ?";
                                         String finalTagsDisplay = tagsDisplay;
@@ -676,15 +694,15 @@ public class InventoryClick implements Listener {
                                     if(event.getSlot() == 22) {
                                         tag.openEditGUI(player, page);
                                     } else if(event.getSlot() == 11) {
-                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-display", tag_id));
+                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-display", String.valueOf(tag_id)));
                                         player.closeInventory();
                                         player.sendMessage(plugin.colourMessage("&aType the new tag display:"));
                                     } else if(event.getSlot() == 13) {
-                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-display", tag_id));
+                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-lore", String.valueOf(tag_id)));
                                         player.closeInventory();
                                         player.sendMessage(plugin.colourMessage("&aType the new tag lore (use \\n for new line):"));
                                     } else if(event.getSlot() == 15) {
-                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-display", tag_id));
+                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-effect", String.valueOf(tag_id)));
                                         player.closeInventory();
                                         player.sendMessage(plugin.colourMessage("&aType the new tag effect:"));
                                     }

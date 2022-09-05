@@ -58,7 +58,7 @@ public class SkyPrisonCore extends JavaPlugin {
     public Map<String, Integer> tokensData = new HashMap<>();
     public HashMap<UUID, String> userTags = new HashMap<>();
 
-    public HashMap<UUID, List> chatLock = new HashMap<>();
+    public HashMap<UUID, List<String>> chatLock = new HashMap<>();
 
     public Map<Integer, UUID> discordLinking = new HashMap<>();
 

@@ -32,16 +32,17 @@ public class AsyncPlayerChat implements Listener {
         this.tag = tag;
     }
 
-    @EventHandler
+
+    @EventHandler (priority = EventPriority.LOWEST)
     public void onAsyncPlayerChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
         String message = event.getMessage();
         if(plugin.chatLock.containsKey(player.getUniqueId())) {
             String finalMessage1 = message;
             Bukkit.getScheduler().runTask(plugin, () -> {
-                List tags = plugin.chatLock.get(player.getUniqueId());
+                List<String> tags = plugin.chatLock.get(player.getUniqueId());
                 event.setCancelled(true);
-                String lockType = (String) tags.get(0);
+                String lockType = tags.get(0);
                 String sql;
                 List<Object> params;
                 String finalMessage = finalMessage1;
@@ -54,7 +55,7 @@ public class AsyncPlayerChat implements Listener {
                         }};
                         hook.sqlUpdate(sql, params);
                         player.sendMessage(plugin.colourMessage("&aUpdated tag display!"));
-                        tag.openSpecificGUI(player, Integer.parseInt((String) tags.get(1)));
+                        tag.openSpecificGUI(player, Integer.parseInt(tags.get(1)));
                         break;
                     case "tags-lore":
                         sql = "UPDATE tags SET tags_lore = ? WHERE tags_id = ?";
@@ -64,7 +65,7 @@ public class AsyncPlayerChat implements Listener {
                         }};
                         hook.sqlUpdate(sql, params);
                         player.sendMessage(plugin.colourMessage("&aUpdated tag lore!"));
-                        tag.openSpecificGUI(player, Integer.parseInt((String) tags.get(1)));
+                        tag.openSpecificGUI(player, Integer.parseInt(tags.get(1)));
                         break;
                     case "tags-effect":
                         sql = "UPDATE tags SET tags_effect = ? WHERE tags_id = ?";
@@ -78,15 +79,15 @@ public class AsyncPlayerChat implements Listener {
                         break;
                     case "tags-new-display":
                         player.sendMessage(plugin.colourMessage("&aSet the tag display!"));
-                        tag.openNewGUI(player, finalMessage1, (String) tags.get(2), (String) tags.get(3));
+                        tag.openNewGUI(player, finalMessage1, tags.get(2), tags.get(3));
                         break;
                     case "tags-new-lore":
                         player.sendMessage(plugin.colourMessage("&aSet the tag lore!"));
-                        tag.openNewGUI(player, (String) tags.get(1), finalMessage1, (String) tags.get(3));
+                        tag.openNewGUI(player, tags.get(1), finalMessage1, tags.get(3));
                         break;
                     case "tags-new-effect":
                         player.sendMessage(plugin.colourMessage("&aSet the tag effect!"));
-                        tag.openNewGUI(player, (String) tags.get(1), (String) tags.get(2), finalMessage1);
+                        tag.openNewGUI(player, tags.get(1), tags.get(2), finalMessage1);
                         break;
                 }
                 plugin.chatLock.remove(player.getUniqueId());

@@ -61,11 +61,11 @@ public class Tags implements CommandExecutor {
 
         try {
             Connection conn = hook.getSQLConnection();
-            PreparedStatement ps = conn.prepareStatement("SELECT tags_id, tags_display, tags_lore, tags_effect FROM tags");
+            PreparedStatement ps = conn.prepareStatement("SELECT tags_id, tags_display, tags_lore, tags_effect, tags_permission FROM tags");
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
                 if(!player.isOp()) {
-                    if (pTags.contains(rs.getInt(1))) {
+                    if (pTags.contains(rs.getInt(1)) || (rs.getString(5) != null && !rs.getString(5).isEmpty() && player.hasPermission(rs.getString(5)))) {
                         tags.add(Arrays.asList(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4)));
                     }
                 } else {
@@ -78,6 +78,8 @@ public class Tags implements CommandExecutor {
         }
 
         double totalPages = Math.ceil(tags.size() / 45.0);
+
+        if(totalPages == 0) totalPages = 1;
 
         int toRemove = 45 * (page - 1);
         if(toRemove != 0) {
@@ -147,6 +149,12 @@ public class Tags implements CommandExecutor {
             bounties.setItem(52, nextPage);
         }
 
+        ItemStack remTag = new ItemStack(Material.BARRIER);
+        ItemMeta remMeta = remTag.getItemMeta();
+        remMeta.setDisplayName(ChatColor.RED + "Remove tag");
+        remTag.setItemMeta(remMeta);
+        bounties.setItem(49, remTag);
+
         player.openInventory(bounties);
     }
 
@@ -172,7 +180,7 @@ public class Tags implements CommandExecutor {
                 ItemMeta meta = head.getItemMeta();
                 meta.setDisplayName(plugin.colourMessage("&7Edit Tag Display"));
                 ArrayList<String> loreList = new ArrayList<>();
-                loreList.add(plugin.colourMessage("Current name: " + display));
+                loreList.add(plugin.colourMessage("&7Current name: " + display));
                 loreList.add(plugin.colourMessage("&7"));
                 loreList.add(plugin.colourMessage("&7--"));
                 loreList.add(plugin.colourMessage("&c&lREQUIRED"));
@@ -184,7 +192,7 @@ public class Tags implements CommandExecutor {
                 ItemMeta meta = head.getItemMeta();
                 meta.setDisplayName(plugin.colourMessage("&7Edit Tag Lore"));
                 ArrayList<String> loreList = new ArrayList<>();
-                loreList.add(plugin.colourMessage("Current lore: " + lore));
+                loreList.add(plugin.colourMessage("&7Current lore: " + lore));
                 loreList.add(plugin.colourMessage("&7"));
                 loreList.add(plugin.colourMessage("&7--"));
                 loreList.add(plugin.colourMessage("&7&lOPTIONAL"));
@@ -206,13 +214,13 @@ public class Tags implements CommandExecutor {
             } else if(i == 22) {
                 ItemStack pane = new ItemStack(Material.GREEN_CONCRETE);
                 ItemMeta paneMeta = pane.getItemMeta();
-                paneMeta.setDisplayName("&cCreate Tag");
+                paneMeta.setDisplayName(plugin.colourMessage("&cCreate Tag"));
                 pane.setItemMeta(paneMeta);
                 bounties.setItem(i, pane);
             } else {
                 ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
                 ItemMeta paneMeta = pane.getItemMeta();
-                paneMeta.setDisplayName("&f");
+                paneMeta.setDisplayName(plugin.colourMessage("&f"));
                 if(i == 0) {
                     NamespacedKey key = new NamespacedKey(plugin, "stop-click");
                     paneMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
@@ -276,7 +284,7 @@ public class Tags implements CommandExecutor {
                 ItemMeta meta = head.getItemMeta();
                 meta.setDisplayName(plugin.colourMessage("&7Edit Tag Display"));
                 ArrayList<String> loreList = new ArrayList<>();
-                loreList.add(plugin.colourMessage("Current name: " + name));
+                loreList.add(plugin.colourMessage("&7Current name: " + name));
                 meta.setLore(loreList);
                 head.setItemMeta(meta);
                 bounties.setItem(i, head);
@@ -285,7 +293,7 @@ public class Tags implements CommandExecutor {
                 ItemMeta meta = head.getItemMeta();
                 meta.setDisplayName(plugin.colourMessage("&7Edit Tag Lore"));
                 ArrayList<String> loreList = new ArrayList<>();
-                loreList.add(plugin.colourMessage("Current lore: " + name));
+                loreList.add(plugin.colourMessage("&7Current lore: " + name));
                 meta.setLore(loreList);
                 head.setItemMeta(meta);
                 bounties.setItem(i, head);
@@ -301,16 +309,22 @@ public class Tags implements CommandExecutor {
                 meta.setLore(loreList);
                 head.setItemMeta(meta);
                 bounties.setItem(i, head);
+            } else if(i == 17) {
+                ItemStack pane = new ItemStack(Material.BARRIER);
+                ItemMeta paneMeta = pane.getItemMeta();
+                paneMeta.setDisplayName(plugin.colourMessage("&cDelete tag"));
+                pane.setItemMeta(paneMeta);
+                bounties.setItem(i, pane);
             } else if(i == 22) {
                 ItemStack pane = new ItemStack(Material.NETHER_STAR);
                 ItemMeta paneMeta = pane.getItemMeta();
-                paneMeta.setDisplayName("&cBack to all tags");
+                paneMeta.setDisplayName(plugin.colourMessage("&cBack to all tags"));
                 pane.setItemMeta(paneMeta);
                 bounties.setItem(i, pane);
             } else {
                 ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
                 ItemMeta paneMeta = pane.getItemMeta();
-                paneMeta.setDisplayName("&F");
+                paneMeta.setDisplayName(plugin.colourMessage("&f"));
                 if(i == 0) {
                     NamespacedKey key = new NamespacedKey(plugin, "stop-click");
                     paneMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
@@ -323,12 +337,6 @@ public class Tags implements CommandExecutor {
                 bounties.setItem(i, pane);
             }
         }
-        ProCosmetics api = ProCosmeticsProvider.get();
-        AbstractCosmeticType asd = (AbstractCosmeticType) CosmeticCategory.PARTICLE_EFFECTS.getCosmeticTypes().get(0);
-        asd.getName();
-        asd.equip(api.getUserManager().getUser(player), true);
-
-
         player.openInventory(bounties);
     }
 
