@@ -288,7 +288,7 @@ public class SkyPlot implements CommandExecutor {
 		blankMeta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "skyplot-gui");
 		NamespacedKey key2 = new NamespacedKey(plugin, "skyplot-type");
 		blankMeta.getPersistentDataContainer().set(key2, PersistentDataType.STRING, page);
-		NamespacedKey key3 = new NamespacedKey(plugin, "skyplot-page");
+		NamespacedKey key3 = new NamespacedKey(plugin, "page");
 		blankMeta.getPersistentDataContainer().set(key3, PersistentDataType.INTEGER, pageNum);
 		blankPane.setItemMeta(blankMeta);
 

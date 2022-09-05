@@ -56,6 +56,9 @@ public class SkyPrisonCore extends JavaPlugin {
     public HashMap<UUID, Boolean> flyPvP = new HashMap<>();
     public HashMap<UUID, Integer> teleportMove = new HashMap<>();
     public Map<String, Integer> tokensData = new HashMap<>();
+    public HashMap<UUID, String> userTags = new HashMap<>();
+
+    public HashMap<UUID, List> chatLock = new HashMap<>();
 
     public Map<Integer, UUID> discordLinking = new HashMap<>();
 
@@ -319,13 +322,13 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("s")).setExecutor(new Staff(new ChatUtils(this, discApi)));
         Objects.requireNonNull(getCommand("donorreset")).setExecutor(new DonorReset(this));
         Objects.requireNonNull(getCommand("customenchant")).setExecutor(new CustomEnchant(this));
-        Objects.requireNonNull(getCommand("sptags")).setExecutor(new Tags(this));
+        Objects.requireNonNull(getCommand("sptags")).setExecutor(new Tags(this, getDatabase()));
     }
 
 
     public void registerEvents() {
         PluginManager pm = getServer().getPluginManager();
-        pm.registerEvents(new AsyncPlayerChat(this, discApi), this);
+        pm.registerEvents(new AsyncPlayerChat(this, discApi, getDatabase(), new Tags(this, getDatabase())), this);
         pm.registerEvents(new BlockBreak(this), this);
         pm.registerEvents(new BlockDamage(this, getDatabase()), this);
         pm.registerEvents(new BlockPlace(this), this);
@@ -338,7 +341,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EntityRemoveFromWorld(this), this);
         pm.registerEvents(new InventoryClick(this, new EconomyCheck(this), new DropChest(this), new Bounty(getDatabase(), this),
                 new SecretsGUI(this, getDatabase()), new Daily(this, new DatabaseHook(this)), new MoneyHistory(this), new EndUpgrade(this),
-                new BuyBack(this, getDatabase()), new SkyPlot(this), getDatabase()), this);
+                new BuyBack(this, getDatabase()), new SkyPlot(this), getDatabase(), new Tags(this, getDatabase())), this);
         pm.registerEvents(new InventoryOpen(), this);
         pm.registerEvents(new LeavesDecay(), this);
         pm.registerEvents(new McMMOLevelUp(this), this);

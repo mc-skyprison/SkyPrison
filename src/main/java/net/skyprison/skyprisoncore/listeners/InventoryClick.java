@@ -14,6 +14,7 @@ import net.kyori.adventure.text.Component;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.Daily;
 import net.skyprison.skyprisoncore.commands.SkyPlot;
+import net.skyprison.skyprisoncore.commands.Tags;
 import net.skyprison.skyprisoncore.commands.economy.*;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
@@ -55,10 +56,11 @@ public class InventoryClick implements Listener {
     private final BuyBack buyBack;
     private final SkyPlot skyPlot;
     private final DatabaseHook hook;
+    private final Tags tag;
 
     public InventoryClick(SkyPrisonCore plugin, EconomyCheck econCheck, DropChest dropChest, Bounty bounty,
                           SecretsGUI secretsGUI, Daily daily, MoneyHistory moneyHistory, EndUpgrade endUpgrade,
-                          BuyBack buyBack, SkyPlot skyPlot, DatabaseHook hook) {
+                          BuyBack buyBack, SkyPlot skyPlot, DatabaseHook hook, Tags tag) {
         this.plugin = plugin;
         this.econCheck = econCheck;
         this.chestDrop = dropChest;
@@ -70,6 +72,7 @@ public class InventoryClick implements Listener {
         this.buyBack = buyBack;
         this.skyPlot = skyPlot;
         this.hook = hook;
+        this.tag = tag;
     }
 
     public boolean isStick(ItemStack i) {
@@ -94,7 +97,7 @@ public class InventoryClick implements Listener {
     }
 
     @EventHandler
-    public void invClick(InventoryClickEvent event) throws IOException {
+    public void invClick(InventoryClickEvent event) {
         if(event.getWhoClicked() instanceof Player) {
             Player player = (Player) event.getWhoClicked();
 
@@ -105,15 +108,31 @@ public class InventoryClick implements Listener {
             CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
             user.getCMIPlayTime().getPlayDayOfToday().getTotalTime();
             Inventory clickInv = event.getClickedInventory();
-            if (clickInv != null && !clickInv.isEmpty() && clickInv.getItem(0) != null) {
+            if (clickInv != null && !clickInv.isEmpty()) {
                 ItemStack fItem = clickInv.getItem(0);
-                ItemMeta fMeta = Objects.requireNonNull(fItem).getItemMeta();
-                PersistentDataContainer fData = fMeta.getPersistentDataContainer();
                 NamespacedKey key = new NamespacedKey(plugin, "stop-click");
                 NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
+                if(fItem == null) {
+                    fItem = getItemStack(clickInv, null, key, key1);
+                } else {
+                    ItemMeta fMeta = Objects.requireNonNull(fItem).getItemMeta();
+                    PersistentDataContainer fData = fMeta.getPersistentDataContainer();
+                    if(!fData.has(key, PersistentDataType.INTEGER) || !fData.has(key1, PersistentDataType.STRING)) {
+                        fItem = getItemStack(clickInv, fItem, key, key1);
+                    }
+                }
+
+                ItemMeta fMeta = Objects.requireNonNull(fItem).getItemMeta();
+                PersistentDataContainer fData = fMeta.getPersistentDataContainer();
                 if (fData.has(key, PersistentDataType.INTEGER) && fData.has(key1, PersistentDataType.STRING)) {
                     int clickCheck = fData.get(key, PersistentDataType.INTEGER);
                     String guiType = fData.get(key1, PersistentDataType.STRING);
+                    int page = 1;
+                    NamespacedKey pageKey = new NamespacedKey(plugin, "page");
+                    if(fData.has(pageKey, PersistentDataType.INTEGER)) {
+                        page = fData.get(pageKey, PersistentDataType.INTEGER);
+                    }
+
                     if (clickCheck == 1) {
                         event.setCancelled(true);
                         switch (Objects.requireNonNull(guiType)) {
@@ -327,13 +346,12 @@ public class InventoryClick implements Listener {
                                 if(event.getClickedInventory().getItem(event.getSlot()) != null) {
                                     Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
 
-                                    NamespacedKey tKey2 = new NamespacedKey(plugin, "page");
-                                    int transPage = fData.get(tKey2, PersistentDataType.INTEGER);
+
                                     if (clickedMat.equals(Material.PAPER)) {
                                         if (event.getSlot() == 46) {
-                                            bounty.openGUI(player, transPage - 1);
+                                            bounty.openGUI(player, page - 1);
                                         } else if (event.getSlot() == 52) {
-                                            bounty.openGUI(player, transPage + 1);
+                                            bounty.openGUI(player, page + 1);
                                         }
                                     }
                                 }
@@ -343,23 +361,21 @@ public class InventoryClick implements Listener {
 
                                     NamespacedKey tKey = new NamespacedKey(plugin, "sort");
                                     NamespacedKey tKey1 = new NamespacedKey(plugin, "toggle");
-                                    NamespacedKey tKey2 = new NamespacedKey(plugin, "page");
                                     NamespacedKey tKey3 = new NamespacedKey(plugin, "lookup-user");
                                     Boolean transSort = Boolean.parseBoolean(fData.get(tKey, PersistentDataType.STRING));
                                     String transToggle = fData.get(tKey1, PersistentDataType.STRING);
-                                    int transPage = fData.get(tKey2, PersistentDataType.INTEGER);
                                     String userId = fData.get(tKey3, PersistentDataType.STRING);
                                     if (clickedMat.equals(Material.PAPER)) {
                                         if (event.getSlot() == 45) {
-                                            moneyHistory.openGUI(player, transSort, transToggle, transPage - 1, userId);
+                                            moneyHistory.openGUI(player, transSort, transToggle, page - 1, userId);
                                         } else if (event.getSlot() == 53) {
-                                            moneyHistory.openGUI(player, transSort, transToggle, transPage + 1, userId);
+                                            moneyHistory.openGUI(player, transSort, transToggle, page + 1, userId);
                                         }
                                     } else if (clickedMat.equals(Material.CLOCK)) {
                                         if (transSort)
-                                            moneyHistory.openGUI(player, false, transToggle, transPage, userId);
+                                            moneyHistory.openGUI(player, false, transToggle, page, userId);
                                         else
-                                            moneyHistory.openGUI(player, true, transToggle, transPage, userId);
+                                            moneyHistory.openGUI(player, true, transToggle, page, userId);
                                     } else if (clickedMat.equals(Material.COMPASS)) {
                                         if (transToggle.equalsIgnoreCase("null")) {
                                             moneyHistory.openGUI(player, transSort, "true", 1, userId);
@@ -375,8 +391,8 @@ public class InventoryClick implements Listener {
                                 break;
                             case "skyplot-gui":
                                 NamespacedKey skyKey = new NamespacedKey(plugin, "skyplot-type");
-                                String page = fData.get(skyKey, PersistentDataType.STRING);
-                                switch(page.toLowerCase()) {
+                                String pageType = fData.get(skyKey, PersistentDataType.STRING);
+                                switch(pageType.toLowerCase()) {
                                     case "main":
                                         switch(event.getSlot()) {
                                             case 13:
@@ -462,9 +478,6 @@ public class InventoryClick implements Listener {
                                             ItemStack clickItem = event.getClickedInventory().getItem(event.getSlot());
                                             PersistentDataContainer clickData = clickItem.getPersistentDataContainer();
 
-                                            NamespacedKey pageKey = new NamespacedKey(plugin, "skyplot-page");
-                                            int pageNum = fData.get(pageKey, PersistentDataType.INTEGER);
-
                                             if(clickItem.getType().equals(Material.PLAYER_HEAD)) {
                                                 NamespacedKey isleKey = new NamespacedKey(plugin, "skyplot-owner");
                                                 String isleOwner = clickData.get(isleKey, PersistentDataType.STRING);
@@ -472,11 +485,11 @@ public class InventoryClick implements Listener {
                                                 player.teleportAsync(loc);
 
                                             } else if(event.getSlot() == 48 && clickItem.getType().equals(Material.PAPER)) {
-                                                skyPlot.skyPlotGUI(player, "main", pageNum-1);
+                                                skyPlot.skyPlotGUI(player, "main", page - 1);
                                             } else if(event.getSlot() == 49) {
                                                 skyPlot.skyPlotGUI(player, "main", 1);
                                             } else if(event.getSlot() == 50 && clickItem.getType().equals(Material.PAPER)) {
-                                                skyPlot.skyPlotGUI(player, "main", pageNum+1);
+                                                skyPlot.skyPlotGUI(player, "main", page + 1);
                                             }
                                         }
                                         break;
@@ -595,6 +608,121 @@ public class InventoryClick implements Listener {
                                             plugin.teleportMove.put(player.getUniqueId(), task.getTaskId());
 
                                         }
+                                    }
+                                }
+                                break;
+                            case "tags":
+                                if(clickInv.getItem(event.getSlot()) != null) {
+                                    ItemStack clickItem = event.getClickedInventory().getItem(event.getSlot());
+                                    PersistentDataContainer clickData = clickItem.getPersistentDataContainer();
+
+
+                                    if(clickItem.getType().equals(Material.NAME_TAG)) {
+                                        NamespacedKey tagKey = new NamespacedKey(plugin, "tag-id");
+                                        int tag_id = clickData.get(tagKey, PersistentDataType.INTEGER);
+                                        String tagsDisplay = "";
+
+                                        try {
+                                            Connection conn = hook.getSQLConnection();
+                                            PreparedStatement ps = conn.prepareStatement("SELECT tags_display FROM tags WHERE tags_id = '" + tag_id + "'");
+                                            ResultSet rs = ps.executeQuery();
+                                            while(rs.next()) {
+                                                tagsDisplay = rs.getString(1);
+                                            }
+                                            hook.close(ps, rs, conn);
+                                        } catch (SQLException e) {
+                                            e.printStackTrace();
+                                        }
+
+                                        String sql = "UPDATE users SET active_tag = ? WHERE user_id = ?";
+                                        String finalTagsDisplay = tagsDisplay;
+                                        List<Object> params = new ArrayList<Object>() {{
+                                            add(finalTagsDisplay);
+                                            add(user.getUniqueId().toString());
+                                        }};
+                                        hook.sqlUpdate(sql, params);
+
+                                        plugin.userTags.put(player.getUniqueId(), tagsDisplay);
+                                        player.sendMessage(plugin.colourMessage("&aSelected Tag: &r" + tagsDisplay));
+                                    } else if(event.getSlot() == 46 && clickItem.getType().equals(Material.PAPER)) {
+                                        tag.openGUI(player, page - 1);
+                                    } else if(event.getSlot() == 52 && clickItem.getType().equals(Material.PAPER)) {
+                                        tag.openGUI(player, page + 1);
+                                    }
+                                }
+                                break;
+                            case "tags-edit-all":
+                                if(clickInv.getItem(event.getSlot()) != null) {
+                                    ItemStack clickItem = event.getClickedInventory().getItem(event.getSlot());
+                                    PersistentDataContainer clickData = clickItem.getPersistentDataContainer();
+
+
+                                    if(clickItem.getType().equals(Material.NAME_TAG)) {
+                                        NamespacedKey tagKey = new NamespacedKey(plugin, "tag-id");
+                                        int tag_id = clickData.get(tagKey, PersistentDataType.INTEGER);
+                                        tag.openSpecificGUI(player, tag_id);
+                                    } else if(event.getSlot() == 46 && clickItem.getType().equals(Material.PAPER)) {
+                                        tag.openGUI(player, page - 1);
+                                    } else if(event.getSlot() == 52 && clickItem.getType().equals(Material.PAPER)) {
+                                        tag.openGUI(player, page + 1);
+                                    }
+                                }
+                                break;
+                            case "tags-edit-specific":
+                                if(clickInv.getItem(event.getSlot()) != null) {
+                                    NamespacedKey tagKey = new NamespacedKey(plugin, "tag-id");
+                                    int tag_id = fData.get(tagKey, PersistentDataType.INTEGER);
+
+                                    if(event.getSlot() == 22) {
+                                        tag.openEditGUI(player, page);
+                                    } else if(event.getSlot() == 11) {
+                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-display", tag_id));
+                                        player.closeInventory();
+                                        player.sendMessage(plugin.colourMessage("&aType the new tag display:"));
+                                    } else if(event.getSlot() == 13) {
+                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-display", tag_id));
+                                        player.closeInventory();
+                                        player.sendMessage(plugin.colourMessage("&aType the new tag lore (use \\n for new line):"));
+                                    } else if(event.getSlot() == 15) {
+                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-display", tag_id));
+                                        player.closeInventory();
+                                        player.sendMessage(plugin.colourMessage("&aType the new tag effect:"));
+                                    }
+                                }
+                                break;
+                            case "tags-new":
+                                if(clickInv.getItem(event.getSlot()) != null) {
+                                    NamespacedKey key2 = new NamespacedKey(plugin, "tags-display");
+                                    NamespacedKey key3 = new NamespacedKey(plugin, "tags-lore");
+                                    NamespacedKey key4 = new NamespacedKey(plugin, "tags-effect");
+                                    String display = fData.get(key2, PersistentDataType.STRING);
+                                    String lore = fData.get(key3, PersistentDataType.STRING);
+                                    String effect = fData.get(key4, PersistentDataType.STRING);
+
+                                    if(event.getSlot() == 0) {
+                                        tag.openEditGUI(player, page);
+                                    } else if(event.getSlot() == 11) {
+                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-new-display", display, lore, effect));
+                                        player.closeInventory();
+                                        player.sendMessage(plugin.colourMessage("&aType the tag display:"));
+                                    } else if(event.getSlot() == 13) {
+                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-new-lore", display, lore, effect));
+                                        player.closeInventory();
+                                        player.sendMessage(plugin.colourMessage("&aType the tag lore (use \\n for new line):"));
+                                    } else if(event.getSlot() == 15) {
+                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-new-effect", display, lore, effect));
+                                        player.closeInventory();
+                                        player.sendMessage(plugin.colourMessage("&aType the tag effect:"));
+                                    } else if(event.getSlot() == 22) {
+                                        String sql = "INSERT INTO tags (tags_display, tags_lore, tags_effect) VALUES (?, ?, ?)";
+                                        List<Object> params = new ArrayList<Object>() {{
+                                            add(display);
+                                            add(lore);
+                                            add(effect);
+                                        }};
+                                        hook.sqlUpdate(sql, params);
+                                        player.sendMessage(plugin.colourMessage("&aSuccessfully created the tag!"));
+                                        player.closeInventory();
                                     }
                                 }
                                 break;
@@ -812,5 +940,22 @@ public class InventoryClick implements Listener {
                 plugin.InvGuardGearDelPlyr(player);
             }
         }
+    }
+
+    private ItemStack getItemStack(Inventory clickInv, ItemStack fItem, NamespacedKey key, NamespacedKey key1) {
+        for(ItemStack item : clickInv.getContents()) {
+            if(item != null) {
+                if (item.getType().equals(Material.BLACK_STAINED_GLASS_PANE)
+                        || item.getType().equals(Material.GRAY_STAINED_GLASS_PANE)
+                        || item.getType().equals(Material.WHITE_STAINED_GLASS_PANE)) {
+                    ItemMeta iMeta = item.getItemMeta();
+                    PersistentDataContainer iData = iMeta.getPersistentDataContainer();
+                    if (iData.has(key, PersistentDataType.INTEGER) && iData.has(key1, PersistentDataType.STRING)) {
+                        fItem = item;
+                    }
+                }
+            }
+        }
+        return fItem;
     }
 }

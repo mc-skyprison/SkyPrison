@@ -68,6 +68,7 @@ public class PlayerJoin implements Listener {
                         .setColor(Color.GREEN);
             }
 
+
             if(discApi != null)
                 discApi.getTextChannelById("788108242797854751").get().sendMessage(embedJoin);
 
@@ -88,6 +89,22 @@ public class PlayerJoin implements Listener {
             Connection conn;
             PreparedStatement ps;
             ResultSet rs;
+
+            if(!plugin.userTags.containsKey(player.getUniqueId())) {
+                String tag = "";
+                try {
+                    conn = db.getSQLConnection();
+                    ps = conn.prepareStatement("SELECT active_tag FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+                    rs = ps.executeQuery();
+                    while(rs.next()) {
+                        tag = rs.getString(1);
+                    }
+                    db.close(ps, rs, conn);
+                } catch (SQLException ignored) {
+                }
+                plugin.userTags.put(player.getUniqueId(), tag);
+            }
+
 
             String pUUID = event.getPlayer().getUniqueId().toString();
 

@@ -6,7 +6,7 @@
 
     <groupId>net.skyprison</groupId>
     <artifactId>SkyPrisonCore</artifactId>
-    <version>6.0.5</version>
+    <version>6.0.6</version>
     <packaging>jar</packaging>
 
     <name>SkyPrisonCore</name>

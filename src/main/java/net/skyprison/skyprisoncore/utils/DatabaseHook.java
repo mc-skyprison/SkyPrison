@@ -121,28 +121,32 @@ public class DatabaseHook {
 
         public void createDatabase() {
             ArrayList<String> tables = new ArrayList<>();
-            tables.add("tags_player");
+            tables.add("tags_user");
             tables.add("tags");
+            tables.add("user");
             for(String table : tables) {
                 Connection conn;
                 PreparedStatement ps;
                 String sql = "";
                 switch(table.toLowerCase()) {
                     case "tags":
-                        sql = "CREATE TABLE TAGS (" +
+                        sql = "CREATE TABLE tags (" +
                                 "tags_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
                                 "tags_display varchar(255), " +
                                 "tags_lore varchar(255), " +
                                 "tags_effect varchar(255) " +
                                 ")";
                         break;
-                    case "tags_player":
-                        sql = "CREATE TABLE TAGS (" +
+                    case "tags_user":
+                        sql = "CREATE TABLE tags_user (" +
                                 "tuser_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
                                 "user_id varchar(255), " +
                                 "tags_id int, " +
                                 "FOREIGN KEY (tags_id) REFERENCES tags(tags_id)" +
                                 ")";
+                        break;
+                    case "user":
+                        sql = "ALTER TABLE users ADD active_tag int";
                         break;
                 }
 
@@ -158,6 +162,31 @@ public class DatabaseHook {
         }
 
         public void convertToSql() {
+            ArrayList<String> tables = new ArrayList<>();
+            tables.add("tags_user");
+            for(String table : tables) {
+                String sql;
+                List<Object> params;
+                switch(table.toLowerCase()) {
+                    case "tags_user":
+                        File tagsFile = new File(Bukkit.getPluginsFolder() + File.separator + "DeluxeTags" + File.separator + "config.yml");
+                        YamlConfiguration tagsConf = YamlConfiguration.loadConfiguration(tagsFile);
+                        Set<String> tagsInfo = tagsConf.getConfigurationSection("deluxetags").getKeys(false);
+
+                        for(String tag : tagsInfo) {
+                            String display = tagsConf.getString("deluxetags." + tag + ".tag");
+                            sql = "INSERT INTO tags (tags_display, tags_lore, tags_effect) VALUES (?, ?, ?)";
+                            params = new ArrayList<Object>() {{
+                                add(display);
+                                add("");
+                                add("");
+                            }};
+                            sqlUpdate(sql, params);
+                        }
+                        break;
+                }
+            }
+            Bukkit.getLogger().info("donzo!");
         }
 
     //Processing

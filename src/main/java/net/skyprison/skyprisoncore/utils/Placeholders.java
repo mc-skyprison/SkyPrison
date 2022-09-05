@@ -226,6 +226,10 @@ public class Placeholders extends PlaceholderExpansion {
 			return String.valueOf(totalFound);
 		}
 
+        if(identifier.equalsIgnoreCase("user_tag")) {
+            return plugin.colourMessage(plugin.userTags.get(player.getUniqueId()));
+        }
+
 		if(identifier.equalsIgnoreCase("mod_tag")) {
 			if (player.hasPermission("group.trmod")) {
 				CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
