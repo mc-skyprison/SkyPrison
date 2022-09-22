@@ -275,8 +275,8 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.customenchant
     permission-message: §4Error:§c You do not have permission to execute this command...
-  sptags:
-    description: command relating to donor mine reset
+  tags:
+    description: Tags command
     usage: /<command>
     permission: skyprisoncore.command.tags
     permission-message: §4Error:§c You do not have permission to execute this command...
