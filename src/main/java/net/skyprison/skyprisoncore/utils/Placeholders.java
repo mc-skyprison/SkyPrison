@@ -227,7 +227,12 @@ public class Placeholders extends PlaceholderExpansion {
 		}
 
         if(identifier.equalsIgnoreCase("user_tag")) {
-            return plugin.colourMessage(plugin.userTags.get(player.getUniqueId()));
+			if(plugin.userTags.get(player.getUniqueId()) != null) {
+				return plugin.colourMessage(plugin.userTags.get(player.getUniqueId()));
+			} else {
+				return "";
+			}
+
         }
 
 		if(identifier.equalsIgnoreCase("mod_tag")) {
