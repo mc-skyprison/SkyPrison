@@ -430,4 +430,6 @@ permissions:
   skyprisoncore.command.moneyhistory:
     description: Gives access to /moneyhistory
   skyprisoncore.command.tags:
-    description: Gives access to /moneyhistory
+    description: Gives access to /tags
+  skyprisoncore.command.tags.admin:
+    description: Gives access to tags stuff

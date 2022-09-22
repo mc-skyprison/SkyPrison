@@ -121,7 +121,6 @@ public class DatabaseHook {
 
         public void createDatabase() {
             ArrayList<String> tables = new ArrayList<>();
-            tables.add("tags_user");
             tables.add("tags");
             tables.add("user");
             for(String table : tables) {
@@ -136,14 +135,6 @@ public class DatabaseHook {
                                 "tags_lore varchar(255), " +
                                 "tags_effect varchar(255) " +
                                 "tags_permission varchar(255) " +
-                                ")";
-                        break;
-                    case "tags_user":
-                        sql = "CREATE TABLE tags_user (" +
-                                "tuser_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
-                                "user_id varchar(255), " +
-                                "tags_id int, " +
-                                "FOREIGN KEY (tags_id) REFERENCES tags(tags_id)" +
                                 ")";
                         break;
                     case "user":
@@ -164,12 +155,12 @@ public class DatabaseHook {
 
         public void convertToSql() {
             ArrayList<String> tables = new ArrayList<>();
-            tables.add("tags_user");
+            tables.add("tags");
             for(String table : tables) {
                 String sql;
                 List<Object> params;
                 switch(table.toLowerCase()) {
-                    case "tags_user":
+                    case "tags":
                         File tagsFile = new File(Bukkit.getPluginsFolder() + File.separator + "DeluxeTags" + File.separator + "config.yml");
                         YamlConfiguration tagsConf = YamlConfiguration.loadConfiguration(tagsFile);
                         Set<String> tagsInfo = tagsConf.getConfigurationSection("deluxetags").getKeys(false);

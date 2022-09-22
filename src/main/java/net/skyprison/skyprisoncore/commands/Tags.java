@@ -1,7 +1,5 @@
 package net.skyprison.skyprisoncore.commands;
 
-import com.Zrips.CMI.CMI;
-import com.Zrips.CMI.Containers.CMIUser;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
@@ -15,16 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
-import se.file14.procosmetics.ProCosmetics;
-import se.file14.procosmetics.api.ProCosmeticsProvider;
-import se.file14.procosmetics.cosmetic.AbstractCosmetic;
-import se.file14.procosmetics.cosmetic.AbstractCosmeticType;
-import se.file14.procosmetics.cosmetic.CosmeticCategory;
-import se.file14.procosmetics.cosmetic.balloon.BalloonType;
-import se.file14.procosmetics.cosmetic.particleeffect.ParticleEffectType;
-import se.file14.procosmetics.v1_8.Particle;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -42,20 +31,6 @@ public class Tags implements CommandExecutor {
     }
 
     public void openGUI(Player player, Integer page) {
-        ArrayList<Integer> pTags = new ArrayList<>();
-        if(!player.isOp()) {
-            try {
-                Connection conn = hook.getSQLConnection();
-                PreparedStatement ps = conn.prepareStatement("SELECT tags_id FROM tags_user WHERE user_id = '" + player.getUniqueId() + "'");
-                ResultSet rs = ps.executeQuery();
-                while (rs.next()) {
-                    pTags.add(rs.getInt(1));
-                }
-                hook.close(ps, rs, conn);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
 
         ArrayList<List> tags = new ArrayList<>();
 
@@ -64,8 +39,8 @@ public class Tags implements CommandExecutor {
             PreparedStatement ps = conn.prepareStatement("SELECT tags_id, tags_display, tags_lore, tags_effect, tags_permission FROM tags");
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
-                if(!player.isOp()) {
-                    if (pTags.contains(rs.getInt(1)) || (rs.getString(5) != null && !rs.getString(5).isEmpty() && player.hasPermission(rs.getString(5)))) {
+                if(!player.hasPermission("skyprisoncore.command.tags.admin")) {
+                    if (player.hasPermission("skyprisoncore.tag." + rs.getInt(1)) || (rs.getString(5) != null && !rs.getString(5).isEmpty() && player.hasPermission(rs.getString(5)))) {
                         tags.add(Arrays.asList(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4)));
                     }
                 } else {
@@ -103,9 +78,21 @@ public class Tags implements CommandExecutor {
             ArrayList<String> lore = new ArrayList<>();
             ItemStack head = new ItemStack(Material.NAME_TAG);
             ItemMeta meta = head.getItemMeta();
-            meta.setDisplayName((String) tag.get(1));
-            if(!String.valueOf(tag.get(2)).isEmpty())
-                lore.add((String) tag.get(2));
+            meta.setDisplayName(plugin.colourMessage((String) tag.get(1)));
+            if(tag.get(2) != null && !String.valueOf(tag.get(2)).isEmpty()) {
+                String loreTexts = String.valueOf(tag.get(2));
+                if (loreTexts.contains("\n")) {
+                    for (String loreText : loreTexts.split("\n")) {
+                        lore.add(plugin.colourMessage(loreText));
+                    }
+                } else {
+                    lore.add(plugin.colourMessage(loreTexts));
+                }
+            }
+            if(tag.get(3) != null && !String.valueOf(tag.get(3)).isEmpty()) {
+                lore.add(plugin.colourMessage("&7--\n"));
+                lore.add(plugin.colourMessage("&eTag Effect: &b" + tag.get(3)));
+            }
             meta.setLore(lore);
 
             NamespacedKey key3 = new NamespacedKey(plugin, "tag-id");
@@ -149,9 +136,16 @@ public class Tags implements CommandExecutor {
             bounties.setItem(52, nextPage);
         }
 
+
+
         ItemStack remTag = new ItemStack(Material.BARRIER);
         ItemMeta remMeta = remTag.getItemMeta();
         remMeta.setDisplayName(ChatColor.RED + "Remove tag");
+        if(plugin.userTags.get(player.getUniqueId()) != null) {
+            ArrayList<String> lore = new ArrayList<>();
+            lore.add(plugin.colourMessage("&eCurrent Tag: " + plugin.userTags.get(player.getUniqueId())));
+            remMeta.setLore(lore);
+        }
         remTag.setItemMeta(remMeta);
         bounties.setItem(49, remTag);
 
@@ -166,7 +160,13 @@ public class Tags implements CommandExecutor {
                 ItemMeta meta = head.getItemMeta();
                 meta.setDisplayName(plugin.colourMessage("&ePreview: &r" + display));
                 ArrayList<String> loreList = new ArrayList<>();
-                loreList.add(plugin.colourMessage(lore));
+                if (lore.contains("\n")) {
+                    for (String loreText : lore.split("\n")) {
+                        loreList.add(plugin.colourMessage(loreText));
+                    }
+                } else {
+                    loreList.add(plugin.colourMessage(lore));
+                }
                 loreList.add(plugin.colourMessage("&7--"));
                 if (!effect.isEmpty())
                     loreList.add(plugin.colourMessage("&6Effect: " + effect));
@@ -268,13 +268,20 @@ public class Tags implements CommandExecutor {
                 ItemMeta meta = head.getItemMeta();
                 meta.setDisplayName(plugin.colourMessage("&ePreview: &r" + name));
                 ArrayList<String> loreList = new ArrayList<>();
-                loreList.add(plugin.colourMessage(lore));
+                if(lore != null && !lore.isEmpty()) {
+                    if (ChatColor.stripColor(lore).contains("\n")) {
+                        for (String loreText : lore.split("\n")) {
+                            loreList.add(plugin.colourMessage(loreText));
+                        }
+                    } else {
+                        loreList.add(plugin.colourMessage(lore));
+                    }
+                }
+                if(effect != null && !effect.isEmpty()) {
+                    loreList.add(plugin.colourMessage("&7--"));
+                    loreList.add(plugin.colourMessage("&eEffect: &6" + effect));
+                }
                 loreList.add(plugin.colourMessage("&7--"));
-                if (!effect.isEmpty())
-                    loreList.add(plugin.colourMessage("&6Effect: " + effect));
-                else
-                    loreList.add(plugin.colourMessage("&6Effect: &lNONE"));
-                loreList.add(" ");
                 loreList.add(plugin.colourMessage("&eTag ID: &6" + tag_id));
                 meta.setLore(loreList);
                 head.setItemMeta(meta);
@@ -293,7 +300,16 @@ public class Tags implements CommandExecutor {
                 ItemMeta meta = head.getItemMeta();
                 meta.setDisplayName(plugin.colourMessage("&7Edit Tag Lore"));
                 ArrayList<String> loreList = new ArrayList<>();
-                loreList.add(plugin.colourMessage("&7Current lore: " + name));
+                loreList.add(plugin.colourMessage("&7Current lore:"));
+                if(lore != null && !lore.isEmpty()) {
+                    if (ChatColor.stripColor(lore).contains("\n")) {
+                        for (String loreText : lore.split("\n")) {
+                            loreList.add(plugin.colourMessage(loreText));
+                        }
+                    } else {
+                        loreList.add(plugin.colourMessage(lore));
+                    }
+                };
                 meta.setLore(loreList);
                 head.setItemMeta(meta);
                 bounties.setItem(i, head);
@@ -302,7 +318,7 @@ public class Tags implements CommandExecutor {
                 ItemMeta meta = head.getItemMeta();
                 meta.setDisplayName(plugin.colourMessage("&7Edit Tag Effect"));
                 ArrayList<String> loreList = new ArrayList<>();
-                if (!effect.isEmpty())
+                if (effect != null && !effect.isEmpty())
                     loreList.add(plugin.colourMessage("&6Current Effect: " + effect));
                 else
                     loreList.add(plugin.colourMessage("&6Current Effect: &lNONE"));
@@ -342,7 +358,6 @@ public class Tags implements CommandExecutor {
 
     public void openEditGUI(Player player, Integer page) {
         ArrayList<List> tags = new ArrayList<>();
-
         try {
             Connection conn = hook.getSQLConnection();
             PreparedStatement ps = conn.prepareStatement("SELECT tags_id, tags_display, tags_lore, tags_effect FROM tags");
@@ -378,15 +393,21 @@ public class Tags implements CommandExecutor {
             ArrayList<String> lore = new ArrayList<>();
             ItemStack head = new ItemStack(Material.NAME_TAG);
             ItemMeta meta = head.getItemMeta();
-            meta.setDisplayName((String) tag.get(1));
-            if(!String.valueOf(tag.get(2)).isEmpty())
-                lore.add((String) tag.get(2));
-            if(!String.valueOf(tag.get(3)).isEmpty()) {
-                lore.add(" ");
-                lore.add(plugin.colourMessage(("&7--")));
+            meta.setDisplayName(plugin.colourMessage((String) tag.get(1)));
+            if(tag.get(2) != null && !String.valueOf(tag.get(2)).isEmpty()) {
+                String loreTexts = String.valueOf(tag.get(2));
+                if (ChatColor.stripColor(loreTexts).contains("\n")) {
+                    for (String loreText : loreTexts.split("\n")) {
+                        lore.add(plugin.colourMessage(loreText));
+                    }
+                } else {
+                    lore.add(plugin.colourMessage(loreTexts));
+                }
+            }
+            if(tag.get(3) != null && !String.valueOf(tag.get(3)).isEmpty()) {
+                lore.add(plugin.colourMessage("&7--"));
                 lore.add(plugin.colourMessage("&eEffect: &6" + tag.get(3)));
             }
-            lore.add(" ");
             lore.add(plugin.colourMessage(("&7--")));
             lore.add(plugin.colourMessage("&eTag ID: &6" + tag.get(0)));
 
@@ -451,27 +472,6 @@ public class Tags implements CommandExecutor {
                     if(player.hasPermission("skyprisoncore.command.tags.admin"))
                         openNewGUI(player, "", "", "");
                     else
-                        player.sendMessage(plugin.colourMessage("&cYou do not have access to this command!"));
-                } else if(args[0].equalsIgnoreCase("give")) {
-                    if(player.hasPermission("skyprisoncore.command.tags.admin")) {
-                        if(args.length == 3) {
-                            CMIUser user = CMI.getInstance().getPlayerManager().getUser(args[1]);
-                            if(user != null) {
-                                if(plugin.isInt(args[2])) {
-                                    Integer tag_id = Integer.parseInt(args[2]);
-                                    String sql = "INSERT INTO tags_user (user_id, tags_id) VALUES (?, ?)";
-                                    List<Object> params = new ArrayList<Object>() {{
-                                        add(user.getUniqueId().toString());
-                                        add(tag_id);
-                                    }};
-                                    hook.sqlUpdate(sql, params);
-                                } else
-                                    player.sendMessage(plugin.colourMessage("&cThat isnt a number!"));
-                            } else
-                                player.sendMessage(plugin.colourMessage("&cUser doesn't exist!"));
-                        } else
-                            player.sendMessage(plugin.colourMessage("&cCorrect Usage: /tags give <player> <tag_id>"));
-                    } else
                         player.sendMessage(plugin.colourMessage("&cYou do not have access to this command!"));
                 }
             }

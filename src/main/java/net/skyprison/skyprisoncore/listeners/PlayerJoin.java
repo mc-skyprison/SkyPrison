@@ -10,6 +10,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -20,6 +21,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
+import se.file14.procosmetics.ProCosmetics;
+import se.file14.procosmetics.api.ProCosmeticsProvider;
+import se.file14.procosmetics.cosmetic.AbstractCosmeticType;
+import se.file14.procosmetics.cosmetic.CosmeticCategory;
 
 import java.awt.*;
 import java.io.File;
@@ -91,18 +96,44 @@ public class PlayerJoin implements Listener {
             ResultSet rs;
 
             if(!plugin.userTags.containsKey(player.getUniqueId())) {
-                String tag = "";
+                int tag_id = 0;
                 try {
                     conn = db.getSQLConnection();
                     ps = conn.prepareStatement("SELECT active_tag FROM users WHERE user_id = '" + player.getUniqueId() + "'");
                     rs = ps.executeQuery();
                     while(rs.next()) {
-                        tag = rs.getString(1);
+                        tag_id = rs.getInt(1);
                     }
                     db.close(ps, rs, conn);
                 } catch (SQLException ignored) {
                 }
-                plugin.userTags.put(player.getUniqueId(), tag);
+
+                if(tag_id != 0) {
+                    String tagsDisplay = "";
+                    String tagsEffect = "";
+                    try {
+                        conn = db.getSQLConnection();
+                        ps = conn.prepareStatement("SELECT tags_display, tags_effect FROM tags WHERE tags_id = '" + tag_id + "'");
+                        rs = ps.executeQuery();
+                        while(rs.next()) {
+                            tagsDisplay = rs.getString(1);
+                            tagsEffect = rs.getString(2);
+                        }
+                        db.close(ps, rs, conn);
+                    } catch (SQLException ignored) {
+                    }
+                    plugin.userTags.put(player.getUniqueId(), tagsDisplay);
+                    ProCosmetics api = ProCosmeticsProvider.get();
+                    if(tagsEffect != null && !tagsEffect.isEmpty()) {
+                        for(Object cosmeticObject : CosmeticCategory.PARTICLE_EFFECTS.getCosmeticTypes()) {
+                            AbstractCosmeticType cosmetic = (AbstractCosmeticType) cosmeticObject;
+                            String name = ChatColor.stripColor(cosmetic.getName());
+                            if(name.equalsIgnoreCase(tagsEffect)) {
+                                cosmetic.equip(api.getUserManager().getUser(player), true);
+                            }
+                        }
+                    }
+                }
             }
 
 

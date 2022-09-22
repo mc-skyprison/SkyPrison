@@ -618,7 +618,7 @@ public class InventoryClick implements Listener {
                                 if(clickInv.getItem(event.getSlot()) != null) {
                                     ItemStack clickItem = event.getClickedInventory().getItem(event.getSlot());
                                     PersistentDataContainer clickData = clickItem.getPersistentDataContainer();
-
+                                    ProCosmetics api = ProCosmeticsProvider.get();
                                     if(clickItem.getType().equals(Material.NAME_TAG)) {
                                         NamespacedKey tagKey = new NamespacedKey(plugin, "tag-id");
                                         int tag_id = clickData.get(tagKey, PersistentDataType.INTEGER);
@@ -637,7 +637,6 @@ public class InventoryClick implements Listener {
                                         } catch (SQLException e) {
                                             e.printStackTrace();
                                         }
-                                        ProCosmetics api = ProCosmeticsProvider.get();
 
                                         if(tagsEffect != null && !tagsEffect.isEmpty()) {
                                             for(Object cosmeticObject : CosmeticCategory.PARTICLE_EFFECTS.getCosmeticTypes()) {
@@ -648,22 +647,31 @@ public class InventoryClick implements Listener {
                                                 }
                                             }
                                         } else {
-                                            api.getUserManager().getUser(player).unequipCosmetics(true);
+                                            api.getUserManager().getUser(player).fullyUnequipCosmetics(true);
                                         }
 
-
                                         String sql = "UPDATE users SET active_tag = ? WHERE user_id = ?";
-                                        String finalTagsDisplay = tagsDisplay;
                                         List<Object> params = new ArrayList<Object>() {{
-                                            add(finalTagsDisplay);
+                                            add(tag_id);
                                             add(user.getUniqueId().toString());
                                         }};
                                         hook.sqlUpdate(sql, params);
 
                                         plugin.userTags.put(player.getUniqueId(), tagsDisplay);
                                         player.sendMessage(plugin.colourMessage("&aSelected Tag: &r" + tagsDisplay));
+                                        tag.openGUI(player, page);
                                     } else if(event.getSlot() == 46 && clickItem.getType().equals(Material.PAPER)) {
                                         tag.openGUI(player, page - 1);
+                                    } else if(event.getSlot() == 49 && clickItem.getType().equals(Material.BARRIER)) {
+                                        plugin.userTags.remove(player.getUniqueId());
+                                        api.getUserManager().getUser(player).fullyUnequipCosmetics(true);
+                                        String sql = "UPDATE users SET active_tag = ? WHERE user_id = ?";
+                                        List<Object> params = new ArrayList<Object>() {{
+                                            add(0);
+                                            add(user.getUniqueId().toString());
+                                        }};
+                                        hook.sqlUpdate(sql, params);
+                                        tag.openGUI(player, page);
                                     } else if(event.getSlot() == 52 && clickItem.getType().equals(Material.PAPER)) {
                                         tag.openGUI(player, page + 1);
                                     }
@@ -680,9 +688,9 @@ public class InventoryClick implements Listener {
                                         int tag_id = clickData.get(tagKey, PersistentDataType.INTEGER);
                                         tag.openSpecificGUI(player, tag_id);
                                     } else if(event.getSlot() == 46 && clickItem.getType().equals(Material.PAPER)) {
-                                        tag.openGUI(player, page - 1);
+                                        tag.openEditGUI(player, page - 1);
                                     } else if(event.getSlot() == 52 && clickItem.getType().equals(Material.PAPER)) {
-                                        tag.openGUI(player, page + 1);
+                                        tag.openEditGUI(player, page + 1);
                                     }
                                 }
                                 break;
@@ -700,11 +708,29 @@ public class InventoryClick implements Listener {
                                     } else if(event.getSlot() == 13) {
                                         plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-lore", String.valueOf(tag_id)));
                                         player.closeInventory();
-                                        player.sendMessage(plugin.colourMessage("&aType the new tag lore (use \\n for new line):"));
+                                        player.sendMessage(plugin.colourMessage("&aType the new tag lore:"));
                                     } else if(event.getSlot() == 15) {
                                         plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-effect", String.valueOf(tag_id)));
                                         player.closeInventory();
-                                        player.sendMessage(plugin.colourMessage("&aType the new tag effect:"));
+                                        StringBuilder cosmetics = new StringBuilder();
+                                        int i = 0;
+                                        for(Object cosmeticObject : CosmeticCategory.PARTICLE_EFFECTS.getCosmeticTypes()) {
+                                            i++;
+                                            AbstractCosmeticType cosmetic = (AbstractCosmeticType) cosmeticObject;
+                                            cosmetics.append(cosmetic.getName());
+                                            if(i < CosmeticCategory.PARTICLE_EFFECTS.getCosmeticTypes().size()) {
+                                                cosmetics.append(", ");
+                                            }
+                                        }
+                                        player.sendMessage(plugin.colourMessage("&aType the new tag effect (Write null to remove effect): \n&eAvailable Effects: " + cosmetics));
+                                    } else if(event.getSlot() == 17) {
+                                        tag.openEditGUI(player, page);
+                                        String sql = "DELETE FROM tags WHERE tags_id = ?";
+                                        List<Object> params = new ArrayList<Object>() {{
+                                            add(tag_id);
+                                        }};
+                                        hook.sqlUpdate(sql, params);
+                                        player.sendMessage(plugin.colourMessage("&aSuccessfully deleted tag!"));
                                     }
                                 }
                                 break;
@@ -726,11 +752,21 @@ public class InventoryClick implements Listener {
                                     } else if(event.getSlot() == 13) {
                                         plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-new-lore", display, lore, effect));
                                         player.closeInventory();
-                                        player.sendMessage(plugin.colourMessage("&aType the tag lore (use \\n for new line):"));
+                                        player.sendMessage(plugin.colourMessage("&aType the tag lore:"));
                                     } else if(event.getSlot() == 15) {
                                         plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-new-effect", display, lore, effect));
                                         player.closeInventory();
-                                        player.sendMessage(plugin.colourMessage("&aType the tag effect:"));
+                                        StringBuilder cosmetics = new StringBuilder();
+                                        int i = 0;
+                                        for(Object cosmeticObject : CosmeticCategory.PARTICLE_EFFECTS.getCosmeticTypes()) {
+                                            i++;
+                                            AbstractCosmeticType cosmetic = (AbstractCosmeticType) cosmeticObject;
+                                            cosmetics.append(cosmetic.getName());
+                                            if(i < CosmeticCategory.PARTICLE_EFFECTS.getCosmeticTypes().size()) {
+                                                cosmetics.append(", ");
+                                            }
+                                        }
+                                        player.sendMessage(plugin.colourMessage("&aType the tag effect (Write null to remove effect): \n&eAvailable Effects: " + cosmetics));
                                     } else if(event.getSlot() == 22) {
                                         String sql = "INSERT INTO tags (tags_display, tags_lore, tags_effect) VALUES (?, ?, ?)";
                                         List<Object> params = new ArrayList<Object>() {{

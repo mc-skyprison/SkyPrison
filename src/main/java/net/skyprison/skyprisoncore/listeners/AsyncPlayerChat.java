@@ -39,18 +39,17 @@ public class AsyncPlayerChat implements Listener {
         String message = event.getMessage();
         if(plugin.chatLock.containsKey(player.getUniqueId())) {
             String finalMessage1 = message;
+            event.setCancelled(true);
             Bukkit.getScheduler().runTask(plugin, () -> {
                 List<String> tags = plugin.chatLock.get(player.getUniqueId());
-                event.setCancelled(true);
                 String lockType = tags.get(0);
                 String sql;
                 List<Object> params;
-                String finalMessage = finalMessage1;
                 switch(lockType.toLowerCase()) {
                     case "tags-display":
                         sql = "UPDATE tags SET tags_display = ? WHERE tags_id = ?";
                         params = new ArrayList<Object>() {{
-                            add(finalMessage);
+                            add(finalMessage1);
                             add(Integer.parseInt("" + tags.get(1)));
                         }};
                         hook.sqlUpdate(sql, params);
@@ -60,7 +59,7 @@ public class AsyncPlayerChat implements Listener {
                     case "tags-lore":
                         sql = "UPDATE tags SET tags_lore = ? WHERE tags_id = ?";
                         params = new ArrayList<Object>() {{
-                            add(finalMessage);
+                            add(finalMessage1);
                             add(Integer.parseInt("" + tags.get(1)));
                         }};
                         hook.sqlUpdate(sql, params);
@@ -68,9 +67,14 @@ public class AsyncPlayerChat implements Listener {
                         tag.openSpecificGUI(player, Integer.parseInt(tags.get(1)));
                         break;
                     case "tags-effect":
+                        String effect = finalMessage1;
+                        if(effect.equalsIgnoreCase("null")) {
+                            effect = null;
+                        }
                         sql = "UPDATE tags SET tags_effect = ? WHERE tags_id = ?";
+                        String finalEffect = effect;
                         params = new ArrayList<Object>() {{
-                            add(finalMessage);
+                            add(finalEffect);
                             add(Integer.parseInt("" + tags.get(1)));
                         }};
                         hook.sqlUpdate(sql, params);
