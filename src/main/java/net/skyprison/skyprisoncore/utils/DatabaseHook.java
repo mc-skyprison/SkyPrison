@@ -133,7 +133,7 @@ public class DatabaseHook {
                                 "tags_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
                                 "tags_display varchar(255), " +
                                 "tags_lore varchar(255), " +
-                                "tags_effect varchar(255) " +
+                                "tags_effect varchar(255), " +
                                 "tags_permission varchar(255) " +
                                 ")";
                         break;
