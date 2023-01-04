@@ -378,9 +378,9 @@ public class SkyPrisonCore extends JavaPlugin {
             @Override
             public void entryAdded(Entry entry) {
                 if (entry.getType().equals("ban")) {
-                    OfflinePlayer bannedUser = Bukkit.getOfflinePlayer(entry.getUuid());
+                    CMIUser bannedUser = CMI.getInstance().getPlayerManager().getUser(entry.getUuid());
                     if(!entry.getExecutorUUID().equalsIgnoreCase("console")) {
-                        OfflinePlayer user = Bukkit.getOfflinePlayer(entry.getExecutorUUID());
+                        CMIUser user = CMI.getInstance().getPlayerManager().getUser(entry.getExecutorUUID());
                         EmbedBuilder embed = new EmbedBuilder();
                         embed.setTitle(bannedUser.getName() + " has been banned!");
                         embed.setColor(java.awt.Color.RED);
