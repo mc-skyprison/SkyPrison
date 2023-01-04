@@ -378,25 +378,41 @@ public class SkyPrisonCore extends JavaPlugin {
             @Override
             public void entryAdded(Entry entry) {
                 if (entry.getType().equals("ban")) {
-                    CMIUser bannedUser = CMI.getInstance().getPlayerManager().getUser(entry.getUuid());
-                    CMIUser user = CMI.getInstance().getPlayerManager().getUser(entry.getExecutorUUID());
-                    EmbedBuilder embed = new EmbedBuilder();
-                    embed.setTitle(bannedUser.getName() + " has been banned!");
-                    embed.setColor(java.awt.Color.RED);
-                    embed.setDescription("Banned by: " + user.getName() + "\nReason: " + entry.getReason() + "\nDuration: " + entry.getDurationString());
-                    discApi.getTextChannelById("823392480241516584").get().sendMessage(embed);
+                    OfflinePlayer bannedUser = Bukkit.getOfflinePlayer(entry.getUuid());
+                    if(!entry.getExecutorUUID().equalsIgnoreCase("console")) {
+                        OfflinePlayer user = Bukkit.getOfflinePlayer(entry.getExecutorUUID());
+                        EmbedBuilder embed = new EmbedBuilder();
+                        embed.setTitle(bannedUser.getName() + " has been banned!");
+                        embed.setColor(java.awt.Color.RED);
+                        embed.setDescription("Banned by: " + user.getName() + "\nReason: " + entry.getReason() + "\nDuration: " + entry.getDurationString());
+                        discApi.getTextChannelById("823392480241516584").get().sendMessage(embed);
+                    } else {
+                        EmbedBuilder embed = new EmbedBuilder();
+                        embed.setTitle(bannedUser.getName() + " has been banned!");
+                        embed.setColor(java.awt.Color.RED);
+                        embed.setDescription("Banned by: CONSOLE \nReason: " + entry.getReason() + "\nDuration: " + entry.getDurationString());
+                        discApi.getTextChannelById("823392480241516584").get().sendMessage(embed);
+                    }
                 }
             }
             @Override
             public void entryRemoved(Entry entry) {
                 if (entry.getType().equals("ban")) {
                     CMIUser bannedUser = CMI.getInstance().getPlayerManager().getUser(entry.getUuid());
-                    CMIUser user = CMI.getInstance().getPlayerManager().getUser(entry.getExecutorUUID());
-                    EmbedBuilder embed = new EmbedBuilder();
-                    embed.setTitle(bannedUser.getName() + " has been unbanned!");
-                    embed.setColor(java.awt.Color.GREEN);
-                    embed.setDescription("Unbanned by: " + user.getName() + "\nReason: " + entry.getRemovalReason());
-                    discApi.getTextChannelById("823392480241516584").get().sendMessage(embed);
+                    if(!entry.getExecutorUUID().equalsIgnoreCase("console")) {
+                        CMIUser user = CMI.getInstance().getPlayerManager().getUser(entry.getExecutorUUID());
+                        EmbedBuilder embed = new EmbedBuilder();
+                        embed.setTitle(bannedUser.getName() + " has been unbanned!");
+                        embed.setColor(java.awt.Color.GREEN);
+                        embed.setDescription("Unbanned by: " + user.getName() + "\nReason: " + entry.getRemovalReason());
+                        discApi.getTextChannelById("823392480241516584").get().sendMessage(embed);
+                    } else {
+                        EmbedBuilder embed = new EmbedBuilder();
+                        embed.setTitle(bannedUser.getName() + " has been unbanned!");
+                        embed.setColor(java.awt.Color.GREEN);
+                        embed.setDescription("Unbanned by: CONSOLE \nReason: " + entry.getRemovalReason());
+                        discApi.getTextChannelById("823392480241516584").get().sendMessage(embed);
+                    }
                 }
             }
         });
