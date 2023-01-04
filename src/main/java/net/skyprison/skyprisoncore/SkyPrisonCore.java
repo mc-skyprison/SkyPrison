@@ -15,6 +15,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
+import litebans.api.Entry;
+import litebans.api.Events;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -46,6 +48,8 @@ import net.skyprison.skyprisoncore.listeners.*;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.channel.TextChannel;
+import org.javacord.api.entity.intent.Intent;
+import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.Role;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.entity.user.User;
@@ -86,6 +90,7 @@ public class SkyPrisonCore extends JavaPlugin {
         if(dToken != null && !dToken.isEmpty()) {
             discApi = new DiscordApiBuilder()
                     .setToken(dToken)
+                    .setAllNonPrivilegedIntentsAnd(Intent.MESSAGE_CONTENT, Intent.GUILD_MEMBERS)
                     .login()
                     .join();
 
@@ -367,6 +372,36 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new InventoryClose(this), this);
         pm.registerEvents(new EntityDamage(this), this);
         pm.registerEvents(new PlayerCommandPreprocess(this), this);
+        pm.registerEvents(new PlayerFinishCourse(this), this);
+
+        Events.get().register(new Events.Listener() {
+            @Override
+            public void entryAdded(Entry entry) {
+                if (entry.getType().equals("ban")) {
+                    CMIUser bannedUser = CMI.getInstance().getPlayerManager().getUser(entry.getUuid());
+                    CMIUser user = CMI.getInstance().getPlayerManager().getUser(entry.getExecutorUUID());
+                    EmbedBuilder embed = new EmbedBuilder();
+                    embed.setTitle(bannedUser.getName() + " has been banned!");
+                    embed.setColor(java.awt.Color.RED);
+                    embed.setDescription("Banned by: " + user.getName() + "\nReason: " + entry.getReason() + "\nDuration: " + entry.getDurationString());
+                    discApi.getTextChannelById("823392480241516584").get().sendMessage(embed);
+                }
+            }
+            @Override
+            public void entryRemoved(Entry entry) {
+                if (entry.getType().equals("ban")) {
+                    CMIUser bannedUser = CMI.getInstance().getPlayerManager().getUser(entry.getUuid());
+                    CMIUser user = CMI.getInstance().getPlayerManager().getUser(entry.getExecutorUUID());
+                    EmbedBuilder embed = new EmbedBuilder();
+                    embed.setTitle(bannedUser.getName() + " has been unbanned!");
+                    embed.setColor(java.awt.Color.GREEN);
+                    embed.setDescription("Unbanned by: " + user.getName() + "\nReason: " + entry.getRemovalReason());
+                    discApi.getTextChannelById("823392480241516584").get().sendMessage(embed);
+                }
+            }
+        });
+
+
     }
 
 

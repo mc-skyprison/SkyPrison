@@ -153,6 +153,49 @@ public class DatabaseHook {
             Bukkit.getLogger().info("donzo!");
         }
 
+        public void deleteUser(String UUID) {
+
+            List<Object> params = new ArrayList<Object>() {{
+                add(UUID);
+            }};
+            String sql = "delete FROM users WHERE user_id = ?";
+            sqlUpdate(sql, params);
+            sql = "delete FROM block_sells WHERE user_id = ?";
+            sqlUpdate(sql, params);
+            sql = "delete FROM bounties WHERE user_id = ?";
+            sqlUpdate(sql, params);
+            sql = "delete FROM casino_cooldowns WHERE user_id = ?";
+            sqlUpdate(sql, params);
+            sql = "delete FROM dailies WHERE user_id = ?";
+            sqlUpdate(sql, params);
+            sql = "delete FROM donations WHERE user_id = ?";
+            sqlUpdate(sql, params);
+            sql = "delete FROM recent_sells WHERE user_id = ?";
+            sqlUpdate(sql, params);
+            sql = "delete FROM recently_killed WHERE killer_id = ?";
+            sqlUpdate(sql, params);
+            sql = "delete FROM recently_killed WHERE killed_id = ?";
+            sqlUpdate(sql, params);
+            sql = "delete FROM referrals WHERE user_id = ?";
+            sqlUpdate(sql, params);
+            sql = "delete FROM referrals WHERE referred_by = ?";
+            sqlUpdate(sql, params);
+            sql = "delete FROM rewards_data WHERE user_id = ?";
+            sqlUpdate(sql, params);
+            sql = "delete FROM secrets_data WHERE user_id = ?";
+            sqlUpdate(sql, params);
+            sql = "delete FROM shop_banned WHERE user_id = ?";
+            sqlUpdate(sql, params);
+            sql = "delete FROM shop_banned WHERE banned_user = ?";
+            sqlUpdate(sql, params);
+            sql = "delete FROM teleport_ignore WHERE user_id = ?";
+            sqlUpdate(sql, params);
+            sql = "delete FROM teleport_ignore WHERE ignore_id = ?";
+            sqlUpdate(sql, params);
+            sql = "delete FROM users WHERE user_id = ?";
+            sqlUpdate(sql, params);
+        }
+
         public void convertToSql() {
             ArrayList<String> tables = new ArrayList<>();
             tables.add("tags");

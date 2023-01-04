@@ -13,8 +13,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -27,11 +25,8 @@ import se.file14.procosmetics.cosmetic.AbstractCosmeticType;
 import se.file14.procosmetics.cosmetic.CosmeticCategory;
 
 import java.awt.*;
-import java.io.File;
 import java.sql.*;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 public class PlayerJoin implements Listener {
@@ -55,6 +50,9 @@ public class PlayerJoin implements Listener {
 
             EmbedBuilder embedJoin;
 
+            Connection conn;
+            PreparedStatement ps;
+            ResultSet rs;
             if(!player.hasPlayedBefore()) {
                 embedJoin = new EmbedBuilder()
                         .setAuthor(player.getName() + " joined the server for the first time!", "",  "https://minotar.net/helm/" + player.getName())
@@ -71,6 +69,27 @@ public class PlayerJoin implements Listener {
                 embedJoin = new EmbedBuilder()
                         .setAuthor(player.getName() + " joined the server", "",  "https://minotar.net/helm/" + player.getName())
                         .setColor(Color.GREEN);
+                boolean noData = false;
+                try {
+                    conn = db.getSQLConnection();
+                    ps = conn.prepareStatement("SELECT * FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+                    rs = ps.executeQuery();
+                    if(!rs.isBeforeFirst()) {
+                        noData = true;
+                    }
+                    db.close(ps, rs, conn);
+                } catch (SQLException ignored) {
+                }
+
+                if(noData) {
+                    String sqls = "INSERT INTO users (user_id, current_name, first_join) VALUES (?, ?, ?)";
+                    List<Object> params = new ArrayList<Object>() {{
+                        add(player.getUniqueId().toString());
+                        add(player.getName());
+                        add(player.getFirstPlayed());
+                    }};
+                    db.sqlUpdate(sqls, params);
+                }
             }
 
 
@@ -91,9 +110,6 @@ public class PlayerJoin implements Listener {
                 player.setAllowFlight(query.testState(locWE, localPlayer, plugin.claimPlugin.FLY));
             }
 
-            Connection conn;
-            PreparedStatement ps;
-            ResultSet rs;
 
             if(!plugin.userTags.containsKey(player.getUniqueId())) {
                 int tag_id = 0;
@@ -139,6 +155,7 @@ public class PlayerJoin implements Listener {
 
             String pUUID = event.getPlayer().getUniqueId().toString();
 
+            plugin.blockBreaks.put(pUUID, 0);
             try {
                 conn = db.getSQLConnection();
                 ps = conn.prepareStatement("SELECT blocks_mined FROM users WHERE user_id = '" + pUUID + "'");
@@ -148,10 +165,10 @@ public class PlayerJoin implements Listener {
                 }
                 db.close(ps, rs, conn);
             } catch (SQLException e) {
-                plugin.blockBreaks.put(pUUID, 0);
                 e.printStackTrace();
             }
 
+            plugin.tokensData.put(pUUID, 0);
             try {
                 conn = db.getSQLConnection();
                 ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = '" + pUUID + "'");
@@ -161,7 +178,6 @@ public class PlayerJoin implements Listener {
                 }
                 db.close(ps, rs, conn);
             } catch (SQLException e) {
-                plugin.tokensData.put(pUUID, 0);
                 e.printStackTrace();
             }
 

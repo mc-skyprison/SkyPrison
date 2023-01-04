@@ -41,7 +41,7 @@ public class Discord implements CommandExecutor {
                         Connection conn = db.getSQLConnection();
                         PreparedStatement ps = conn.prepareStatement("SELECT discord_id FROM users WHERE user_id = '" + player.getUniqueId() + "'");
                         ResultSet rs = ps.executeQuery();
-                        if (!rs.next()) {
+                        if (!rs.next() || rs.getString(1) == null) {
                             Random rand = new Random();
 
                             int newCode = 0;
@@ -63,8 +63,15 @@ public class Discord implements CommandExecutor {
                     } catch (SQLException e) {
                         e.printStackTrace();
                     }
+                } else if (args[0].equalsIgnoreCase("unlink")) {
+                    player.sendMessage(plugin.colourMessage("&3Join our discord at &9&lhttp://discord.gg/T9DwRcPpgj&3!"));
                 } else {
                     player.sendMessage(plugin.colourMessage("&3Join our discord at &9&lhttp://discord.gg/T9DwRcPpgj&3!"));
+                }
+            } else if(args.length == 2) {
+                if (player.hasPermission("skyprisoncore.command.discord.admin")) {
+/*                    db.deleteUser(args[1]);
+                    player.sendMessage("success???");*/
                 }
             } else {
                 if (player.hasPermission("skyprisoncore.command.discord.broadcast")) {
