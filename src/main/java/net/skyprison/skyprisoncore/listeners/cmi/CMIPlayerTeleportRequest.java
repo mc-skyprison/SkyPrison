@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.cmi;
 
 import com.Zrips.CMI.events.CMIPlayerTeleportRequestEvent;
 import net.skyprison.skyprisoncore.SkyPrisonCore;

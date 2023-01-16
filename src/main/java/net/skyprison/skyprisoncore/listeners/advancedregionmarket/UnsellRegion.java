@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.advancedregionmarket;
 
 import net.alex9849.arm.events.UnsellRegionEvent;
 import org.bukkit.Bukkit;

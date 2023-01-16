@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.brewery;
 
 import com.dre.brewery.api.events.brew.BrewDrinkEvent;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
@@ -30,23 +30,10 @@ public class BrewDrink implements Listener {
     @EventHandler
     public void onBrewDrink(BrewDrinkEvent event) {
         Player player = event.getPlayer();
-
-        try {
-            Connection conn = hook.getSQLConnection();
-            PreparedStatement ps = conn.prepareStatement("SELECT brews_drank FROM users WHERE user_id = '" + player.getUniqueId() + "'");
-            ResultSet rs = ps.executeQuery();
-            while(rs.next()) {
-                String sql = "UPDATE users SET brews_drank = ? WHERE user_id = ?";
-                int nBrews = rs.getInt(1) + 1;
-                List<Object> params = new ArrayList<Object>() {{
-                    add(nBrews);
-                    add(player.getUniqueId().toString());
-                }};
-                hook.sqlUpdate(sql, params);
-            }
-            hook.close(ps, rs, conn);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        String sql = "UPDATE users SET brews_drank = brews_drank + 1 WHERE user_id = ?";
+        List<Object> params = new ArrayList<Object>() {{
+            add(player.getUniqueId().toString());
+        }};
+        hook.sqlUpdate(sql, params);
     }
 }

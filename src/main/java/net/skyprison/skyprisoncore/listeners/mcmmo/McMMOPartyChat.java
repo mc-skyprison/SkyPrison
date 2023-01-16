@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.mcmmo;
 
 import com.gmail.nossr50.events.chat.McMMOPartyChatEvent;
 import org.bukkit.Bukkit;

@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.discord;
 
 import com.Zrips.CMI.CMI;
 import com.gmail.nossr50.datatypes.party.Party;

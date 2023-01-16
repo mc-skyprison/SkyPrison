@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.parkour;
 
 import io.github.a5h73y.parkour.Parkour;
 import io.github.a5h73y.parkour.event.PlayerFinishCourseEvent;
