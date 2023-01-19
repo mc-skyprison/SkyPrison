@@ -163,12 +163,12 @@ public class EntityDeath implements Listener {
         int pKillStreak = killstreak + 1;
 
         if(pDeaths == 1000) {
-            plugin.asConsole("lp user " + killed.getName() + " permission set deluxetags.tag.death");
+            plugin.asConsole("lp user " + killed.getName() + " permission set skyprisoncore.tag.52");
             killer.sendMessage(plugin.colourMessage("&7You have died a whopping &c&l1000 &7times! Therefore, you get a special tag!"));
         }
 
         if(pKills == 1000) {
-            plugin.asConsole("lp user " + killer.getName() + " permission set deluxetags.tag.kills");
+            plugin.asConsole("lp user " + killer.getName() + " permission set skyprisoncore.tag.53");
             killed.sendMessage(plugin.colourMessage("&7You have killed &c&l1000 &7players! Therefore, you get a special tag!"));
         }
 

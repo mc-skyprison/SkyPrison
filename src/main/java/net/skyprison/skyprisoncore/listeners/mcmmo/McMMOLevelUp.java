@@ -18,24 +18,24 @@ public class McMMOLevelUp implements Listener {
     public void onMcMMOLevelUp(McMMOPlayerLevelUpEvent event) {
         McMMOPlayer mcPlayer = com.gmail.nossr50.util.player.UserManager.getPlayer(event.getPlayer());
         if(mcPlayer.getPowerLevel() == 250) {
-            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set skyprisoncore.tag.powerlevel1");
+            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set skyprisoncore.tag.44");
         } else if(mcPlayer.getPowerLevel() == 500) {
-            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set skyprisoncore.tag.powerlevel2");
+            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set skyprisoncore.tag.45");
         } else if(mcPlayer.getPowerLevel() == 750) {
-            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set skyprisoncore.tag.powerlevel3");
+            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set skyprisoncore.tag.46");
         } else if(mcPlayer.getPowerLevel() == 1000) {
-            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set skyprisoncore.tag.powerlevel4");
+            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set skyprisoncore.tag.47");
         } else if(mcPlayer.getPowerLevel() == 1500) {
-            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set skyprisoncore.tag.powerlevel5");
+            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set skyprisoncore.tag.48");
         } else if(mcPlayer.getPowerLevel() == 2000) {
-            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set skyprisoncore.tag.powerlevel6");
+            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set skyprisoncore.tag.49");
         }
         if(event.getSkillLevel() == 100) {
-            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set skyprisoncore.tag." + event.getSkill().getName());
+            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set deluxetags.tag." + event.getSkill().getName());
         } else if(event.getSkillLevel() == 200) {
-            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set skyprisoncore.tag." + event.getSkill().getName() + "2");
+            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set deluxetags.tag." + event.getSkill().getName() + "2");
         } else if(event.getSkillLevel() == 300) {
-            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set skyprisoncore.tag." + event.getSkill().getName() + "3");
+            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set deluxetags.tag." + event.getSkill().getName() + "3");
         }
     }
 }

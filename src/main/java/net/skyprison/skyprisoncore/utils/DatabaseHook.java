@@ -154,7 +154,6 @@ public class DatabaseHook {
         }
 
         public void deleteUser(String UUID) {
-
             List<Object> params = new ArrayList<Object>() {{
                 add(UUID);
             }};
@@ -197,32 +196,6 @@ public class DatabaseHook {
         }
 
         public void convertToSql() {
-            ArrayList<String> tables = new ArrayList<>();
-            tables.add("tags");
-            for(String table : tables) {
-                String sql;
-                List<Object> params;
-                switch(table.toLowerCase()) {
-                    case "tags":
-                        File tagsFile = new File(Bukkit.getPluginsFolder() + File.separator + "DeluxeTags" + File.separator + "config.yml");
-                        YamlConfiguration tagsConf = YamlConfiguration.loadConfiguration(tagsFile);
-                        Set<String> tagsInfo = tagsConf.getConfigurationSection("deluxetags").getKeys(false);
-
-                        for(String tag : tagsInfo) {
-                            String display = tagsConf.getString("deluxetags." + tag + ".tag");
-                            String permission = tagsConf.getString("deluxetags." + tag + ".permission");
-                            sql = "INSERT INTO tags (tags_display, tags_lore, tags_effect, tags_permission) VALUES (?, ?, ?, ?)";
-                            params = new ArrayList<Object>() {{
-                                add(display);
-                                add("");
-                                add("");
-                                add(permission);
-                            }};
-                            sqlUpdate(sql, params);
-                        }
-                        break;
-                }
-            }
             Bukkit.getLogger().info("donzo!");
         }
 

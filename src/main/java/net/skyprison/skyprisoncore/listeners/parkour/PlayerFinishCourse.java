@@ -21,7 +21,7 @@ public class PlayerFinishCourse implements Listener {
         Player player = event.getPlayer();
         List<String> uncompletedCourses = Parkour.getInstance().getPlayerManager().getUncompletedCourses(player);
         if(uncompletedCourses.isEmpty()) {
-            plugin.asConsole("lp user " + player.getName() + " permission set deluxetags.tag.Parkourist");
+            plugin.asConsole("lp user " + player.getName() + " permission set skyprisoncore.tag.17");
         }
     }
 }
