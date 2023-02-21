@@ -121,14 +121,13 @@ public class DatabaseHook {
 
         public void createDatabase() {
             ArrayList<String> tables = new ArrayList<>();
-            tables.add("tags");
             tables.add("user");
             for(String table : tables) {
                 Connection conn;
                 PreparedStatement ps;
                 String sql = "";
                 switch(table.toLowerCase()) {
-                    case "tags":
+/*                    case "tags":
                         sql = "CREATE TABLE tags (" +
                                 "tags_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
                                 "tags_display varchar(255), " +
@@ -136,10 +135,10 @@ public class DatabaseHook {
                                 "tags_effect varchar(255), " +
                                 "tags_permission varchar(255) " +
                                 ")";
-                        break;
-                    case "user":
-                        sql = "ALTER TABLE users ADD active_tag int";
-                        break;
+                        break;*/
+/*                    case "user":
+                        sql = "ALTER TABLE users ADD pvp_status BIT SET DEFAULT 0";
+                        break;*/
                 }
 
                 try {

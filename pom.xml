@@ -58,9 +58,19 @@
             <id>BenCodez Repo</id>
             <url>https://nexus.bencodez.com/repository/maven-public/</url>
         </repository>
+        <repository>
+            <id>krypton</id>
+            <url>https://repo.kryptonmc.org/releases</url>
+        </repository>
     </repositories>
 
     <dependencies>
+        <dependency>
+            <groupId>me.neznamy</groupId>
+            <artifactId>tab-api</artifactId>
+            <version>3.2.4</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>se.file14.procosmetics</groupId>
             <artifactId>procosmetics</artifactId>
@@ -148,7 +158,7 @@
         <dependency>
             <groupId>me.NoChance.PvPManager</groupId>
             <artifactId>PvPManager</artifactId>
-            <version>3.8.10</version>
+            <version>3.10.9</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

@@ -92,7 +92,6 @@ public class PlayerJoin implements Listener {
                 }
             }
 
-
             if(discApi != null)
                 discApi.getTextChannelById("788108242797854751").get().sendMessage(embedJoin);
 
@@ -109,7 +108,6 @@ public class PlayerJoin implements Listener {
             if(!player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
                 player.setAllowFlight(query.testState(locWE, localPlayer, plugin.claimPlugin.FLY));
             }
-
 
             if(!plugin.userTags.containsKey(player.getUniqueId())) {
                 int tag_id = 0;

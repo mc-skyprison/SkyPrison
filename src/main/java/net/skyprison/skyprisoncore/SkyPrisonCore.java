@@ -43,6 +43,7 @@ import net.skyprison.skyprisoncore.listeners.mcmmo.McMMOLevelUp;
 import net.skyprison.skyprisoncore.listeners.mcmmo.McMMOPartyChat;
 import net.skyprison.skyprisoncore.listeners.parkour.PlayerFinishCourse;
 import net.skyprison.skyprisoncore.listeners.pvpmanager.PlayerTag;
+import net.skyprison.skyprisoncore.listeners.pvpmanager.PlayerTogglePvP;
 import net.skyprison.skyprisoncore.listeners.pvpmanager.PlayerUntag;
 import net.skyprison.skyprisoncore.listeners.quickshop.ShopCreate;
 import net.skyprison.skyprisoncore.listeners.quickshop.ShopPurchase;
@@ -391,6 +392,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EntityDamage(this), this);
         pm.registerEvents(new PlayerCommandPreprocess(this), this);
         pm.registerEvents(new PlayerFinishCourse(this), this);
+        pm.registerEvents(new PlayerTogglePvP(this), this);
 
         Events.get().register(new Events.Listener() {
             @Override
