@@ -20,7 +20,6 @@ public class PlayerUntag implements Listener {
         this.plugin = plugin;
     }
 
-
     @EventHandler
     public void onPlayerUntag(PlayerUntagEvent event) {
         Player player = event.getPlayer();

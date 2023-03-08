@@ -121,8 +121,6 @@ public class Daily implements CommandExecutor {
 		if(sender instanceof Player) {
 			Player player = (Player) sender;
 			openGUI(player);
-		} else if (args.length == 1) {
-			hook.convertToSql();
 		} else {
 			hook.createDatabase();
 		}
