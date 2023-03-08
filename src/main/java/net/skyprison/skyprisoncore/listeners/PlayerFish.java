@@ -1,16 +1,12 @@
 package net.skyprison.skyprisoncore.listeners;
 
-import com.Zrips.CMI.CMI;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
-import org.bukkit.Sound;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerFishEvent;
-
-import java.util.Random;
 
 public class PlayerFish implements Listener {
     private final SkyPrisonCore plugin;
@@ -40,14 +36,16 @@ public class PlayerFish implements Listener {
                                 dailyMissions.updatePlayerMission(player, mission, nMission);
                             }
                             break;
-                    }
-
-
-                    if (dailyMissions.missionComplete(player, nMission)) {
-                        Random randInt = new Random();
-                        int reward = randInt.nextInt(25) + 25;
-                        plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), reward);
-                        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+                        case "salmon":
+                            if (event.getCaught().getType().equals(EntityType.SALMON)) {
+                                dailyMissions.updatePlayerMission(player, mission, nMission);
+                            }
+                            break;
+                        case "cod":
+                            if (event.getCaught().getType().equals(EntityType.COD)) {
+                                dailyMissions.updatePlayerMission(player, mission, nMission);
+                            }
+                            break;
                     }
                 }
             }

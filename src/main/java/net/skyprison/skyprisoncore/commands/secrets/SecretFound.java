@@ -136,13 +136,6 @@ public class SecretFound implements CommandExecutor {
 				int currAmount = Integer.parseInt(missSplit[4]) + 1;
 				String nMission = missSplit[0] + "-" + missSplit[1] + "-" + missSplit[2] + "-" + missSplit[3] + "-" + currAmount;
 				dailyMissions.updatePlayerMission(player, mission, nMission);
-
-				if(dailyMissions.missionComplete(player, nMission)) {
-					Random randInt = new Random();
-					int reward = randInt.nextInt(25) + 25;
-					plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), reward);
-					player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
-				}
 			}
 		}
 

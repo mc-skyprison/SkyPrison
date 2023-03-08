@@ -3,6 +3,7 @@ package net.skyprison.skyprisoncore.listeners.shopguiplus;
 import net.brcdev.shopgui.event.ShopPostTransactionEvent;
 import net.brcdev.shopgui.shop.ShopManager;
 import net.brcdev.shopgui.shop.ShopTransactionResult;
+import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -17,9 +18,11 @@ import java.util.List;
 
 public class ShopPostTransaction implements Listener {
     private final DatabaseHook hook;
+    private DailyMissions dailyMissions;
 
-    public ShopPostTransaction(DatabaseHook hook) {
+    public ShopPostTransaction(DatabaseHook hook, DailyMissions dailyMissions) {
         this.hook = hook;
+        this.dailyMissions = dailyMissions;
     }
 
     @EventHandler
@@ -29,6 +32,14 @@ public class ShopPostTransaction implements Listener {
                     || event.getResult().getShopAction() == ShopManager.ShopAction.SELL_ALL) {
                 Player player = event.getResult().getPlayer();
 
+                for (String mission : dailyMissions.getPlayerMissions(player)) {
+                    String[] missSplit = mission.split("-");
+                    if (missSplit[0].equalsIgnoreCase("money")) {
+                        int currAmount = Integer.parseInt(missSplit[4]) + Integer.parseInt(String.valueOf(event.getResult().getPrice()));
+                        String nMission = missSplit[0] + "-" + missSplit[1] + "-" + missSplit[2] + "-" + missSplit[3] + "-" + currAmount;
+                        dailyMissions.updatePlayerMission(player, mission, nMission);
+                    }
+                }
                 List<String> soldItems = new ArrayList<>();
                 int recentId = -1;
 

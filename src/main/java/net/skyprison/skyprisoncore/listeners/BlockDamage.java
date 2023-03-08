@@ -2,6 +2,7 @@ package net.skyprison.skyprisoncore.listeners;
 
 import com.Zrips.CMI.CMI;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -18,10 +19,12 @@ import java.util.*;
 public class BlockDamage implements Listener {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
+    private DailyMissions dailyMissions;
 
-    public BlockDamage(SkyPrisonCore plugin, DatabaseHook db) {
+    public BlockDamage(SkyPrisonCore plugin, DatabaseHook db, DailyMissions dailyMissions) {
         this.plugin = plugin;
         this.db = db;
+        this.dailyMissions = dailyMissions;
     }
 
     @EventHandler
@@ -31,6 +34,16 @@ public class BlockDamage implements Listener {
         Player player = event.getPlayer();
 
         if (b.getType() == Material.SPONGE) {
+
+            for (String mission : dailyMissions.getPlayerMissions(player)) {
+                String[] missSplit = mission.split("-");
+                if (missSplit[0].equalsIgnoreCase("sponge")) {
+                    int currAmount = Integer.parseInt(missSplit[4]) + 1;
+                    String nMission = missSplit[0] + "-" + missSplit[1] + "-" + missSplit[2] + "-" + missSplit[3] + "-" + currAmount;
+                    dailyMissions.updatePlayerMission(player, mission, nMission);
+                }
+            }
+
             if (loc.getWorld().getName().equalsIgnoreCase("world_prison")) {
                 File f = new File(plugin.getDataFolder() + File.separator + "spongelocations.yml");
                 FileConfiguration yamlf = YamlConfiguration.loadConfiguration(f);

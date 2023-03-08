@@ -4,11 +4,15 @@ import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.guard.Safezone;
+import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Animals;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -27,11 +31,13 @@ public class EntityDeath implements Listener {
     private final SkyPrisonCore plugin;
     private final Safezone safezone;
     private final DatabaseHook hook;
+    private DailyMissions dailyMissions;
 
-    public EntityDeath(SkyPrisonCore plugin, Safezone safezone, DatabaseHook hook) {
+    public EntityDeath(SkyPrisonCore plugin, Safezone safezone, DatabaseHook hook, DailyMissions dailyMissions) {
         this.plugin = plugin;
         this.safezone = safezone;
         this.hook = hook;
+        this.dailyMissions = dailyMissions;
     }
     @EventHandler
     public void playerDeath(EntityDeathEvent event) {
@@ -39,6 +45,54 @@ public class EntityDeath implements Listener {
             Player player = (Player) event.getEntity();
             if(safezone.safezoneViolators.containsKey(player.getUniqueId())) {
                 safezone.safezoneViolators.remove(player.getUniqueId());
+            }
+        }
+
+        if(!(event.getEntity() instanceof Player) && event.getEntity().getKiller() != null) {
+            Player player = event.getEntity().getKiller();
+            for (String mission : dailyMissions.getPlayerMissions(player)) {
+                String[] missSplit = mission.split("-");
+                if (missSplit[0].equalsIgnoreCase("kill")) {
+                    int currAmount = Integer.parseInt(missSplit[4]) + 1;
+                    String nMission = missSplit[0] + "-" + missSplit[1] + "-" + missSplit[2] + "-" + missSplit[3] + "-" + currAmount;
+                    switch (missSplit[1].toLowerCase()) {
+                        case "any":
+                            if(event.getEntity() instanceof Monster) {
+                                dailyMissions.updatePlayerMission(player, mission, nMission);
+                            }
+                            break;
+                        case "zombie":
+                            if (event.getEntityType().equals(EntityType.ZOMBIE)) {
+                                dailyMissions.updatePlayerMission(player, mission, nMission);
+                            }
+                            break;
+                        case "skeleton":
+                            if (event.getEntityType().equals(EntityType.SKELETON)) {
+                                dailyMissions.updatePlayerMission(player, mission, nMission);
+                            }
+                            break;
+                    }
+                } else if (missSplit[0].equalsIgnoreCase("slaughter")) {
+                    int currAmount = Integer.parseInt(missSplit[4]) + 1;
+                    String nMission = missSplit[0] + "-" + missSplit[1] + "-" + missSplit[2] + "-" + missSplit[3] + "-" + currAmount;
+                    switch (missSplit[1].toLowerCase()) {
+                        case "any":
+                            if(event.getEntity() instanceof Animals) {
+                                dailyMissions.updatePlayerMission(player, mission, nMission);
+                            }
+                            break;
+                        case "pig":
+                            if (event.getEntityType().equals(EntityType.PIG)) {
+                                dailyMissions.updatePlayerMission(player, mission, nMission);
+                            }
+                            break;
+                        case "cow":
+                            if (event.getEntityType().equals(EntityType.COW)) {
+                                dailyMissions.updatePlayerMission(player, mission, nMission);
+                            }
+                            break;
+                    }
+                }
             }
         }
 
