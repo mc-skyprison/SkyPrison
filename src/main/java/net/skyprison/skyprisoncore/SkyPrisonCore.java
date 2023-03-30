@@ -55,6 +55,7 @@ import net.skyprison.skyprisoncore.commands.donations.DonorAdd;
 import net.skyprison.skyprisoncore.commands.donations.Purchases;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.*;
@@ -434,6 +435,27 @@ public class SkyPrisonCore extends JavaPlugin {
         });
 
 
+    }
+
+    private Location shinyGrass() {
+        World world = Bukkit.getWorld("world_prison");
+        List<Block> blocks = new ArrayList<>();
+        int radius = 5;
+        for(int x = -radius; x <= radius; x++) {
+            for(int y = 0; y <= 319; y++) {
+                for(int z = -radius; z <= radius; z++) {
+                    if(world.getBlockAt(x, y, z).getType().equals(Material.TALL_GRASS) ||
+                            world.getBlockAt(x, y, z).getType().equals(Material.GRASS) ||
+                            world.getBlockAt(x, y, z).getType().equals(Material.FERN) ||
+                            world.getBlockAt(x, y, z).getType().equals(Material.LARGE_FERN))
+                    blocks.add(world.getBlockAt(x, y, z));
+                }
+            }
+        }
+        Random rand = new Random();
+
+        Block block = blocks.get(rand.nextInt(blocks.size()));
+        return block.getLocation();
     }
 
 
