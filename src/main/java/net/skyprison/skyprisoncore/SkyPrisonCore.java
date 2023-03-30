@@ -350,13 +350,13 @@ public class SkyPrisonCore extends JavaPlugin {
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new AsyncPlayerChat(this, discApi, getDatabase(), new Tags(this, getDatabase())), this);
         pm.registerEvents(new BlockBreak(this), this);
-        pm.registerEvents(new BlockDamage(this, getDatabase()), this);
+        pm.registerEvents(new BlockDamage(this, getDatabase(), dailyMissions), this);
         pm.registerEvents(new BlockPlace(this), this);
         pm.registerEvents(new BrewDrink(this, getDatabase()), this);
         pm.registerEvents(new CMIPlayerTeleportRequest(this, getDatabase()), this);
         pm.registerEvents(new CMIUserBalanceChange(this), this);
         pm.registerEvents(new EntityDamageByEntity(this), this);
-        pm.registerEvents(new EntityDeath(this, new Safezone(this), getDatabase()), this);
+        pm.registerEvents(new EntityDeath(this, new Safezone(this), getDatabase(), dailyMissions), this);
         pm.registerEvents(new EntityPickupItem(this), this);
         pm.registerEvents(new EntityRemoveFromWorld(this), this);
         pm.registerEvents(new InventoryClick(this, new EconomyCheck(this), new DropChest(this), new Bounty(getDatabase(), this),
@@ -378,7 +378,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PlayerUnJail(), this);
         pm.registerEvents(new PlayerUntag(this), this);
         pm.registerEvents(new ShopCreate(this), this);
-        pm.registerEvents(new ShopPostTransaction(getDatabase()), this);
+        pm.registerEvents(new ShopPostTransaction(getDatabase(), dailyMissions), this);
         pm.registerEvents(new ShopPreTransaction(getDatabase()), this);
         pm.registerEvents(new ShopPurchase(this, getDatabase()), this);
         pm.registerEvents(new ShopSuccessPurchase(this), this);
