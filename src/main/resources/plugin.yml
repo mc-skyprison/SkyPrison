@@ -265,6 +265,11 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.discord
     permission-message: §4Error:§c You do not have permission to execute this command...
+  bomb:
+    description: commands relating to bomb
+    usage: /<command>
+    permission: skyprisoncore.command.bomb
+    permission-message: §4Error:§c You do not have permission to execute this command...
   donorreset:
     description: command relating to donor mine reset
     usage: /<command>
@@ -432,4 +437,6 @@ permissions:
   skyprisoncore.command.tags:
     description: Gives access to /tags
   skyprisoncore.command.tags.admin:
+    description: Gives access to tags stuff
+  skyprisoncore.command.bomb:
     description: Gives access to tags stuff

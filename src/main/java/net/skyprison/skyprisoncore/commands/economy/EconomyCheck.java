@@ -33,7 +33,6 @@ public class EconomyCheck implements CommandExecutor {
 	HashMap<String, LinkedHashMap<String, Integer>> shopLogPagePlayer = new HashMap<>();
 
 	public void openGUI(Player player, int page, String sortMethod) {
-
 		LinkedHashMap<String, Integer> shopLogAmount = shopLogAmountPlayer.get(player.getUniqueId().toString());
 		LinkedHashMap<String, Double> shopLogPrice = shopLogPricePlayer.get(player.getUniqueId().toString());
 		LinkedHashMap<String, Integer> shopLogPage = shopLogPagePlayer.get(player.getUniqueId().toString());
@@ -54,7 +53,7 @@ public class EconomyCheck implements CommandExecutor {
 			totalItemSold += entry.getValue();
 			shopLogAmountList.add(entry.getValue());
 		}
-		Collections.sort(shopLogAmountList, Collections.reverseOrder());
+		shopLogAmountList.sort(Collections.reverseOrder());
 		for (int num : shopLogAmountList) {
 			for (HashMap.Entry<String, Integer> entry : shopLogAmount.entrySet()) {
 				if (entry.getValue().equals(num)) {
@@ -83,7 +82,7 @@ public class EconomyCheck implements CommandExecutor {
 			totalMoneyMade += shopLogPrice.get(entry.getKey());
 			shopLogPriceList.add(entry.getValue());
 		}
-		Collections.sort(shopLogPriceList, Collections.reverseOrder());
+		shopLogPriceList.sort(Collections.reverseOrder());
 		for (double num : shopLogPriceList) {
 			for (HashMap.Entry<String, Double> entry : shopLogPrice.entrySet()) {
 				if (entry.getValue().equals(num)) {
@@ -151,12 +150,12 @@ public class EconomyCheck implements CommandExecutor {
 
 		DecimalFormat df = new DecimalFormat("###,###,###");
 		NumberFormat defaultFormat = NumberFormat.getCurrencyInstance();
-		ArrayList totalPages = new ArrayList<>();
+		ArrayList<Integer> totalPages = new ArrayList<>();
 		Inventory shopLogInv = Bukkit.createInventory(null, 54, ChatColor.RED + "Shop Log | Page " + page);
 		int i = 0;
 		for (HashMap.Entry<String, Integer> entry : shopLogPage.entrySet()) {
 			if(entry.getValue() == page) {
-				ArrayList lore = new ArrayList();
+				ArrayList<String> lore = new ArrayList<>();
 				String mat = entry.getKey().replaceAll(" ", "_").toUpperCase();
 				ItemStack item = new ItemStack(Material.valueOf(mat));
 				ItemMeta meta = item.getItemMeta();
@@ -179,7 +178,7 @@ public class EconomyCheck implements CommandExecutor {
 		ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
 		ItemStack pageChange = new ItemStack(Material.PAPER);
 		ItemStack itemSort = new ItemStack(Material.BOOK);
-		ArrayList lore = new ArrayList();
+		ArrayList<String> lore = new ArrayList<>();
 		ItemStack itemStats = new ItemStack(Material.NETHER_STAR);
 		ItemMeta metaStats = itemStats.getItemMeta();
 		ItemMeta metaSort = itemSort.getItemMeta();
@@ -378,7 +377,7 @@ public class EconomyCheck implements CommandExecutor {
 		if(sender instanceof Player) {
 			Player player = (Player) sender;
 			String sortMethod = "default";
-			if(args.length > 0 && args.length <= 1) {
+			if(args.length == 1) {
 				sortMethod = args[0];
 			}
 			if(args.length > 0 && args.length <= 2) {
@@ -422,8 +421,6 @@ public class EconomyCheck implements CommandExecutor {
 												}
 											}
 										}
-									} else {
-										continue;
 									}
 								}
 							}
@@ -470,8 +467,6 @@ public class EconomyCheck implements CommandExecutor {
 										shopLogPrice.put(str[4], shopPrice);
 									}
 								}
-							} else {
-								continue;
 							}
 						}
 					}

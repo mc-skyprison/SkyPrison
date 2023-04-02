@@ -344,6 +344,7 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("donorreset")).setExecutor(new DonorReset(this));
         Objects.requireNonNull(getCommand("customenchant")).setExecutor(new CustomEnchant(this));
         Objects.requireNonNull(getCommand("tags")).setExecutor(new Tags(this, getDatabase()));
+        Objects.requireNonNull(getCommand("bomb")).setExecutor(new Bomb(this));
     }
 
 
