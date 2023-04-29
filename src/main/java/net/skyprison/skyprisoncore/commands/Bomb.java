@@ -54,13 +54,13 @@ public class Bomb implements CommandExecutor {
                                 user.getLocation().getWorld().dropItem(user.getLocation(), item);
                             }
                         } else {
-                            // AMOUNT ISNT NUMBER
+                            sender.sendMessage(plugin.colourMessage("&cAmount specified isnt a number!"));
                         }
                     } else {
-                        // TYPE DOESNT EXIST
+                        sender.sendMessage(plugin.colourMessage("&cWrong Type! Available types are: Small, Medium, Large, Massive & Nuke"));
                     }
                 } else {
-                    // PLAYER DOESNT EXIST
+                    sender.sendMessage(plugin.colourMessage("&c" + args[1] + " is not a valid player name!"));
                 }
             } else {
                 // NOT GIVE

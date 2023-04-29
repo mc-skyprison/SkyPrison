@@ -2,20 +2,17 @@ package net.skyprison.skyprisoncore.utils;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
-import net.skyprison.skyprisoncore.SkyPrisonCore;
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Set;
 
 public class Placeholders extends PlaceholderExpansion {
 	private final SkyPrisonCore plugin;
@@ -320,15 +317,20 @@ public class Placeholders extends PlaceholderExpansion {
 		}
 
 		if(identifier.equalsIgnoreCase("sponges_found")) {
-			File spongeData = new File(plugin.getDataFolder() + File.separator
-					+ "spongedata.yml");
-			YamlConfiguration sDataConf = YamlConfiguration.loadConfiguration(spongeData);
-			if(sDataConf.isConfigurationSection(player.getUniqueId().toString())) {
-				int spongeFound = sDataConf.getInt(player.getUniqueId() + ".sponge-found");
-				return String.valueOf(spongeFound);
-			} else {
-				return "0";
+			int spongesFound = 0;
+			try {
+				Connection conn = hook.getSQLConnection();
+				PreparedStatement ps = conn.prepareStatement("SELECT sponges_found FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+				ResultSet rs = ps.executeQuery();
+				while(rs.next()) {
+					spongesFound = rs.getInt(1);
+				}
+				hook.close(ps, rs, conn);
+			} catch (SQLException e) {
+				e.printStackTrace();
 			}
+
+			return String.valueOf(spongesFound);
 		}
 
 		for(int i = 1; i <= 8; i++) {

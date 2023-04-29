@@ -5,6 +5,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -12,6 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -19,7 +21,10 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 public class EconomyCheck implements CommandExecutor {
 	private final SkyPrisonCore plugin;
@@ -28,14 +33,10 @@ public class EconomyCheck implements CommandExecutor {
 		this.plugin = plugin;
 	}
 
-	HashMap<String, LinkedHashMap<String, Integer>> shopLogAmountPlayer = new HashMap<>();
-	HashMap<String, LinkedHashMap<String, Double>> shopLogPricePlayer = new HashMap<>();
-	HashMap<String, LinkedHashMap<String, Integer>> shopLogPagePlayer = new HashMap<>();
-
 	public void openGUI(Player player, int page, String sortMethod) {
-		LinkedHashMap<String, Integer> shopLogAmount = shopLogAmountPlayer.get(player.getUniqueId().toString());
-		LinkedHashMap<String, Double> shopLogPrice = shopLogPricePlayer.get(player.getUniqueId().toString());
-		LinkedHashMap<String, Integer> shopLogPage = shopLogPagePlayer.get(player.getUniqueId().toString());
+		LinkedHashMap<String, Integer> shopLogAmount = plugin.shopLogAmountPlayer.get(player.getUniqueId());
+		LinkedHashMap<String, Double> shopLogPrice = plugin.shopLogPricePlayer.get(player.getUniqueId());
+		LinkedHashMap<String, Integer> shopLogPage = plugin.shopLogPagePlayer.get(player.getUniqueId());
 
 		ArrayList<Double> shopLogPriceList = new ArrayList<>();
 		ArrayList<Integer> shopLogAmountList = new ArrayList<>();
@@ -168,6 +169,14 @@ public class EconomyCheck implements CommandExecutor {
 				int moneyPos = new ArrayList<>(shopLogPriceSortedTop.keySet()).indexOf(entry.getKey()) + 1;
 				lore.add(ChatColor.GRAY + "Position: " + ChatColor.GREEN + moneyPos);
 				meta.setLore(lore);
+				if(i == 0) {
+					NamespacedKey key = new NamespacedKey(plugin, "stop-click");
+					meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
+					NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
+					meta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "econcheck");
+					NamespacedKey key4 = new NamespacedKey(plugin, "page");
+					meta.getPersistentDataContainer().set(key4, PersistentDataType.INTEGER, page);
+				}
 				item.setItemMeta(meta);
 				shopLogInv.setItem(i, item);
 				i++;
@@ -475,9 +484,9 @@ public class EconomyCheck implements CommandExecutor {
 					System.err.println("Error: " + e.getMessage());
 				}
 			}
-			shopLogAmountPlayer.put(player.getUniqueId().toString(), shopLogAmount);
-			shopLogPricePlayer.put(player.getUniqueId().toString(), shopLogPrice);
-			shopLogPagePlayer.put(player.getUniqueId().toString(), shopLogPage);
+			plugin.shopLogAmountPlayer.put(player.getUniqueId(), shopLogAmount);
+			plugin.shopLogPricePlayer.put(player.getUniqueId(), shopLogPrice);
+			plugin.shopLogPagePlayer.put(player.getUniqueId(), shopLogPage);
 			openGUI(player, 0, sortMethod);
 		}
 		return true;

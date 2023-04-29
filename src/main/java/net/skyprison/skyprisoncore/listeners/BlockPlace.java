@@ -7,7 +7,6 @@ import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.flags.Flags;
-import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
@@ -16,7 +15,10 @@ import net.kyori.adventure.text.Component;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.entity.*;
+import org.bukkit.entity.Display;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -42,7 +44,7 @@ public class BlockPlace implements Listener {
         if ((!event.canBuild() || event.isCancelled()) && !event.getPlayer().hasPermission("antiblockjump.bypass")) {
             player.setVelocity(new Vector(0, -5, 0));
         } else {
-            if (event.getBlock().getWorld().getName().equalsIgnoreCase("world_prison")) { //  && !player.isOp()
+            if (event.getBlock().getWorld().getName().equalsIgnoreCase("world_prison") && player.isOp()) {
                 ItemStack bomb = event.getItemInHand();
                 Block block = event.getBlockPlaced();
                 if (bomb.getType().equals(Material.PLAYER_HEAD)) {
@@ -117,7 +119,7 @@ public class BlockPlace implements Listener {
                                                 break;
                                             case 4:
                                                 player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1, 1);
-                                                player.spawnParticle(Particle.EXPLOSION_NORMAL, block.getLocation(), 2);
+                                                player.spawnParticle(Particle.EXPLOSION_NORMAL, block.getLocation(), 20);
                                                 ent.remove();
                                                 for(Block block1 : blocks) {
                                                     if(!block1.equals(block)) {
@@ -138,6 +140,8 @@ public class BlockPlace implements Listener {
                             } else {
                                 // SELECT MINE REGION AND GO BOOM BOOM
                             }
+                        } else {
+                            event.setCancelled(true);
                         }
                     }
                 }

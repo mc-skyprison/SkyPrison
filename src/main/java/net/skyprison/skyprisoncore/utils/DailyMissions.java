@@ -2,9 +2,6 @@ package net.skyprison.skyprisoncore.utils;
 
 import com.Zrips.CMI.CMI;
 import org.bukkit.Sound;
-import org.bukkit.entity.Animals;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 
 import java.util.*;

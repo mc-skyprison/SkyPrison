@@ -7,12 +7,9 @@ import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -21,8 +18,6 @@ import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.permission.Role;
 import org.javacord.api.entity.user.User;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -108,7 +103,7 @@ public class Referral implements CommandExecutor {
 					}
 
 					if(!hasReferred) {
-						if(playtime >= 1 && playtime < 24) {
+						if(playtime >= 1 && playtime < 24) { // Checks that the player has played more than an hour on the server but less than 24 hours.
 							if(CMI.getInstance().getPlayerManager().getUser(args[0]) != null) {
 								CMIUser reffedPlayer = CMI.getInstance().getPlayerManager().getUser(args[0]);
 								if(!player.getLastIp().equalsIgnoreCase(reffedPlayer.getLastIp())) {

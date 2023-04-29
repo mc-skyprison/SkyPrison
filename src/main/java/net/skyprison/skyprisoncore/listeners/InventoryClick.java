@@ -734,6 +734,27 @@ public class InventoryClick implements Listener {
                                         }
                                     }
                                     break;
+                                case "econcheck":
+                                    if(event.getCurrentItem().getType() == Material.PAPER) {
+                                        if(event.getSlot() == 46) {
+                                            econCheck.openGUI((Player) event.getWhoClicked(), page-1, "default");
+                                        } else if(event.getSlot() == 52) {
+                                            econCheck.openGUI((Player) event.getWhoClicked(), page+1, "default");
+                                        }
+                                    } else if(event.getCurrentItem().getType() == Material.BOOK) {
+                                        if(event.getSlot() == 47) {
+                                            econCheck.openGUI((Player) event.getWhoClicked(), page, "amounttop");
+                                        } else if(event.getSlot() == 48) {
+                                            econCheck.openGUI((Player) event.getWhoClicked(), page, "amountbottom");
+                                        } else if(event.getSlot() == 49) {
+                                            event.getWhoClicked().closeInventory();
+                                            event.getWhoClicked().sendMessage(ChatColor.RED + "/econcheck player <player>");
+                                        } else if(event.getSlot() == 50) {
+                                            econCheck.openGUI((Player) event.getWhoClicked(), page, "moneybottom");
+                                        } else if(event.getSlot() == 51) {
+                                            econCheck.openGUI((Player) event.getWhoClicked(), page, "moneytop");
+                                        }
+                                    }
                                 case "tags-new":
                                     if (clickInv.getItem(event.getSlot()) != null) {
                                         NamespacedKey key2 = new NamespacedKey(plugin, "tags-display");
@@ -839,7 +860,6 @@ public class InventoryClick implements Listener {
                 }
             }
         }
-        String[] pageCheck = ChatColor.stripColor(event.getView().getTitle()).split(" ");
         if (ChatColor.stripColor(event.getView().getTitle()).contains("Secrets")) {
             if (event.getCurrentItem() != null) {
                 event.setCancelled(true);
@@ -934,36 +954,6 @@ public class InventoryClick implements Listener {
                                 secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "rewards");
                                 break;
                         }
-                }
-            }
-        } else if (pageCheck[0].equalsIgnoreCase("Shop") && pageCheck[1].equalsIgnoreCase("Log")) {
-            if (event.getCurrentItem() != null) {
-                event.setCancelled(true);
-                if(event.getCurrentItem().getType() == Material.PAPER) {
-                    if(event.getSlot() == 46) {
-                        int page = Integer.parseInt(pageCheck[4])-1;
-                        econCheck.openGUI((Player) event.getWhoClicked(), page, "default");
-                    } else if(event.getSlot() == 52) {
-                        int page = Integer.parseInt(pageCheck[4])+1;
-                        econCheck.openGUI((Player) event.getWhoClicked(), page, "default");
-                    }
-                } else if(event.getCurrentItem().getType() == Material.BOOK) {
-                    if(event.getSlot() == 47) {
-                        int page = Integer.parseInt(pageCheck[4]);
-                        econCheck.openGUI((Player) event.getWhoClicked(), page, "amounttop");
-                    } else if(event.getSlot() == 48) {
-                        int page = Integer.parseInt(pageCheck[4]);
-                        econCheck.openGUI((Player) event.getWhoClicked(), page, "amountbottom");
-                    } else if(event.getSlot() == 49) {
-                        event.getWhoClicked().closeInventory();
-                        event.getWhoClicked().sendMessage(ChatColor.RED + "/econcheck player <player>");
-                    } else if(event.getSlot() == 50) {
-                        int page = Integer.parseInt(pageCheck[4]);
-                        econCheck.openGUI((Player) event.getWhoClicked(), page, "moneybottom");
-                    } else if(event.getSlot() == 51) {
-                        int page = Integer.parseInt(pageCheck[4]);
-                        econCheck.openGUI((Player) event.getWhoClicked(), page, "moneytop");
-                    }
                 }
             }
         }

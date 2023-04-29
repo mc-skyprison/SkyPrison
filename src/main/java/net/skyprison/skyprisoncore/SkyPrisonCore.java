@@ -1,18 +1,5 @@
 package net.skyprison.skyprisoncore;
 
-import java.io.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import litebans.api.Entry;
@@ -27,10 +14,13 @@ import net.skyprison.skyprisoncore.commands.chats.Build;
 import net.skyprison.skyprisoncore.commands.chats.Guard;
 import net.skyprison.skyprisoncore.commands.chats.Staff;
 import net.skyprison.skyprisoncore.commands.discord.Discord;
-import net.skyprison.skyprisoncore.commands.guard.*;
+import net.skyprison.skyprisoncore.commands.donations.DonorAdd;
+import net.skyprison.skyprisoncore.commands.donations.Purchases;
 import net.skyprison.skyprisoncore.commands.economy.*;
-import net.skyprison.skyprisoncore.commands.Referral;
-import net.skyprison.skyprisoncore.commands.secrets.*;
+import net.skyprison.skyprisoncore.commands.guard.*;
+import net.skyprison.skyprisoncore.commands.secrets.SecretFound;
+import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
+import net.skyprison.skyprisoncore.listeners.*;
 import net.skyprison.skyprisoncore.listeners.advancedregionmarket.UnsellRegion;
 import net.skyprison.skyprisoncore.listeners.brewery.BrewDrink;
 import net.skyprison.skyprisoncore.listeners.cmi.CMIPlayerTeleportRequest;
@@ -51,19 +41,18 @@ import net.skyprison.skyprisoncore.listeners.quickshop.ShopSuccessPurchase;
 import net.skyprison.skyprisoncore.listeners.shopguiplus.ShopPostTransaction;
 import net.skyprison.skyprisoncore.listeners.shopguiplus.ShopPreTransaction;
 import net.skyprison.skyprisoncore.utils.*;
-import net.skyprison.skyprisoncore.commands.donations.DonorAdd;
-import net.skyprison.skyprisoncore.commands.donations.Purchases;
 import org.apache.commons.lang.StringUtils;
-import org.bukkit.*;
-import org.bukkit.block.Block;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.*;
-import org.bukkit.inventory.*;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-import net.skyprison.skyprisoncore.listeners.*;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.channel.TextChannel;
@@ -72,6 +61,23 @@ import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.Role;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.entity.user.User;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class SkyPrisonCore extends JavaPlugin {
@@ -101,7 +107,15 @@ public class SkyPrisonCore extends JavaPlugin {
 
     private DailyMissions dailyMissions;
 
+    private Plugin plugin;
+
+
+    public HashMap<UUID, LinkedHashMap<String, Integer>> shopLogAmountPlayer = new HashMap<>();
+    public HashMap<UUID, LinkedHashMap<String, Double>> shopLogPricePlayer = new HashMap<>();
+    public HashMap<UUID, LinkedHashMap<String, Integer>> shopLogPagePlayer = new HashMap<>();
+
     public void onEnable() {
+        plugin = this;
         String dToken = getConfig().getString("discord-token");
 
         if(dToken != null && !dToken.isEmpty()) {
@@ -191,6 +205,44 @@ public class SkyPrisonCore extends JavaPlugin {
                 }
             }
         }.runTaskTimerAsynchronously(this, 20 * 635, 20 * 635);
+
+
+/*        new BukkitRunnable() {
+            @Override
+            public void run() {
+                Random rand = new Random();
+                if(rand.nextInt(2) < 3) {
+                    World world = Bukkit.getWorld("world_prison");
+                    List<Block> blocks = new ArrayList<>();
+                    int radius = 300;
+                    for(int x = -radius; x <= radius; x++) {
+                        for(int y = 130; y <= 174; y++) {
+                            for(int z = -radius; z <= radius; z++) {
+                                if(world.getBlockAt(x, y, z).getType().equals(Material.TALL_GRASS) ||
+                                        world.getBlockAt(x, y, z).getType().equals(Material.GRASS) ||
+                                        world.getBlockAt(x, y, z).getType().equals(Material.FERN) ||
+                                        world.getBlockAt(x, y, z).getType().equals(Material.LARGE_FERN)) {
+                                    blocks.add(world.getBlockAt(x, y, z));
+                                }
+                            }
+                        }
+                    }
+
+                    if(!blocks.isEmpty()) {
+                        Block block = blocks.get(rand.nextInt(blocks.size()));
+                        Location loc = block.getLocation();
+                        tellConsole(loc + "wham");
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                tellConsole("wham-feck");
+                                loc.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, loc, 5);
+                            }
+                        }.runTaskTimerAsynchronously(plugin, 0, 20);
+                    }
+                }
+            }
+        }.runTaskTimerAsynchronously(this, 100, 100);*/
     }
 
     @Override
@@ -436,27 +488,6 @@ public class SkyPrisonCore extends JavaPlugin {
         });
 
 
-    }
-
-    private Location shinyGrass() {
-        World world = Bukkit.getWorld("world_prison");
-        List<Block> blocks = new ArrayList<>();
-        int radius = 5;
-        for(int x = -radius; x <= radius; x++) {
-            for(int y = 0; y <= 319; y++) {
-                for(int z = -radius; z <= radius; z++) {
-                    if(world.getBlockAt(x, y, z).getType().equals(Material.TALL_GRASS) ||
-                            world.getBlockAt(x, y, z).getType().equals(Material.GRASS) ||
-                            world.getBlockAt(x, y, z).getType().equals(Material.FERN) ||
-                            world.getBlockAt(x, y, z).getType().equals(Material.LARGE_FERN))
-                    blocks.add(world.getBlockAt(x, y, z));
-                }
-            }
-        }
-        Random rand = new Random();
-
-        Block block = blocks.get(rand.nextInt(blocks.size()));
-        return block.getLocation();
     }
 
 
