@@ -1,10 +1,8 @@
 package net.skyprison.skyprisoncore.commands.secrets;
 
-import com.Zrips.CMI.CMI;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -16,7 +14,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 public class SecretFound implements CommandExecutor {
 	private final SkyPrisonCore plugin;
@@ -62,14 +63,14 @@ public class SecretFound implements CommandExecutor {
 					List<Object> params;
 					if(amountFound == 0) {
 						sql = "INSERT INTO secrets_data (user_id, secret_name, secret_amount) VALUES (?, ?, ?)";
-						params = new ArrayList<Object>() {{
+						params = new ArrayList<>() {{
 							add(player.getUniqueId());
 							add(args[0]);
 							add(1);
 						}};
 					} else {
 						sql = "UPDATE secrets_data SET secret_amount = secret_amount + 1 WHERE user_id = ? AND secret_name = ?";
-						params = new ArrayList<Object>() {{
+						params = new ArrayList<>() {{
 							add(player.getUniqueId().toString());
 							add(args[0]);
 						}};
@@ -120,7 +121,7 @@ public class SecretFound implements CommandExecutor {
 			if(!alreadyDone) {
 				String sql = "INSERT INTO rewards_data (user_id, reward_name, reward_collected) VALUES (?, ?, ?)";
 				String finalGuiType = guiType;
-				List<Object> params = new ArrayList<Object>() {{
+				List<Object> params = new ArrayList<>() {{
 					add(player.getUniqueId().toString());
 					add("first-time-" + finalGuiType);
 					add(0);

@@ -12,7 +12,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public class Casino implements CommandExecutor {
     private final SkyPrisonCore plugin;
@@ -57,7 +59,7 @@ public class Casino implements CommandExecutor {
 
 
                         String sql = "UPDATE casino_cooldowns SET casino_cooldown = ? WHERE user_id = ? AND casino_name = ?";
-                        List<Object> params = new ArrayList<Object>() {{
+                        List<Object> params = new ArrayList<>() {{
                             add(nCooldown);
                             add(user.getUniqueId().toString());
                             add(args[1]);
@@ -86,7 +88,7 @@ public class Casino implements CommandExecutor {
                 }
             } else {
                 String sql = "INSERT INTO casino_cooldowns (user_id, casino_name, casino_cooldown) VALUES (?, ?, ?)";
-                List<Object> params = new ArrayList<Object>() {{
+                List<Object> params = new ArrayList<>() {{
                     add(user.getUniqueId().toString());
                     add(args[1]);
                     add(nCooldown);
@@ -99,7 +101,7 @@ public class Casino implements CommandExecutor {
                 plugin.asConsole("crates key give " + user.getName() + " " + args[1] + " 1");
 
                 String sql = "INSERT INTO casino_cooldowns (user_id, casino_name, casino_cooldown) VALUES (?, ?, ?)";
-                List<Object> params = new ArrayList<Object>() {{
+                List<Object> params = new ArrayList<>() {{
                     add(user.getUniqueId().toString());
                     add(args[1]);
                     add(nCooldown);

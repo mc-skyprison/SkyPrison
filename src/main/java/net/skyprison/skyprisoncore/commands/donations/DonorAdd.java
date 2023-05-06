@@ -54,7 +54,7 @@ public class DonorAdd implements CommandExecutor {
 
 				// /donoradd <player> <item-currency> <item-price> <date> <time> <amount of it bought> <item-bought>
 				String sql = "INSERT INTO donations (user_id, item_bought, price, currency, amount, date) VALUES (?, ?, ?, ?, ?, ?)";
-				List<Object> params = new ArrayList<Object>() {{
+				List<Object> params = new ArrayList<>() {{
 					add(player.getUniqueId().toString());
 					add(String.valueOf(itemBought));
 					add(Double.parseDouble(args[2]));

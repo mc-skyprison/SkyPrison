@@ -2,7 +2,6 @@ package net.skyprison.skyprisoncore.commands.economy;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
-import net.kyori.adventure.text.Component;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.CooldownManager;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
@@ -13,8 +12,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -197,7 +194,7 @@ public class Bounty implements CommandExecutor {
 												String sql = "UPDATE bounties SET prize = prize + ?, bountied_by = ? WHERE user_id = ?";
 												bountiedBy += "," + player.getUniqueId();
 												String finalBountiedBy = bountiedBy;
-												List<Object> params = new ArrayList<Object>() {{
+												List<Object> params = new ArrayList<>() {{
 													add(bountyPrize);
 													add(finalBountiedBy);
 													add(bountyTarget);
@@ -214,7 +211,7 @@ public class Bounty implements CommandExecutor {
 												cooldownManager.setCooldown(player.getUniqueId(), System.currentTimeMillis());
 
 												String sql = "INSERT INTO bounties (user_id, prize, bountied_by) VALUES (?, ?, ?)";
-												List<Object> params = new ArrayList<Object>() {{
+												List<Object> params = new ArrayList<>() {{
 													add(bountyTarget);
 													add(bountyPrize);
 													add(player.getUniqueId().toString());

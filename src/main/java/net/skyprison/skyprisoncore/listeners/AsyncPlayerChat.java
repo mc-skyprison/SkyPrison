@@ -16,7 +16,10 @@ import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.channel.TextChannel;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 
 public class AsyncPlayerChat implements Listener {
@@ -48,7 +51,7 @@ public class AsyncPlayerChat implements Listener {
                 switch(lockType.toLowerCase()) {
                     case "tags-display":
                         sql = "UPDATE tags SET tags_display = ? WHERE tags_id = ?";
-                        params = new ArrayList<Object>() {{
+                        params = new ArrayList<>() {{
                             add(finalMessage1);
                             add(Integer.parseInt("" + tags.get(1)));
                         }};
@@ -58,7 +61,7 @@ public class AsyncPlayerChat implements Listener {
                         break;
                     case "tags-lore":
                         sql = "UPDATE tags SET tags_lore = ? WHERE tags_id = ?";
-                        params = new ArrayList<Object>() {{
+                        params = new ArrayList<>() {{
                             add(finalMessage1);
                             add(Integer.parseInt("" + tags.get(1)));
                         }};
@@ -73,7 +76,7 @@ public class AsyncPlayerChat implements Listener {
                         }
                         sql = "UPDATE tags SET tags_effect = ? WHERE tags_id = ?";
                         String finalEffect = effect;
-                        params = new ArrayList<Object>() {{
+                        params = new ArrayList<>() {{
                             add(finalEffect);
                             add(Integer.parseInt("" + tags.get(1)));
                         }};

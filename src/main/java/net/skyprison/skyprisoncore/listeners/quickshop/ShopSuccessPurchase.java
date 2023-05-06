@@ -10,8 +10,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.UUID;
 
 public class ShopSuccessPurchase implements Listener {
@@ -41,16 +39,14 @@ public class ShopSuccessPurchase implements Listener {
             PrintWriter pData = new PrintWriter(fData);
             PrintWriter pData2 = new PrintWriter(fData2);
 
-            Date date = new Date();
-            SimpleDateFormat DateFor = new SimpleDateFormat("yyyy/MM/dd hh:mm:ss");
-            String stringDate = DateFor.format(date);
+            Long date = System.currentTimeMillis();
 
             if (event.getShop().isBuying()) {
-                pData.println(stringDate + ";" + shopOwner + ";deposit;" + event.getBalance() + ";true;" + event.getShop().getItem() + ";" + event.getAmount());
-                pData2.println(stringDate + ";" + purchaser + ";withdraw;" + event.getBalance() + ";true;" + event.getShop().getItem() + ";" + event.getAmount());
+                pData.println(date + ";" + shopOwner + ";deposit;" + event.getBalance() + ";true;" + event.getShop().getItem() + ";" + event.getAmount());
+                pData2.println(date + ";" + purchaser + ";withdraw;" + event.getBalance() + ";true;" + event.getShop().getItem() + ";" + event.getAmount());
             } else {
-                pData.println(stringDate + ";" + shopOwner + ";withdraw;" + event.getBalance() + ";true;" + event.getShop().getItem() + ";" + event.getAmount());
-                pData2.println(stringDate + ";" + purchaser + ";deposit;" + event.getBalance() + ";true;" + event.getShop().getItem() + ";" + event.getAmount());
+                pData.println(date + ";" + shopOwner + ";withdraw;" + event.getBalance() + ";true;" + event.getShop().getItem() + ";" + event.getAmount());
+                pData2.println(date + ";" + purchaser + ";deposit;" + event.getBalance() + ";true;" + event.getShop().getItem() + ";" + event.getAmount());
             }
 
             pData.flush();

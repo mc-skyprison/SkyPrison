@@ -54,6 +54,10 @@ public class BlockBreak implements Listener {
                     Location cob = loc.add(0.5D, 0.0D, 0.5D);
                     ItemStack snowblock = new ItemStack(Material.SNOW_BLOCK, 1);
                     loc.getWorld().dropItem(cob, snowblock);
+                } else if (b.getType().equals(Material.PLAYER_HEAD) || b.getType().equals(Material.PLAYER_WALL_HEAD)) {
+                    if(plugin.bombLocs.contains(b.getLocation())) {
+                        event.setCancelled(true);
+                    }
                 }
             }
 
@@ -64,7 +68,7 @@ public class BlockBreak implements Listener {
                     plugin.blockBreaks.put(pUUID, 0);
                     Random rand = new Random();
                     int tReward = rand.nextInt(25 - 10 + 1) + 10;
-                    plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tReward);
+                    plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tReward, "2000 Blocks Broken", "");
                     player.sendMessage(ChatColor.GRAY + "You've mined 2,000 blocks and have received some tokens!");
                 } else {
                     plugin.blockBreaks.put(pUUID, brokeBlocks + 1);

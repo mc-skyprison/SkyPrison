@@ -16,7 +16,11 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class MoneyHistory implements CommandExecutor {
@@ -154,13 +158,23 @@ public class MoneyHistory implements CommandExecutor {
             if(page != 1)
                 transList = trans.subList(((page-1) * 45), trans.size());
 
+            SimpleDateFormat DateFor = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+
             for(Iterator<String> iterator = transList.iterator(); iterator.hasNext();) {
                 if(b == 45)
                     break;
                 ItemStack moneyHist = new ItemStack(Material.OAK_SIGN);
                 ItemMeta moneyMeta = moneyHist.getItemMeta();
                 String[] val = iterator.next().split(";");
-                moneyMeta.setDisplayName(plugin.colourMessage("&6&l" + val[0]));
+
+                String name = val[0];
+
+                if(plugin.isLong(val[0])) {
+                    Date date = new Date(Long.parseLong(val[0]));
+                    name = DateFor.format(date);
+                }
+
+                moneyMeta.setDisplayName(plugin.colourMessage("&6&l" + name));
                 ArrayList<String> lore = new ArrayList<>();
                 CMIUser oUser = CMI.getInstance().getPlayerManager().getUser(UUID.fromString(val[1]));
                 if (val[2].equalsIgnoreCase("withdraw")) {

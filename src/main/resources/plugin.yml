@@ -144,11 +144,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.purchases
     permission-message: §4Error:§c You do not have permission to execute this command...
-  donorcheck:
-    description: Check the state of the economy
-    usage: /<command>
-    permission: skyprisoncore.command.donorcheck
-    permission-message: §4Error:§c You do not have permission to execute this command...
   endupgrade:
     description: Opens the end upgrade GUI
     usage: /<command>
@@ -285,6 +280,21 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.tags
     permission-message: §4Error:§c You do not have permission to execute this command...
+  furnace:
+    description: Tags command
+    usage: /<command>
+    permission: skyprisoncore.command.furnace
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  minereset:
+    description: Tags command
+    usage: /<command>
+    permission: skyprisoncore.command.minereset
+    permission-message: §4Error:§c You do not have permission to execute this command...
+  voucher:
+    description: Tags command
+    usage: /<command>
+    permission: skyprisoncore.command.voucher
+    permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
   skyprisoncore.command.build:
     description: Gives access to buildchat
@@ -301,6 +311,12 @@ permissions:
   skyprisoncore.command.discord:
     description: Gives access to discord
   skyprisoncore.command.donorreset:
+    description: Gives access to discord
+  skyprisoncore.command.furnace:
+    description: Gives access to discord
+  skyprisoncore.command.minereset:
+    description: Gives access to discord
+  skyprisoncore.command.voucher:
     description: Gives access to discord
 
   #
@@ -371,7 +387,7 @@ permissions:
     description: Gives you access to /donoradd
   skyprisoncore.command.purchases:
     description: Gives you access to /purchases
-  skyprisoncore.command.donorcheck:
+  skyprisoncore.command.purchases.others:
     description: Gives you access to /purchases
   #
   # Killinfo Permissions

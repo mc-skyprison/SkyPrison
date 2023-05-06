@@ -153,7 +153,7 @@ public class Referral implements CommandExecutor {
 									}
 
 									String sql = "INSERT INTO referrals (user_id, referred_by, refer_date) VALUES (?, ?, ?)";
-									List<Object> params = new ArrayList<Object>() {{
+									List<Object> params = new ArrayList<>() {{
 										add(reffedPlayer.getUniqueId().toString());
 										add(player.getUniqueId().toString());
 										add(System.currentTimeMillis());
@@ -170,8 +170,8 @@ public class Referral implements CommandExecutor {
 									}
 									player.sendMessage(ChatColor.DARK_AQUA + "You successfully referred " + ChatColor.AQUA + reffedPlayer.getName()
 											+ ChatColor.DARK_AQUA + " and have received " + ChatColor.YELLOW + "50" + ChatColor.DARK_AQUA + " tokens!");
-									plugin.tokens.addTokens(reffedPlayer, 250);
-									plugin.tokens.addTokens(player, 50);
+									plugin.tokens.addTokens(reffedPlayer, 250, "Referred Someone", player.getName());
+									plugin.tokens.addTokens(player, 50, "Was Referred", reffedPlayer.getName());
 								} else {
 									player.sendMessage(ChatColor.RED + "/referral <player>");
 								}

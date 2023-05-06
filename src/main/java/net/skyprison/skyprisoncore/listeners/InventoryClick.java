@@ -113,6 +113,7 @@ public class InventoryClick implements Listener {
             Inventory clickInv = event.getClickedInventory();
             if (clickInv != null && !clickInv.isEmpty()) {
                 ItemStack fItem = clickInv.getItem(0);
+
                 NamespacedKey key = new NamespacedKey(plugin, "stop-click");
                 NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
                 if(fItem == null) {
@@ -189,7 +190,7 @@ public class InventoryClick implements Listener {
                                                     int buyId = buyData.get(posKey, PersistentDataType.INTEGER);
 
                                                     String sql = "DELETE FROM recent_sells WHERE recent_id = ?";
-                                                    List<Object> params = new ArrayList<Object>() {{
+                                                    List<Object> params = new ArrayList<>() {{
                                                         add(buyId);
                                                     }};
                                                     hook.sqlUpdate(sql, params);
@@ -358,6 +359,34 @@ public class InventoryClick implements Listener {
                                             }
                                         }
                                     }
+                                case "token-history":
+                                    if (event.getClickedInventory().getItem(event.getSlot()) != null) {
+                                        Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
+
+                                        NamespacedKey tKey = new NamespacedKey(plugin, "sort");
+                                        NamespacedKey tKey1 = new NamespacedKey(plugin, "toggle");
+                                        NamespacedKey tKey3 = new NamespacedKey(plugin, "lookup-user");
+                                        Boolean transSort = Boolean.parseBoolean(fData.get(tKey, PersistentDataType.STRING));
+                                        Integer transToggle = fData.get(tKey1, PersistentDataType.INTEGER);
+                                        String userId = fData.get(tKey3, PersistentDataType.STRING);
+                                        if (clickedMat.equals(Material.PAPER)) {
+                                            if (event.getSlot() == 45) {
+                                                plugin.tokens.openHistoryGUI(player, transSort, transToggle, page - 1, userId);
+                                            } else if (event.getSlot() == 53) {
+                                                plugin.tokens.openHistoryGUI(player, transSort, transToggle, page + 1, userId);
+                                            }
+                                        } else if (clickedMat.equals(Material.CLOCK)) {
+                                            plugin.tokens.openHistoryGUI(player, !transSort, transToggle, page, userId);
+                                        } else if (clickedMat.equals(Material.COMPASS)) {
+                                            if(transToggle == 6) {
+                                                plugin.tokens.openHistoryGUI(player, transSort, 1, 1, userId);
+                                            } else {
+                                                plugin.tokens.openHistoryGUI(player, transSort, transToggle + 1, 1, userId);
+                                            }
+
+                                        }
+                                    }
+                                    break;
                                 case "transaction-history":
                                     if (event.getClickedInventory().getItem(event.getSlot()) != null) {
                                         Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
@@ -375,10 +404,7 @@ public class InventoryClick implements Listener {
                                                 moneyHistory.openGUI(player, transSort, transToggle, page + 1, userId);
                                             }
                                         } else if (clickedMat.equals(Material.CLOCK)) {
-                                            if (transSort)
-                                                moneyHistory.openGUI(player, false, transToggle, page, userId);
-                                            else
-                                                moneyHistory.openGUI(player, true, transToggle, page, userId);
+                                            moneyHistory.openGUI(player, !transSort, transToggle, page, userId);
                                         } else if (clickedMat.equals(Material.COMPASS)) {
                                             if (transToggle.equalsIgnoreCase("null")) {
                                                 moneyHistory.openGUI(player, transSort, "true", 1, userId);
@@ -536,7 +562,7 @@ public class InventoryClick implements Listener {
                                             tReward = randInt;
                                         }
 
-                                        plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tReward);
+                                        plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tReward, "Daily Reward", currStreak + " Days");
 
                                         int nCurrStreak = currStreak + 1;
                                         int nTotalCollected = totalCollected + 1;
@@ -551,7 +577,7 @@ public class InventoryClick implements Listener {
                                         if (!lastColl.isEmpty()) {
                                             if (currStreak >= highestStreak) {
                                                 sql = "UPDATE dailies SET current_streak = ?, highest_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?";
-                                                params = new ArrayList<Object>() {{
+                                                params = new ArrayList<>() {{
                                                     add(nCurrStreak);
                                                     add(nCurrStreak);
                                                     add(currDate);
@@ -560,7 +586,7 @@ public class InventoryClick implements Listener {
                                                 }};
                                             } else {
                                                 sql = "UPDATE dailies SET current_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?";
-                                                params = new ArrayList<Object>() {{
+                                                params = new ArrayList<>() {{
                                                     add(nCurrStreak);
                                                     add(currDate);
                                                     add(nTotalCollected);
@@ -569,7 +595,7 @@ public class InventoryClick implements Listener {
                                             }
                                         } else {
                                             sql = "INSERT INTO dailies (user_id, current_streak, total_collected, highest_streak, last_collected) VALUES (?, ?, ?, ?, ?)";
-                                            params = new ArrayList<Object>() {{
+                                            params = new ArrayList<>() {{
                                                 add(user.getUniqueId().toString());
                                                 add(nCurrStreak);
                                                 add(nTotalCollected);
@@ -651,7 +677,7 @@ public class InventoryClick implements Listener {
                                             }
 
                                             String sql = "UPDATE users SET active_tag = ? WHERE user_id = ?";
-                                            List<Object> params = new ArrayList<Object>() {{
+                                            List<Object> params = new ArrayList<>() {{
                                                 add(tag_id);
                                                 add(user.getUniqueId().toString());
                                             }};
@@ -666,7 +692,7 @@ public class InventoryClick implements Listener {
                                             plugin.userTags.remove(player.getUniqueId());
                                             api.getUserManager().getUser(player).fullyUnequipCosmetics(true);
                                             String sql = "UPDATE users SET active_tag = ? WHERE user_id = ?";
-                                            List<Object> params = new ArrayList<Object>() {{
+                                            List<Object> params = new ArrayList<>() {{
                                                 add(0);
                                                 add(user.getUniqueId().toString());
                                             }};
@@ -726,7 +752,7 @@ public class InventoryClick implements Listener {
                                         } else if (event.getSlot() == 17) {
                                             tag.openEditGUI(player, page);
                                             String sql = "DELETE FROM tags WHERE tags_id = ?";
-                                            List<Object> params = new ArrayList<Object>() {{
+                                            List<Object> params = new ArrayList<>() {{
                                                 add(tag_id);
                                             }};
                                             hook.sqlUpdate(sql, params);
@@ -734,25 +760,51 @@ public class InventoryClick implements Listener {
                                         }
                                     }
                                     break;
-                                case "econcheck":
-                                    if(event.getCurrentItem().getType() == Material.PAPER) {
-                                        if(event.getSlot() == 46) {
-                                            econCheck.openGUI((Player) event.getWhoClicked(), page-1, "default");
-                                        } else if(event.getSlot() == 52) {
-                                            econCheck.openGUI((Player) event.getWhoClicked(), page+1, "default");
+                                case "tokencheck":
+                                    if (clickInv.getItem(event.getSlot()) != null) {
+                                        if (event.getCurrentItem().getType() == Material.PAPER) {
+                                            if (event.getSlot() == 46) {
+                                                plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page - 1, "default");
+                                            } else if (event.getSlot() == 52) {
+                                                plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page + 1, "default");
+                                            }
+                                        } else if (event.getCurrentItem().getType() == Material.BOOK) {
+                                            if (event.getSlot() == 47) {
+                                                plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page, "amounttop");
+                                            } else if (event.getSlot() == 48) {
+                                                plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page, "amountbottom");
+                                            } else if (event.getSlot() == 49) {
+                                                event.getWhoClicked().closeInventory();
+                                                event.getWhoClicked().sendMessage(ChatColor.RED + "/token check (player)");
+                                            } else if (event.getSlot() == 50) {
+                                                plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page, "usagebottom");
+                                            } else if (event.getSlot() == 51) {
+                                                plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page, "usagetop");
+                                            }
                                         }
-                                    } else if(event.getCurrentItem().getType() == Material.BOOK) {
-                                        if(event.getSlot() == 47) {
-                                            econCheck.openGUI((Player) event.getWhoClicked(), page, "amounttop");
-                                        } else if(event.getSlot() == 48) {
-                                            econCheck.openGUI((Player) event.getWhoClicked(), page, "amountbottom");
-                                        } else if(event.getSlot() == 49) {
-                                            event.getWhoClicked().closeInventory();
-                                            event.getWhoClicked().sendMessage(ChatColor.RED + "/econcheck player <player>");
-                                        } else if(event.getSlot() == 50) {
-                                            econCheck.openGUI((Player) event.getWhoClicked(), page, "moneybottom");
-                                        } else if(event.getSlot() == 51) {
-                                            econCheck.openGUI((Player) event.getWhoClicked(), page, "moneytop");
+                                    }
+                                    break;
+                                case "econcheck":
+                                    if (clickInv.getItem(event.getSlot()) != null) {
+                                        if (event.getCurrentItem().getType() == Material.PAPER) {
+                                            if (event.getSlot() == 46) {
+                                                econCheck.openGUI((Player) event.getWhoClicked(), page - 1, "default");
+                                            } else if (event.getSlot() == 52) {
+                                                econCheck.openGUI((Player) event.getWhoClicked(), page + 1, "default");
+                                            }
+                                        } else if (event.getCurrentItem().getType() == Material.BOOK) {
+                                            if (event.getSlot() == 47) {
+                                                econCheck.openGUI((Player) event.getWhoClicked(), page, "amounttop");
+                                            } else if (event.getSlot() == 48) {
+                                                econCheck.openGUI((Player) event.getWhoClicked(), page, "amountbottom");
+                                            } else if (event.getSlot() == 49) {
+                                                event.getWhoClicked().closeInventory();
+                                                event.getWhoClicked().sendMessage(ChatColor.RED + "/econcheck player <player>");
+                                            } else if (event.getSlot() == 50) {
+                                                econCheck.openGUI((Player) event.getWhoClicked(), page, "moneybottom");
+                                            } else if (event.getSlot() == 51) {
+                                                econCheck.openGUI((Player) event.getWhoClicked(), page, "moneytop");
+                                            }
                                         }
                                     }
                                 case "tags-new":
@@ -790,7 +842,7 @@ public class InventoryClick implements Listener {
                                             player.sendMessage(plugin.colourMessage("&aType the tag effect (Write null to remove effect): \n&eAvailable Effects: " + cosmetics));
                                         } else if (event.getSlot() == 22) {
                                             String sql = "INSERT INTO tags (tags_display, tags_lore, tags_effect) VALUES (?, ?, ?)";
-                                            List<Object> params = new ArrayList<Object>() {{
+                                            List<Object> params = new ArrayList<>() {{
                                                 add(display);
                                                 add(lore);
                                                 add(effect);
@@ -927,10 +979,10 @@ public class InventoryClick implements Listener {
                                 foundValue = container.get(key, PersistentDataType.STRING);
                                 if(Objects.requireNonNull(rData.getString(foundValue + ".reward-type")).equalsIgnoreCase("tokens")) {
                                     int tokenAmount = rData.getInt(foundValue + ".reward");
-                                    plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tokenAmount);
+                                    plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tokenAmount, "Secret Region Found", foundValue);
 
                                     String sql = "UPDATE rewards_data SET reward_collected = ? WHERE user_id = ? AND reward_name = ?";
-                                    List<Object> params = new ArrayList<Object>() {{
+                                    List<Object> params = new ArrayList<>() {{
                                         add(1);
                                         add(player.getUniqueId().toString());
                                         add(foundValue);
@@ -989,15 +1041,11 @@ public class InventoryClick implements Listener {
 
     private ItemStack getItemStack(Inventory clickInv, ItemStack fItem, NamespacedKey key, NamespacedKey key1) {
         for(ItemStack item : clickInv.getContents()) {
-            if(item != null) {
-                if (item.getType().equals(Material.BLACK_STAINED_GLASS_PANE)
-                        || item.getType().equals(Material.GRAY_STAINED_GLASS_PANE)
-                        || item.getType().equals(Material.WHITE_STAINED_GLASS_PANE)) {
-                    ItemMeta iMeta = item.getItemMeta();
-                    PersistentDataContainer iData = iMeta.getPersistentDataContainer();
-                    if (iData.has(key, PersistentDataType.INTEGER) && iData.has(key1, PersistentDataType.STRING)) {
-                        fItem = item;
-                    }
+            if(item != null && item.getItemMeta() != null) {
+                ItemMeta iMeta = item.getItemMeta();
+                PersistentDataContainer iData = iMeta.getPersistentDataContainer();
+                if (iData.has(key, PersistentDataType.INTEGER) && iData.has(key1, PersistentDataType.STRING)) {
+                    fItem = item;
                 }
             }
         }

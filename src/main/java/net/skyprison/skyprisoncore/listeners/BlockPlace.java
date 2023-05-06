@@ -12,6 +12,7 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -29,6 +30,7 @@ import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class BlockPlace implements Listener {
 
@@ -44,10 +46,10 @@ public class BlockPlace implements Listener {
         if ((!event.canBuild() || event.isCancelled()) && !event.getPlayer().hasPermission("antiblockjump.bypass")) {
             player.setVelocity(new Vector(0, -5, 0));
         } else {
-            if (event.getBlock().getWorld().getName().equalsIgnoreCase("world_prison") && player.isOp()) {
+            if (event.getBlock().getWorld().getName().equalsIgnoreCase("world_prison")) {
                 ItemStack bomb = event.getItemInHand();
                 Block block = event.getBlockPlaced();
-                if (bomb.getType().equals(Material.PLAYER_HEAD)) {
+                if (bomb.getType().equals(Material.PLAYER_HEAD) || bomb.getType().equals(Material.PLAYER_WALL_HEAD)) {
                     NamespacedKey key = new NamespacedKey(plugin, "bomb-type");
                     if (bomb.getPersistentDataContainer().has(key)) {
                         RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
@@ -63,86 +65,132 @@ public class BlockPlace implements Listener {
                         }
                         if (mineRegion != null) {
                             String bombType = bomb.getPersistentDataContainer().get(key, PersistentDataType.STRING);
-                            if (!bombType.equalsIgnoreCase("nuke")) {
-                                Location loc = block.getLocation();
-                                List<Block> blocks = new ArrayList<>();
-                                int radius = 0;
-                                switch (bombType) {
-                                    case "small":
-                                        radius = 1;
-                                        break;
-                                    case "medium":
-                                        radius = 2;
-                                        break;
-                                    case "large":
-                                        radius = 3;
-                                        break;
-                                    case "massive":
-                                        radius = 4;
-                                        break;
+                            Location loc = block.getLocation();
+                            List<Block> blocks = new ArrayList<>();
+                            Random random = new Random();
+                            int radius = 0;
+                            switch (bombType) {
+                                case "small":
+                                    radius = 2;
+                                    break;
+                                case "medium":
+                                    radius = 3;
+                                    break;
+                                case "large":
+                                    radius = 4;
+                                    break;
+                                case "massive":
+                                    radius = 5;
+                                    break;
+                                case "nuke":
+                                    radius = 6;
+                                    break;
+                            }
+
+                            World world = loc.getWorld();
+                            if(radius != 6) {
+                                int centerX = loc.getBlockX();
+                                int centerY = loc.getBlockY();
+                                int centerZ = loc.getBlockZ();
+
+                                for (int x = centerX - radius; x <= centerX + radius; x++) {
+                                    for (int y = centerY - radius; y <= centerY + radius; y++) {
+                                        for (int z = centerZ - radius; z <= centerZ + radius; z++) {
+                                            double distance = Math.sqrt(
+                                                    Math.pow(x - centerX, 2) +
+                                                            Math.pow(y - centerY, 2) +
+                                                            Math.pow(z - centerZ, 2)
+                                            );
+
+                                            // Add randomness to the edges
+                                            double threshold = radius - (radius * 0.2) + (random.nextDouble() * (radius * 0.4));
+
+                                            if (distance <= threshold) {
+                                                blocks.add(world.getBlockAt(x, y, z));
+                                            }
+                                        }
+                                    }
                                 }
-                                for (int x = loc.getBlockX() - radius; x <= loc.getBlockX() + radius; x++) {
-                                    for (int y = loc.getBlockY() - radius; y <= loc.getBlockY() + radius; y++) {
-                                        for (int z = loc.getBlockZ() - radius; z <= loc.getBlockZ() + radius; z++) {
+                            } else {
+                                BlockVector3 min = mineRegion.getMinimumPoint();
+                                BlockVector3 max = mineRegion.getMaximumPoint();
+
+                                for (int x = min.getBlockX(); x <= max.getBlockX(); x++) {
+                                    for (int y = min.getBlockY(); y <= max.getBlockY(); y++) {
+                                        for (int z = min.getBlockZ(); z <= max.getBlockZ(); z++) {
                                             blocks.add(loc.getWorld().getBlockAt(x, y, z));
                                         }
                                     }
                                 }
-                                Location disLoc = new Location(block.getWorld(), loc.getX()+0.5, loc.getY()+1, loc.getZ()+0.5);
-                                TextDisplay ent = (TextDisplay) block.getWorld().spawnEntity(disLoc, EntityType.TEXT_DISPLAY);
-                                ent.setBillboard(Display.Billboard.CENTER);
-                                String name = bombType.substring(0, 1).toUpperCase() + bombType.substring(1);
-                                ent.text(Component.text(plugin.colourMessage("&e" + name + " Bomb\n&c▊▊▊")));
-                                ent.setDefaultBackground(false);
-
-                                LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
-                                RegionQuery query = regionContainer.createQuery();
-
-                                new BukkitRunnable() {
-                                    int i = 0;
-
-                                    @Override
-                                    public void run() {
-                                        i++;
-                                        switch(i) {
-                                            case 1:
-                                                player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 0);
-                                                ent.text(Component.text(plugin.colourMessage("&e" + name + " Bomb\n&a▊&c▊▊")));
-                                                break;
-                                            case 2:
-                                                player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 0);
-                                                ent.text(Component.text(plugin.colourMessage("&e" + name + " Bomb\n&a▊▊&c▊")));
-                                                break;
-                                            case 3:
-                                                player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 0);
-                                                ent.text(Component.text(plugin.colourMessage("&e" + name + " Bomb\n&a▊▊▊")));
-                                                break;
-                                            case 4:
-                                                player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1, 1);
-                                                player.spawnParticle(Particle.EXPLOSION_NORMAL, block.getLocation(), 20);
-                                                ent.remove();
-                                                for(Block block1 : blocks) {
-                                                    if(!block1.equals(block)) {
-                                                        com.sk89q.worldedit.util.Location toLoc = BukkitAdapter.adapt(block1.getLocation());
-                                                        if (query.testState(toLoc, localPlayer, Flags.BLOCK_BREAK)) {
-                                                            block1.breakNaturally();
-                                                        }
-                                                    } else {
-                                                        block1.setType(Material.AIR);
-                                                    }
-                                                }
-                                                this.cancel();
-                                                break;
-
-                                        }
-                                    }
-                                }.runTaskTimer(plugin, 20, 20);
-                            } else {
-                                // SELECT MINE REGION AND GO BOOM BOOM
                             }
+
+                            Location disLoc = new Location(block.getWorld(), loc.getX() + 0.5, loc.getY() + 1, loc.getZ() + 0.5);
+                            TextDisplay ent = (TextDisplay) block.getWorld().spawnEntity(disLoc, EntityType.TEXT_DISPLAY);
+                            ent.setBillboard(Display.Billboard.CENTER);
+                            String name = bombType.substring(0, 1).toUpperCase() + bombType.substring(1);
+                            String red = "&c▊";
+                            String green = "&a▊";
+                            String title = "&e" + name + " Bomb\n";
+                            TextComponent bombTitle = Component.text(plugin.colourMessage(title + red.repeat(radius)));
+                            ent.text(bombTitle);
+                            ent.setDefaultBackground(false);
+
+                            LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
+                            RegionQuery query = regionContainer.createQuery();
+                            plugin.bombLocs.add(loc);
+
+                            int finalRadius = radius;
+                            new BukkitRunnable() {
+                                int redAmount = finalRadius;
+                                int greenAmount = 0;
+                                @Override
+                                public void run() {
+                                    redAmount--;
+                                    if(redAmount >= 0) {
+                                        greenAmount++;
+                                        TextComponent nBombTitle = Component.text(plugin.colourMessage(title + green.repeat(greenAmount) + red.repeat(redAmount)));
+                                        ent.text(nBombTitle);
+                                        world.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 0);
+                                    } else {
+                                        world.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1, 1);
+                                        world.spawnParticle(Particle.EXPLOSION_LARGE, loc, 1);
+                                        ent.remove();
+                                        double delay = 0.0;
+                                        for(Block block1 : blocks) {
+                                            if(!block1.getType().equals(Material.PLAYER_HEAD) && !block1.getType().equals(Material.PLAYER_WALL_HEAD)) {
+                                                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                                                    com.sk89q.worldedit.util.Location toLoc = BukkitAdapter.adapt(block1.getLocation());
+                                                    if (query.testState(toLoc, localPlayer, Flags.BLOCK_BREAK)) {
+                                                        block1.breakNaturally();
+                                                    }
+                                                }, (int)Math.floor(delay));
+                                                delay += 0.004;
+                                            } else {
+                                                if(block1.equals(block)) {
+                                                    block1.setType(Material.AIR);
+                                                } else if(!plugin.bombLocs.contains(block1.getLocation())) {
+                                                    block1.breakNaturally();
+                                                }
+                                            }
+                                        }
+                                        plugin.bombLocs.remove(loc);
+                                        this.cancel();
+                                    }
+                                }
+                            }.runTaskTimer(plugin, 20, 20);
                         } else {
+                            player.sendMessage(plugin.colourMessage("&cYou can only use this in the mines!"));
                             event.setCancelled(true);
                         }
+                    }
+                }
+            } else {
+                ItemStack bomb = event.getItemInHand();
+                if (bomb.getType().equals(Material.PLAYER_HEAD) || bomb.getType().equals(Material.PLAYER_WALL_HEAD)) {
+                    NamespacedKey key = new NamespacedKey(plugin, "bomb-type");
+                    if (bomb.getPersistentDataContainer().has(key) && !player.isOp()) {
+                        player.sendMessage(plugin.colourMessage("&cYou can only use this in the mines!"));
+                        event.setCancelled(true);
                     }
                 }
             }

@@ -8,8 +8,6 @@ import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.channel.ChannelType;
@@ -20,8 +18,6 @@ import org.javacord.api.entity.user.User;
 import org.javacord.api.event.message.MessageCreateEvent;
 import org.javacord.api.listener.message.MessageCreateListener;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,14 +46,14 @@ public class MessageCreate implements MessageCreateListener {
                     OfflinePlayer player = Bukkit.getOfflinePlayer(plugin.discordLinking.get(code));
 
                     String sql = "UPDATE users SET discord_id = ? WHERE user_id = ?";
-                    List<Object> params = new ArrayList<Object>() {{
+                    List<Object> params = new ArrayList<>() {{
                         add(userId);
                         add(player.getUniqueId().toString());
                     }};
 
                     if(db.sqlUpdate(sql, params)) {
                         event.getChannel().sendMessage("Your account has successfully been linked with " + player.getName() + ", and you have received 500 tokens.");
-                        plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), 500);
+                        plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), 500, "Linking Discord", "");
 
                         Server server = discApi.getServerById("782795465632251955").get();
                         author.asUser().get().updateNickname(server, player.getName());

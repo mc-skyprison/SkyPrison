@@ -1,6 +1,5 @@
 package net.skyprison.skyprisoncore.commands.secrets;
 
-import net.skyprison.skyprisoncore.SkyPrisonCore;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.WorldGuard;
@@ -8,6 +7,7 @@ import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import me.clip.placeholderapi.PlaceholderAPI;
+import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.*;
 import org.bukkit.command.Command;
@@ -20,7 +20,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
-
 
 import java.io.File;
 import java.sql.Connection;
@@ -184,9 +183,13 @@ public class SecretsGUI implements CommandExecutor {
 			Set<String> cmds = f.getConfigurationSection("commands").getKeys(false);
 			for(String cmd : cmds) {
 				String tokenCmd = f.getString("commands." + cmd + ".command");
-				if(tokenCmd.startsWith("tokensadd") || tokenCmd.startsWith("/tokensadd") ) {
+				if(tokenCmd.startsWith("tokensadd") || tokenCmd.startsWith("/tokensadd")) {
 					String[] tokenVal = tokenCmd.split(" ");
 					output = tokenVal[2];
+				} else if(tokenCmd.startsWith("token add") || tokenCmd.startsWith("/token add")
+						|| tokenCmd.startsWith("tokens add") || tokenCmd.startsWith("/tokens add")) {
+					String[] tokenVal = tokenCmd.split(" ");
+					output = tokenVal[3];
 				}
 			}
 		}

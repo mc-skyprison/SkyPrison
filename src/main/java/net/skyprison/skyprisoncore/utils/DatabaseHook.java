@@ -154,7 +154,7 @@ public class DatabaseHook {
         }
 
         public void deleteUser(String UUID) {
-            List<Object> params = new ArrayList<Object>() {{
+            List<Object> params = new ArrayList<>() {{
                 add(UUID);
             }};
             String sql = "delete FROM users WHERE user_id = ?";
@@ -200,27 +200,27 @@ public class DatabaseHook {
         }
 
     //Processing
-        public boolean sqlUpdate(String statement, @NonNull List<Object> params) {
-            Connection conn;
-            PreparedStatement ps;
-            boolean success = true;
-            try {
-                conn = getSQLConnection();
-                ps = conn.prepareStatement(statement);
-                Iterator<Object> it = params.iterator();
-                int paramIndex = 1;
-                while (it.hasNext()) {
-                    ps.setObject(paramIndex, it.next());
-                    paramIndex++;
-                }
-                ps.executeUpdate();
-                close(ps, null, conn);
-            } catch (SQLException e) {
-                success = false;
-                e.printStackTrace();
+    public boolean sqlUpdate(String statement, @NonNull List<Object> params) {
+        Connection conn;
+        PreparedStatement ps;
+        boolean success = true;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement(statement);
+            Iterator<Object> it = params.iterator();
+            int paramIndex = 1;
+            while (it.hasNext()) {
+                ps.setObject(paramIndex, it.next());
+                paramIndex++;
             }
-            return success;
+            ps.executeUpdate();
+            close(ps, null, conn);
+        } catch (SQLException e) {
+            success = false;
+            e.printStackTrace();
         }
+        return success;
+    }
 
     public void close(PreparedStatement ps, ResultSet rs, Connection conn) {
         try {

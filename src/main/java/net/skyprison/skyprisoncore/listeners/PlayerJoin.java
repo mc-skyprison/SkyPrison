@@ -25,7 +25,10 @@ import se.file14.procosmetics.cosmetic.AbstractCosmeticType;
 import se.file14.procosmetics.cosmetic.CosmeticCategory;
 
 import java.awt.*;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,7 +62,7 @@ public class PlayerJoin implements Listener {
                         .setColor(Color.YELLOW);
 
                 String sqls = "INSERT INTO users (user_id, current_name, first_join) VALUES (?, ?, ?)";
-                List<Object> params = new ArrayList<Object>() {{
+                List<Object> params = new ArrayList<>() {{
                     add(player.getUniqueId().toString());
                     add(player.getName());
                     add(player.getFirstPlayed());
@@ -83,7 +86,7 @@ public class PlayerJoin implements Listener {
 
                 if(noData) {
                     String sqls = "INSERT INTO users (user_id, current_name, first_join) VALUES (?, ?, ?)";
-                    List<Object> params = new ArrayList<Object>() {{
+                    List<Object> params = new ArrayList<>() {{
                         add(player.getUniqueId().toString());
                         add(player.getName());
                         add(player.getFirstPlayed());

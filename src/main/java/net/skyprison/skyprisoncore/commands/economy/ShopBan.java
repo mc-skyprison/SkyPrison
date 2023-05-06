@@ -8,11 +8,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -66,7 +63,7 @@ public class ShopBan implements CommandExecutor {
 								if(!banUser.getPlayer().equals(player)) {
 									if (!bannedUsers.contains(banUser.getUniqueId().toString())) {
 										String sql = "INSERT INTO shop_banned (user_id, banned_user) VALUES (?, ?)";
-										List<Object> params = new ArrayList<Object>() {{
+										List<Object> params = new ArrayList<>() {{
 											add(player.getUniqueId().toString());
 											add(banUser.getUniqueId().toString());
 										}};
@@ -92,7 +89,7 @@ public class ShopBan implements CommandExecutor {
 								CMIUser banUser = CMI.getInstance().getPlayerManager().getUser(args[1]);
 								if (bannedUsers.contains(banUser.getUniqueId().toString())) {
 									String sql = "DELETE FROM shop_banned WHERE user_id = ? AND banned_user = ?";
-									List<Object> params = new ArrayList<Object>() {{
+									List<Object> params = new ArrayList<>() {{
 										add(player.getUniqueId().toString());
 										add(banUser.getUniqueId().toString());
 									}};

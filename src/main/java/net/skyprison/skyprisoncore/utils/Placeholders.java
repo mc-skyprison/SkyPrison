@@ -166,10 +166,16 @@ public class Placeholders extends PlaceholderExpansion {
 				return "&7-";
 			}
 			String[] mission = dailyMissions.getPlayerMissions(player).get(0).split("-");
-			int amountNeeded = Integer.parseInt(mission[3]);
-			int currAmount = Integer.parseInt(mission[4]);
+			String amountNeeded = mission[3];
+			String currAmount = mission[4];
 			String missionTitle = mission[2];
-			if(amountNeeded == currAmount) {
+
+			if(mission[0].equalsIgnoreCase("money")) {
+				amountNeeded = "$" + plugin.formatNumber(Integer.parseInt(amountNeeded));
+				currAmount = "$" + plugin.formatNumber(Integer.parseInt(currAmount));
+			}
+
+			if(amountNeeded.equalsIgnoreCase(currAmount)) {
 				return plugin.colourMessage("{#ACBED8}&m" + missionTitle + " &f&m" + currAmount + "/" + amountNeeded);
 			} else {
 				return plugin.colourMessage("{#ACBED8}" + missionTitle + " &f" + currAmount + "/" + amountNeeded);
@@ -181,10 +187,15 @@ public class Placeholders extends PlaceholderExpansion {
 				return "&7-";
 			}
 			String[] mission = dailyMissions.getPlayerMissions(player).get(1).split("-");
-			int amountNeeded = Integer.parseInt(mission[3]);
-			int currAmount = Integer.parseInt(mission[4]);
+			String amountNeeded = mission[3];
+			String currAmount = mission[4];
 			String missionTitle = mission[2];
-			if(amountNeeded == currAmount) {
+
+			if(mission[0].equalsIgnoreCase("money")) {
+				amountNeeded = "$" + plugin.formatNumber(Integer.parseInt(amountNeeded));
+				currAmount = "$" + plugin.formatNumber(Integer.parseInt(currAmount));
+			}
+			if(amountNeeded.equalsIgnoreCase(currAmount)) {
 				return plugin.colourMessage("{#ACBED8}&m" + missionTitle + " &f&m" + currAmount + "/" + amountNeeded);
 			} else {
 				return plugin.colourMessage("{#ACBED8}" + missionTitle + " &f" + currAmount + "/" + amountNeeded);

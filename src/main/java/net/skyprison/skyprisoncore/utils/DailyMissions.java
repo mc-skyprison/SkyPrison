@@ -145,31 +145,6 @@ public class DailyMissions {
         return missionsToGive;
     }
 
-  /*
-        Player player = event.getEntity().getKiller();
-        for (String mission : dailyMissions.getPlayerMissions(player)) {
-            String[] missSplit = mission.split("-");
-            if (missSplit[0].equalsIgnoreCase("kill")) {
-                int currAmount = Integer.parseInt(missSplit[4]) + 1;
-                String nMission = missSplit[0] + "-" + missSplit[1] + "-" + missSplit[2] + "-" + missSplit[3] + "-" + currAmount;
-                switch (missSplit[1].toLowerCase()) {
-                    case "any":
-                        if(event.getEntity() instanceof Monster) {
-                            dailyMissions.updatePlayerMission(player, mission, nMission);
-                        }
-                        break;
-                    case "zombie":
-                        if (event.getEntityType().equals(EntityType.ZOMBIE)) {
-                            dailyMissions.updatePlayerMission(player, mission, nMission);
-                        }
-                        break;
-                }
-            }
-        }
-    */
-
-
-
     public void setPlayerMissions(Player player) {
         List<String> ranks = new ArrayList<>();
         CMI.getInstance().getPlayerManager().getUser(player).getRank().getPreviousRanks().forEach(i -> ranks.add(i.getName()));

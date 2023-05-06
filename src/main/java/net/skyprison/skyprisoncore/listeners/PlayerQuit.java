@@ -3,8 +3,6 @@ package net.skyprison.skyprisoncore.listeners;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -13,10 +11,6 @@ import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 
 import java.awt.*;
-import java.io.File;
-import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,14 +44,14 @@ public class PlayerQuit implements Listener {
             String sql;
             List<Object> params;
             sql = "UPDATE users SET blocks_mined = ? WHERE user_id = ?";
-            params = new ArrayList<Object>() {{
+            params = new ArrayList<>() {{
                 add(plugin.blockBreaks.get(pUUID));
                 add(pUUID);
             }};
             db.sqlUpdate(sql, params);
 
             sql = "UPDATE users SET tokens = ? WHERE user_id = ?";
-            params = new ArrayList<Object>() {{
+            params = new ArrayList<>() {{
                 add(plugin.tokensData.get(pUUID));
                 add(pUUID);
             }};

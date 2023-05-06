@@ -14,7 +14,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockDamageEvent;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 public class BlockDamage implements Listener {
     private final SkyPrisonCore plugin;
@@ -63,12 +66,12 @@ public class BlockDamage implements Listener {
                             }
 
                             String sql = "UPDATE users SET sponges_found = sponges_found + 1 WHERE user_id = ?";
-                            List<Object> params = new ArrayList<Object>() {{
+                            List<Object> params = new ArrayList<>() {{
                                 add(player.getUniqueId());
                             }};
                             db.sqlUpdate(sql, params);
 
-                            plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(event.getPlayer()), 25);
+                            plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(event.getPlayer()), 25, "Found Sponge", "");
                             break;
                         }
                     }

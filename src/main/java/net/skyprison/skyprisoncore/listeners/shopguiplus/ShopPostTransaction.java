@@ -67,7 +67,7 @@ public class ShopPostTransaction implements Listener {
                     if (recentId >= 0) {
                         String sql = "DELETE FROM recent_sells WHERE recent_id = ?";
                         int finalRecentId = recentId;
-                        List<Object> params = new ArrayList<Object>() {{
+                        List<Object> params = new ArrayList<>() {{
                             add(finalRecentId);
                         }};
                         hook.sqlUpdate(sql, params);
@@ -75,7 +75,7 @@ public class ShopPostTransaction implements Listener {
                 }
 
                 String sql = "INSERT INTO recent_sells (user_id, recent_item, recent_amount, recent_price) VALUES (?, ?, ?, ?)";
-                List<Object> params = new ArrayList<Object>() {{
+                List<Object> params = new ArrayList<>() {{
                     add(player.getUniqueId().toString());
                     add(event.getResult().getShopItem().getItem().getType());
                     add(event.getResult().getAmount());

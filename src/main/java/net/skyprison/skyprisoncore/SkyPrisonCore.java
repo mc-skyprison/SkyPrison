@@ -44,6 +44,7 @@ import net.skyprison.skyprisoncore.utils.*;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -87,6 +88,8 @@ public class SkyPrisonCore extends JavaPlugin {
     public Map<String, Integer> tokensData = new HashMap<>();
     public HashMap<UUID, String> userTags = new HashMap<>();
 
+    public Map<String, Long> mineCools = new HashMap<>();
+
     public HashMap<UUID, List<String>> chatLock = new HashMap<>();
 
     public Map<Integer, UUID> discordLinking = new HashMap<>();
@@ -109,10 +112,18 @@ public class SkyPrisonCore extends JavaPlugin {
 
     private Plugin plugin;
 
+    public ArrayList<Location> bombLocs = new ArrayList<>();
+
 
     public HashMap<UUID, LinkedHashMap<String, Integer>> shopLogAmountPlayer = new HashMap<>();
     public HashMap<UUID, LinkedHashMap<String, Double>> shopLogPricePlayer = new HashMap<>();
     public HashMap<UUID, LinkedHashMap<String, Integer>> shopLogPagePlayer = new HashMap<>();
+
+
+    public HashMap<UUID, LinkedHashMap<String, Integer>> tokenLogUsagePlayer = new HashMap<>();
+    public HashMap<UUID, LinkedHashMap<String, Integer>> tokenLogAmountPlayer = new HashMap<>();
+    public HashMap<UUID, LinkedHashMap<String, Integer>> tokenLogPagePlayer = new HashMap<>();
+
 
     public void onEnable() {
         plugin = this;
@@ -196,7 +207,7 @@ public class SkyPrisonCore extends JavaPlugin {
                     Map<String, Integer> token = tokensData;
                     for (String pUUID : token.keySet()) {
                         String sql = "UPDATE users SET tokens = ? WHERE user_id = ?";
-                        List<Object> params = new ArrayList<Object>() {{
+                        List<Object> params = new ArrayList<>() {{
                             add(tokensData.get(pUUID));
                             add(pUUID);
                         }};
@@ -378,7 +389,7 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("guardduty")).setExecutor(new GuardDuty(this));
         Objects.requireNonNull(getCommand("safezone")).setExecutor(new Safezone(this));
         Objects.requireNonNull(getCommand("buyback")).setExecutor(new BuyBack(this, getDatabase()));
-        Objects.requireNonNull(getCommand("daily")).setExecutor(new Daily(this, new DatabaseHook(this)));
+        Objects.requireNonNull(getCommand("daily")).setExecutor(new Daily(this, getDatabase()));
         Objects.requireNonNull(getCommand("shopban")).setExecutor(new ShopBan(getDatabase(), this));
         Objects.requireNonNull(getCommand("enchtable")).setExecutor(new EnchTable(this));
         Objects.requireNonNull(getCommand("removeitalics")).setExecutor(new RemoveItalics(this));
@@ -397,6 +408,9 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("customenchant")).setExecutor(new CustomEnchant(this));
         Objects.requireNonNull(getCommand("tags")).setExecutor(new Tags(this, getDatabase()));
         Objects.requireNonNull(getCommand("bomb")).setExecutor(new Bomb(this));
+        Objects.requireNonNull(getCommand("furnace")).setExecutor(new VirtualFurnace(this));
+        Objects.requireNonNull(getCommand("minereset")).setExecutor(new MineReset(this));
+        Objects.requireNonNull(getCommand("voucher")).setExecutor(new Voucher(this));
     }
 
 
@@ -414,7 +428,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EntityPickupItem(this), this);
         pm.registerEvents(new EntityRemoveFromWorld(this), this);
         pm.registerEvents(new InventoryClick(this, new EconomyCheck(this), new DropChest(this), new Bounty(getDatabase(), this),
-                new SecretsGUI(this, getDatabase()), new Daily(this, new DatabaseHook(this)), new MoneyHistory(this), new EndUpgrade(this),
+                new SecretsGUI(this, getDatabase()), new Daily(this, getDatabase()), new MoneyHistory(this), new EndUpgrade(this),
                 new BuyBack(this, getDatabase()), new SkyPlot(this), getDatabase(), new Tags(this, getDatabase())), this);
         pm.registerEvents(new InventoryOpen(), this);
         pm.registerEvents(new LeavesDecay(), this);
@@ -686,6 +700,15 @@ public class SkyPrisonCore extends JavaPlugin {
         return sb + message;
     }
 
+    public boolean isLong(String str) {
+        try {
+            Long.parseLong(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
     public boolean isInt(String str) {
         try {
             Integer.parseInt(str);
@@ -746,7 +769,7 @@ public class SkyPrisonCore extends JavaPlugin {
 
         for(String player : dailyPlayers) {
             String sql = "UPDATE dailies SET current_streak = 0 WHERE user_id = ?";
-            List<Object> params = new ArrayList<Object>() {{
+            List<Object> params = new ArrayList<>() {{
                 add(player);
             }};
             getDatabase().sqlUpdate(sql, params);

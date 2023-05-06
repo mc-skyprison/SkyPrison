@@ -1,25 +1,20 @@
 package net.skyprison.skyprisoncore.commands.economy;
 
-import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.brcdev.shopgui.ShopGuiPlusApi;
+import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -78,7 +73,7 @@ public class DontSell implements CommandExecutor {
 									player.sendMessage(plugin.colourMessage("&aSuccessfully &lREMOVED &aitem from the dont sell list!"));
 								}
 								String sql = "UPDATE users SET sell_blocks = ? WHERE user_id = ?";
-								List<Object> params = new ArrayList<Object>() {{
+								List<Object> params = new ArrayList<>() {{
 									add(blockedSales);
 									add(player.getUniqueId().toString());
 								}};
@@ -101,7 +96,7 @@ public class DontSell implements CommandExecutor {
 								player.sendMessage(plugin.colourMessage("&aSuccessfully &lADDED &aitem to the dont sell list!"));
 
 								String sql = "INSERT INTO block_sells (user_id, block_item) VALUES (?, ?)";
-								List<Object> params = new ArrayList<Object>() {{
+								List<Object> params = new ArrayList<>() {{
 									add(player.getUniqueId().toString());
 									add(iName);
 								}};
@@ -111,7 +106,7 @@ public class DontSell implements CommandExecutor {
 								player.sendMessage(plugin.colourMessage("&aSuccessfully &lREMOVED &aitem from the dont sell list!"));
 
 								String sql = "DELETE FROM block_sells WHERE user_id = ? AND block_item = ?";
-								List<Object> params = new ArrayList<Object>() {{
+								List<Object> params = new ArrayList<>() {{
 									add(player.getUniqueId().toString());
 									add(iName);
 								}};

@@ -3,24 +3,19 @@ package net.skyprison.skyprisoncore.commands;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import com.google.common.collect.Lists;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -72,7 +67,7 @@ public class IgnoreTeleport implements CommandExecutor {
 								player.sendMessage(plugin.colourMessage("&aSuccessfully removed " + ignorePlayer.getName() + " from your ignore list!"));
 
 								String sql = "DELETE FROM teleport_ignore WHERE user_id = ? AND ignore_id = ?";
-								List<Object> params = new ArrayList<Object>() {{
+								List<Object> params = new ArrayList<>() {{
 									add(player.getUniqueId().toString());
 									add(ignorePlayer.getUniqueId().toString());
 								}};
@@ -82,7 +77,7 @@ public class IgnoreTeleport implements CommandExecutor {
 								player.sendMessage(plugin.colourMessage("&aSuccessfully added " + ignorePlayer.getName() + " to your ignore list!"));
 
 								String sql = "INSERT INTO teleport_ignore (user_id, ignore_id) VALUES (?, ?)";
-								List<Object> params = new ArrayList<Object>() {{
+								List<Object> params = new ArrayList<>() {{
 									add(player.getUniqueId().toString());
 									add(ignorePlayer.getUniqueId().toString());
 								}};
