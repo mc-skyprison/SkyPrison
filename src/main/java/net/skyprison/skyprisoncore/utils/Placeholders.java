@@ -162,57 +162,64 @@ public class Placeholders extends PlaceholderExpansion {
 		}
 
 		if(identifier.equalsIgnoreCase("daily_mission_one")) {
-			if(dailyMissions.getPlayerMissions(player).isEmpty()) {
+			if(dailyMissions.getMissions(player).isEmpty()) {
 				return "&7-";
 			}
-			String[] mission = dailyMissions.getPlayerMissions(player).get(0).split("-");
-			String amountNeeded = mission[3];
-			String currAmount = mission[4];
-			String missionTitle = mission[2];
+			String mission = dailyMissions.getMissions(player).get(0);
+			String[] mSplit = mission.split("-");
+			int amount = dailyMissions.getMissionAmount(player, mission);
+			int needed = dailyMissions.getMissionNeeded(player, mission);
 
-			if(mission[0].equalsIgnoreCase("money")) {
-				amountNeeded = "$" + plugin.formatNumber(Integer.parseInt(amountNeeded));
-				currAmount = "$" + plugin.formatNumber(Integer.parseInt(currAmount));
+			String amFormat = plugin.formatNumber(amount);
+			String neeFormat = plugin.formatNumber(needed);
+
+			if(mSplit[0].equalsIgnoreCase("money")) {
+				amFormat = "$" + amFormat;
+				neeFormat = "$" + neeFormat;
 			}
 
-			if(amountNeeded.equalsIgnoreCase(currAmount)) {
-				return plugin.colourMessage("{#ACBED8}&m" + missionTitle + " &f&m" + currAmount + "/" + amountNeeded);
+			if(dailyMissions.isCompleted(player, mission)) {
+				return plugin.colourMessage("{#ACBED8}&m" + mSplit[2] + " &f&m" + amFormat + "/" + neeFormat);
 			} else {
-				return plugin.colourMessage("{#ACBED8}" + missionTitle + " &f" + currAmount + "/" + amountNeeded);
+				return plugin.colourMessage("{#ACBED8}" + mSplit[2] + " &f" + amFormat + "/" + neeFormat);
 			}
 		}
 
 		if(identifier.equalsIgnoreCase("daily_mission_two")) {
-			if(dailyMissions.getPlayerMissions(player).isEmpty()) {
+			if(dailyMissions.getMissions(player).isEmpty()) {
 				return "&7-";
 			}
-			String[] mission = dailyMissions.getPlayerMissions(player).get(1).split("-");
-			String amountNeeded = mission[3];
-			String currAmount = mission[4];
-			String missionTitle = mission[2];
+			String mission = dailyMissions.getMissions(player).get(1);
+			String[] mSplit = mission.split("-");
+			int amount = dailyMissions.getMissionAmount(player, mission);
+			int needed = dailyMissions.getMissionNeeded(player, mission);
 
-			if(mission[0].equalsIgnoreCase("money")) {
-				amountNeeded = "$" + plugin.formatNumber(Integer.parseInt(amountNeeded));
-				currAmount = "$" + plugin.formatNumber(Integer.parseInt(currAmount));
+			String amFormat = plugin.formatNumber(amount);
+			String neeFormat = plugin.formatNumber(needed);
+
+			if(mSplit[0].equalsIgnoreCase("money")) {
+				amFormat = "$" + amFormat;
+				neeFormat = "$" + neeFormat;
 			}
-			if(amountNeeded.equalsIgnoreCase(currAmount)) {
-				return plugin.colourMessage("{#ACBED8}&m" + missionTitle + " &f&m" + currAmount + "/" + amountNeeded);
+
+			if(dailyMissions.isCompleted(player, mission)) {
+				return plugin.colourMessage("{#ACBED8}&m" + mSplit[2] + " &f&m" + amFormat + "/" + neeFormat);
 			} else {
-				return plugin.colourMessage("{#ACBED8}" + missionTitle + " &f" + currAmount + "/" + amountNeeded);
+				return plugin.colourMessage("{#ACBED8}" + mSplit[2] + " &f" + amFormat + "/" + neeFormat);
 			}
 		}
 
 		if(identifier.equalsIgnoreCase("token_balance_formatted")) {
-			if(plugin.tokensData.containsKey(player.getUniqueId().toString())) {
-				return plugin.formatNumber(plugin.tokensData.get(player.getUniqueId().toString()));
+			if(plugin.tokensData.containsKey(player.getUniqueId())) {
+				return plugin.formatNumber(plugin.tokensData.get(player.getUniqueId()));
 			} else {
 				return "0";
 			}
 		}
 
 		if(identifier.equalsIgnoreCase("token_balance")) {
-			if(plugin.tokensData.containsKey(player.getUniqueId().toString())) {
-				return String.valueOf(plugin.tokensData.get(player.getUniqueId().toString()));
+			if(plugin.tokensData.containsKey(player.getUniqueId())) {
+				return String.valueOf(plugin.tokensData.get(player.getUniqueId()));
 			} else {
 				return "0";
 			}
@@ -309,21 +316,17 @@ public class Placeholders extends PlaceholderExpansion {
 		if(identifier.equalsIgnoreCase("silence_private")) {
 			CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
 			if(!user.isAcceptingPM()) {
-				String availableMessage = ChatColor.GRAY + "Private Chat is " + ChatColor.DARK_RED + "DISABLED";
-				return availableMessage;
+				return ChatColor.GRAY + "Private Chat is " + ChatColor.DARK_RED + "DISABLED";
 			} else {
-				String availableMessage = ChatColor.GRAY + "Private Chat is " + ChatColor.GREEN + "ENABLED";
-				return availableMessage;
+				return ChatColor.GRAY + "Private Chat is " + ChatColor.GREEN + "ENABLED";
 			}
 		}
 
 		if(identifier.equalsIgnoreCase("silence_bounty")) {
 			if(player.hasPermission("skyprisoncore.command.bounty.silent")) {
-				String availableMessage = ChatColor.GRAY + "Bounty Notifications are " + ChatColor.DARK_RED + "DISABLED";
-				return availableMessage;
+				return ChatColor.GRAY + "Bounty Notifications are " + ChatColor.DARK_RED + "DISABLED";
 			} else {
-				String availableMessage = ChatColor.GRAY + "Bounty Notifications are " + ChatColor.GREEN + "ENABLED";
-				return availableMessage;
+				return ChatColor.GRAY + "Bounty Notifications are " + ChatColor.GREEN + "ENABLED";
 			}
 		}
 

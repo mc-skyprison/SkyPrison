@@ -22,7 +22,7 @@ import java.util.Set;
 public class BlockDamage implements Listener {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
-    private DailyMissions dailyMissions;
+    private final DailyMissions dailyMissions;
 
     public BlockDamage(SkyPrisonCore plugin, DatabaseHook db, DailyMissions dailyMissions) {
         this.plugin = plugin;
@@ -38,12 +38,12 @@ public class BlockDamage implements Listener {
 
         if (b.getType() == Material.SPONGE) {
 
-            for (String mission : dailyMissions.getPlayerMissions(player)) {
-                String[] missSplit = mission.split("-");
-                if (missSplit[0].equalsIgnoreCase("sponge")) {
-                    int currAmount = Integer.parseInt(missSplit[4]) + 1;
-                    String nMission = missSplit[0] + "-" + missSplit[1] + "-" + missSplit[2] + "-" + missSplit[3] + "-" + currAmount;
-                    dailyMissions.updatePlayerMission(player, mission, nMission);
+            for (String mission : dailyMissions.getMissions(player)) {
+                if(!dailyMissions.isCompleted(player, mission)) {
+                    String[] missSplit = mission.split("-");
+                    if (missSplit[0].equalsIgnoreCase("sponge")) {
+                        dailyMissions.updatePlayerMission(player, mission);
+                    }
                 }
             }
 

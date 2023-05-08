@@ -602,7 +602,6 @@ public class InventoryClick implements Listener {
                                                 add(nCurrStreak);
                                                 add(currDate);
                                             }};
-                                            hook.sqlUpdate(sql, params);
                                         }
 
                                         hook.sqlUpdate(sql, params);

@@ -131,12 +131,12 @@ public class SecretFound implements CommandExecutor {
 				player.sendMessage("You have found all secrets in this category! Check out the Rewards GUI in /secrets to collect your reward!");
 			}
 		}
-		for(String mission : dailyMissions.getPlayerMissions(player)) {
-			String[] missSplit = mission.split("-");
-			if(missSplit[0].equalsIgnoreCase("secrets")) {
-				int currAmount = Integer.parseInt(missSplit[4]) + 1;
-				String nMission = missSplit[0] + "-" + missSplit[1] + "-" + missSplit[2] + "-" + missSplit[3] + "-" + currAmount;
-				dailyMissions.updatePlayerMission(player, mission, nMission);
+		for(String mission : dailyMissions.getMissions(player)) {
+			if(!dailyMissions.isCompleted(player, mission)) {
+				String[] missSplit = mission.split("-");
+				if (missSplit[0].equalsIgnoreCase("secrets")) {
+					dailyMissions.updatePlayerMission(player, mission);
+				}
 			}
 		}
 

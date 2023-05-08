@@ -18,7 +18,7 @@ import java.util.List;
 
 public class ShopPostTransaction implements Listener {
     private final DatabaseHook hook;
-    private DailyMissions dailyMissions;
+    private final DailyMissions dailyMissions;
 
     public ShopPostTransaction(DatabaseHook hook, DailyMissions dailyMissions) {
         this.hook = hook;
@@ -32,12 +32,13 @@ public class ShopPostTransaction implements Listener {
                     || event.getResult().getShopAction() == ShopManager.ShopAction.SELL_ALL) {
                 Player player = event.getResult().getPlayer();
 
-                for (String mission : dailyMissions.getPlayerMissions(player)) {
-                    String[] missSplit = mission.split("-");
-                    if (missSplit[0].equalsIgnoreCase("money")) {
-                        int currAmount = Integer.parseInt(missSplit[4]) + Integer.parseInt(String.valueOf(event.getResult().getPrice()));
-                        String nMission = missSplit[0] + "-" + missSplit[1] + "-" + missSplit[2] + "-" + missSplit[3] + "-" + currAmount;
-                        dailyMissions.updatePlayerMission(player, mission, nMission);
+                for (String mission : dailyMissions.getMissions(player)) {
+                    if(!dailyMissions.isCompleted(player, mission)) {
+                        String[] missSplit = mission.split("-");
+                        if (missSplit[0].equalsIgnoreCase("money")) {
+                            int incAmount = (int) event.getResult().getPrice();
+                            dailyMissions.updatePlayerMission(player, mission, incAmount);
+                        }
                     }
                 }
                 List<String> soldItems = new ArrayList<>();

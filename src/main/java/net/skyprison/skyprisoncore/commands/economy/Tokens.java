@@ -3,6 +3,7 @@ package net.skyprison.skyprisoncore.commands.economy;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import me.clip.placeholderapi.PlaceholderAPI;
+import net.kyori.adventure.text.Component;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.apache.commons.lang.WordUtils;
@@ -54,8 +55,8 @@ public class Tokens implements CommandExecutor {
     public void addTokens(CMIUser player, Integer amount, String type, String source) {
         if(player.isOnline()) {
             int tokens = amount;
-            tokens += plugin.tokensData.get(player.getUniqueId().toString());
-            plugin.tokensData.put(player.getUniqueId().toString(), tokens);
+            tokens += plugin.tokensData.get(player.getUniqueId());
+            plugin.tokensData.put(player.getUniqueId(), tokens);
             player.sendMessage(plugin.colourMessage("&bTokens &8» &b" + plugin.formatNumber(amount) + " tokens &7has been added to your balance"));
         } else {
             String sql = "UPDATE users SET tokens = tokens + ? WHERE user_id = ?";
@@ -542,21 +543,25 @@ public class Tokens implements CommandExecutor {
                     } else if (i == 49) {
                         ItemStack balance = new ItemStack(Material.NETHER_STAR);
                         ItemMeta bMeta = balance.getItemMeta();
-                        bMeta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Your Balance");
+                        bMeta.setDisplayName(plugin.colourMessage("&e&lBalances"));
+                        ArrayList<Component> lore = new ArrayList<>();
+                        lore.add(Component.text(plugin.colourMessage("&7&m━━━━━━━━━━━━━━")));
+                        lore.add(Component.text(plugin.colourMessage("&fTokens: " + plugin.formatNumber(plugin.tokensData.get(player.getUniqueId())))));
+                        lore.add(Component.text(plugin.colourMessage("&fMoney: " + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%"))));
                         bMeta.setLore(Collections.singletonList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
+                        lore.add(Component.text(plugin.colourMessage("&7&m━━━━━━━━━━━━━━")));
                         balance.setItemMeta(bMeta);
                         tokenShopGUI.setItem(i, balance);
                     } else if (i == 50) {
                         ItemStack balance = new ItemStack(Material.PAPER);
                         ItemMeta bMeta = balance.getItemMeta();
-                        bMeta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Next Page");
-                        bMeta.setLore(Collections.singletonList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
+                        bMeta.setDisplayName(plugin.colourMessage("&a&lNext Page"));
                         balance.setItemMeta(bMeta);
                         tokenShopGUI.setItem(i, balance);
                     } else if (i == 53) {
                         ItemStack balance = new ItemStack(Material.BOOK);
                         ItemMeta bMeta = balance.getItemMeta();
-                        bMeta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Your Balance");
+                        bMeta.setDisplayName(plugin.colourMessage("&3&lYour Balance"));
                         bMeta.setLore(Collections.singletonList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
                         balance.setItemMeta(bMeta);
                         tokenShopGUI.setItem(i, balance);
@@ -646,6 +651,123 @@ public class Tokens implements CommandExecutor {
                 }
                 break;
             case 2:
+                tokenShopGUI = Bukkit.createInventory(null, 45, ChatColor.RED + "Bartender Shop");
+                for (int i = 0; i < 45; i++) {
+                    if (i == 0) {
+                        NamespacedKey key = new NamespacedKey(plugin, "stop-click");
+                        redMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
+                        NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
+                        redMeta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "tokenshop-" + page);
+                        redPane.setItemMeta(redMeta);
+                        tokenShopGUI.setItem(i, redPane);
+                    } else if (i == 8 || i == 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35 || i == 36) {
+                        tokenShopGUI.setItem(i, redPane);
+                    } else if (i == 40) {
+                        ItemStack balance = new ItemStack(Material.NETHER_STAR);
+                        ItemMeta bMeta = balance.getItemMeta();
+                        bMeta.setDisplayName(plugin.colourMessage("&6&lYour Balance"));
+                        bMeta.setLore(Collections.singletonList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
+                        balance.setItemMeta(bMeta);
+                        tokenShopGUI.setItem(i, balance);
+                    } else if (i == 39) {
+                        ItemStack balance = new ItemStack(Material.PAPER);
+                        ItemMeta bMeta = balance.getItemMeta();
+                        bMeta.setDisplayName(plugin.colourMessage("&6&lPrevious Page"));
+                        bMeta.setLore(Collections.singletonList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
+                        balance.setItemMeta(bMeta);
+                        tokenShopGUI.setItem(i, balance);
+                    } else if (i == 44) {
+                        ItemStack balance = new ItemStack(Material.BOOK);
+                        ItemMeta bMeta = balance.getItemMeta();
+                        bMeta.setDisplayName(plugin.colourMessage("&6&lYour Balance"));
+                        bMeta.setLore(Collections.singletonList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
+                        balance.setItemMeta(bMeta);
+                        tokenShopGUI.setItem(i, balance);
+                    } else if(i == 10) {
+                        ItemStack item = new ItemStack(Material.DIAMOND_HELMET);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 11) {
+                        ItemStack item = new ItemStack(Material.IRON_HELMET);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 13) {
+                        ItemStack item = new ItemStack(Material.ENDER_CHEST);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 15) {
+                        ItemStack item = new ItemStack(Material.IRON_SWORD);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 16) {
+                        ItemStack item = new ItemStack(Material.CROSSBOW);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 19) {
+                        ItemStack item = new ItemStack(Material.DIAMOND_CHESTPLATE);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 20) {
+                        ItemStack item = new ItemStack(Material.IRON_CHESTPLATE);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 22) {
+                        ItemStack item = new ItemStack(Material.SNOWBALL, 16);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 24) {
+                        ItemStack item = new ItemStack(Material.DIAMOND_PICKAXE);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 25) {
+                        ItemStack item = new ItemStack(Material.BOW);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 28) {
+                        ItemStack item = new ItemStack(Material.DIAMOND_LEGGINGS);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 29) {
+                        ItemStack item = new ItemStack(Material.IRON_LEGGINGS);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 31) {
+                        ItemStack item = new ItemStack(Material.ARROW);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 33) {
+                        ItemStack item = new ItemStack(Material.DIAMOND_AXE);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 34) {
+                        ItemStack item = new ItemStack(Material.TRIDENT);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 37) {
+                        ItemStack item = new ItemStack(Material.DIAMOND_BOOTS);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 38) {
+                        ItemStack item = new ItemStack(Material.IRON_BOOTS);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 40) {
+                        ItemStack item = new ItemStack(Material.EXPERIENCE_BOTTLE, 64);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 42) {
+                        ItemStack item = new ItemStack(Material.DIAMOND_SHOVEL);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else if(i == 43) {
+                        ItemStack item = new ItemStack(Material.TURTLE_HELMET);
+                        ItemMeta iMeta = item.getItemMeta();
+                        tokenShopGUI.setItem(i, item);
+                    } else {
+                        tokenShopGUI.setItem(i, blackPane);
+                    }
+                }
+                break;
 
         };
 
@@ -736,11 +858,11 @@ public class Tokens implements CommandExecutor {
                                 if(CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
                                     CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
                                     if(oPlayer.isOnline()) {
-                                        int tokens = plugin.tokensData.get(oPlayer.getUniqueId().toString());
+                                        int tokens = plugin.tokensData.get(oPlayer.getUniqueId());
                                         if(tokens != 0) {
                                             if(plugin.isInt(args[2])) {
                                                 tokens -= Integer.parseInt(args[2]);
-                                                plugin.tokensData.put(oPlayer.getUniqueId().toString(), Math.max(tokens, 0));
+                                                plugin.tokensData.put(oPlayer.getUniqueId(), Math.max(tokens, 0));
                                                 player.sendMessage(plugin.colourMessage("&bTokens &8» &7Removed &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens &7from " + oPlayer.getName()));
                                                 oPlayer.sendMessage(plugin.colourMessage("&bTokens &8» &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens &7was removed from your balance"));
 
@@ -950,7 +1072,7 @@ public class Tokens implements CommandExecutor {
                                     if (plugin.isInt(args[2])) {
                                         if(Integer.parseInt(args[2]) >= 0) {
                                             if(oPlayer.isOnline()) {
-                                                plugin.tokensData.put(oPlayer.getUniqueId().toString(), Integer.parseInt(args[2]));
+                                                plugin.tokensData.put(oPlayer.getUniqueId(), Integer.parseInt(args[2]));
                                                 player.sendMessage(plugin.colourMessage("&bTokens &8» &7Set " + oPlayer.getName() + "'s tokens to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
                                                 oPlayer.sendMessage(plugin.colourMessage("&bTokens &8» &7Your token balance was set to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
                                             } else {
@@ -998,7 +1120,7 @@ public class Tokens implements CommandExecutor {
                             if(CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
                                 CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
                                 if(oPlayer.isOnline()) {
-                                    player.sendMessage(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'s token balance is &b" + plugin.formatNumber(plugin.tokensData.get(oPlayer.getUniqueId().toString())) + " &7tokens"));
+                                    player.sendMessage(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'s token balance is &b" + plugin.formatNumber(plugin.tokensData.get(oPlayer.getUniqueId())) + " &7tokens"));
                                 } else {
                                     try {
                                         Connection conn = hook.getSQLConnection();
@@ -1018,7 +1140,7 @@ public class Tokens implements CommandExecutor {
                                 player.sendMessage(plugin.colourMessage("&cPlayer does not exist!"));
                             }
                         } else {
-                            player.sendMessage(plugin.colourMessage("&bTokens &8» &7Your token balance is &b" + plugin.formatNumber(plugin.tokensData.get(player.getUniqueId().toString())) + " &7tokens"));
+                            player.sendMessage(plugin.colourMessage("&bTokens &8» &7Your token balance is &b" + plugin.formatNumber(plugin.tokensData.get(player.getUniqueId())) + " &7tokens"));
                         }
                         break;
                     case "shop":
@@ -1099,11 +1221,11 @@ public class Tokens implements CommandExecutor {
                             if(CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
                                 CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
                                 if(oPlayer.isOnline()) {
-                                    int tokens = plugin.tokensData.get(oPlayer.getUniqueId().toString());
+                                    int tokens = plugin.tokensData.get(oPlayer.getUniqueId());
                                     if(tokens != 0) {
                                         if(plugin.isInt(args[2])) {
                                             tokens -= Integer.parseInt((args[2]));
-                                            plugin.tokensData.put(oPlayer.getUniqueId().toString(), Math.max(tokens, 0));
+                                            plugin.tokensData.put(oPlayer.getUniqueId(), Math.max(tokens, 0));
                                             plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7Removed &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens &7from " + oPlayer.getName()));
                                             oPlayer.sendMessage(plugin.colourMessage("&bTokens &8» &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens &7was removed from your balance"));
 
@@ -1208,7 +1330,7 @@ public class Tokens implements CommandExecutor {
                                 if (plugin.isInt(args[2])) {
                                     if(Integer.parseInt(args[2]) >= 0) {
                                         if(oPlayer.isOnline()) {
-                                            plugin.tokensData.put(oPlayer.getUniqueId().toString(), Integer.parseInt(args[2]));
+                                            plugin.tokensData.put(oPlayer.getUniqueId(), Integer.parseInt(args[2]));
                                             plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7Set " + oPlayer.getName() + "'s tokens to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
                                             oPlayer.sendMessage(plugin.colourMessage("&bTokens &8» &7Your token balance was set to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
                                         } else {
@@ -1252,7 +1374,7 @@ public class Tokens implements CommandExecutor {
                             if(CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
                                 CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
                                 if(oPlayer.isOnline()) {
-                                    plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'S token balance is &b" + plugin.formatNumber(plugin.tokensData.get(oPlayer.getUniqueId().toString())) + "tokens"));
+                                    plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'S token balance is &b" + plugin.formatNumber(plugin.tokensData.get(oPlayer.getUniqueId())) + "tokens"));
                                 } else {
                                     try {
                                         Connection conn = hook.getSQLConnection();

@@ -2,7 +2,8 @@ package net.skyprison.skyprisoncore.listeners;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
-import org.bukkit.entity.EntityType;
+import org.bukkit.Material;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -10,7 +11,7 @@ import org.bukkit.event.player.PlayerFishEvent;
 
 public class PlayerFish implements Listener {
     private final SkyPrisonCore plugin;
-    private DailyMissions dailyMissions;
+    private final DailyMissions dailyMissions;
 
     public PlayerFish(SkyPrisonCore plugin, DailyMissions dailyMissions) {
         this.plugin = plugin;
@@ -19,33 +20,34 @@ public class PlayerFish implements Listener {
 
     @EventHandler
     public void onPlayerFish(PlayerFishEvent event) {
-        if(event.getCaught() != null) {
+        if(event.getCaught() != null && event.getCaught() instanceof Item && event.getState() == PlayerFishEvent.State.CAUGHT_FISH) {
+            Item item = (Item) event.getCaught();
+            Material caught = item.getItemStack().getType();
             Player player = event.getPlayer();
-
-            for (String mission : dailyMissions.getPlayerMissions(player)) {
-                String[] missSplit = mission.split("-");
-                if (missSplit[0].equalsIgnoreCase("fish")) {
-                    int currAmount = Integer.parseInt(missSplit[4]) + 1;
-                    String nMission = missSplit[0] + "-" + missSplit[1] + "-" + missSplit[2] + "-" + missSplit[3] + "-" + currAmount;
-                    switch (missSplit[1].toLowerCase()) {
-                        case "any":
-                            dailyMissions.updatePlayerMission(player, mission, nMission);
-                            break;
-                        case "pufferfish":
-                            if (event.getCaught().getType().equals(EntityType.PUFFERFISH)) {
-                                dailyMissions.updatePlayerMission(player, mission, nMission);
-                            }
-                            break;
-                        case "salmon":
-                            if (event.getCaught().getType().equals(EntityType.SALMON)) {
-                                dailyMissions.updatePlayerMission(player, mission, nMission);
-                            }
-                            break;
-                        case "cod":
-                            if (event.getCaught().getType().equals(EntityType.COD)) {
-                                dailyMissions.updatePlayerMission(player, mission, nMission);
-                            }
-                            break;
+            for (String mission : dailyMissions.getMissions(player)) {
+                if(!dailyMissions.isCompleted(player, mission)) {
+                    String[] missSplit = mission.split("-");
+                    if (missSplit[0].equalsIgnoreCase("fish")) {
+                        switch (missSplit[1].toLowerCase()) {
+                            case "any":
+                                dailyMissions.updatePlayerMission(player, mission);
+                                break;
+                            case "pufferfish":
+                                if (caught.equals(Material.PUFFERFISH)) {
+                                    dailyMissions.updatePlayerMission(player, mission);
+                                }
+                                break;
+                            case "salmon":
+                                if (caught.equals(Material.SALMON)) {
+                                    dailyMissions.updatePlayerMission(player, mission);
+                                }
+                                break;
+                            case "cod":
+                                if (caught.equals(Material.COD)) {
+                                    dailyMissions.updatePlayerMission(player, mission);
+                                }
+                                break;
+                        }
                     }
                 }
             }

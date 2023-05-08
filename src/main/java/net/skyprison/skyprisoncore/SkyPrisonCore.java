@@ -42,15 +42,11 @@ import net.skyprison.skyprisoncore.listeners.shopguiplus.ShopPostTransaction;
 import net.skyprison.skyprisoncore.listeners.shopguiplus.ShopPreTransaction;
 import net.skyprison.skyprisoncore.utils.*;
 import org.apache.commons.lang.StringUtils;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -79,14 +75,17 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
 public class SkyPrisonCore extends JavaPlugin {
     public HashMap<String, String> hexColour = new HashMap<>();
     public HashMap<UUID, Boolean> flyPvP = new HashMap<>();
     public HashMap<UUID, Integer> teleportMove = new HashMap<>();
-    public Map<String, Integer> tokensData = new HashMap<>();
+    public Map<UUID, Integer> tokensData = new HashMap<>();
     public HashMap<UUID, String> userTags = new HashMap<>();
+
+    public HashMap<UUID, ArrayList<String>> missions = new HashMap<>();
 
     public Map<String, Long> mineCools = new HashMap<>();
 
@@ -94,7 +93,7 @@ public class SkyPrisonCore extends JavaPlugin {
 
     public Map<Integer, UUID> discordLinking = new HashMap<>();
 
-    public Map<String, Integer> blockBreaks = new HashMap<>();
+    public Map<UUID, Integer> blockBreaks = new HashMap<>();
 
     private FileConfiguration infoConf;
 
@@ -110,8 +109,6 @@ public class SkyPrisonCore extends JavaPlugin {
 
     private DailyMissions dailyMissions;
 
-    private Plugin plugin;
-
     public ArrayList<Location> bombLocs = new ArrayList<>();
 
 
@@ -126,7 +123,6 @@ public class SkyPrisonCore extends JavaPlugin {
 
 
     public void onEnable() {
-        plugin = this;
         String dToken = getConfig().getString("discord-token");
 
         if(dToken != null && !dToken.isEmpty()) {
@@ -148,7 +144,7 @@ public class SkyPrisonCore extends JavaPlugin {
 
         tokens = new Tokens(this, getDatabase());
 
-        dailyMissions = new DailyMissions();
+        dailyMissions = new DailyMissions(this, getDatabase());
 
         registerMinPrice();
         registerCommands();
@@ -184,7 +180,7 @@ public class SkyPrisonCore extends JavaPlugin {
             public void run() {
                 checkDailies();
             }
-        }.runTaskTimerAsynchronously(this, 20 * 3800, 20 * 3800);
+        }.runTaskTimerAsynchronously(this, 20 * 1800, 20 * 1800);
 
         File infoFile = new File(this.getDataFolder() + File.separator + "info.yml");
         infoConf = YamlConfiguration.loadConfiguration(infoFile);
@@ -204,14 +200,30 @@ public class SkyPrisonCore extends JavaPlugin {
                 updateTopic();
                 checkOnlineDailies();
                 if(tokensData != null && !tokensData.isEmpty()) {
-                    Map<String, Integer> token = tokensData;
-                    for (String pUUID : token.keySet()) {
+                    Map<UUID, Integer> token = tokensData;
+                    for (UUID pUUID : token.keySet()) {
                         String sql = "UPDATE users SET tokens = ? WHERE user_id = ?";
                         List<Object> params = new ArrayList<>() {{
-                            add(tokensData.get(pUUID));
-                            add(pUUID);
+                            add(token.get(pUUID));
+                            add(pUUID.toString());
                         }};
                         getDatabase().sqlUpdate(sql, params);
+                    }
+                }
+                if(missions != null && !missions.isEmpty()) {
+                    Map<UUID, ArrayList<String>> tempMissions = missions;
+                    for (UUID pUUID : tempMissions.keySet()) {
+                        OfflinePlayer player = Bukkit.getOfflinePlayer(pUUID);
+                        for(String mission : dailyMissions.getMissions(player)) {
+                            String sql = "UPDATE daily_missions SET amount = ?, completed = ? WHERE user_id = ? AND type = ?";
+                            List<Object> params = new ArrayList<>() {{
+                                add(dailyMissions.getMissionAmount(player, mission));
+                                add(dailyMissions.isCompleted(player, mission) ? 1 : 0);
+                                add(pUUID);
+                                add(mission);
+                            }};
+                            getDatabase().sqlUpdate(sql, params);
+                        }
                     }
                 }
             }
@@ -259,8 +271,12 @@ public class SkyPrisonCore extends JavaPlugin {
     @Override
     public void onDisable() {
         if(discApi != null) {
-            discApi.getTextChannelById("788108242797854751").get().sendMessage(":octagonal_sign: **Server has stopped**");
-            discApi.getServerTextChannelById("788108242797854751").get().updateTopic("Server is offline!");
+            try {
+                discApi.getTextChannelById("788108242797854751").get().sendMessage(":octagonal_sign: **Server has stopped**");
+                discApi.getServerTextChannelById("788108242797854751").get().updateTopic("Server is offline!");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             discApi.disconnect();
         }
         getLogger().info("Disabled SkyPrisonCore v" + getDescription().getVersion());
@@ -417,9 +433,9 @@ public class SkyPrisonCore extends JavaPlugin {
     public void registerEvents() {
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new AsyncPlayerChat(this, discApi, getDatabase(), new Tags(this, getDatabase())), this);
-        pm.registerEvents(new BlockBreak(this), this);
+        pm.registerEvents(new BlockBreak(this, dailyMissions), this);
         pm.registerEvents(new BlockDamage(this, getDatabase(), dailyMissions), this);
-        pm.registerEvents(new BlockPlace(this), this);
+        pm.registerEvents(new BlockPlace(this, dailyMissions), this);
         pm.registerEvents(new BrewDrink(this, getDatabase()), this);
         pm.registerEvents(new CMIPlayerTeleportRequest(this, getDatabase()), this);
         pm.registerEvents(new CMIUserBalanceChange(this), this);
@@ -439,7 +455,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PlayerJoin(this, getDatabase(), discApi, dailyMissions), this);
         pm.registerEvents(new PlayerMove(this), this);
         pm.registerEvents(new PlayerPostRespawn(this), this);
-        pm.registerEvents(new PlayerQuit(this, getDatabase(), discApi), this);
+        pm.registerEvents(new PlayerQuit(this, getDatabase(), discApi, dailyMissions), this);
         pm.registerEvents(new PlayerRiptide(), this);
         pm.registerEvents(new PlayerTag(this), this);
         pm.registerEvents(new PlayerTeleport(this), this);
@@ -752,12 +768,12 @@ public class SkyPrisonCore extends JavaPlugin {
         ArrayList<String> dailyPlayers = new ArrayList<>();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        LocalDate yesterday = LocalDate.now().minusDays(2);
-        String yesterDate = yesterday.format(formatter);
+        LocalDate yestererday = LocalDate.now().minusDays(2);
+        String yestererDate = yestererday.format(formatter);
 
         try {
             Connection conn = getDatabase().getSQLConnection();
-            PreparedStatement ps = conn.prepareStatement("SELECT user_id, current_streak FROM dailies WHERE last_collected = '" + yesterDate + "'");
+            PreparedStatement ps = conn.prepareStatement("SELECT user_id, current_streak FROM dailies WHERE last_collected = '" + yestererDate + "'");
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
                 if(rs.getInt(2) > 0) dailyPlayers.add(rs.getString(1));
@@ -766,14 +782,53 @@ public class SkyPrisonCore extends JavaPlugin {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        String placeholders = dailyPlayers.stream().map(id -> "?").collect(Collectors.joining(","));
 
-        for(String player : dailyPlayers) {
-            String sql = "UPDATE dailies SET current_streak = 0 WHERE user_id = ?";
-            List<Object> params = new ArrayList<>() {{
-                add(player);
-            }};
-            getDatabase().sqlUpdate(sql, params);
+        String sql = "UPDATE dailies SET current_streak = 0 WHERE user_id IN (" + placeholders + ")";
+        List<Object> params = dailyPlayers.stream().map(id -> (Object) id).collect(Collectors.toList());
+        getDatabase().sqlUpdate(sql, params);
+
+
+        LocalDate yesterday = LocalDate.now().minusDays(1);
+        String yesterDate = yesterday.format(formatter);
+        ArrayList<Integer> oldMissions = new ArrayList<>();
+        ArrayList<UUID> players = new ArrayList<>();
+        ArrayList<UUID> oPlayers = new ArrayList<>();
+        try {
+            Connection conn = getDatabase().getSQLConnection();
+            PreparedStatement ps = conn.prepareStatement("SELECT mission_id, user_id FROM daily_missions WHERE date = '" + yesterDate + "'");
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()) {
+                oldMissions.add(rs.getInt(1));
+                UUID pUUID = UUID.fromString(rs.getString(2));
+                players.add(pUUID);
+                if(Bukkit.getOfflinePlayer(pUUID).isOnline() && !oPlayers.contains(pUUID)) {
+                    oPlayers.add(pUUID);
+                }
+            }
+            getDatabase().close(ps, rs, conn);
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
+
+        players.forEach(missions.keySet()::remove);
+
+/*
+        for(UUID pUUID : oPlayers) {
+            OfflinePlayer offline = Bukkit.getOfflinePlayer(pUUID);
+            if(offline.isOnline()) {
+                Player player = offline.getPlayer();
+                dailyMissions.setPlayerMissions(player);
+                player.sendMessage(colourMessage("&aYour Daily Missions have refreshed!"));
+            }
+        }
+*/
+
+        placeholders = oldMissions.stream().map(id -> "?").collect(Collectors.joining(","));
+
+        sql = "DELETE FROM daily_missions WHERE mission_id IN (" + placeholders + ")";
+        params = oldMissions.stream().map(id -> (Object) id).collect(Collectors.toList());
+        getDatabase().sqlUpdate(sql, params);
     }
 
     public void tellConsole(String message){

@@ -20,10 +20,10 @@ public class TransportPass implements CommandExecutor {
         switch (args[1].toLowerCase()) {
             case "bus":
                 if(!player.hasPermission("skyprisoncore.command.transportpass.bus")) {
-                    if(plugin.tokensData.get(player.getUniqueId().toString()) >= 250) {
-                        int uTokens = plugin.tokensData.get(player.getUniqueId().toString()) - 250;
+                    if(plugin.tokensData.get(player.getUniqueId()) >= 250) {
+                        int uTokens = plugin.tokensData.get(player.getUniqueId()) - 250;
                         player.sendMessage(plugin.colourMessage("&bTokens &8» &b250 tokens &7was removed from your balance"));
-                        plugin.tokensData.put(player.getUniqueId().toString(), uTokens);
+                        plugin.tokensData.put(player.getUniqueId(), uTokens);
                         plugin.asConsole("lp user " + player.getName() + " permission settemp skyprisoncore.command.transportpass.bus true 7d");
                     } else {
                         player.sendMessage(plugin.colourMessage("&bTokens &8» &cYou do not have enough tokens to buy this!"));
@@ -34,10 +34,10 @@ public class TransportPass implements CommandExecutor {
                 break;
             case "train":
                 if(!player.hasPermission("skyprisoncore.command.transportpass.train")) {
-                    if(plugin.tokensData.get(player.getUniqueId().toString()) >= 500) {
-                        int uTokens = plugin.tokensData.get(player.getUniqueId().toString()) - 500;
+                    if(plugin.tokensData.get(player.getUniqueId()) >= 500) {
+                        int uTokens = plugin.tokensData.get(player.getUniqueId()) - 500;
                         player.sendMessage(plugin.colourMessage("&bTokens &8» &b500 tokens &7was removed from your balance"));
-                        plugin.tokensData.put(player.getUniqueId().toString(), uTokens);
+                        plugin.tokensData.put(player.getUniqueId(), uTokens);
                         plugin.asConsole("lp user " + player.getName() + " permission settemp skyprisoncore.command.transportpass.train true 7d");
                     } else {
                         player.sendMessage(plugin.colourMessage("&bTokens &8» &cYou do not have enough tokens to buy this!"));

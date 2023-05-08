@@ -1,8 +1,11 @@
 package net.skyprison.skyprisoncore.commands.economy;
 
-import net.skyprison.skyprisoncore.SkyPrisonCore;
 import me.clip.placeholderapi.PlaceholderAPI;
-import org.bukkit.*;
+import net.skyprison.skyprisoncore.SkyPrisonCore;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -15,7 +18,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 public class Bartender implements CommandExecutor {
 	private final SkyPrisonCore plugin;
@@ -53,7 +59,7 @@ public class Bartender implements CommandExecutor {
 			} else if(i == 40) {
 				ItemStack balance = new ItemStack(Material.NETHER_STAR);
 				ItemMeta bMeta = balance.getItemMeta();
-				bMeta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Your Balance");
+				bMeta.setDisplayName(plugin.colourMessage("&6&lYour Balance"));
 				bMeta.setLore(Collections.singletonList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
 				balance.setItemMeta(bMeta);
 				bartenderGUI.setItem(i, balance);

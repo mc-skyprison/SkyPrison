@@ -14,6 +14,7 @@ import com.sk89q.worldguard.protection.regions.RegionQuery;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.DailyMissions;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Display;
@@ -35,9 +36,11 @@ import java.util.Random;
 public class BlockPlace implements Listener {
 
     private final SkyPrisonCore plugin;
+    private final DailyMissions dm;
 
-    public BlockPlace(SkyPrisonCore plugin) {
+    public BlockPlace(SkyPrisonCore plugin, DailyMissions dm) {
         this.plugin = plugin;
+        this.dm = dm;
     }
 
     @EventHandler
@@ -174,6 +177,11 @@ public class BlockPlace implements Listener {
                                             }
                                         }
                                         plugin.bombLocs.remove(loc);
+                                        for(String mission : dm.getMissions(player)) {
+                                            if(mission.startsWith("bomb") && !dm.isCompleted(player, mission)) {
+                                                dm.updatePlayerMission(player, mission);
+                                            }
+                                        }
                                         this.cancel();
                                     }
                                 }

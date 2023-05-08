@@ -28,7 +28,7 @@ public class EntityDeath implements Listener {
     private final SkyPrisonCore plugin;
     private final Safezone safezone;
     private final DatabaseHook hook;
-    private DailyMissions dailyMissions;
+    private final DailyMissions dailyMissions;
 
     public EntityDeath(SkyPrisonCore plugin, Safezone safezone, DatabaseHook hook, DailyMissions dailyMissions) {
         this.plugin = plugin;
@@ -40,54 +40,50 @@ public class EntityDeath implements Listener {
     public void playerDeath(EntityDeathEvent event) {
         if(event.getEntity() instanceof Player) {
             Player player = (Player) event.getEntity();
-            if(safezone.safezoneViolators.containsKey(player.getUniqueId())) {
-                safezone.safezoneViolators.remove(player.getUniqueId());
-            }
+            safezone.safezoneViolators.remove(player.getUniqueId());
         }
 
         if(!(event.getEntity() instanceof Player) && event.getEntity().getKiller() != null) {
             Player player = event.getEntity().getKiller();
-            for (String mission : dailyMissions.getPlayerMissions(player)) {
-                String[] missSplit = mission.split("-");
-                if (missSplit[0].equalsIgnoreCase("kill")) {
-                    int currAmount = Integer.parseInt(missSplit[4]) + 1;
-                    String nMission = missSplit[0] + "-" + missSplit[1] + "-" + missSplit[2] + "-" + missSplit[3] + "-" + currAmount;
-                    switch (missSplit[1].toLowerCase()) {
-                        case "any":
-                            if(event.getEntity() instanceof Monster) {
-                                dailyMissions.updatePlayerMission(player, mission, nMission);
-                            }
-                            break;
-                        case "zombie":
-                            if (event.getEntityType().equals(EntityType.ZOMBIE)) {
-                                dailyMissions.updatePlayerMission(player, mission, nMission);
-                            }
-                            break;
-                        case "skeleton":
-                            if (event.getEntityType().equals(EntityType.SKELETON)) {
-                                dailyMissions.updatePlayerMission(player, mission, nMission);
-                            }
-                            break;
-                    }
-                } else if (missSplit[0].equalsIgnoreCase("slaughter")) {
-                    int currAmount = Integer.parseInt(missSplit[4]) + 1;
-                    String nMission = missSplit[0] + "-" + missSplit[1] + "-" + missSplit[2] + "-" + missSplit[3] + "-" + currAmount;
-                    switch (missSplit[1].toLowerCase()) {
-                        case "any":
-                            if(event.getEntity() instanceof Animals) {
-                                dailyMissions.updatePlayerMission(player, mission, nMission);
-                            }
-                            break;
-                        case "pig":
-                            if (event.getEntityType().equals(EntityType.PIG)) {
-                                dailyMissions.updatePlayerMission(player, mission, nMission);
-                            }
-                            break;
-                        case "cow":
-                            if (event.getEntityType().equals(EntityType.COW)) {
-                                dailyMissions.updatePlayerMission(player, mission, nMission);
-                            }
-                            break;
+            for (String mission : dailyMissions.getMissions(player)) {
+                if(!dailyMissions.isCompleted(player, mission)) {
+                    String[] missSplit = mission.split("-");
+                    if (missSplit[0].equalsIgnoreCase("kill")) {
+                        switch (missSplit[1].toLowerCase()) {
+                            case "any":
+                                if (event.getEntity() instanceof Monster) {
+                                    dailyMissions.updatePlayerMission(player, mission);
+                                }
+                                break;
+                            case "zombie":
+                                if (event.getEntityType().equals(EntityType.ZOMBIE)) {
+                                    dailyMissions.updatePlayerMission(player, mission);
+                                }
+                                break;
+                            case "skeleton":
+                                if (event.getEntityType().equals(EntityType.SKELETON)) {
+                                    dailyMissions.updatePlayerMission(player, mission);
+                                }
+                                break;
+                        }
+                    } else if (missSplit[0].equalsIgnoreCase("slaughter")) {
+                        switch (missSplit[1].toLowerCase()) {
+                            case "any":
+                                if (event.getEntity() instanceof Animals) {
+                                    dailyMissions.updatePlayerMission(player, mission);
+                                }
+                                break;
+                            case "pig":
+                                if (event.getEntityType().equals(EntityType.PIG)) {
+                                    dailyMissions.updatePlayerMission(player, mission);
+                                }
+                                break;
+                            case "cow":
+                                if (event.getEntityType().equals(EntityType.COW)) {
+                                    dailyMissions.updatePlayerMission(player, mission);
+                                }
+                                break;
+                        }
                     }
                 }
             }

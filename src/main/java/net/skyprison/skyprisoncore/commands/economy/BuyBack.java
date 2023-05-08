@@ -1,7 +1,7 @@
 package net.skyprison.skyprisoncore.commands.economy;
 
-import net.skyprison.skyprisoncore.SkyPrisonCore;
 import me.clip.placeholderapi.PlaceholderAPI;
+import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -20,7 +20,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class BuyBack implements CommandExecutor {
 	private final SkyPrisonCore plugin;
@@ -70,7 +73,7 @@ public class BuyBack implements CommandExecutor {
 			} else if(i == 22) {
 				ItemStack balance = new ItemStack(Material.NETHER_STAR);
 				ItemMeta bMeta = balance.getItemMeta();
-				bMeta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Your Balance");
+				bMeta.setDisplayName(plugin.colourMessage("&6&lYour Balance"));
 				bMeta.setLore(Collections.singletonList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
 				balance.setItemMeta(bMeta);
 				buyBackGUI.setItem(i, balance);

@@ -37,7 +37,7 @@ public class PlayerJoin implements Listener {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
     private DiscordApi discApi;
-    private DailyMissions dailyMissions;
+    private final DailyMissions dailyMissions;
 
     public PlayerJoin(SkyPrisonCore plugin, DatabaseHook db, DiscordApi discApi, DailyMissions dailyMissions) {
         this.plugin = plugin;
@@ -99,7 +99,7 @@ public class PlayerJoin implements Listener {
                 discApi.getTextChannelById("788108242797854751").get().sendMessage(embedJoin);
 
 
-            if(player.getName().equalsIgnoreCase("DrakePork") && dailyMissions.getPlayerMissions(player).isEmpty()) {
+            if((player.getName().equalsIgnoreCase("DrakePork") || player.getName().equalsIgnoreCase("blueberry09")) && dailyMissions.getMissions(player).isEmpty()) {
                 dailyMissions.setPlayerMissions(player);
             }
 
@@ -154,28 +154,26 @@ public class PlayerJoin implements Listener {
             }
 
 
-            String pUUID = event.getPlayer().getUniqueId().toString();
-
-            plugin.blockBreaks.put(pUUID, 0);
+            plugin.blockBreaks.put(player.getUniqueId(), 0);
             try {
                 conn = db.getSQLConnection();
-                ps = conn.prepareStatement("SELECT blocks_mined FROM users WHERE user_id = '" + pUUID + "'");
+                ps = conn.prepareStatement("SELECT blocks_mined FROM users WHERE user_id = '" + player.getUniqueId() + "'");
                 rs = ps.executeQuery();
                 while(rs.next()) {
-                    plugin.blockBreaks.put(pUUID, rs.getInt(1));
+                    plugin.blockBreaks.put(player.getUniqueId(), rs.getInt(1));
                 }
                 db.close(ps, rs, conn);
             } catch (SQLException e) {
                 e.printStackTrace();
             }
 
-            plugin.tokensData.put(pUUID, 0);
+            plugin.tokensData.put(player.getUniqueId(), 0);
             try {
                 conn = db.getSQLConnection();
-                ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = '" + pUUID + "'");
+                ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = '" + player.getUniqueId() + "'");
                 rs = ps.executeQuery();
                 while(rs.next()) {
-                    plugin.tokensData.put(pUUID, rs.getInt(1));
+                    plugin.tokensData.put(player.getUniqueId(), rs.getInt(1));
                 }
                 db.close(ps, rs, conn);
             } catch (SQLException e) {

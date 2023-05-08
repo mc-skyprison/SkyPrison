@@ -10,10 +10,12 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import net.coreprotect.CoreProtect;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.DailyMissions;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.Ageable;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -28,9 +30,11 @@ import java.util.Random;
 
 public class BlockBreak implements Listener {
     private final SkyPrisonCore plugin;
+    private final DailyMissions dm;
 
-    public BlockBreak(SkyPrisonCore plugin) {
+    public BlockBreak(SkyPrisonCore plugin, DailyMissions dm) {
         this.plugin = plugin;
+        this.dm = dm;
     }
 
 
@@ -39,22 +43,25 @@ public class BlockBreak implements Listener {
         Block b = event.getBlock();
         Location loc = b.getLocation();
         Player player = event.getPlayer();
+        Material bType = b.getType();
+
+        
         if(!event.isCancelled()) {
             if(loc.getWorld().getName().equalsIgnoreCase("world_event")) {
-                if(b.getType().equals(Material.SNOW_BLOCK))
+                if(bType.equals(Material.SNOW_BLOCK))
                     event.setDropItems(false);
                 if(!player.isOp()) {
-                    if(b.getType().equals(Material.TNT)) {
+                    if(bType.equals(Material.TNT)) {
                         event.setCancelled(true);
                     }
                 }
             } else if(loc.getWorld().getName().equalsIgnoreCase("world_prison")) {
-                if (b.getType().equals(Material.SNOW_BLOCK)) {
+                if (bType.equals(Material.SNOW_BLOCK)) {
                     event.setDropItems(false);
                     Location cob = loc.add(0.5D, 0.0D, 0.5D);
                     ItemStack snowblock = new ItemStack(Material.SNOW_BLOCK, 1);
                     loc.getWorld().dropItem(cob, snowblock);
-                } else if (b.getType().equals(Material.PLAYER_HEAD) || b.getType().equals(Material.PLAYER_WALL_HEAD)) {
+                } else if (bType.equals(Material.PLAYER_HEAD) || bType.equals(Material.PLAYER_WALL_HEAD)) {
                     if(plugin.bombLocs.contains(b.getLocation())) {
                         event.setCancelled(true);
                     }
@@ -62,21 +69,20 @@ public class BlockBreak implements Listener {
             }
 
             if (!CoreProtect.getInstance().getAPI().hasPlaced(player.getName(), event.getBlock(), 300, 0) && !loc.getWorld().getName().equalsIgnoreCase("world_event")) {
-                String pUUID = player.getUniqueId().toString();
-                int brokeBlocks = plugin.blockBreaks.get(pUUID);
+                int brokeBlocks = plugin.blockBreaks.get(player.getUniqueId());
                 if (brokeBlocks >= 2000) {
-                    plugin.blockBreaks.put(pUUID, 0);
+                    plugin.blockBreaks.put(player.getUniqueId(), 0);
                     Random rand = new Random();
                     int tReward = rand.nextInt(25 - 10 + 1) + 10;
                     plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tReward, "2000 Blocks Broken", "");
                     player.sendMessage(ChatColor.GRAY + "You've mined 2,000 blocks and have received some tokens!");
                 } else {
-                    plugin.blockBreaks.put(pUUID, brokeBlocks + 1);
+                    plugin.blockBreaks.put(player.getUniqueId(), brokeBlocks + 1);
                 }
             }
         } else {
             if(loc.getWorld().getName().equalsIgnoreCase("world_prison")) {
-                if (b.getType().equals(Material.SUGAR_CANE)) {
+                if (bType.equals(Material.SUGAR_CANE)) {
                     final RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
                     final RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(player.getWorld()));
                     final ApplicableRegionSet regionList = regionManager.getApplicableRegions(BlockVector3.at(b.getLocation().getX(),
@@ -88,7 +94,7 @@ public class BlockBreak implements Listener {
                             break;
                         }
                     }
-                } else if (b.getType().equals(Material.CACTUS)) {
+                } else if (bType.equals(Material.CACTUS)) {
                     final RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
                     final RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(player.getWorld()));
                     final ApplicableRegionSet regionList = regionManager.getApplicableRegions(BlockVector3.at(b.getLocation().getX(),
@@ -100,7 +106,7 @@ public class BlockBreak implements Listener {
                             break;
                         }
                     }
-                } else if (b.getType().equals(Material.BAMBOO)) {
+                } else if (bType.equals(Material.BAMBOO)) {
                     final RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
                     final RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(player.getWorld()));
                     final ApplicableRegionSet regionList = regionManager.getApplicableRegions(BlockVector3.at(b.getLocation().getX(),
@@ -112,7 +118,7 @@ public class BlockBreak implements Listener {
                             break;
                         }
                     }
-                } else if (b.getType().equals(Material.BIRCH_LOG)) {
+                } else if (bType.equals(Material.BIRCH_LOG)) {
                     final RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
                     final RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(player.getWorld()));
                     final ApplicableRegionSet regionList = regionManager.getApplicableRegions(BlockVector3.at(b.getLocation().getX(),
@@ -201,5 +207,55 @@ public class BlockBreak implements Listener {
                 }
             }
         }
+
+        for (String mission : dm.getMissions(player)) {
+            if(!dm.isCompleted(player, mission)) {
+                String[] missSplit = mission.split("-");
+                if (missSplit[0].equalsIgnoreCase("break")) {
+                    switch (missSplit[1].toLowerCase()) {
+                        case "any":
+                            if (!(b.getBlockData() instanceof Ageable)) {
+                                dm.updatePlayerMission(player, mission);
+                            }
+                            break;
+                        case "birch_log":
+                            if (bType.equals(Material.BIRCH_LOG) || bType.equals(Material.BIRCH_WOOD)) {
+                                dm.updatePlayerMission(player, mission);
+                            }
+                            break;
+                    }
+                } else if (missSplit[0].equalsIgnoreCase("harvest")) {
+                    switch (missSplit[1].toLowerCase()) {
+                        case "any":
+                            if (b.getBlockData() instanceof Ageable) {
+                                dm.updatePlayerMission(player, mission);
+                            }
+                            break;
+                        case "cactus":
+                            if (bType.equals(Material.CACTUS)) {
+                                dm.updatePlayerMission(player, mission);
+                            }
+                            break;
+                        case "sugar_cane":
+                            if (bType.equals(Material.SUGAR_CANE)) {
+                                dm.updatePlayerMission(player, mission);
+                            }
+                            break;
+                        case "pumpkin":
+                            if (bType.equals(Material.PUMPKIN)) {
+                                dm.updatePlayerMission(player, mission);
+                            }
+                        break;
+                        case "bamboo":
+                            if (bType.equals(Material.BAMBOO)) {
+                                dm.updatePlayerMission(player, mission);
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+
+
     }
 }
