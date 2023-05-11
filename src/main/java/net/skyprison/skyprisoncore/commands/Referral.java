@@ -149,7 +149,6 @@ public class Referral implements CommandExecutor {
 										} catch (InterruptedException | ExecutionException e) {
 											e.printStackTrace();
 										}
-
 									}
 
 									String sql = "INSERT INTO referrals (user_id, referred_by, refer_date) VALUES (?, ?, ?)";

@@ -1,6 +1,7 @@
 package net.skyprison.skyprisoncore.listeners;
 
 import com.Zrips.CMI.CMI;
+import com.Zrips.CMI.Containers.CMIUser;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.WorldGuard;
@@ -8,9 +9,11 @@ import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
+import dev.esophose.playerparticles.api.PlayerParticlesAPI;
 import net.coreprotect.CoreProtect;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
+import net.skyprison.skyprisoncore.utils.RandomReward;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -31,10 +34,12 @@ import java.util.Random;
 public class BlockBreak implements Listener {
     private final SkyPrisonCore plugin;
     private final DailyMissions dm;
+    private final PlayerParticlesAPI particles;
 
-    public BlockBreak(SkyPrisonCore plugin, DailyMissions dm) {
+    public BlockBreak(SkyPrisonCore plugin, DailyMissions dm, PlayerParticlesAPI particles) {
         this.plugin = plugin;
         this.dm = dm;
+        this.particles = particles;
     }
 
 
@@ -45,7 +50,6 @@ public class BlockBreak implements Listener {
         Player player = event.getPlayer();
         Material bType = b.getType();
 
-        
         if(!event.isCancelled()) {
             if(loc.getWorld().getName().equalsIgnoreCase("world_event")) {
                 if(bType.equals(Material.SNOW_BLOCK))
@@ -92,6 +96,22 @@ public class BlockBreak implements Listener {
                             if(loc.subtract(0,1,0).getBlock().getType().equals(Material.SUGAR_CANE))
                                 event.setCancelled(false);
                             break;
+                        }
+                    }
+                } else if (bType.equals(Material.TALL_GRASS) || bType.equals(Material.GRASS) || bType.equals(Material.LARGE_FERN) || bType.equals(Material.FERN)) {
+                    Location shinyLoc = plugin.shinyGrass;
+                    if(shinyLoc != null) {
+                        if(shinyLoc.equals(loc) || shinyLoc.offset(0, 1, 0).equals(loc) || shinyLoc.offset(0, -1, 0).equals(loc)) {
+/*                            plugin.shinyGrass = null;
+                            particles.removeFixedEffectsInRange(shinyLoc, 1);*/
+                            player.sendMessage(plugin.colourMessage("&7&oBuried amidst the leafy foliage, you discover an unexpected treasure!"));
+                            ItemStack item = RandomReward.getRandomReward();
+                            CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
+                            if(user.getInventory().canFit(item)) {
+                                player.getInventory().addItem(item);
+                            } else {
+                                player.getLocation().getWorld().dropItem(player.getLocation(), item);
+                            }
                         }
                     }
                 } else if (bType.equals(Material.CACTUS)) {

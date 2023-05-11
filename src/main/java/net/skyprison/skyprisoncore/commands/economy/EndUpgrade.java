@@ -62,11 +62,11 @@ public class EndUpgrade implements CommandExecutor {
 	public int upgradeCost(Player player, Boolean enchTransfer, Boolean repairReset) {
 		int totalCost = 0;
 
-		if(repairReset) {
-			totalCost += 350000;
-		}
 		if(enchTransfer) {
 			totalCost += 100000;
+		}
+		if(repairReset) {
+			totalCost += 350000;
 		}
 		totalCost += itemCost(player.getInventory().getItemInMainHand().getType());
 		return totalCost;

@@ -2,6 +2,9 @@ package net.skyprison.skyprisoncore;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
+import dev.esophose.playerparticles.api.PlayerParticlesAPI;
+import dev.esophose.playerparticles.particles.ParticleEffect;
+import dev.esophose.playerparticles.styles.ParticleStyle;
 import litebans.api.Entry;
 import litebans.api.Events;
 import net.kyori.adventure.text.Component;
@@ -27,11 +30,12 @@ import net.skyprison.skyprisoncore.listeners.cmi.CMIPlayerTeleportRequest;
 import net.skyprison.skyprisoncore.listeners.cmi.CMIUserBalanceChange;
 import net.skyprison.skyprisoncore.listeners.cmi.PlayerUnJail;
 import net.skyprison.skyprisoncore.listeners.discord.MessageCreate;
+import net.skyprison.skyprisoncore.listeners.discord.SlashCommandCreate;
 import net.skyprison.skyprisoncore.listeners.discord.UserRoleAdd;
 import net.skyprison.skyprisoncore.listeners.discord.UserRoleRemove;
 import net.skyprison.skyprisoncore.listeners.mcmmo.McMMOLevelUp;
 import net.skyprison.skyprisoncore.listeners.mcmmo.McMMOPartyChat;
-import net.skyprison.skyprisoncore.listeners.parkour.PlayerFinishCourse;
+import net.skyprison.skyprisoncore.listeners.parkour.ParkourFinish;
 import net.skyprison.skyprisoncore.listeners.pvpmanager.PlayerTag;
 import net.skyprison.skyprisoncore.listeners.pvpmanager.PlayerTogglePvP;
 import net.skyprison.skyprisoncore.listeners.pvpmanager.PlayerUntag;
@@ -43,6 +47,7 @@ import net.skyprison.skyprisoncore.listeners.shopguiplus.ShopPreTransaction;
 import net.skyprison.skyprisoncore.utils.*;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -58,6 +63,9 @@ import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.Role;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.entity.user.User;
+import org.javacord.api.interaction.SlashCommand;
+import org.javacord.api.interaction.SlashCommandOption;
+import org.javacord.api.interaction.SlashCommandOptionType;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -103,6 +111,8 @@ public class SkyPrisonCore extends JavaPlugin {
 
     public HashMap<Material, Double> minPrice = new HashMap<>();
 
+    public Location shinyGrass;
+
     public Tokens tokens;
 
     private DiscordApi discApi;
@@ -111,6 +121,7 @@ public class SkyPrisonCore extends JavaPlugin {
 
     public ArrayList<Location> bombLocs = new ArrayList<>();
 
+    private PlayerParticlesAPI particles;
 
     public HashMap<UUID, LinkedHashMap<String, Integer>> shopLogAmountPlayer = new HashMap<>();
     public HashMap<UUID, LinkedHashMap<String, Double>> shopLogPricePlayer = new HashMap<>();
@@ -125,6 +136,11 @@ public class SkyPrisonCore extends JavaPlugin {
     public void onEnable() {
         String dToken = getConfig().getString("discord-token");
 
+        if (Bukkit.getPluginManager().isPluginEnabled("PlayerParticles")) {
+            this.particles = PlayerParticlesAPI.getInstance();
+        }
+
+
         if(dToken != null && !dToken.isEmpty()) {
             discApi = new DiscordApiBuilder()
                     .setToken(dToken)
@@ -132,12 +148,20 @@ public class SkyPrisonCore extends JavaPlugin {
                     .login()
                     .join();
 
-            onConnectToDiscord(discApi);
+            onConnectToDiscord();
 
             new BukkitRunnable() {
                 @Override
                 public void run() {
-                    updateDiscordRoles(discApi);
+                    updateDiscordRoles();
+                }
+            }.runTaskTimerAsynchronously(this, 20 * 1800, 20 * 1800);
+
+
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    updateTopic();
                 }
             }.runTaskTimerAsynchronously(this, 20 * 1800, 20 * 1800);
         }
@@ -197,7 +221,6 @@ public class SkyPrisonCore extends JavaPlugin {
         new BukkitRunnable() {
             @Override
             public void run() {
-                updateTopic();
                 checkOnlineDailies();
                 if(tokensData != null && !tokensData.isEmpty()) {
                     Map<UUID, Integer> token = tokensData;
@@ -229,23 +252,22 @@ public class SkyPrisonCore extends JavaPlugin {
             }
         }.runTaskTimerAsynchronously(this, 20 * 635, 20 * 635);
 
-
-/*        new BukkitRunnable() {
+        new BukkitRunnable() {
             @Override
             public void run() {
                 Random rand = new Random();
-                if(rand.nextInt(2) < 3) {
+                if(rand.nextInt(100) < 1000) {
                     World world = Bukkit.getWorld("world_prison");
                     List<Block> blocks = new ArrayList<>();
                     int radius = 300;
                     for(int x = -radius; x <= radius; x++) {
-                        for(int y = 130; y <= 174; y++) {
-                            for(int z = -radius; z <= radius; z++) {
-                                if(world.getBlockAt(x, y, z).getType().equals(Material.TALL_GRASS) ||
-                                        world.getBlockAt(x, y, z).getType().equals(Material.GRASS) ||
-                                        world.getBlockAt(x, y, z).getType().equals(Material.FERN) ||
-                                        world.getBlockAt(x, y, z).getType().equals(Material.LARGE_FERN)) {
-                                    blocks.add(world.getBlockAt(x, y, z));
+                        for(int z = -radius; z <= radius; z++) {
+                            for(int y = 130; y <= 174; y++) {
+                                Block block = world.getBlockAt(x, y, z);
+                                Material bType = block.getType();
+
+                                if (bType.equals(Material.TALL_GRASS) || bType.equals(Material.GRASS) || bType.equals(Material.LARGE_FERN) || bType.equals(Material.FERN)) {
+                                    blocks.add(block);
                                 }
                             }
                         }
@@ -254,22 +276,26 @@ public class SkyPrisonCore extends JavaPlugin {
                     if(!blocks.isEmpty()) {
                         Block block = blocks.get(rand.nextInt(blocks.size()));
                         Location loc = block.getLocation();
-                        tellConsole(loc + "wham");
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                tellConsole("wham-feck");
-                                loc.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, loc, 5);
-                            }
-                        }.runTaskTimerAsynchronously(plugin, 0, 20);
+                        tellConsole("Location: " + loc);
+                        if(shinyGrass != null) {
+                            particles.removeFixedEffectsInRange(shinyGrass, 1);
+                        }
+
+                        shinyGrass = loc;
+                        particles.createFixedParticleEffect(Bukkit.getConsoleSender(), loc.offset(0.5, 0, 0.5).toLocation(world), ParticleEffect.ELECTRIC_SPARK, ParticleStyle.fromInternalName("Normal"));
                     }
                 }
             }
-        }.runTaskTimerAsynchronously(this, 100, 100);*/
+        }.runTaskTimerAsynchronously(this, 20 * 30, 20 * 6000);
     }
 
     @Override
     public void onDisable() {
+        tellConsole("wham");
+        if(shinyGrass != null) {
+            tellConsole("wham1");
+            particles.removeFixedEffectsInRange(shinyGrass, 2);
+        }
         if(discApi != null) {
             try {
                 discApi.getTextChannelById("788108242797854751").get().sendMessage(":octagonal_sign: **Server has stopped**");
@@ -282,50 +308,69 @@ public class SkyPrisonCore extends JavaPlugin {
         getLogger().info("Disabled SkyPrisonCore v" + getDescription().getVersion());
     }
 
+    private void onConnectToDiscord() {
+        if(discApi != null) {
+            getLogger().info("Connected to Discord as " + discApi.getYourself().getDiscriminatedName());
+            getLogger().info("Open the following url to invite the bot: " + discApi.createBotInvite());
+            discApi.getTextChannelById("788108242797854751").get().sendMessage(":white_check_mark: **Server has started**");
 
-    private void onConnectToDiscord(DiscordApi discApi) {
-        getLogger().info("Connected to Discord as " + discApi.getYourself().getDiscriminatedName());
-        getLogger().info("Open the following url to invite the bot: " + discApi.createBotInvite());
-        discApi.getTextChannelById("788108242797854751").get().sendMessage(":white_check_mark: **Server has started**");
+            try {
+                for(SlashCommand command: discApi.getGlobalSlashCommands().get()) {
+                    if(!command.getName().equalsIgnoreCase("link")) {
+                        command.delete();
+                    }
+                }
+            } catch (InterruptedException | ExecutionException ignored) {
+            }
 
-        discApi.addListener(new MessageCreate(this, new ChatUtils(this, discApi), discApi, getDatabase()));
-        discApi.addListener(new UserRoleAdd(this, getDatabase()));
-        discApi.addListener(new UserRoleRemove(this, getDatabase()));
+            SlashCommand link = SlashCommand.with("link", "Link your Discord and Minecraft Account", List.of(
+                            SlashCommandOption.createWithChoices(SlashCommandOptionType.STRING, "link-code", "Code for linking", true)
+                    )).createGlobal(discApi)
+                    .join();
+            discApi.addListener(new SlashCommandCreate(this, getDatabase()));
+            discApi.addListener(new MessageCreate(this, new ChatUtils(this, discApi), discApi, getDatabase()));
+            discApi.addListener(new UserRoleAdd(this, getDatabase()));
+            discApi.addListener(new UserRoleRemove(this, getDatabase()));
+        }
     }
 
     private void updateTopic() {
-        TextChannel channel = discApi.getTextChannelById("788108242797854751").get();
-        channel.asServerTextChannel().get().updateTopic("Online Players: " + Bukkit.getOnlinePlayers().size() + "/50");
+        if(discApi != null) {
+            TextChannel channel = discApi.getTextChannelById("788108242797854751").get();
+            channel.asServerTextChannel().get().updateTopic("Online Players: " + Bukkit.getOnlinePlayers().size() + "/50");
+        }
     }
 
 
-    public void updateDiscordRoles(DiscordApi discApi) {
-        for(Player player : Bukkit.getOnlinePlayers()) {
-            long discordId = 0;
-            try {
-                Connection conn = getDatabase().getSQLConnection();
-                PreparedStatement ps = conn.prepareStatement("SELECT discord_id FROM users WHERE user_id = '" + player.getUniqueId() + "'");
-                ResultSet rs = ps.executeQuery();
-                while(rs.next()) {
-                    discordId = rs.getLong(1);
-                }
-                getDatabase().close(ps, rs, conn);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-
-            if(discordId != 0) {
-                CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-                String roleName = user.getRank().getName();
-                Role role = discApi.getRolesByName(roleName).iterator().next();
+    public void updateDiscordRoles() {
+        if(discApi != null) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                long discordId = 0;
                 try {
-                    User discUser = discApi.getUserById(discordId).get();
-                    Server server = discApi.getServerById("782795465632251955").get();
-                    if(!discUser.getRoles(server).contains(role)) {
-                        discUser.addRole(role);
+                    Connection conn = getDatabase().getSQLConnection();
+                    PreparedStatement ps = conn.prepareStatement("SELECT discord_id FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+                    ResultSet rs = ps.executeQuery();
+                    while (rs.next()) {
+                        discordId = rs.getLong(1);
                     }
-                } catch (InterruptedException | ExecutionException e) {
+                    getDatabase().close(ps, rs, conn);
+                } catch (SQLException e) {
                     e.printStackTrace();
+                }
+
+                if (discordId != 0) {
+                    CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
+                    String roleName = user.getRank().getName();
+                    Role role = discApi.getRolesByName(roleName).iterator().next();
+                    try {
+                        User discUser = discApi.getUserById(discordId).get();
+                        Server server = discApi.getServerById("782795465632251955").get();
+                        if (!discUser.getRoles(server).contains(role)) {
+                            discUser.addRole(role);
+                        }
+                    } catch (InterruptedException | ExecutionException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -395,10 +440,8 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("bounty")).setExecutor(new Bounty(getDatabase(), this));
         Objects.requireNonNull(getCommand("killinfo")).setExecutor(new KillInfo(getDatabase()));
         Objects.requireNonNull(getCommand("firstjointop")).setExecutor(new FirstjoinTop(this, getDatabase()));
-        Objects.requireNonNull(getCommand("referral")).setExecutor(new Referral(this, discApi, getDatabase()));
         Objects.requireNonNull(getCommand("bartender")).setExecutor(new Bartender(this));
         Objects.requireNonNull(getCommand("sword")).setExecutor(new Sword(this));
-        Objects.requireNonNull(getCommand("discord")).setExecutor(new Discord(this, getDatabase(), discApi));
         Objects.requireNonNull(getCommand("bow")).setExecutor(new Bow(this));
         Objects.requireNonNull(getCommand("contraband")).setExecutor(new Contraband(this));
         Objects.requireNonNull(getCommand("ignoretp")).setExecutor(new IgnoreTeleport(this, getDatabase()));
@@ -416,10 +459,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("skyplot")).setExecutor(new SkyPlot(this));
         Objects.requireNonNull(getCommand("plot")).setExecutor(new PlotTeleport(this));
         Objects.requireNonNull(getCommand("moneyhistory")).setExecutor(new MoneyHistory(this));
-        Objects.requireNonNull(getCommand("g")).setExecutor(new Guard(new ChatUtils(this, discApi)));
-        Objects.requireNonNull(getCommand("b")).setExecutor(new Build(new ChatUtils(this, discApi)));
-        Objects.requireNonNull(getCommand("a")).setExecutor(new Admin(new ChatUtils(this, discApi)));
-        Objects.requireNonNull(getCommand("s")).setExecutor(new Staff(new ChatUtils(this, discApi)));
         Objects.requireNonNull(getCommand("donorreset")).setExecutor(new DonorReset(this));
         Objects.requireNonNull(getCommand("customenchant")).setExecutor(new CustomEnchant(this));
         Objects.requireNonNull(getCommand("tags")).setExecutor(new Tags(this, getDatabase()));
@@ -427,13 +466,21 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("furnace")).setExecutor(new VirtualFurnace(this));
         Objects.requireNonNull(getCommand("minereset")).setExecutor(new MineReset(this));
         Objects.requireNonNull(getCommand("voucher")).setExecutor(new Voucher(this));
+
+        if(discApi != null) {
+            Objects.requireNonNull(getCommand("referral")).setExecutor(new Referral(this, discApi, getDatabase()));
+            Objects.requireNonNull(getCommand("discord")).setExecutor(new Discord(this, getDatabase(), discApi));
+            Objects.requireNonNull(getCommand("g")).setExecutor(new Guard(new ChatUtils(this, discApi)));
+            Objects.requireNonNull(getCommand("b")).setExecutor(new Build(new ChatUtils(this, discApi)));
+            Objects.requireNonNull(getCommand("a")).setExecutor(new Admin(new ChatUtils(this, discApi)));
+            Objects.requireNonNull(getCommand("s")).setExecutor(new Staff(new ChatUtils(this, discApi)));
+        }
     }
 
 
     public void registerEvents() {
         PluginManager pm = getServer().getPluginManager();
-        pm.registerEvents(new AsyncPlayerChat(this, discApi, getDatabase(), new Tags(this, getDatabase())), this);
-        pm.registerEvents(new BlockBreak(this, dailyMissions), this);
+        pm.registerEvents(new BlockBreak(this, dailyMissions, particles), this);
         pm.registerEvents(new BlockDamage(this, getDatabase(), dailyMissions), this);
         pm.registerEvents(new BlockPlace(this, dailyMissions), this);
         pm.registerEvents(new BrewDrink(this, getDatabase()), this);
@@ -445,17 +492,14 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EntityRemoveFromWorld(this), this);
         pm.registerEvents(new InventoryClick(this, new EconomyCheck(this), new DropChest(this), new Bounty(getDatabase(), this),
                 new SecretsGUI(this, getDatabase()), new Daily(this, getDatabase()), new MoneyHistory(this), new EndUpgrade(this),
-                new BuyBack(this, getDatabase()), new SkyPlot(this), getDatabase(), new Tags(this, getDatabase())), this);
+                new BuyBack(this, getDatabase()), new SkyPlot(this), getDatabase(), new Tags(this, getDatabase()), particles), this);
         pm.registerEvents(new InventoryOpen(), this);
         pm.registerEvents(new LeavesDecay(), this);
         pm.registerEvents(new McMMOLevelUp(this), this);
-        pm.registerEvents(new McMMOPartyChat(discApi), this);
         pm.registerEvents(new PlayerChangedWorld(), this);
         pm.registerEvents(new PlayerInteract(this), this);
-        pm.registerEvents(new PlayerJoin(this, getDatabase(), discApi, dailyMissions), this);
         pm.registerEvents(new PlayerMove(this), this);
         pm.registerEvents(new PlayerPostRespawn(this), this);
-        pm.registerEvents(new PlayerQuit(this, getDatabase(), discApi, dailyMissions), this);
         pm.registerEvents(new PlayerRiptide(), this);
         pm.registerEvents(new PlayerTag(this), this);
         pm.registerEvents(new PlayerTeleport(this), this);
@@ -471,51 +515,59 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new InventoryClose(this), this);
         pm.registerEvents(new EntityDamage(this), this);
         pm.registerEvents(new PlayerCommandPreprocess(this), this);
-        pm.registerEvents(new PlayerFinishCourse(this), this);
+        pm.registerEvents(new ParkourFinish(this, dailyMissions), this);
         pm.registerEvents(new PlayerTogglePvP(this), this);
 
-        Events.get().register(new Events.Listener() {
-            @Override
-            public void entryAdded(Entry entry) {
-                if (entry.getType().equals("ban")) {
-                    CMIUser bannedUser = CMI.getInstance().getPlayerManager().getUser(entry.getUuid());
-                    if(!entry.getExecutorUUID().equalsIgnoreCase("console")) {
-                        CMIUser user = CMI.getInstance().getPlayerManager().getUser(entry.getExecutorUUID());
-                        EmbedBuilder embed = new EmbedBuilder();
-                        embed.setTitle(bannedUser.getName() + " has been banned!");
-                        embed.setColor(java.awt.Color.RED);
-                        embed.setDescription("Banned by: " + user.getName() + "\nReason: " + entry.getReason() + "\nDuration: " + entry.getDurationString());
-                        discApi.getTextChannelById("823392480241516584").get().sendMessage(embed);
-                    } else {
-                        EmbedBuilder embed = new EmbedBuilder();
-                        embed.setTitle(bannedUser.getName() + " has been banned!");
-                        embed.setColor(java.awt.Color.RED);
-                        embed.setDescription("Banned by: CONSOLE \nReason: " + entry.getReason() + "\nDuration: " + entry.getDurationString());
-                        discApi.getTextChannelById("823392480241516584").get().sendMessage(embed);
+        if(discApi != null) {
+            pm.registerEvents(new AsyncPlayerChat(this, discApi, getDatabase(), new Tags(this, getDatabase())), this);
+            pm.registerEvents(new PlayerQuit(this, getDatabase(), discApi, dailyMissions), this);
+            pm.registerEvents(new PlayerJoin(this, getDatabase(), discApi, dailyMissions, particles), this);
+            pm.registerEvents(new McMMOPartyChat(discApi), this);
+
+            Events.get().register(new Events.Listener() {
+                @Override
+                public void entryAdded(Entry entry) {
+                    if (entry.getType().equals("ban")) {
+                        CMIUser bannedUser = CMI.getInstance().getPlayerManager().getUser(entry.getUuid());
+                        if(!entry.getExecutorUUID().equalsIgnoreCase("console")) {
+                            CMIUser user = CMI.getInstance().getPlayerManager().getUser(entry.getExecutorUUID());
+                            EmbedBuilder embed = new EmbedBuilder();
+                            embed.setTitle(bannedUser.getName() + " has been banned!");
+                            embed.setColor(java.awt.Color.RED);
+                            embed.setDescription("Banned by: " + user.getName() + "\nReason: " + entry.getReason() + "\nDuration: " + entry.getDurationString());
+                            discApi.getTextChannelById("823392480241516584").get().sendMessage(embed);
+                        } else {
+                            EmbedBuilder embed = new EmbedBuilder();
+                            embed.setTitle(bannedUser.getName() + " has been banned!");
+                            embed.setColor(java.awt.Color.RED);
+                            embed.setDescription("Banned by: CONSOLE \nReason: " + entry.getReason() + "\nDuration: " + entry.getDurationString());
+                            discApi.getTextChannelById("823392480241516584").get().sendMessage(embed);
+                        }
                     }
                 }
-            }
-            @Override
-            public void entryRemoved(Entry entry) {
-                if (entry.getType().equals("ban")) {
-                    CMIUser bannedUser = CMI.getInstance().getPlayerManager().getUser(entry.getUuid());
-                    if(!entry.getExecutorUUID().equalsIgnoreCase("console")) {
-                        CMIUser user = CMI.getInstance().getPlayerManager().getUser(entry.getExecutorUUID());
-                        EmbedBuilder embed = new EmbedBuilder();
-                        embed.setTitle(bannedUser.getName() + " has been unbanned!");
-                        embed.setColor(java.awt.Color.GREEN);
-                        embed.setDescription("Unbanned by: " + user.getName() + "\nReason: " + entry.getRemovalReason());
-                        discApi.getTextChannelById("823392480241516584").get().sendMessage(embed);
-                    } else {
-                        EmbedBuilder embed = new EmbedBuilder();
-                        embed.setTitle(bannedUser.getName() + " has been unbanned!");
-                        embed.setColor(java.awt.Color.GREEN);
-                        embed.setDescription("Unbanned by: CONSOLE \nReason: " + entry.getRemovalReason());
-                        discApi.getTextChannelById("823392480241516584").get().sendMessage(embed);
+                @Override
+                public void entryRemoved(Entry entry) {
+                    if (entry.getType().equals("ban")) {
+                        CMIUser bannedUser = CMI.getInstance().getPlayerManager().getUser(entry.getUuid());
+                        if(!entry.getExecutorUUID().equalsIgnoreCase("console")) {
+                            CMIUser user = CMI.getInstance().getPlayerManager().getUser(entry.getExecutorUUID());
+                            EmbedBuilder embed = new EmbedBuilder();
+                            embed.setTitle(bannedUser.getName() + " has been unbanned!");
+                            embed.setColor(java.awt.Color.GREEN);
+                            embed.setDescription("Unbanned by: " + user.getName() + "\nReason: " + entry.getRemovalReason());
+                            discApi.getTextChannelById("823392480241516584").get().sendMessage(embed);
+                        } else {
+                            EmbedBuilder embed = new EmbedBuilder();
+                            embed.setTitle(bannedUser.getName() + " has been unbanned!");
+                            embed.setColor(java.awt.Color.GREEN);
+                            embed.setDescription("Unbanned by: CONSOLE \nReason: " + entry.getRemovalReason());
+                            discApi.getTextChannelById("823392480241516584").get().sendMessage(embed);
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
+
 
 
     }
@@ -739,6 +791,31 @@ public class SkyPrisonCore extends JavaPlugin {
         return message;
     }
 
+
+
+    public String translateHexColorCodes(String message) {
+        if(StringUtils.substringsBetween(message, "{#", "}") != null) {
+            String[] hexNames = StringUtils.substringsBetween(message, "{#", "}");
+            for (String hexName : hexNames) {
+                if (hexColour.get(hexName.toLowerCase()) != null) {
+                    message = message.replaceAll(hexName, hexColour.get(hexName.toLowerCase()).substring(1));
+                }
+            }
+        }
+        final Pattern hexPattern = Pattern.compile("\\{#" + "([A-Fa-f0-9]{6})" + "}");
+        Matcher matcher = hexPattern.matcher(message);
+        StringBuffer buffer = new StringBuffer(message.length() + 4 * 8);
+        while (matcher.find()) {
+            String group = matcher.group(1);
+            matcher.appendReplacement(buffer, ChatColor.COLOR_CHAR + "x"
+                    + ChatColor.COLOR_CHAR + group.charAt(0) + ChatColor.COLOR_CHAR + group.charAt(1)
+                    + ChatColor.COLOR_CHAR + group.charAt(2) + ChatColor.COLOR_CHAR + group.charAt(3)
+                    + ChatColor.COLOR_CHAR + group.charAt(4) + ChatColor.COLOR_CHAR + group.charAt(5)
+            );
+        }
+        return matcher.appendTail(buffer).toString();
+    }
+
     public void checkOnlineDailies() {
         Date date = new Date();
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
@@ -841,29 +918,6 @@ public class SkyPrisonCore extends JavaPlugin {
     public String formatNumber(double value) {
         DecimalFormat df = new DecimalFormat("###,###,###.##");
         return df.format(value);
-    }
-
-    public String translateHexColorCodes(String message) {
-        if(StringUtils.substringsBetween(message, "{#", "}") != null) {
-            String[] hexNames = StringUtils.substringsBetween(message, "{#", "}");
-            for (String hexName : hexNames) {
-                if (hexColour.get(hexName.toLowerCase()) != null) {
-                    message = message.replaceAll(hexName, hexColour.get(hexName.toLowerCase()).substring(1));
-                }
-            }
-        }
-        final Pattern hexPattern = Pattern.compile("\\{#" + "([A-Fa-f0-9]{6})" + "}");
-        Matcher matcher = hexPattern.matcher(message);
-        StringBuffer buffer = new StringBuffer(message.length() + 4 * 8);
-        while (matcher.find()) {
-            String group = matcher.group(1);
-            matcher.appendReplacement(buffer, ChatColor.COLOR_CHAR + "x"
-                    + ChatColor.COLOR_CHAR + group.charAt(0) + ChatColor.COLOR_CHAR + group.charAt(1)
-                    + ChatColor.COLOR_CHAR + group.charAt(2) + ChatColor.COLOR_CHAR + group.charAt(3)
-                    + ChatColor.COLOR_CHAR + group.charAt(4) + ChatColor.COLOR_CHAR + group.charAt(5)
-            );
-        }
-        return matcher.appendTail(buffer).toString();
     }
 
     public Map<Player, Map.Entry<Player, Long>> hitcd = new HashMap<>();

@@ -44,6 +44,8 @@ public class DailyMissions {
 
         missions.add("bomb-any-Use Bombs");
 
+        missions.add("parkour-any-Do /parkour");
+
         if(ranks.contains("desert")) {
             missions.add("harvest-any-Harvest Crops");
             missions.add("harvest-cactus-Harvest Cactus");
@@ -166,6 +168,9 @@ public class DailyMissions {
                     break;
                 case "bomb": // BlockPlace IMPLEMENTED
                     missionsToGive.add(mission  + ":" + (randInt.nextInt(5) + 5));
+                    break;
+                case "parkour": // parkourFinish IMPLEMENTED
+                    missionsToGive.add(mission  + ":" + (randInt.nextInt(5) + 3));
 
             }
         }

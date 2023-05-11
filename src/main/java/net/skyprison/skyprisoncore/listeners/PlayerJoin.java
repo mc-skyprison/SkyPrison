@@ -6,11 +6,13 @@ import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
+import dev.esophose.playerparticles.api.PlayerParticlesAPI;
+import dev.esophose.playerparticles.particles.ParticleEffect;
+import dev.esophose.playerparticles.styles.ParticleStyle;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
@@ -19,10 +21,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
-import se.file14.procosmetics.ProCosmetics;
-import se.file14.procosmetics.api.ProCosmeticsProvider;
-import se.file14.procosmetics.cosmetic.AbstractCosmeticType;
-import se.file14.procosmetics.cosmetic.CosmeticCategory;
 
 import java.awt.*;
 import java.sql.Connection;
@@ -36,14 +34,16 @@ public class PlayerJoin implements Listener {
 
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
-    private DiscordApi discApi;
+    private final DiscordApi discApi;
     private final DailyMissions dailyMissions;
+    private final PlayerParticlesAPI particles;
 
-    public PlayerJoin(SkyPrisonCore plugin, DatabaseHook db, DiscordApi discApi, DailyMissions dailyMissions) {
+    public PlayerJoin(SkyPrisonCore plugin, DatabaseHook db, DiscordApi discApi, DailyMissions dailyMissions, PlayerParticlesAPI particles) {
         this.plugin = plugin;
         this.db = db;
         this.discApi = discApi;
         this.dailyMissions = dailyMissions;
+        this.particles = particles;
     }
 
     @EventHandler
@@ -52,7 +52,6 @@ public class PlayerJoin implements Listener {
             Player player = event.getPlayer();
 
             EmbedBuilder embedJoin;
-
             Connection conn;
             PreparedStatement ps;
             ResultSet rs;
@@ -140,16 +139,8 @@ public class PlayerJoin implements Listener {
                     } catch (SQLException ignored) {
                     }
                     plugin.userTags.put(player.getUniqueId(), tagsDisplay);
-                    ProCosmetics api = ProCosmeticsProvider.get();
-                    if(tagsEffect != null && !tagsEffect.isEmpty()) {
-                        for(Object cosmeticObject : CosmeticCategory.PARTICLE_EFFECTS.getCosmeticTypes()) {
-                            AbstractCosmeticType cosmetic = (AbstractCosmeticType) cosmeticObject;
-                            String name = ChatColor.stripColor(cosmetic.getName());
-                            if(name.equalsIgnoreCase(tagsEffect)) {
-                                cosmetic.equip(api.getUserManager().getUser(player), true);
-                            }
-                        }
-                    }
+                    particles.resetActivePlayerParticles(player);
+                    particles.addActivePlayerParticle(player, ParticleEffect.CLOUD, ParticleStyle.fromInternalName(tagsEffect));
                 }
             }
 

@@ -5,6 +5,7 @@ import com.Zrips.CMI.Containers.CMIUser;
 import me.arcaniax.hdb.api.HeadDatabaseAPI;
 import net.kyori.adventure.text.Component;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import org.apache.commons.lang.WordUtils;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -13,41 +14,62 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
 
 public class Bomb implements CommandExecutor {
     private final SkyPrisonCore plugin;
-
     public Bomb(SkyPrisonCore plugin) {
         this.plugin = plugin;
     }
+
+
+
+
+    public static ItemStack getBomb(String bombName, int amount) {
+        SkyPrisonCore plugin = JavaPlugin.getPlugin(SkyPrisonCore.class);
+        if(bombName.contains("_")) {
+            bombName = bombName.split("_")[0];
+        }
+
+        bombName = bombName.toLowerCase();
+
+        HeadDatabaseAPI hAPI = new HeadDatabaseAPI();
+        ItemStack item = hAPI.getItemHead(getBombHdb(bombName));
+        SkullMeta iMeta = (SkullMeta) item.getItemMeta();
+        iMeta.displayName(Component.text(plugin.colourMessage("&e" + WordUtils.capitalize(bombName) + " Bomb")));
+        NamespacedKey key = new NamespacedKey(plugin, "bomb-type");
+        iMeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, bombName);
+        item.setItemMeta(iMeta);
+        item.setAmount(amount);
+        return item;
+    }
+
+    public static String getBombHdb(String bombType) {
+        HashMap<String, String> bombTypes = new HashMap<>();
+        bombTypes.put("small", "29488");
+        bombTypes.put("medium", "11556");
+        bombTypes.put("large", "11567");
+        bombTypes.put("massive", "11555");
+        bombTypes.put("nuke", "11564");
+
+        return bombTypes.get(bombType);
+    }
+
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         // /bomb give <player> <type> <amount>
         if(args.length == 4) {
+            String bomb = args[2];
             if(args[0].equalsIgnoreCase("give")) {
                 CMIUser user = CMI.getInstance().getPlayerManager().getUser(args[1]);
                 if(user != null) {
-                    HashMap<String, String> bombTypes = new HashMap<>();
-                    bombTypes.put("small", "29488");
-                    bombTypes.put("medium", "11556");
-                    bombTypes.put("large", "11567");
-                    bombTypes.put("massive", "11555");
-                    bombTypes.put("nuke", "11564");
-                    if(bombTypes.containsKey(args[2].toLowerCase())) {
+                    if(getBombHdb(bomb) != null) {
                         if(plugin.isInt(args[3])) {
                             int amount = Integer.parseInt(args[3]);
-                            HeadDatabaseAPI hAPI = new HeadDatabaseAPI();
-                            ItemStack item = hAPI.getItemHead(bombTypes.get(args[2].toLowerCase()));
-                            SkullMeta iMeta = (SkullMeta) item.getItemMeta();
-                            String type = args[2].substring(0, 1).toUpperCase() + args[2].substring(1);
-                            iMeta.displayName(Component.text(plugin.colourMessage("&e" + type + " Bomb")));
-                            NamespacedKey key = new NamespacedKey(plugin, "bomb-type");
-                            iMeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, args[2].toLowerCase());
-                            item.setItemMeta(iMeta);
-                            item.setAmount(amount);
+                            ItemStack item = getBomb(bomb, amount);
                             if(user.getInventory().canFit(item)) {
                                 user.getInventory().addItem(item);
                             } else {
