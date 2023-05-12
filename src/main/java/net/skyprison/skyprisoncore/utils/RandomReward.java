@@ -29,16 +29,16 @@ public enum RandomReward {
     IRON_INGOT(5, "", "&8&oLooks rusty.."),
     GOLD_INGOT(2.5, "", "&8&oWe're rich!"),
     LAPIS_LAZULI(2.5, "Allay Dust", "&8&oShould keep this hidden from the guards.."),
-    GOLD_NUGGET(2.5, "", ""),
+    GOLD_NUGGET(2.5, "Lost Tooth", "&8&o"),
 
     MAGGOTY_BREAD(2.5, "Maggoty Bread", "&8&oWe ain't had nothing but maggoty bread for three stinking days!"),
     SUSPICIOUS_MEAT(2.5, "Suspicous Meat", "&8&oLooks like meat's back on the menu, boys!"),
-
+    GOLDEN_APPLE(1, "Golden Delight", "&8&oLooks delicious."),
 
     BROKEN_TOOL(1, "Broken", "&8&oDoesn't seem repairable.."),
     DAMAGED_TOOL(2, "Damaged", "&8&oStill got a few uses left.."),
     WORN_TOOL(5, "Worn", "&8&oStarted to rust.."),
-    USED_TOOL(1.5, "Used", "&8&oSlight used.."),
+    USED_TOOL(1.5, "Used", "&8&oSlightly used.."),
     NEW_TOOL(0.1, "Brand New", "&8&oSparkly new!"),
 
     FECES(0.5, "Brown Surprise", "&8&oThat wasnt a mushroom..");
@@ -87,6 +87,19 @@ public enum RandomReward {
         return itemFromReward(reward);
     }
 
+    public static int biasedRandom(int min, int max) {
+        if (min >= max) {
+            throw new IllegalArgumentException("Max must be greater than min");
+        }
+
+        Random r = new Random();
+        double rawRandom = r.nextDouble(); // random between 0.0(inclusive) and 1.0(exclusive)
+        double biasedRandom = 1 - Math.sqrt(rawRandom); // bias towards lower values
+
+        return (int) (min + (biasedRandom * (max - min)));
+    }
+
+
     private static ItemStack itemFromReward(RandomReward reward) {
         SkyPrisonCore plugin = JavaPlugin.getPlugin(SkyPrisonCore.class);
         String rew = reward.name().toLowerCase();
@@ -99,8 +112,8 @@ public enum RandomReward {
         if(rew.contains("bomb")) {
             if(!rew.contains("nuke")) {
                 int chance = rand.nextInt(100);
-                if (chance > 75) {
-                    amount = 2 + rand.nextInt(3);
+                if (chance > 94) {
+                    amount = biasedRandom(2, 4);
                 }
             }
             item = Bomb.getBomb(reward.toString(), amount);
@@ -112,25 +125,39 @@ public enum RandomReward {
             iMeta.displayName(Component.text(reward.title).color(TextColor.fromHexString("#b25f23")));
             item.setItemMeta(iMeta);
         } else if(rew.equalsIgnoreCase("maggoty_bread")) {
-            amount = rand.nextInt(13) + 4;
+            amount =biasedRandom(4, 16);
             item = new ItemStack(Material.BREAD, amount);
             lore.add(Component.text(plugin.colourMessage(reward.desc)));
             iMeta.lore(lore);
             iMeta.displayName(Component.text(reward.title).color(TextColor.fromHexString("#7E6A45")));
             item.setItemMeta(iMeta);
         } else if(rew.equalsIgnoreCase("suspicious_meat")) {
-            amount = rand.nextInt(13) + 4;
+            amount = biasedRandom(4, 16);
             item = new ItemStack(Material.COOKED_BEEF, amount);
             lore.add(Component.text(plugin.colourMessage(reward.desc)));
             iMeta.lore(lore);
             iMeta.displayName(Component.text(reward.title).color(TextColor.fromHexString("#C38A8A")));
             item.setItemMeta(iMeta);
         } else if(rew.equalsIgnoreCase("lapis_lazuli")) {
-            amount = rand.nextInt(13) + 4;
+            amount = biasedRandom(4, 16);
             item = new ItemStack(Material.LAPIS_LAZULI, amount);
             lore.add(Component.text(plugin.colourMessage(reward.desc)));
             iMeta.lore(lore);
             iMeta.displayName(Component.text(reward.title).color(TextColor.fromHexString("#2DD4DC")));
+            item.setItemMeta(iMeta);
+        } else if(rew.equalsIgnoreCase("golden_apple")) {
+            amount = rand.nextInt(3) + 1;
+            item = new ItemStack(Material.GOLDEN_APPLE, amount);
+            lore.add(Component.text(plugin.colourMessage(reward.desc)));
+            iMeta.lore(lore);
+            iMeta.displayName(Component.text(reward.title).color(TextColor.fromHexString("#f2ff00")));
+            item.setItemMeta(iMeta);
+        } else if(rew.equalsIgnoreCase("gold_nugget")) {
+            amount = rand.nextInt(3) + 1;
+            item = new ItemStack(Material.GOLD_NUGGET, amount);
+            lore.add(Component.text(plugin.colourMessage(reward.desc)));
+            iMeta.lore(lore);
+            iMeta.displayName(Component.text(reward.title).color(TextColor.fromHexString("#FFD700")));
             item.setItemMeta(iMeta);
         } else if(rew.contains("tool")) {
             item = new ItemStack(TOOLS[rand.nextInt(TOOLS.length)], amount);
@@ -211,9 +238,10 @@ public enum RandomReward {
             iMeta.displayName(Component.text(name).color(NamedTextColor.GRAY));
             item.setItemMeta(iMeta);
 
+            item.setRepairCost(10000);
             item.setDamage(damage);
         } else {
-            amount = rand.nextInt(13) + 4;
+            amount = biasedRandom(4, 16);
             item = new ItemStack(Objects.requireNonNull(Material.matchMaterial(rew)), amount);
         }
         return item;

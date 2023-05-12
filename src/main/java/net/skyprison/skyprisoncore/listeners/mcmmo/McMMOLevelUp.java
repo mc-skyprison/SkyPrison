@@ -32,10 +32,6 @@ public class McMMOLevelUp implements Listener {
         }
         if(event.getSkillLevel() == 100) {
             plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set deluxetags.tag." + event.getSkill().getName());
-        } else if(event.getSkillLevel() == 200) {
-            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set deluxetags.tag." + event.getSkill().getName() + "2");
-        } else if(event.getSkillLevel() == 300) {
-            plugin.asConsole("lp user " + event.getPlayer().getName() + " permission set deluxetags.tag." + event.getSkill().getName() + "3");
         }
     }
 }

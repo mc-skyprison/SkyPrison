@@ -19,7 +19,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class Tags implements CommandExecutor {
     private final SkyPrisonCore plugin;
@@ -58,18 +60,8 @@ public class Tags implements CommandExecutor {
 
         int toRemove = 45 * (page - 1);
         if(toRemove != 0) {
-            toRemove -= 1;
+            tags = (ArrayList<List>) tags.subList(toRemove, tags.size()-1);
         }
-        int b = 0;
-        ArrayList<List> toBeRemoved = new ArrayList<>();
-
-        for(List tag : tags) {
-            if(b == toRemove) break;
-            toBeRemoved.add(tag);
-            b++;
-        }
-
-        tags.removeAll(toBeRemoved);
 
         Inventory bounties = Bukkit.createInventory(null, 54, ChatColor.RED + "Tags | Page " + page);
         int j = 0;
@@ -374,17 +366,8 @@ public class Tags implements CommandExecutor {
 
         int toRemove = 45 * (page - 1);
         if(toRemove != 0) {
-            toRemove -= 1;
+            tags = (ArrayList<List>) tags.subList(toRemove, tags.size()-1);
         }
-        int b = 0;
-        ArrayList<List> toBeRemoved = new ArrayList<>();
-
-        for(List tag : tags) {
-            if(b == toRemove) break;
-            toBeRemoved.add(tag);
-            b++;
-        }
-        tags.removeAll(toBeRemoved);
 
         Inventory bounties = Bukkit.createInventory(null, 54, ChatColor.RED + "Tags | Page " + page);
         int j = 0;

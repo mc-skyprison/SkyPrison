@@ -3,8 +3,6 @@ package net.skyprison.skyprisoncore;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import dev.esophose.playerparticles.api.PlayerParticlesAPI;
-import dev.esophose.playerparticles.particles.ParticleEffect;
-import dev.esophose.playerparticles.styles.ParticleStyle;
 import litebans.api.Entry;
 import litebans.api.Events;
 import net.kyori.adventure.text.Component;
@@ -47,7 +45,6 @@ import net.skyprison.skyprisoncore.listeners.shopguiplus.ShopPreTransaction;
 import net.skyprison.skyprisoncore.utils.*;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.*;
-import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -255,7 +252,7 @@ public class SkyPrisonCore extends JavaPlugin {
         new BukkitRunnable() {
             @Override
             public void run() {
-                Random rand = new Random();
+/*                Random rand = new Random();
                 if(rand.nextInt(100) < 1000) {
                     World world = Bukkit.getWorld("world_prison");
                     List<Block> blocks = new ArrayList<>();
@@ -265,7 +262,6 @@ public class SkyPrisonCore extends JavaPlugin {
                             for(int y = 130; y <= 174; y++) {
                                 Block block = world.getBlockAt(x, y, z);
                                 Material bType = block.getType();
-
                                 if (bType.equals(Material.TALL_GRASS) || bType.equals(Material.GRASS) || bType.equals(Material.LARGE_FERN) || bType.equals(Material.FERN)) {
                                     blocks.add(block);
                                 }
@@ -276,7 +272,6 @@ public class SkyPrisonCore extends JavaPlugin {
                     if(!blocks.isEmpty()) {
                         Block block = blocks.get(rand.nextInt(blocks.size()));
                         Location loc = block.getLocation();
-                        tellConsole("Location: " + loc);
                         if(shinyGrass != null) {
                             particles.removeFixedEffectsInRange(shinyGrass, 1);
                         }
@@ -284,16 +279,21 @@ public class SkyPrisonCore extends JavaPlugin {
                         shinyGrass = loc;
                         particles.createFixedParticleEffect(Bukkit.getConsoleSender(), loc.offset(0.5, 0, 0.5).toLocation(world), ParticleEffect.ELECTRIC_SPARK, ParticleStyle.fromInternalName("Normal"));
                     }
-                }
+
+                }*/
+
+                Random rand = new Random();
+                int delay = rand.nextInt(11) + 5;
+                tellConsole("Delay: " + delay);
+                this.cancel();
+                this.runTaskTimer(Bukkit.getPluginManager().getPlugin("SkyPrisonCore"), delay * 20, 0);
             }
-        }.runTaskTimerAsynchronously(this, 20 * 30, 20 * 6000);
+        }.runTaskTimer(this, 5 * 20, 0);
     }
 
     @Override
     public void onDisable() {
-        tellConsole("wham");
         if(shinyGrass != null) {
-            tellConsole("wham1");
             particles.removeFixedEffectsInRange(shinyGrass, 2);
         }
         if(discApi != null) {

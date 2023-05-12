@@ -98,7 +98,7 @@ public class PlayerJoin implements Listener {
                 discApi.getTextChannelById("788108242797854751").get().sendMessage(embedJoin);
 
 
-            if((player.getName().equalsIgnoreCase("DrakePork") || player.getName().equalsIgnoreCase("blueberry09")) && dailyMissions.getMissions(player).isEmpty()) {
+            if(dailyMissions.getMissions(player).isEmpty()) {
                 dailyMissions.setPlayerMissions(player);
             }
 
@@ -157,6 +157,9 @@ public class PlayerJoin implements Listener {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
+            plugin.tellConsole("wham1");
+            plugin.blockBreaks.forEach((k,v) -> plugin.tellConsole("Map! " + k + " : " + "v"));
+            plugin.tellConsole("wham2");
 
             plugin.tokensData.put(player.getUniqueId(), 0);
             try {
