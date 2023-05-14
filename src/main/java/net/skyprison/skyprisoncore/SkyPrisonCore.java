@@ -45,6 +45,7 @@ import net.skyprison.skyprisoncore.listeners.shopguiplus.ShopPreTransaction;
 import net.skyprison.skyprisoncore.utils.*;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -108,7 +109,7 @@ public class SkyPrisonCore extends JavaPlugin {
 
     public HashMap<Material, Double> minPrice = new HashMap<>();
 
-    public Location shinyGrass;
+    public List<Location> shinyGrass = new ArrayList<>();
 
     public Tokens tokens;
 
@@ -119,6 +120,10 @@ public class SkyPrisonCore extends JavaPlugin {
     public ArrayList<Location> bombLocs = new ArrayList<>();
 
     private PlayerParticlesAPI particles;
+
+    public List<Block> grassLocations = new ArrayList<>();
+
+    public Timer shinyTimer = new Timer();
 
     public HashMap<UUID, LinkedHashMap<String, Integer>> shopLogAmountPlayer = new HashMap<>();
     public HashMap<UUID, LinkedHashMap<String, Double>> shopLogPricePlayer = new HashMap<>();
@@ -248,53 +253,12 @@ public class SkyPrisonCore extends JavaPlugin {
                 }
             }
         }.runTaskTimerAsynchronously(this, 20 * 635, 20 * 635);
-
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-/*                Random rand = new Random();
-                if(rand.nextInt(100) < 1000) {
-                    World world = Bukkit.getWorld("world_prison");
-                    List<Block> blocks = new ArrayList<>();
-                    int radius = 300;
-                    for(int x = -radius; x <= radius; x++) {
-                        for(int z = -radius; z <= radius; z++) {
-                            for(int y = 130; y <= 174; y++) {
-                                Block block = world.getBlockAt(x, y, z);
-                                Material bType = block.getType();
-                                if (bType.equals(Material.TALL_GRASS) || bType.equals(Material.GRASS) || bType.equals(Material.LARGE_FERN) || bType.equals(Material.FERN)) {
-                                    blocks.add(block);
-                                }
-                            }
-                        }
-                    }
-
-                    if(!blocks.isEmpty()) {
-                        Block block = blocks.get(rand.nextInt(blocks.size()));
-                        Location loc = block.getLocation();
-                        if(shinyGrass != null) {
-                            particles.removeFixedEffectsInRange(shinyGrass, 1);
-                        }
-
-                        shinyGrass = loc;
-                        particles.createFixedParticleEffect(Bukkit.getConsoleSender(), loc.offset(0.5, 0, 0.5).toLocation(world), ParticleEffect.ELECTRIC_SPARK, ParticleStyle.fromInternalName("Normal"));
-                    }
-
-                }*/
-
-                Random rand = new Random();
-                int delay = rand.nextInt(11) + 5;
-                tellConsole("Delay: " + delay);
-                this.cancel();
-                this.runTaskTimer(Bukkit.getPluginManager().getPlugin("SkyPrisonCore"), delay * 20, 0);
-            }
-        }.runTaskTimer(this, 5 * 20, 0);
     }
 
     @Override
     public void onDisable() {
-        if(shinyGrass != null) {
-            particles.removeFixedEffectsInRange(shinyGrass, 2);
+        if(!shinyGrass.isEmpty()) {
+            particles.removeFixedEffectsInRange(shinyGrass.get(0), 1000);
         }
         if(discApi != null) {
             try {
@@ -466,6 +430,8 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("furnace")).setExecutor(new VirtualFurnace(this));
         Objects.requireNonNull(getCommand("minereset")).setExecutor(new MineReset(this));
         Objects.requireNonNull(getCommand("voucher")).setExecutor(new Voucher(this));
+        Objects.requireNonNull(getCommand("randomgive")).setExecutor(new RandomGive(this));
+        Objects.requireNonNull(getCommand("customrecipes")).setExecutor(new CustomRecipes(this));
 
         if(discApi != null) {
             Objects.requireNonNull(getCommand("referral")).setExecutor(new Referral(this, discApi, getDatabase()));
@@ -517,6 +483,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PlayerCommandPreprocess(this), this);
         pm.registerEvents(new ParkourFinish(this, dailyMissions), this);
         pm.registerEvents(new PlayerTogglePvP(this), this);
+        pm.registerEvents(new ServerLoad(this, particles), this);
 
         if(discApi != null) {
             pm.registerEvents(new AsyncPlayerChat(this, discApi, getDatabase(), new Tags(this, getDatabase())), this);
@@ -567,9 +534,6 @@ public class SkyPrisonCore extends JavaPlugin {
                 }
             });
         }
-
-
-
     }
 
 

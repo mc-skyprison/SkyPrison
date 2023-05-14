@@ -144,7 +144,6 @@ public class PlayerJoin implements Listener {
                 }
             }
 
-
             plugin.blockBreaks.put(player.getUniqueId(), 0);
             try {
                 conn = db.getSQLConnection();
@@ -157,9 +156,6 @@ public class PlayerJoin implements Listener {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-            plugin.tellConsole("wham1");
-            plugin.blockBreaks.forEach((k,v) -> plugin.tellConsole("Map! " + k + " : " + "v"));
-            plugin.tellConsole("wham2");
 
             plugin.tokensData.put(player.getUniqueId(), 0);
             try {

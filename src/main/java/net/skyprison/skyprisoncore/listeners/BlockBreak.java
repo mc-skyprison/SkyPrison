@@ -29,6 +29,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class BlockBreak implements Listener {
@@ -73,6 +74,7 @@ public class BlockBreak implements Listener {
             }
 
             if (!CoreProtect.getInstance().getAPI().hasPlaced(player.getName(), event.getBlock(), 300, 0) && !loc.getWorld().getName().equalsIgnoreCase("world_event")) {
+                plugin.tellConsole("Wham: " + plugin.blockBreaks);
                 int brokeBlocks = plugin.blockBreaks.get(player.getUniqueId());
                 if (brokeBlocks >= 2000) {
                     plugin.blockBreaks.put(player.getUniqueId(), 0);
@@ -99,18 +101,21 @@ public class BlockBreak implements Listener {
                         }
                     }
                 } else if (bType.equals(Material.TALL_GRASS) || bType.equals(Material.GRASS) || bType.equals(Material.LARGE_FERN) || bType.equals(Material.FERN)) {
-                    Location shinyLoc = plugin.shinyGrass;
-                    if(shinyLoc != null) {
-                        if(shinyLoc.equals(loc) || shinyLoc.offset(0, 1, 0).equals(loc) || shinyLoc.offset(0, -1, 0).equals(loc)) {
-/*                            plugin.shinyGrass = null;
-                            particles.removeFixedEffectsInRange(shinyLoc, 1);*/
-                            player.sendMessage(plugin.colourMessage("&7&oBuried amidst the leafy foliage, you discover an unexpected treasure!"));
-                            ItemStack item = RandomReward.getRandomReward();
-                            CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-                            if(user.getInventory().canFit(item)) {
-                                player.getInventory().addItem(item);
-                            } else {
-                                player.getLocation().getWorld().dropItem(player.getLocation(), item);
+                    List<Location> shinyLocs = plugin.shinyGrass;
+                    if(!shinyLocs.isEmpty()) {
+                        for(Location shinyLoc : shinyLocs) {
+                            if (shinyLoc.equals(loc) || shinyLoc.offset(0, 1, 0).equals(loc) || shinyLoc.offset(0, -1, 0).equals(loc)) {
+                                plugin.shinyGrass.remove(loc);
+                                particles.removeFixedEffectsInRange(shinyLoc, 1);
+                                player.sendMessage(plugin.colourMessage("&7&oBuried amidst the leafy foliage, you discover an unexpected treasure!"));
+                                ItemStack item = RandomReward.getRandomReward();
+                                CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
+                                if (user.getInventory().canFit(item)) {
+                                    player.getInventory().addItem(item);
+                                } else {
+                                    player.getLocation().getWorld().dropItem(player.getLocation(), item);
+                                }
+                                break;
                             }
                         }
                     }

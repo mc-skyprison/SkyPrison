@@ -27,11 +27,13 @@ public class ParkourFinish implements Listener {
             plugin.asConsole("lp user " + player.getName() + " permission set skyprisoncore.tag.17");
         }
 
-        for(String mission : dm.getMissions(player)) {
-            if (!dm.isCompleted(player, mission)) {
-                String[] missSplit = mission.split("-");
-                if (missSplit[0].equalsIgnoreCase("parkour")) {
-                    dm.updatePlayerMission(player, mission);
+        if(!event.getEventName().equalsIgnoreCase("parkour1")) {
+            for (String mission : dm.getMissions(player)) {
+                if (!dm.isCompleted(player, mission)) {
+                    String[] missSplit = mission.split("-");
+                    if (missSplit[0].equalsIgnoreCase("parkour")) {
+                        dm.updatePlayerMission(player, mission);
+                    }
                 }
             }
         }

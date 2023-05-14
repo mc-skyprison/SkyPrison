@@ -217,14 +217,15 @@ public class Tokens implements CommandExecutor {
                 ArrayList<String> lore = new ArrayList<>();
                 ItemStack item = new ItemStack(Material.OAK_SIGN);
                 ItemMeta meta = item.getItemMeta();
-                meta.setDisplayName(ChatColor.YELLOW + entry.getKey());
-                lore.add(ChatColor.GRAY + "Amount Used: " + ChatColor.YELLOW + plugin.formatNumber(tokenLogAmount.get(entry.getKey())));
-                int amountPos = new ArrayList<>(tokenLogAmountSortedTop.keySet()).indexOf(entry.getKey()) + 1;
-                lore.add(ChatColor.GRAY + "Position: " + ChatColor.GREEN + amountPos);
+                String[] name = entry.getKey().split(";");
+                meta.setDisplayName(WordUtils.capitalize(ChatColor.YELLOW + name[1] + " - (" + name[0] + ")"));
+                lore.add(ChatColor.GRAY + "Times Used: " + ChatColor.YELLOW + plugin.formatNumber(tokenLogUsage.get(entry.getKey())));
+                int usagePos = new ArrayList<>(tokenLogUsageSortedTop.keySet()).indexOf(entry.getKey()) + 1;
+                lore.add(ChatColor.GRAY + "Position: " + ChatColor.GREEN + usagePos);
                 lore.add(ChatColor.DARK_GRAY + "-----");
-                lore.add(ChatColor.GRAY + "Tokens Made: " + ChatColor.YELLOW + plugin.formatNumber(tokenLogUsage.get(entry.getKey())));
-                int moneyPos = new ArrayList<>(tokenLogUsageSortedTop.keySet()).indexOf(entry.getKey()) + 1;
-                lore.add(ChatColor.GRAY + "Position: " + ChatColor.GREEN + moneyPos);
+                lore.add(ChatColor.GRAY + "Tokens Made: " + ChatColor.YELLOW + plugin.formatNumber(tokenLogAmount.get(entry.getKey())));
+                int tokensPos = new ArrayList<>(tokenLogAmountSortedTop.keySet()).indexOf(entry.getKey()) + 1;
+                lore.add(ChatColor.GRAY + "Position: " + ChatColor.GREEN + tokensPos);
                 meta.setLore(lore);
                 if(i == 0) {
                     NamespacedKey key = new NamespacedKey(plugin, "stop-click");
@@ -1033,7 +1034,7 @@ public class Tokens implements CommandExecutor {
                                     // Date ; remove/receive ; amount ; type ; source
                                     int tokenAmount = Integer.parseInt(str[2]);
 
-                                    String source = str[4].toLowerCase();
+                                    String source = str[3].toLowerCase() + ";" + str[4].toLowerCase();
 
                                     if (tokenLogAmount.containsKey(source)) {
                                         int newNum = tokenAmount + tokenLogAmount.get(source);

@@ -19,8 +19,8 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 public enum RandomReward {
-    SMALL_BOMB(5, "", "&8&oCould come in handy.."),
-    MEDIUM_BOMB(3.5, "", "&8&oCould come in handy.."),
+    SMALL_BOMB(3, "", "&8&oCould come in handy.."),
+    MEDIUM_BOMB(2.5, "", "&8&oCould come in handy.."),
     LARGE_BOMB(2, "", "&8&oCould come in handy.."),
     MASSIVE_BOMB(1, "", "&8&oCould come in handy.."),
     NUKE_BOMB(0.1, "", "&8&oWhat maniac left this in the bushes!?"),
