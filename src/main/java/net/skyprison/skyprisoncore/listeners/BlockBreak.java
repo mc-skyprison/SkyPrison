@@ -120,9 +120,9 @@ public class BlockBreak implements Listener {
                         }
                     }
                 } else if (bType.equals(Material.CACTUS)) {
-                    final RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-                    final RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(player.getWorld()));
-                    final ApplicableRegionSet regionList = regionManager.getApplicableRegions(BlockVector3.at(b.getLocation().getX(),
+                    RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
+                    RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(player.getWorld()));
+                    ApplicableRegionSet regionList = regionManager.getApplicableRegions(BlockVector3.at(b.getLocation().getX(),
                             b.getLocation().getY(), b.getLocation().getZ()));
                     for(ProtectedRegion region : regionList.getRegions()) {
                         if(region.getId().equalsIgnoreCase("desert-nofly")) {
@@ -132,9 +132,9 @@ public class BlockBreak implements Listener {
                         }
                     }
                 } else if (bType.equals(Material.BAMBOO)) {
-                    final RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-                    final RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(player.getWorld()));
-                    final ApplicableRegionSet regionList = regionManager.getApplicableRegions(BlockVector3.at(b.getLocation().getX(),
+                    RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
+                    RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(player.getWorld()));
+                    ApplicableRegionSet regionList = regionManager.getApplicableRegions(BlockVector3.at(b.getLocation().getX(),
                             b.getLocation().getY(), b.getLocation().getZ()));
                     for(ProtectedRegion region : regionList.getRegions()) {
                         if(region.getId().equalsIgnoreCase("desert-nofly")) {
@@ -144,9 +144,9 @@ public class BlockBreak implements Listener {
                         }
                     }
                 } else if (bType.equals(Material.BIRCH_LOG)) {
-                    final RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-                    final RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(player.getWorld()));
-                    final ApplicableRegionSet regionList = regionManager.getApplicableRegions(BlockVector3.at(b.getLocation().getX(),
+                    RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
+                    RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(player.getWorld()));
+                    ApplicableRegionSet regionList = regionManager.getApplicableRegions(BlockVector3.at(b.getLocation().getX(),
                             b.getLocation().getY(), b.getLocation().getZ()));
                     for(ProtectedRegion region : regionList.getRegions()) {
                         if(region.getId().equalsIgnoreCase("grass-nofly")) {

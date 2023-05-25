@@ -2,8 +2,9 @@ package net.skyprison.skyprisoncore.commands.economy;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
-import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.apache.commons.lang.WordUtils;
@@ -516,262 +517,323 @@ public class Tokens implements CommandExecutor {
             player.sendMessage(plugin.colourMessage("&cPage doesn't exist! Total pages: " + totalPages));
         }
     }
+    public void openShopEditSpecificGUI(Player player, String id) {
+        List<Object> item = new ArrayList<>();
+        Connection conn = hook.getSQLConnection();
+        try {
+            PreparedStatement ps = conn.prepareStatement("SELECT display_item, name, description, commands, permission, price, price_voucher, position, page, max_purchases FROM tokenshop WHERE id = '" + id + "'");
+            ResultSet rs = ps.executeQuery();
+            if(rs.next()) {
+                item.add(rs.getBlob(1)); // display_item
+                item.add(rs.getString(2)); // name
+                item.add(rs.getString(3)); // description
+                item.add(rs.getString(4)); // commands
+                item.add(rs.getString(5)); // permission
+                item.add(rs.getInt(6)); // price
+                item.add(rs.getInt(7)); // price_voucher
+                item.add(rs.getInt(8)); // page
+                item.add(rs.getInt(9)); // max_purchases
+            }
+            hook.close(ps, rs, null);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
-
-    public void openShopGUI(Player player, String bar, Integer page) {
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-        ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         ItemMeta redMeta = redPane.getItemMeta();
-        ItemMeta blackMeta = blackPane.getItemMeta();
-        redMeta.setDisplayName(" ");
+        redMeta.displayName(Component.text(" "));
         redPane.setItemMeta(redMeta);
-        blackMeta.setDisplayName(" ");
+
+        ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemMeta blackMeta = blackPane.getItemMeta();
+        blackMeta.displayName(Component.text(" "));
         blackPane.setItemMeta(blackMeta);
+
+
+        Inventory tokenShopGUI = Bukkit.createInventory(null, 36, Component.text("Tokenshop Edit"));
+        for(int i = 0; i < tokenShopGUI.getSize(); i++) {
+            if(i == 0) {
+                NamespacedKey key = new NamespacedKey(plugin, "stop-click");
+                redMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
+                NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
+                redMeta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "recipes-specific");
+                redPane.setItemMeta(redMeta);
+                tokenShopGUI.setItem(i, redPane);
+            } else if(i == 8 || i == 9 || i == 17 || i == 18 || i == 26 || i == 35) {
+                tokenShopGUI.setItem(i, redPane);
+            } else if(i < 8 || i > 27 && i < 35) {
+                tokenShopGUI.setItem(i, blackPane);
+            } else if(i == 13) {
+                ItemStack back = (ItemStack) item.get(0);
+                ItemMeta backMeta = back.getItemMeta();
+                backMeta.displayName(Component.text("Item Displayed").color(NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
+                List<Component> lore = new ArrayList<>();
+                lore.add(Component.text("Drag a new item onto this one to set a new display item").color(NamedTextColor.RED));
+                backMeta.lore(lore);
+                back.setItemMeta(backMeta);
+                tokenShopGUI.setItem(i, back);
+            } else if(i == 19) {
+                ItemStack back = new ItemStack(Material.NAME_TAG, 1);
+                ItemMeta backMeta = back.getItemMeta();
+                backMeta.displayName(Component.text("Edit ID").color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+                List<Component> lore = new ArrayList<>();
+                lore.add(Component.text("Current ID: " + id).color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                backMeta.lore(lore);
+                back.setItemMeta(backMeta);
+                tokenShopGUI.setItem(i, back);
+            } else if(i == 20) {
+                ItemStack back = new ItemStack(Material.BOOK, 1);
+                ItemMeta backMeta = back.getItemMeta();
+                backMeta.displayName(Component.text("Edit Display Name").color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+                List<Component> lore = new ArrayList<>();
+                lore.add(Component.text("Current Display Name: " + item.get(1)).color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                backMeta.lore(lore);
+                back.setItemMeta(backMeta);
+                tokenShopGUI.setItem(i, back);
+            } else if(i == 21) {
+                ItemStack back = new ItemStack(Material.NAME_TAG, 1);
+                ItemMeta backMeta = back.getItemMeta();
+                backMeta.displayName(Component.text("Edit Description").color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+                List<Component> lore = new ArrayList<>();
+                lore.add(Component.text("Left click to add new line").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("Right click to reset description").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text(" "));
+                lore.add(Component.text("Current Description:").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                String description = (String) item.get(2);
+                for(String desc : description.split("<br>")) {
+                    lore.add(plugin.miniSerial.deserialize(desc));
+                }
+
+                backMeta.lore(lore);
+                back.setItemMeta(backMeta);
+                tokenShopGUI.setItem(i, back);
+            } else if(i == 22) {
+                ItemStack back = new ItemStack(Material.NAME_TAG, 1);
+                ItemMeta backMeta = back.getItemMeta();
+                backMeta.displayName(Component.text("Edit Commands").color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+                List<Component> lore = new ArrayList<>();
+                lore.add(Component.text("Left click to add new command").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("Right click to reset commands").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text(" "));
+                lore.add(Component.text("Current Commands:").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                String description = (String) item.get(2);
+                for(String desc : description.split("<br>")) {
+                    lore.add(plugin.miniSerial.deserialize(desc));
+                }
+
+                backMeta.lore(lore);
+                back.setItemMeta(backMeta);
+                tokenShopGUI.setItem(i, back);
+            } else if(i == 23) {
+                ItemStack back = new ItemStack(Material.DAYLIGHT_DETECTOR, 1);
+                ItemMeta backMeta = back.getItemMeta();
+                backMeta.displayName(Component.text("Edit Permission").color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+                List<Component> lore = new ArrayList<>();
+                lore.add(Component.text("Current Permission: " + item.get(4)).color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                backMeta.lore(lore);
+                back.setItemMeta(backMeta);
+                tokenShopGUI.setItem(i, back);
+            } else if(i == 24) {
+                ItemStack back = new ItemStack(Material.GOLD_NUGGET, 1);
+                ItemMeta backMeta = back.getItemMeta();
+                backMeta.displayName(Component.text("Edit Price").color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+                List<Component> lore = new ArrayList<>();
+                lore.add(Component.text("Current Price: " + item.get(5)).color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                backMeta.lore(lore);
+                back.setItemMeta(backMeta);
+                tokenShopGUI.setItem(i, back);
+            } else if(i == 25) {
+                ItemStack back = new ItemStack(Material.NAME_TAG, 1);
+                ItemMeta backMeta = back.getItemMeta();
+                backMeta.displayName(Component.text("Edit Voucher Price").color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+                List<Component> lore = new ArrayList<>();
+                lore.add(Component.text("Current Voucher Price: " + item.get(6)).color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                backMeta.lore(lore);
+                back.setItemMeta(backMeta);
+                tokenShopGUI.setItem(i, back);
+            }
+        }
+
+        player.openInventory(tokenShopGUI);
+    }
+    public void openShopEditGUI(Player player, Integer page) {
+        List<List<Object>> items = new ArrayList<>();
+        Connection conn = hook.getSQLConnection();
+        try {
+            PreparedStatement ps = conn.prepareStatement("SELECT id, display_item, name, position FROM tokenshop WHERE page = '" + page + "'");
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()) {
+                List<Object> item = new ArrayList<>();
+                item.add(rs.getString(1)); // id
+                item.add(rs.getBlob(2)); // display_item
+                item.add(rs.getString(3)); // name
+                item.add(rs.getInt(4)); // position
+                items.add(item);
+            }
+            hook.close(ps, rs, null);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
         Inventory tokenShopGUI = null;
-        switch(page) {
-            case 1:
-                tokenShopGUI = Bukkit.createInventory(null, 54, ChatColor.RED + "Bartender Shop");
-                for (int i = 0; i < 54; i++) {
-                    if (i == 0) {
-                        NamespacedKey key = new NamespacedKey(plugin, "stop-click");
-                        redMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
-                        NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
-                        redMeta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "tokenshop-" + page);
-                        redPane.setItemMeta(redMeta);
-                        tokenShopGUI.setItem(i, redPane);
-                    } else if (i == 8 || i == 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35 || i == 36 || i == 44 || i == 45) {
-                        tokenShopGUI.setItem(i, redPane);
-                    } else if (i == 49) {
-                        ItemStack balance = new ItemStack(Material.NETHER_STAR);
-                        ItemMeta bMeta = balance.getItemMeta();
-                        bMeta.setDisplayName(plugin.colourMessage("&e&lBalances"));
-                        ArrayList<Component> lore = new ArrayList<>();
-                        lore.add(Component.text(plugin.colourMessage("&7&m━━━━━━━━━━━━━━")));
-                        lore.add(Component.text(plugin.colourMessage("&fTokens: " + plugin.formatNumber(plugin.tokensData.get(player.getUniqueId())))));
-                        lore.add(Component.text(plugin.colourMessage("&fMoney: " + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%"))));
-                        bMeta.setLore(Collections.singletonList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
-                        lore.add(Component.text(plugin.colourMessage("&7&m━━━━━━━━━━━━━━")));
-                        balance.setItemMeta(bMeta);
-                        tokenShopGUI.setItem(i, balance);
-                    } else if (i == 50) {
-                        ItemStack balance = new ItemStack(Material.PAPER);
-                        ItemMeta bMeta = balance.getItemMeta();
-                        bMeta.setDisplayName(plugin.colourMessage("&a&lNext Page"));
-                        balance.setItemMeta(bMeta);
-                        tokenShopGUI.setItem(i, balance);
-                    } else if (i == 53) {
-                        ItemStack balance = new ItemStack(Material.BOOK);
-                        ItemMeta bMeta = balance.getItemMeta();
-                        bMeta.setDisplayName(plugin.colourMessage("&3&lYour Balance"));
-                        bMeta.setLore(Collections.singletonList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
-                        balance.setItemMeta(bMeta);
-                        tokenShopGUI.setItem(i, balance);
-                    } else if(i == 10) {
-                        ItemStack item = new ItemStack(Material.DIAMOND_HELMET);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 11) {
-                        ItemStack item = new ItemStack(Material.IRON_HELMET);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 13) {
-                        ItemStack item = new ItemStack(Material.ENDER_CHEST);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 15) {
-                        ItemStack item = new ItemStack(Material.IRON_SWORD);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 16) {
-                        ItemStack item = new ItemStack(Material.CROSSBOW);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 19) {
-                        ItemStack item = new ItemStack(Material.DIAMOND_CHESTPLATE);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 20) {
-                        ItemStack item = new ItemStack(Material.IRON_CHESTPLATE);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 22) {
-                        ItemStack item = new ItemStack(Material.SNOWBALL, 16);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 24) {
-                        ItemStack item = new ItemStack(Material.DIAMOND_PICKAXE);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 25) {
-                        ItemStack item = new ItemStack(Material.BOW);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 28) {
-                        ItemStack item = new ItemStack(Material.DIAMOND_LEGGINGS);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 29) {
-                        ItemStack item = new ItemStack(Material.IRON_LEGGINGS);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 31) {
-                        ItemStack item = new ItemStack(Material.ARROW);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 33) {
-                        ItemStack item = new ItemStack(Material.DIAMOND_AXE);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 34) {
-                        ItemStack item = new ItemStack(Material.TRIDENT);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 37) {
-                        ItemStack item = new ItemStack(Material.DIAMOND_BOOTS);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 38) {
-                        ItemStack item = new ItemStack(Material.IRON_BOOTS);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 40) {
-                        ItemStack item = new ItemStack(Material.EXPERIENCE_BOTTLE, 64);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 42) {
-                        ItemStack item = new ItemStack(Material.DIAMOND_SHOVEL);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 43) {
-                        ItemStack item = new ItemStack(Material.TURTLE_HELMET);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else {
-                        tokenShopGUI.setItem(i, blackPane);
-                    }
-                }
-                break;
-            case 2:
-                tokenShopGUI = Bukkit.createInventory(null, 45, ChatColor.RED + "Bartender Shop");
-                for (int i = 0; i < 45; i++) {
-                    if (i == 0) {
-                        NamespacedKey key = new NamespacedKey(plugin, "stop-click");
-                        redMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
-                        NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
-                        redMeta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "tokenshop-" + page);
-                        redPane.setItemMeta(redMeta);
-                        tokenShopGUI.setItem(i, redPane);
-                    } else if (i == 8 || i == 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35 || i == 36) {
-                        tokenShopGUI.setItem(i, redPane);
-                    } else if (i == 40) {
-                        ItemStack balance = new ItemStack(Material.NETHER_STAR);
-                        ItemMeta bMeta = balance.getItemMeta();
-                        bMeta.setDisplayName(plugin.colourMessage("&6&lYour Balance"));
-                        bMeta.setLore(Collections.singletonList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
-                        balance.setItemMeta(bMeta);
-                        tokenShopGUI.setItem(i, balance);
-                    } else if (i == 39) {
-                        ItemStack balance = new ItemStack(Material.PAPER);
-                        ItemMeta bMeta = balance.getItemMeta();
-                        bMeta.setDisplayName(plugin.colourMessage("&6&lPrevious Page"));
-                        bMeta.setLore(Collections.singletonList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
-                        balance.setItemMeta(bMeta);
-                        tokenShopGUI.setItem(i, balance);
-                    } else if (i == 44) {
-                        ItemStack balance = new ItemStack(Material.BOOK);
-                        ItemMeta bMeta = balance.getItemMeta();
-                        bMeta.setDisplayName(plugin.colourMessage("&6&lYour Balance"));
-                        bMeta.setLore(Collections.singletonList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
-                        balance.setItemMeta(bMeta);
-                        tokenShopGUI.setItem(i, balance);
-                    } else if(i == 10) {
-                        ItemStack item = new ItemStack(Material.DIAMOND_HELMET);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 11) {
-                        ItemStack item = new ItemStack(Material.IRON_HELMET);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 13) {
-                        ItemStack item = new ItemStack(Material.ENDER_CHEST);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 15) {
-                        ItemStack item = new ItemStack(Material.IRON_SWORD);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 16) {
-                        ItemStack item = new ItemStack(Material.CROSSBOW);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 19) {
-                        ItemStack item = new ItemStack(Material.DIAMOND_CHESTPLATE);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 20) {
-                        ItemStack item = new ItemStack(Material.IRON_CHESTPLATE);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 22) {
-                        ItemStack item = new ItemStack(Material.SNOWBALL, 16);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 24) {
-                        ItemStack item = new ItemStack(Material.DIAMOND_PICKAXE);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 25) {
-                        ItemStack item = new ItemStack(Material.BOW);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 28) {
-                        ItemStack item = new ItemStack(Material.DIAMOND_LEGGINGS);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 29) {
-                        ItemStack item = new ItemStack(Material.IRON_LEGGINGS);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 31) {
-                        ItemStack item = new ItemStack(Material.ARROW);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 33) {
-                        ItemStack item = new ItemStack(Material.DIAMOND_AXE);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 34) {
-                        ItemStack item = new ItemStack(Material.TRIDENT);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 37) {
-                        ItemStack item = new ItemStack(Material.DIAMOND_BOOTS);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 38) {
-                        ItemStack item = new ItemStack(Material.IRON_BOOTS);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 40) {
-                        ItemStack item = new ItemStack(Material.EXPERIENCE_BOTTLE, 64);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 42) {
-                        ItemStack item = new ItemStack(Material.DIAMOND_SHOVEL);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else if(i == 43) {
-                        ItemStack item = new ItemStack(Material.TURTLE_HELMET);
-                        ItemMeta iMeta = item.getItemMeta();
-                        tokenShopGUI.setItem(i, item);
-                    } else {
-                        tokenShopGUI.setItem(i, blackPane);
-                    }
-                }
-                break;
+        if(page == 1) {
+            tokenShopGUI = Bukkit.createInventory(null, 54, Component.text("Tokenshop Edit"));
+        } else if(page == 2) {
+            tokenShopGUI = Bukkit.createInventory(null, 45, Component.text("Tokenshop Edit"));
+        }
 
-        };
+        for(List<Object> itemData : items) {
+            String id = (String) itemData.get(0);
+            Component name = plugin.miniSerial.deserialize((String) itemData.get(2));
+            int pos = (int) itemData.get(3);
+            ItemStack item = (ItemStack) itemData.get(1);
+            ItemMeta itemMeta = item.getItemMeta();
+            itemMeta.displayName(name);
+            List<Component> lore = new ArrayList<>();
+            lore.add(Component.text(" "));
+            lore.add(Component.text("Left click to move").color(NamedTextColor.GRAY));
+            lore.add(Component.text("Right click to edit").color(NamedTextColor.GRAY));
+            itemMeta.lore(lore);
 
+            NamespacedKey idKey = new NamespacedKey(plugin, "id");
+            itemMeta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, id);
+
+            item.setItemMeta(itemMeta);
+            tokenShopGUI.setItem(pos, item);
+        }
+        for (ItemStack item : tokenShopGUI.getContents()) {
+            if (item != null && !item.getType().isAir()) {
+                ItemMeta itemMeta = item.getItemMeta();
+                NamespacedKey clickKey = new NamespacedKey(plugin, "stop-click");
+                itemMeta.getPersistentDataContainer().set(clickKey, PersistentDataType.INTEGER, 0);
+                NamespacedKey typeKey = new NamespacedKey(plugin, "gui-type");
+                itemMeta.getPersistentDataContainer().set(typeKey, PersistentDataType.STRING, "tokenshop-edit");
+                NamespacedKey pageKey = new NamespacedKey(plugin, "page");
+                itemMeta.getPersistentDataContainer().set(pageKey, PersistentDataType.INTEGER, page);
+                item.setItemMeta(itemMeta);
+                tokenShopGUI.setItem(tokenShopGUI.first(item), item);
+                break;
+            }
+        }
+
+        player.openInventory(tokenShopGUI);
+    }
+
+    public void openShopGUI(Player player, Integer page) {
+        List<List<Object>> items = new ArrayList<>();
+        Connection conn = hook.getSQLConnection();
+        try {
+            PreparedStatement ps = conn.prepareStatement("SELECT id, display_item, name, description, command, permission, price, price_voucher, position, max_purchases FROM tokenshop WHERE page = '" + page + "'");
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()) { // id, display_item BLOB, name STR, description STR, command STR, permission STR, price INT, price_voucher INT, position INT, max_purchases INT
+                List<Object> item = new ArrayList<>();
+                item.add(rs.getString(1)); // id
+                item.add(rs.getBlob(2)); // display_item
+                item.add(rs.getString(3)); // name
+                item.add(rs.getString(4)); // description
+                item.add(rs.getString(5)); // commands
+                item.add(rs.getString(6)); // permission
+                item.add(rs.getInt(7)); // price
+                item.add(rs.getInt(8)); // price_voucher
+                item.add(rs.getInt(9)); // position
+                item.add(rs.getInt(10)); // max_purchases
+                items.add(item);
+            }
+            hook.close(ps, rs, null);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        HashMap<String, Integer> purchases = new HashMap<>();
+        try {
+            PreparedStatement ps = conn.prepareStatement("SELECT item_id, item_bought FROM tokenshop_userdata WHERE user_id = '" + player.getUniqueId() + "'");
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()) {
+                purchases.put(rs.getString(1), rs.getInt(2));
+            }
+            hook.close(ps, rs, null);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+
+        Inventory tokenShopGUI = null;
+        if(page == 1) {
+            tokenShopGUI = Bukkit.createInventory(null, 54, Component.text("Tokenshop"));
+        } else if(page == 2) {
+            tokenShopGUI = Bukkit.createInventory(null, 45, Component.text("Tokenshop"));
+        }
+
+        for(List<Object> itemData : items) {
+            String id = (String) itemData.get(0);
+            int max_purchases = (int) itemData.get(9);
+            if(max_purchases < 0 || (purchases.containsKey(id) && purchases.get(id) < max_purchases)) {
+                String perm = (String) itemData.get(5);
+                if (perm == null || player.hasPermission(perm)) {
+                    Component name = plugin.miniSerial.deserialize((String) itemData.get(2));
+                    String description = (String) itemData.get(3);
+                    String commands = (String) itemData.get(4);
+
+                    int price = (int) itemData.get(6);
+                    int vouchPrice = (int) itemData.get(7);
+                    int pos = (int) itemData.get(8);
+                    int bought = 0;
+
+                    if(purchases.containsKey(id)) {
+                        bought = purchases.get(id);
+                    }
+
+
+                    ItemStack item = (ItemStack) itemData.get(1);
+                    ItemMeta itemMeta = item.getItemMeta();
+                    itemMeta.displayName(name);
+                    List<Component> lore = new ArrayList<>();
+                    if (price > 0) {
+                        if (player.getInventory().containsAtLeast(Voucher.getVoucher("token-shop", 1), 1)) {
+                            lore.add(Component.text("Vouchers Needed: " + plugin.formatNumber(vouchPrice)).color(NamedTextColor.GRAY).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                        } else {
+                            lore.add(Component.text("Price: " + plugin.formatNumber(price) + " tokens").color(NamedTextColor.GRAY).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                        }
+                        lore.add(Component.text("You've bought this " + bought + " time(s)").decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                    }
+                    if (description != null) {
+                        for (String loreLine : description.split("<br>")) {
+                            lore.add(plugin.miniSerial.deserialize(loreLine));
+                        }
+                    }
+                    itemMeta.lore(lore);
+
+                    if(commands != null) {
+                        NamespacedKey commandKey = new NamespacedKey(plugin, "command");
+                        itemMeta.getPersistentDataContainer().set(commandKey, PersistentDataType.STRING, commands);
+                    }
+
+                    if(price > 0) {
+                        NamespacedKey priceKey = new NamespacedKey(plugin, "price");
+                        itemMeta.getPersistentDataContainer().set(priceKey, PersistentDataType.INTEGER, price);
+                        NamespacedKey vouchPriceKey = new NamespacedKey(plugin, "vouch-price");
+                        itemMeta.getPersistentDataContainer().set(vouchPriceKey, PersistentDataType.INTEGER, vouchPrice);
+                    }
+
+                    item.setItemMeta(itemMeta);
+                    tokenShopGUI.setItem(pos, item);
+                }
+            }
+        }
+        for(ItemStack item : tokenShopGUI.getContents()) {
+            if(item != null && !item.getType().isAir()) {
+                ItemMeta itemMeta = item.getItemMeta();
+                NamespacedKey clickKey = new NamespacedKey(plugin, "stop-click");
+                itemMeta.getPersistentDataContainer().set(clickKey, PersistentDataType.INTEGER, 1);
+                NamespacedKey typeKey = new NamespacedKey(plugin, "gui-type");
+                itemMeta.getPersistentDataContainer().set(typeKey, PersistentDataType.STRING, "tokenshop");
+                NamespacedKey pageKey = new NamespacedKey(plugin, "page");
+                itemMeta.getPersistentDataContainer().set(pageKey, PersistentDataType.INTEGER, page);
+                item.setItemMeta(itemMeta);
+                tokenShopGUI.setItem(tokenShopGUI.first(item), item);
+                break;
+            }
+        }
 
         player.openInventory(tokenShopGUI);
     }
@@ -1144,8 +1206,37 @@ public class Tokens implements CommandExecutor {
                             player.sendMessage(plugin.colourMessage("&bTokens &8» &7Your token balance is &b" + plugin.formatNumber(plugin.tokensData.get(player.getUniqueId())) + " &7tokens"));
                         }
                         break;
-                    case "shop":
-                        Bukkit.dispatchCommand(player, "cp tokenshop");
+                    case "shop": // /token shop (page/edit)
+                        if(args.length > 1) {
+                            if(plugin.isInt(args[1])) {
+                                int page = Integer.parseInt(args[1]);
+                                if(page > 3) page = 1;
+                                openShopGUI(player, page);
+                            } else if(args[1].equalsIgnoreCase("edit")) {
+                                if(player.hasPermission("skyprisoncore.command.tokens.admin")) {
+                                    if(args.length > 2) {
+                                        if(plugin.isInt(args[2])) {
+                                            int page = Integer.parseInt(args[2]);
+                                            if(page > 3) page = 1;
+                                            openShopEditGUI(player, page);
+                                        } else {
+                                            if(args[2].equalsIgnoreCase("wham")) {
+                                                openShopEditSpecificGUI(player, "wham");
+                                            }
+                                            player.sendMessage(Component.text("Correct usage: /token shop edit (page)").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                                        }
+                                    } else {
+                                        openShopEditGUI(player, 1);
+                                    }
+                                } else {
+                                    player.sendMessage(Component.text("Correct usage: /token shop (page)").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                                }
+                            } else {
+                                player.sendMessage(Component.text("Correct usage: /token shop (page)").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                            }
+                        } else {
+                            openShopGUI(player, 1);
+                        }
                         break;
                     case "top":
                         player.chat("/lb tokens");

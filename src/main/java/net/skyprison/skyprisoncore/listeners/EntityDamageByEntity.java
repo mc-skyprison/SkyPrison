@@ -46,7 +46,7 @@ public class EntityDamageByEntity implements Listener {
             RegionQuery query = container.createQuery();
             if (plugin.flyPvP.containsKey(damager.getUniqueId()) && !plugin.flyPvP.containsKey(damagee.getUniqueId())) {
                 plugin.flyPvP.remove(damager.getUniqueId());
-            } else if (query.testState(damagerLoc, localDamager, plugin.claimPlugin.FLY) && !query.testState(damageeLoc, localDamagee, plugin.claimPlugin.FLY)) {
+            } else if (query.testState(damagerLoc, localDamager, plugin.FLY) && !query.testState(damageeLoc, localDamagee, plugin.FLY)) {
                 plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> plugin.flyPvP.remove(damager.getUniqueId()), 1L);
             }
             if (damager.hasPermission("skyprisoncore.guard.onduty") && damagee.hasPermission("skyprisoncore.guard.onduty")) {
@@ -72,7 +72,7 @@ public class EntityDamageByEntity implements Listener {
                 RegionQuery query = container.createQuery();
                 if (plugin.flyPvP.containsKey(damager.getUniqueId()) && !plugin.flyPvP.containsKey(damagee.getUniqueId())) {
                     plugin.flyPvP.remove(damager.getUniqueId());
-                } else if (query.testState(damagerLoc, localDamager, plugin.claimPlugin.FLY) && !query.testState(damageeLoc, localDamagee, plugin.claimPlugin.FLY)) {
+                } else if (query.testState(damagerLoc, localDamager, plugin.FLY) && !query.testState(damageeLoc, localDamagee, plugin.FLY)) {
                     plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> plugin.flyPvP.remove(damager.getUniqueId()), 1L);
                 }
                 if (damager.hasPermission("skyprisoncore.guard.onduty") && damagee.hasPermission("skyprisoncore.guard.onduty")) {

@@ -13,13 +13,16 @@ import com.sk89q.worldguard.protection.regions.RegionContainer;
 import dev.esophose.playerparticles.api.PlayerParticlesAPI;
 import dev.esophose.playerparticles.particles.ParticleEffect;
 import dev.esophose.playerparticles.styles.ParticleStyle;
-import net.kyori.adventure.text.Component;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.commands.CustomRecipes;
 import net.skyprison.skyprisoncore.commands.Daily;
 import net.skyprison.skyprisoncore.commands.SkyPlot;
 import net.skyprison.skyprisoncore.commands.Tags;
 import net.skyprison.skyprisoncore.commands.economy.*;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
+import net.skyprison.skyprisoncore.inventories.ClaimFlags;
+import net.skyprison.skyprisoncore.inventories.ClaimFlagsMobs;
+import net.skyprison.skyprisoncore.inventories.ClaimMembers;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -60,10 +63,11 @@ public class InventoryClick implements Listener {
     private final DatabaseHook hook;
     private final Tags tag;
     private final PlayerParticlesAPI particles;
+    private final CustomRecipes customRecipes;
 
     public InventoryClick(SkyPrisonCore plugin, EconomyCheck econCheck, DropChest dropChest, Bounty bounty,
                           SecretsGUI secretsGUI, Daily daily, MoneyHistory moneyHistory, EndUpgrade endUpgrade,
-                          BuyBack buyBack, SkyPlot skyPlot, DatabaseHook hook, Tags tag, PlayerParticlesAPI particles) {
+                          BuyBack buyBack, SkyPlot skyPlot, DatabaseHook hook, Tags tag, PlayerParticlesAPI particles, CustomRecipes customRecipes) {
         this.plugin = plugin;
         this.econCheck = econCheck;
         this.chestDrop = dropChest;
@@ -77,6 +81,7 @@ public class InventoryClick implements Listener {
         this.hook = hook;
         this.tag = tag;
         this.particles = particles;
+        this.customRecipes = customRecipes;
     }
 
     public boolean isStick(ItemStack i) {
@@ -102,787 +107,796 @@ public class InventoryClick implements Listener {
 
     @EventHandler
     public void invClick(InventoryClickEvent event) {
-        if(event.getWhoClicked() instanceof Player) {
-            Player player = (Player) event.getWhoClicked();
+        if(event.getWhoClicked() instanceof Player player) {
 
-            if(event.getClickedInventory() instanceof PlayerInventory) {
+            if (event.getClickedInventory() instanceof PlayerInventory) {
                 InvStickFix(player);
             }
+            if (Objects.requireNonNull(event.getClickedInventory()).getHolder() instanceof ClaimFlags) {
 
-            CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-            user.getCMIPlayTime().getPlayDayOfToday().getTotalTime();
-            Inventory clickInv = event.getClickedInventory();
-            if (clickInv != null && !clickInv.isEmpty()) {
-                ItemStack fItem = clickInv.getItem(0);
+            } else if (event.getClickedInventory().getHolder() instanceof ClaimFlagsMobs) {
 
-                NamespacedKey key = new NamespacedKey(plugin, "stop-click");
-                NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
-                if(fItem == null) {
-                    fItem = getItemStack(clickInv, null, key, key1);
-                } else {
-                    ItemMeta fMeta = Objects.requireNonNull(fItem).getItemMeta();
-                    PersistentDataContainer fData = fMeta.getPersistentDataContainer();
-                    if(!fData.has(key, PersistentDataType.INTEGER) || !fData.has(key1, PersistentDataType.STRING)) {
-                        fItem = getItemStack(clickInv, fItem, key, key1);
-                    }
-                }
-                if(fItem != null) {
-                    ItemMeta fMeta = fItem.getItemMeta();
-                    PersistentDataContainer fData = fMeta.getPersistentDataContainer();
-                    if (fData.has(key, PersistentDataType.INTEGER) && fData.has(key1, PersistentDataType.STRING)) {
-                        int clickCheck = fData.get(key, PersistentDataType.INTEGER);
-                        String guiType = fData.get(key1, PersistentDataType.STRING);
-                        int page = 1;
-                        NamespacedKey pageKey = new NamespacedKey(plugin, "page");
-                        if (fData.has(pageKey, PersistentDataType.INTEGER)) {
-                            page = fData.get(pageKey, PersistentDataType.INTEGER);
+            } else if (event.getClickedInventory().getHolder() instanceof ClaimMembers) {
+
+            } else {
+                CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
+                user.getCMIPlayTime().getPlayDayOfToday().getTotalTime();
+                Inventory clickInv = event.getClickedInventory();
+                if (clickInv != null && !clickInv.isEmpty()) {
+                    ItemStack fItem = clickInv.getItem(0);
+
+                    NamespacedKey key = new NamespacedKey(plugin, "stop-click");
+                    NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
+                    if (fItem == null) {
+                        fItem = getItemStack(clickInv, null, key, key1);
+                    } else {
+                        ItemMeta fMeta = Objects.requireNonNull(fItem).getItemMeta();
+                        PersistentDataContainer fData = fMeta.getPersistentDataContainer();
+                        if (!fData.has(key, PersistentDataType.INTEGER) || !fData.has(key1, PersistentDataType.STRING)) {
+                            fItem = getItemStack(clickInv, fItem, key, key1);
                         }
+                    }
+                    if (fItem != null) {
+                        ItemMeta fMeta = fItem.getItemMeta();
+                        PersistentDataContainer fData = fMeta.getPersistentDataContainer();
+                        if (fData.has(key, PersistentDataType.INTEGER) && fData.has(key1, PersistentDataType.STRING)) {
+                            int clickCheck = fData.get(key, PersistentDataType.INTEGER);
+                            String guiType = fData.get(key1, PersistentDataType.STRING);
+                            int page = 1;
+                            NamespacedKey pageKey = new NamespacedKey(plugin, "page");
+                            if (fData.has(pageKey, PersistentDataType.INTEGER)) {
+                                page = fData.get(pageKey, PersistentDataType.INTEGER);
+                            }
 
-                        if (clickCheck == 1) {
-                            event.setCancelled(true);
-                            switch (Objects.requireNonNull(guiType)) {
-                                case "bartender-grass":
-                                    File f = new File(plugin.getDataFolder() + File.separator + "bartender.yml");
-                                    FileConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
-                                    ItemStack alc = event.getCurrentItem();
-                                    ItemMeta alcMeta = Objects.requireNonNull(alc).getItemMeta();
-                                    PersistentDataContainer alcData = alcMeta.getPersistentDataContainer();
-                                    NamespacedKey alcKey = new NamespacedKey(plugin, "alc-type");
-                                    if (alcData.has(alcKey, PersistentDataType.STRING)) {
-                                        String alcType = alcData.get(alcKey, PersistentDataType.STRING);
-                                        int price = yamlf.getInt("grass." + alcType + ".price");
-                                        if (user.getBalance() >= price) {
-                                            if (user.getInventory().getFreeSlots() != 0) {
-                                                if (!alc.getType().equals(Material.MILK_BUCKET)) {
-                                                    int quality = yamlf.getInt("grass." + alcType + ".quality");
-                                                    String type = yamlf.getString("grass." + alcType + ".type");
-                                                    player.sendMessage(plugin.colourMessage("&f[{#green}Bartender&f] &eYou bought " + type + "!"));
-                                                    plugin.asConsole("brew create " + type + " " + quality + " " + player.getName());
+                            if (clickCheck == 1) {
+                                event.setCancelled(true);
+                                switch (Objects.requireNonNull(guiType)) {
+                                    case "bartender-grass":
+                                        File f = new File(plugin.getDataFolder() + File.separator + "bartender.yml");
+                                        FileConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
+                                        ItemStack alc = event.getCurrentItem();
+                                        ItemMeta alcMeta = Objects.requireNonNull(alc).getItemMeta();
+                                        PersistentDataContainer alcData = alcMeta.getPersistentDataContainer();
+                                        NamespacedKey alcKey = new NamespacedKey(plugin, "alc-type");
+                                        if (alcData.has(alcKey, PersistentDataType.STRING)) {
+                                            String alcType = alcData.get(alcKey, PersistentDataType.STRING);
+                                            int price = yamlf.getInt("grass." + alcType + ".price");
+                                            if (user.getBalance() >= price) {
+                                                if (user.getInventory().getFreeSlots() != 0) {
+                                                    if (!alc.getType().equals(Material.MILK_BUCKET)) {
+                                                        int quality = yamlf.getInt("grass." + alcType + ".quality");
+                                                        String type = yamlf.getString("grass." + alcType + ".type");
+                                                        player.sendMessage(plugin.colourMessage("&f[{#green}Bartender&f] &eYou bought " + type + "!"));
+                                                        plugin.asConsole("brew create " + type + " " + quality + " " + player.getName());
+                                                    } else {
+                                                        player.sendMessage(plugin.colourMessage("&f[{#green}Bartender&f] &eYou bought Milk!"));
+                                                        plugin.asConsole("give " + player.getName() + " milk_bucket");
+                                                    }
+                                                    plugin.asConsole("money take " + player.getName() + " " + price);
+                                                    // Bartender.openGUI(player, "bartender-grass");
                                                 } else {
-                                                    player.sendMessage(plugin.colourMessage("&f[{#green}Bartender&f] &eYou bought Milk!"));
-                                                    plugin.asConsole("give " + player.getName() + " milk_bucket");
-                                                }
-                                                plugin.asConsole("money take " + player.getName() + " " + price);
-                                                // Bartender.openGUI(player, "bartender-grass");
-                                            } else {
-                                                player.sendMessage(plugin.colourMessage("&cYou do not have enough space in your inventory!"));
-                                            }
-                                        } else {
-                                            player.sendMessage(plugin.colourMessage("&cYou do not have enough money!"));
-                                        }
-                                    }
-                                    break;
-                                case "buyback":
-                                    NamespacedKey typeKey = new NamespacedKey(plugin, "sold-type");
-                                    ItemStack buyItem = event.getCurrentItem();
-                                    if (buyItem != null) {
-                                        ItemMeta buyMeta = buyItem.getItemMeta();
-                                        PersistentDataContainer buyData = buyMeta.getPersistentDataContainer();
-                                        if (buyData.has(typeKey, PersistentDataType.STRING)) {
-                                            NamespacedKey amKey = new NamespacedKey(plugin, "sold-amount");
-                                            NamespacedKey priKey = new NamespacedKey(plugin, "sold-price");
-                                            String itemType = buyData.get(typeKey, PersistentDataType.STRING);
-                                            int itemAmount = buyData.get(amKey, PersistentDataType.INTEGER);
-                                            Double itemPrice = buyData.get(priKey, PersistentDataType.DOUBLE);
-                                            ItemStack iSold = new ItemStack(Objects.requireNonNull(Material.getMaterial(Objects.requireNonNull(itemType))), itemAmount);
-                                            if (user.getInventory().canFit(iSold)) {
-                                                if (user.getBalance() >= itemPrice) {
-                                                    NamespacedKey posKey = new NamespacedKey(plugin, "sold-id");
-                                                    int buyId = buyData.get(posKey, PersistentDataType.INTEGER);
-
-                                                    String sql = "DELETE FROM recent_sells WHERE recent_id = ?";
-                                                    List<Object> params = new ArrayList<>() {{
-                                                        add(buyId);
-                                                    }};
-                                                    hook.sqlUpdate(sql, params);
-                                                    plugin.asConsole("give " + player.getName() + " " + itemType + " " + itemAmount);
-                                                    plugin.asConsole("money take " + player.getName() + " " + itemPrice);
-                                                    buyBack.openGUI(player);
-                                                } else {
-                                                    player.sendMessage(plugin.colourMessage("&cYou do not have enough money!"));
+                                                    player.sendMessage(plugin.colourMessage("&cYou do not have enough space in your inventory!"));
                                                 }
                                             } else {
-                                                player.sendMessage(plugin.colourMessage("&cYou do not have enough space in your inventory!"));
+                                                player.sendMessage(plugin.colourMessage("&cYou do not have enough money!"));
                                             }
                                         }
-                                    }
-                                    break;
-                                case "netheriteupgrade":
-                                    if (event.getSlot() == 11) {
-                                        ItemStack pMain = player.getInventory().getItemInMainHand();
-                                        if (pMain.getType() != Material.AIR) {
-                                            if (clickInv.getItem(event.getSlot()).getType() == Material.GREEN_CONCRETE) {
-                                                plugin.asConsole("cmi money take " + user.getName() + " 500000");
-                                                pMain.setRepairCost(0);
-                                                player.sendMessage(plugin.colourMessage("&f[&aBlacksmith&f] &7Your &3" + clickInv.getItem(13).getType() + " &7has had its repair cost reset for &a$500,000&7!"));
+                                        break;
+                                    case "buyback":
+                                        NamespacedKey typeKey = new NamespacedKey(plugin, "sold-type");
+                                        ItemStack buyItem = event.getCurrentItem();
+                                        if (buyItem != null) {
+                                            ItemMeta buyMeta = buyItem.getItemMeta();
+                                            PersistentDataContainer buyData = buyMeta.getPersistentDataContainer();
+                                            if (buyData.has(typeKey, PersistentDataType.STRING)) {
+                                                NamespacedKey amKey = new NamespacedKey(plugin, "sold-amount");
+                                                NamespacedKey priKey = new NamespacedKey(plugin, "sold-price");
+                                                String itemType = buyData.get(typeKey, PersistentDataType.STRING);
+                                                int itemAmount = buyData.get(amKey, PersistentDataType.INTEGER);
+                                                Double itemPrice = buyData.get(priKey, PersistentDataType.DOUBLE);
+                                                ItemStack iSold = new ItemStack(Objects.requireNonNull(Material.getMaterial(Objects.requireNonNull(itemType))), itemAmount);
+                                                if (user.getInventory().canFit(iSold)) {
+                                                    if (user.getBalance() >= itemPrice) {
+                                                        NamespacedKey posKey = new NamespacedKey(plugin, "sold-id");
+                                                        int buyId = buyData.get(posKey, PersistentDataType.INTEGER);
+
+                                                        String sql = "DELETE FROM recent_sells WHERE recent_id = ?";
+                                                        List<Object> params = new ArrayList<>() {{
+                                                            add(buyId);
+                                                        }};
+                                                        hook.sqlUpdate(sql, params);
+                                                        plugin.asConsole("give " + player.getName() + " " + itemType + " " + itemAmount);
+                                                        plugin.asConsole("money take " + player.getName() + " " + itemPrice);
+                                                        buyBack.openGUI(player);
+                                                    } else {
+                                                        player.sendMessage(plugin.colourMessage("&cYou do not have enough money!"));
+                                                    }
+                                                } else {
+                                                    player.sendMessage(plugin.colourMessage("&cYou do not have enough space in your inventory!"));
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    case "netheriteupgrade":
+                                        if (event.getSlot() == 11) {
+                                            ItemStack pMain = player.getInventory().getItemInMainHand();
+                                            if (pMain.getType() != Material.AIR) {
+                                                if (clickInv.getItem(event.getSlot()).getType() == Material.GREEN_CONCRETE) {
+                                                    plugin.asConsole("cmi money take " + user.getName() + " 500000");
+                                                    pMain.setRepairCost(0);
+                                                    player.sendMessage(plugin.colourMessage("&f[&aBlacksmith&f] &7Your &3" + clickInv.getItem(13).getType() + " &7has had its repair cost reset for &a$500,000&7!"));
+                                                    player.closeInventory();
+                                                } else {
+                                                    player.sendMessage(plugin.colourMessage("&cYou can't afford this!"));
+                                                }
+                                            } else {
                                                 player.closeInventory();
-                                            } else {
-                                                player.sendMessage(plugin.colourMessage("&cYou can't afford this!"));
+                                                player.sendMessage(plugin.colourMessage("&f[&aBlacksmith&f] &cYou are not holding anything in your hand!"));
                                             }
-                                        } else {
+                                        } else if (event.getSlot() == 15) {
                                             player.closeInventory();
-                                            player.sendMessage(plugin.colourMessage("&f[&aBlacksmith&f] &cYou are not holding anything in your hand!"));
                                         }
-                                    } else if (event.getSlot() == 15) {
-                                        player.closeInventory();
-                                    }
-                                    break;
-                                case "endupgrade":
-                                    ItemStack clickedItem = clickInv.getItem(event.getSlot());
-                                    if (event.getSlot() == 20) {
-                                        ItemStack repItem = clickInv.getItem(24);
-                                        PersistentDataContainer repData = Objects.requireNonNull(repItem).getPersistentDataContainer();
-                                        NamespacedKey repKey = new NamespacedKey(plugin, "repair-state");
-                                        int repCheck = repData.get(repKey, PersistentDataType.INTEGER);
-
-                                        PersistentDataContainer clickData = Objects.requireNonNull(clickedItem).getPersistentDataContainer();
-                                        NamespacedKey enchKey = new NamespacedKey(plugin, "ench-state");
-                                        int enchCheck = clickData.get(enchKey, PersistentDataType.INTEGER);
-                                        if (enchCheck != 1) {
-                                            endUpgrade.openGUI(player, true, repCheck == 1);
-                                        } else {
-                                            endUpgrade.openGUI(player, false, repCheck == 1);
-                                        }
-                                    } else if (event.getSlot() == 24) {
-                                        ItemStack enchItem = clickInv.getItem(20);
-                                        PersistentDataContainer enchData = Objects.requireNonNull(enchItem).getPersistentDataContainer();
-                                        NamespacedKey enchKey = new NamespacedKey(plugin, "ench-state");
-                                        int enchCheck = enchData.get(enchKey, PersistentDataType.INTEGER);
-
-                                        PersistentDataContainer clickData = Objects.requireNonNull(clickedItem).getPersistentDataContainer();
-                                        NamespacedKey repKey = new NamespacedKey(plugin, "repair-state");
-                                        int repCheck = clickData.get(repKey, PersistentDataType.INTEGER);
-                                        if (repCheck != 1) {
-                                            endUpgrade.openGUI(player, enchCheck == 1, true);
-                                        } else {
-                                            endUpgrade.openGUI(player, enchCheck == 1, false);
-                                        }
-                                    } else if (event.getSlot() == 31) {
-                                        ItemStack pMain = player.getInventory().getItemInMainHand();
-                                        if (pMain.getType() != Material.AIR) {
-                                            if (clickInv.getItem(event.getSlot()).getType() == Material.GREEN_CONCRETE) {
-                                                ItemStack enchState = clickInv.getItem(20);
-                                                assert enchState != null;
-                                                PersistentDataContainer enchData = enchState.getPersistentDataContainer();
-                                                NamespacedKey enchKey = new NamespacedKey(plugin, "ench-state");
-                                                int enchCheck = enchData.get(enchKey, PersistentDataType.INTEGER);
-
-                                                ItemStack repItem = clickInv.getItem(24);
-                                                PersistentDataContainer repData = Objects.requireNonNull(repItem).getPersistentDataContainer();
-                                                NamespacedKey repKey = new NamespacedKey(plugin, "repair-state");
-                                                int repCheck = repData.get(repKey, PersistentDataType.INTEGER);
-
-                                                endUpgrade.confirmGUI(player, enchCheck == 1, repCheck == 1);
-                                            } else {
-                                                player.sendMessage(plugin.colourMessage("&cYou can't afford this!"));
-                                            }
-                                        } else {
-                                            player.closeInventory();
-                                            player.sendMessage(plugin.colourMessage("&f[&aBlacksmith&f] &cYou are not holding anything in your hand!"));
-                                        }
-                                    }
-                                    break;
-                                case "confirm-endupgrade":
-                                    if (event.getSlot() == 11) {
-                                        ItemStack pMain = player.getInventory().getItemInMainHand();
-                                        if (pMain.getType() != Material.AIR) {
-                                            ItemStack confirmItem = clickInv.getItem(11);
-                                            PersistentDataContainer confirmData = Objects.requireNonNull(confirmItem).getPersistentDataContainer();
-                                            NamespacedKey enchKey = new NamespacedKey(plugin, "ench-state");
-                                            int enchCheck = confirmData.get(enchKey, PersistentDataType.INTEGER);
-
+                                        break;
+                                    case "endupgrade":
+                                        ItemStack clickedItem = clickInv.getItem(event.getSlot());
+                                        if (event.getSlot() == 20) {
+                                            ItemStack repItem = clickInv.getItem(24);
+                                            PersistentDataContainer repData = Objects.requireNonNull(repItem).getPersistentDataContainer();
                                             NamespacedKey repKey = new NamespacedKey(plugin, "repair-state");
-                                            int repCheck = confirmData.get(repKey, PersistentDataType.INTEGER);
+                                            int repCheck = repData.get(repKey, PersistentDataType.INTEGER);
 
-                                            if(pMain.getRepairCost() >= 1000) {
-                                                repCheck = 0;
-                                            }
-
-                                            int cost = endUpgrade.upgradeCost(player, enchCheck == 1, repCheck == 1);
-
-                                            switch (pMain.getType().toString()) {
-                                                case "DIAMOND_AXE":
-                                                    pMain.setType(Material.NETHERITE_AXE);
-                                                    break;
-                                                case "DIAMOND_PICKAXE":
-                                                    pMain.setType(Material.NETHERITE_PICKAXE);
-                                                    break;
-                                                case "DIAMOND_SHOVEL":
-                                                    pMain.setType(Material.NETHERITE_SHOVEL);
-                                                    break;
-                                                case "DIAMOND_HOE":
-                                                    pMain.setType(Material.NETHERITE_HOE);
-                                                    break;
-                                                case "DIAMOND_HELMET":
-                                                    pMain.setType(Material.NETHERITE_HELMET);
-                                                    break;
-                                                case "DIAMOND_CHESTPLATE":
-                                                    pMain.setType(Material.NETHERITE_CHESTPLATE);
-                                                    break;
-                                                case "DIAMOND_LEGGINGS":
-                                                    pMain.setType(Material.NETHERITE_LEGGINGS);
-                                                    break;
-                                                case "DIAMOND_BOOTS":
-                                                    pMain.setType(Material.NETHERITE_BOOTS);
-                                                    break;
-                                            }
+                                            PersistentDataContainer clickData = Objects.requireNonNull(clickedItem).getPersistentDataContainer();
+                                            NamespacedKey enchKey = new NamespacedKey(plugin, "ench-state");
+                                            int enchCheck = clickData.get(enchKey, PersistentDataType.INTEGER);
                                             if (enchCheck != 1) {
-                                                if (pMain.hasEnchants()) {
-                                                    for (Enchantment ench : pMain.getEnchants().keySet()) {
-                                                        pMain.removeEnchant(ench);
+                                                endUpgrade.openGUI(player, true, repCheck == 1);
+                                            } else {
+                                                endUpgrade.openGUI(player, false, repCheck == 1);
+                                            }
+                                        } else if (event.getSlot() == 24) {
+                                            ItemStack enchItem = clickInv.getItem(20);
+                                            PersistentDataContainer enchData = Objects.requireNonNull(enchItem).getPersistentDataContainer();
+                                            NamespacedKey enchKey = new NamespacedKey(plugin, "ench-state");
+                                            int enchCheck = enchData.get(enchKey, PersistentDataType.INTEGER);
+
+                                            PersistentDataContainer clickData = Objects.requireNonNull(clickedItem).getPersistentDataContainer();
+                                            NamespacedKey repKey = new NamespacedKey(plugin, "repair-state");
+                                            int repCheck = clickData.get(repKey, PersistentDataType.INTEGER);
+                                            if (repCheck != 1) {
+                                                endUpgrade.openGUI(player, enchCheck == 1, true);
+                                            } else {
+                                                endUpgrade.openGUI(player, enchCheck == 1, false);
+                                            }
+                                        } else if (event.getSlot() == 31) {
+                                            ItemStack pMain = player.getInventory().getItemInMainHand();
+                                            if (pMain.getType() != Material.AIR) {
+                                                if (clickInv.getItem(event.getSlot()).getType() == Material.GREEN_CONCRETE) {
+                                                    ItemStack enchState = clickInv.getItem(20);
+                                                    assert enchState != null;
+                                                    PersistentDataContainer enchData = enchState.getPersistentDataContainer();
+                                                    NamespacedKey enchKey = new NamespacedKey(plugin, "ench-state");
+                                                    int enchCheck = enchData.get(enchKey, PersistentDataType.INTEGER);
+
+                                                    ItemStack repItem = clickInv.getItem(24);
+                                                    PersistentDataContainer repData = Objects.requireNonNull(repItem).getPersistentDataContainer();
+                                                    NamespacedKey repKey = new NamespacedKey(plugin, "repair-state");
+                                                    int repCheck = repData.get(repKey, PersistentDataType.INTEGER);
+
+                                                    endUpgrade.confirmGUI(player, enchCheck == 1, repCheck == 1);
+                                                } else {
+                                                    player.sendMessage(plugin.colourMessage("&cYou can't afford this!"));
+                                                }
+                                            } else {
+                                                player.closeInventory();
+                                                player.sendMessage(plugin.colourMessage("&f[&aBlacksmith&f] &cYou are not holding anything in your hand!"));
+                                            }
+                                        }
+                                        break;
+                                    case "confirm-endupgrade":
+                                        if (event.getSlot() == 11) {
+                                            ItemStack pMain = player.getInventory().getItemInMainHand();
+                                            if (pMain.getType() != Material.AIR) {
+                                                ItemStack confirmItem = clickInv.getItem(11);
+                                                PersistentDataContainer confirmData = Objects.requireNonNull(confirmItem).getPersistentDataContainer();
+                                                NamespacedKey enchKey = new NamespacedKey(plugin, "ench-state");
+                                                int enchCheck = confirmData.get(enchKey, PersistentDataType.INTEGER);
+
+                                                NamespacedKey repKey = new NamespacedKey(plugin, "repair-state");
+                                                int repCheck = confirmData.get(repKey, PersistentDataType.INTEGER);
+
+                                                if (pMain.getRepairCost() >= 1000) {
+                                                    repCheck = 0;
+                                                }
+
+                                                int cost = endUpgrade.upgradeCost(player, enchCheck == 1, repCheck == 1);
+
+                                                switch (pMain.getType().toString()) {
+                                                    case "DIAMOND_AXE":
+                                                        pMain.setType(Material.NETHERITE_AXE);
+                                                        break;
+                                                    case "DIAMOND_PICKAXE":
+                                                        pMain.setType(Material.NETHERITE_PICKAXE);
+                                                        break;
+                                                    case "DIAMOND_SHOVEL":
+                                                        pMain.setType(Material.NETHERITE_SHOVEL);
+                                                        break;
+                                                    case "DIAMOND_HOE":
+                                                        pMain.setType(Material.NETHERITE_HOE);
+                                                        break;
+                                                    case "DIAMOND_HELMET":
+                                                        pMain.setType(Material.NETHERITE_HELMET);
+                                                        break;
+                                                    case "DIAMOND_CHESTPLATE":
+                                                        pMain.setType(Material.NETHERITE_CHESTPLATE);
+                                                        break;
+                                                    case "DIAMOND_LEGGINGS":
+                                                        pMain.setType(Material.NETHERITE_LEGGINGS);
+                                                        break;
+                                                    case "DIAMOND_BOOTS":
+                                                        pMain.setType(Material.NETHERITE_BOOTS);
+                                                        break;
+                                                }
+                                                if (enchCheck != 1) {
+                                                    if (pMain.hasEnchants()) {
+                                                        for (Enchantment ench : pMain.getEnchants().keySet()) {
+                                                            pMain.removeEnchant(ench);
+                                                        }
                                                     }
                                                 }
-                                            }
-                                            if (repCheck == 1) {
-                                                pMain.setRepairCost(0);
-                                            }
+                                                if (repCheck == 1) {
+                                                    pMain.setRepairCost(0);
+                                                }
 
-                                            if (!player.hasPermission("skyprisoncore.command.endupgrade.first-time")) {
-                                                plugin.asConsole("money take " + player.getName() + " " + cost);
-                                                player.sendMessage(plugin.colourMessage("&f[&aBlacksmith&f] &7Your &3" + clickInv.getItem(4).getType() + " &7has been upgraded for &a$" + plugin.formatNumber(cost) + "&7!"));
-                                            } else {
-                                                plugin.asConsole("lp user " + player.getName() + " permission unset skyprisoncore.command.endupgrade.first-time");
-                                                player.sendMessage(plugin.colourMessage("&f[&aBlacksmith&f] &7Your &3" + clickInv.getItem(4).getType() + " &7has been upgraded!"));
-
+                                                if (!player.hasPermission("skyprisoncore.command.endupgrade.first-time")) {
+                                                    plugin.asConsole("money take " + player.getName() + " " + cost);
+                                                    player.sendMessage(plugin.colourMessage("&f[&aBlacksmith&f] &7Your &3" + clickInv.getItem(4).getType() + " &7has been upgraded for &a$" + plugin.formatNumber(cost) + "&7!"));
+                                                } else {
+                                                    plugin.asConsole("lp user " + player.getName() + " permission unset skyprisoncore.command.endupgrade.first-time");
+                                                    player.sendMessage(plugin.colourMessage("&f[&aBlacksmith&f] &7Your &3" + clickInv.getItem(4).getType() + " &7has been upgraded!"));
+                                                }
+                                                player.closeInventory();
                                             }
+                                        } else if (event.getSlot() == 15) {
                                             player.closeInventory();
                                         }
-                                    } else if (event.getSlot() == 15) {
-                                        player.closeInventory();
-                                    }
-                                    break;
-                                case "bounties":
-                                    if (event.getClickedInventory().getItem(event.getSlot()) != null) {
-                                        Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
-
-
-                                        if (clickedMat.equals(Material.PAPER)) {
-                                            if (event.getSlot() == 46) {
-                                                bounty.openGUI(player, page - 1);
-                                            } else if (event.getSlot() == 52) {
-                                                bounty.openGUI(player, page + 1);
+                                        break;
+                                    case "bounties":
+                                        if (event.getClickedInventory().getItem(event.getSlot()) != null) {
+                                            Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
+                                            if (clickedMat.equals(Material.PAPER)) {
+                                                if (event.getSlot() == 46) {
+                                                    bounty.openGUI(player, page - 1);
+                                                } else if (event.getSlot() == 52) {
+                                                    bounty.openGUI(player, page + 1);
+                                                }
                                             }
                                         }
-                                    }
-                                case "token-history":
-                                    if (event.getClickedInventory().getItem(event.getSlot()) != null) {
-                                        Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
-
-                                        NamespacedKey tKey = new NamespacedKey(plugin, "sort");
-                                        NamespacedKey tKey1 = new NamespacedKey(plugin, "toggle");
-                                        NamespacedKey tKey3 = new NamespacedKey(plugin, "lookup-user");
-                                        Boolean transSort = Boolean.parseBoolean(fData.get(tKey, PersistentDataType.STRING));
-                                        Integer transToggle = fData.get(tKey1, PersistentDataType.INTEGER);
-                                        String userId = fData.get(tKey3, PersistentDataType.STRING);
-                                        if (clickedMat.equals(Material.PAPER)) {
-                                            if (event.getSlot() == 45) {
-                                                plugin.tokens.openHistoryGUI(player, transSort, transToggle, page - 1, userId);
-                                            } else if (event.getSlot() == 53) {
-                                                plugin.tokens.openHistoryGUI(player, transSort, transToggle, page + 1, userId);
+                                        break;
+                                    case "recipes-main":
+                                        if (event.getClickedInventory().getItem(event.getSlot()) != null) {
+                                            Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
+                                            if (clickedMat.equals(Material.BARRIER)) {
+                                                customRecipes.openDisabledGUI(player);
+                                            } else if (clickedMat.equals(Material.KNOWLEDGE_BOOK)) {
+                                                customRecipes.openCustomGUI(player);
                                             }
-                                        } else if (clickedMat.equals(Material.CLOCK)) {
-                                            plugin.tokens.openHistoryGUI(player, !transSort, transToggle, page, userId);
-                                        } else if (clickedMat.equals(Material.COMPASS)) {
-                                            if(transToggle == 6) {
-                                                plugin.tokens.openHistoryGUI(player, transSort, 1, 1, userId);
+                                        }
+                                        break;
+                                    case "recipes-custom":
+                                        if (event.getClickedInventory().getItem(event.getSlot()) != null) {
+                                            ItemStack cItem = event.getClickedInventory().getItem(event.getSlot());
+                                            ItemMeta cMeta = cItem.getItemMeta();
+                                            Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
+                                            if (clickedMat.equals(Material.PAPER)) {
+                                                customRecipes.openMainGUI(player);
                                             } else {
-                                                plugin.tokens.openHistoryGUI(player, transSort, transToggle + 1, 1, userId);
+                                                NamespacedKey recipeKey = new NamespacedKey(plugin, "custom-recipe");
+                                                if (cMeta.getPersistentDataContainer().has(recipeKey, PersistentDataType.STRING)) {
+                                                    String recipe = cMeta.getPersistentDataContainer().get(recipeKey, PersistentDataType.STRING);
+                                                    customRecipes.openSpecificGUI(player, recipe);
+                                                }
                                             }
-
                                         }
-                                    }
-                                    break;
-                                case "transaction-history":
-                                    if (event.getClickedInventory().getItem(event.getSlot()) != null) {
-                                        Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
-
-                                        NamespacedKey tKey = new NamespacedKey(plugin, "sort");
-                                        NamespacedKey tKey1 = new NamespacedKey(plugin, "toggle");
-                                        NamespacedKey tKey3 = new NamespacedKey(plugin, "lookup-user");
-                                        Boolean transSort = Boolean.parseBoolean(fData.get(tKey, PersistentDataType.STRING));
-                                        String transToggle = fData.get(tKey1, PersistentDataType.STRING);
-                                        String userId = fData.get(tKey3, PersistentDataType.STRING);
-                                        if (clickedMat.equals(Material.PAPER)) {
-                                            if (event.getSlot() == 45) {
-                                                moneyHistory.openGUI(player, transSort, transToggle, page - 1, userId);
-                                            } else if (event.getSlot() == 53) {
-                                                moneyHistory.openGUI(player, transSort, transToggle, page + 1, userId);
+                                        break;
+                                    case "recipes-disabled":
+                                        if (event.getClickedInventory().getItem(event.getSlot()) != null) {
+                                            Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
+                                            if (clickedMat.equals(Material.PAPER)) {
+                                                customRecipes.openMainGUI(player);
                                             }
-                                        } else if (clickedMat.equals(Material.CLOCK)) {
-                                            moneyHistory.openGUI(player, !transSort, transToggle, page, userId);
-                                        } else if (clickedMat.equals(Material.COMPASS)) {
-                                            if (transToggle.equalsIgnoreCase("null")) {
-                                                moneyHistory.openGUI(player, transSort, "true", 1, userId);
-                                            } else if (transToggle.equalsIgnoreCase("true")) {
-                                                moneyHistory.openGUI(player, transSort, "false", 1, userId);
-                                            } else if (transToggle.equalsIgnoreCase("false")) {
-                                                moneyHistory.openGUI(player, transSort, "null", 1, userId);
-
-                                            }
-
                                         }
-                                    }
-                                    break;
-                                case "skyplot-gui":
-                                    NamespacedKey skyKey = new NamespacedKey(plugin, "skyplot-type");
-                                    String pageType = fData.get(skyKey, PersistentDataType.STRING);
-                                    switch (pageType.toLowerCase()) {
-                                        case "main":
-                                            switch (event.getSlot()) {
-                                                case 13:
-                                                    break;
-                                                case 20:
-                                                    skyPlot.skyPlotGUI(player, "expand", 1);
-                                                    break;
-                                                case 24:
-                                                    skyPlot.skyPlotGUI(player, "other", 1);
-                                                    break;
-                                                case 31:
+                                        break;
+                                    case "recipes-specific":
+                                        if (event.getClickedInventory().getItem(event.getSlot()) != null) {
+                                            Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
+                                            if (clickedMat.equals(Material.PAPER)) {
+                                                customRecipes.openCustomGUI(player);
+                                            }
+                                        }
+                                        break;
+                                    case "token-history":
+                                        if (event.getClickedInventory().getItem(event.getSlot()) != null) {
+                                            Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
+
+                                            NamespacedKey tKey = new NamespacedKey(plugin, "sort");
+                                            NamespacedKey tKey1 = new NamespacedKey(plugin, "toggle");
+                                            NamespacedKey tKey3 = new NamespacedKey(plugin, "lookup-user");
+                                            Boolean transSort = Boolean.parseBoolean(fData.get(tKey, PersistentDataType.STRING));
+                                            Integer transToggle = fData.get(tKey1, PersistentDataType.INTEGER);
+                                            String userId = fData.get(tKey3, PersistentDataType.STRING);
+                                            if (clickedMat.equals(Material.PAPER)) {
+                                                if (event.getSlot() == 45) {
+                                                    plugin.tokens.openHistoryGUI(player, transSort, transToggle, page - 1, userId);
+                                                } else if (event.getSlot() == 53) {
+                                                    plugin.tokens.openHistoryGUI(player, transSort, transToggle, page + 1, userId);
+                                                }
+                                            } else if (clickedMat.equals(Material.CLOCK)) {
+                                                plugin.tokens.openHistoryGUI(player, !transSort, transToggle, page, userId);
+                                            } else if (clickedMat.equals(Material.COMPASS)) {
+                                                if (transToggle == 6) {
+                                                    plugin.tokens.openHistoryGUI(player, transSort, 1, 1, userId);
+                                                } else {
+                                                    plugin.tokens.openHistoryGUI(player, transSort, transToggle + 1, 1, userId);
+                                                }
+
+                                            }
+                                        }
+                                        break;
+                                    case "transaction-history":
+                                        if (event.getClickedInventory().getItem(event.getSlot()) != null) {
+                                            Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
+
+                                            NamespacedKey tKey = new NamespacedKey(plugin, "sort");
+                                            NamespacedKey tKey1 = new NamespacedKey(plugin, "toggle");
+                                            NamespacedKey tKey3 = new NamespacedKey(plugin, "lookup-user");
+                                            Boolean transSort = Boolean.parseBoolean(fData.get(tKey, PersistentDataType.STRING));
+                                            String transToggle = fData.get(tKey1, PersistentDataType.STRING);
+                                            String userId = fData.get(tKey3, PersistentDataType.STRING);
+                                            if (clickedMat.equals(Material.PAPER)) {
+                                                if (event.getSlot() == 45) {
+                                                    moneyHistory.openGUI(player, transSort, transToggle, page - 1, userId);
+                                                } else if (event.getSlot() == 53) {
+                                                    moneyHistory.openGUI(player, transSort, transToggle, page + 1, userId);
+                                                }
+                                            } else if (clickedMat.equals(Material.CLOCK)) {
+                                                moneyHistory.openGUI(player, !transSort, transToggle, page, userId);
+                                            } else if (clickedMat.equals(Material.COMPASS)) {
+                                                if (transToggle.equalsIgnoreCase("null")) {
+                                                    moneyHistory.openGUI(player, transSort, "true", 1, userId);
+                                                } else if (transToggle.equalsIgnoreCase("true")) {
+                                                    moneyHistory.openGUI(player, transSort, "false", 1, userId);
+                                                } else if (transToggle.equalsIgnoreCase("false")) {
+                                                    moneyHistory.openGUI(player, transSort, "null", 1, userId);
+
+                                                }
+
+                                            }
+                                        }
+                                        break;
+                                    case "skyplot-gui":
+                                        NamespacedKey skyKey = new NamespacedKey(plugin, "skyplot-type");
+                                        String pageType = fData.get(skyKey, PersistentDataType.STRING);
+                                        switch (pageType.toLowerCase()) {
+                                            case "main":
+                                                switch (event.getSlot()) {
+                                                    case 13:
+                                                        break;
+                                                    case 20:
+                                                        skyPlot.skyPlotGUI(player, "expand", 1);
+                                                        break;
+                                                    case 24:
+                                                        skyPlot.skyPlotGUI(player, "other", 1);
+                                                        break;
+                                                    case 31:
+                                                        skyPlot.skyPlotGUI(player, "settings", 1);
+                                                        break;
+                                                }
+                                                break;
+                                            case "settings":
+                                                if (event.getSlot() == 11) {
+                                                    skyPlot.skyPlotGUI(player, "banned", 1);
+                                                } else if (event.getSlot() == 15) {
+                                                    skyPlot.setVisit(player);
                                                     skyPlot.skyPlotGUI(player, "settings", 1);
-                                                    break;
-                                            }
-                                            break;
-                                        case "settings":
-                                            if (event.getSlot() == 11) {
-                                                skyPlot.skyPlotGUI(player, "banned", 1);
-                                            } else if (event.getSlot() == 15) {
-                                                skyPlot.setVisit(player);
-                                                skyPlot.skyPlotGUI(player, "settings", 1);
-                                            } else if (event.getSlot() == 22) {
-                                                skyPlot.skyPlotGUI(player, "main", 1);
-                                            }
-                                            break;
-                                        case "expand":
-                                            clickedItem = event.getClickedInventory().getItem(event.getSlot());
-                                            RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
-                                            RegionManager regions = container.get(BukkitAdapter.adapt(player.getWorld()));
-                                            ApplicableRegionSet regionList = regions.getApplicableRegions(BlockVector3.at(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ()));
-                                            ProtectedRegion region = regionList.getRegions().iterator().next();
-                                            if (clickedItem.getType().equals(Material.PLAYER_HEAD)) {
-                                                switch (event.getSlot()) { // Default Size = 14 x 24 x 14
-                                                    case 10: // increase to 20 x 30 x 20
-                                                        ProtectedRegion newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(3, -3, -3), region.getMaximumPoint().add(-3, 3, 3));
-                                                        newRegion.copyFrom(region);
-                                                        regions.removeRegion(region.getId());
-                                                        regions.addRegion(newRegion);
-                                                        break;
-                                                    case 11: // increase by 30 x 40 x 30
-                                                        newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
-                                                        newRegion.copyFrom(region);
-                                                        regions.removeRegion(region.getId());
-                                                        regions.addRegion(newRegion);
-                                                        break;
-                                                    case 12: // increase by 6
-                                                        newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
-                                                        newRegion.copyFrom(region);
-                                                        regions.removeRegion(region.getId());
-                                                        regions.addRegion(newRegion);
-                                                        break;
-                                                    case 13: // increase by 8
-                                                        newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
-                                                        newRegion.copyFrom(region);
-                                                        regions.removeRegion(region.getId());
-                                                        regions.addRegion(newRegion);
-                                                        break;
-                                                    case 14: // increase by 10
-                                                        newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
-                                                        newRegion.copyFrom(region);
-                                                        regions.removeRegion(region.getId());
-                                                        regions.addRegion(newRegion);
-                                                        break;
-                                                    case 15: // increase by 12
-                                                        newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
-                                                        newRegion.copyFrom(region);
-                                                        regions.removeRegion(region.getId());
-                                                        regions.addRegion(newRegion);
-                                                        break;
-                                                    case 16: // increase by 14
-                                                        newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
-                                                        newRegion.copyFrom(region);
-                                                        regions.removeRegion(region.getId());
-                                                        regions.addRegion(newRegion);
-                                                        break;
-                                                }
-                                            }
-                                            break;
-                                        case "banned":
-                                            break;
-                                        case "other":
-                                            if (event.getClickedInventory().getItem(event.getSlot()) != null) {
-                                                ItemStack clickItem = event.getClickedInventory().getItem(event.getSlot());
-                                                PersistentDataContainer clickData = clickItem.getPersistentDataContainer();
-
-                                                if (clickItem.getType().equals(Material.PLAYER_HEAD)) {
-                                                    NamespacedKey isleKey = new NamespacedKey(plugin, "skyplot-owner");
-                                                    String isleOwner = clickData.get(isleKey, PersistentDataType.STRING);
-                                                    Location loc = skyPlot.getIsleLoc(isleOwner);
-                                                    player.teleportAsync(loc);
-
-                                                } else if (event.getSlot() == 48 && clickItem.getType().equals(Material.PAPER)) {
-                                                    skyPlot.skyPlotGUI(player, "main", page - 1);
-                                                } else if (event.getSlot() == 49) {
+                                                } else if (event.getSlot() == 22) {
                                                     skyPlot.skyPlotGUI(player, "main", 1);
-                                                } else if (event.getSlot() == 50 && clickItem.getType().equals(Material.PAPER)) {
-                                                    skyPlot.skyPlotGUI(player, "main", page + 1);
                                                 }
-                                            }
-                                            break;
-                                    }
+                                                break;
+                                            case "expand":
+                                                clickedItem = event.getClickedInventory().getItem(event.getSlot());
+                                                RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+                                                RegionManager regions = container.get(BukkitAdapter.adapt(player.getWorld()));
+                                                ApplicableRegionSet regionList = regions.getApplicableRegions(BlockVector3.at(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ()));
+                                                ProtectedRegion region = regionList.getRegions().iterator().next();
+                                                if (clickedItem.getType().equals(Material.PLAYER_HEAD)) {
+                                                    switch (event.getSlot()) { // Default Size = 14 x 24 x 14
+                                                        case 10: // increase to 20 x 30 x 20
+                                                            ProtectedRegion newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(3, -3, -3), region.getMaximumPoint().add(-3, 3, 3));
+                                                            newRegion.copyFrom(region);
+                                                            regions.removeRegion(region.getId());
+                                                            regions.addRegion(newRegion);
+                                                            break;
+                                                        case 11: // increase by 30 x 40 x 30
+                                                            newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
+                                                            newRegion.copyFrom(region);
+                                                            regions.removeRegion(region.getId());
+                                                            regions.addRegion(newRegion);
+                                                            break;
+                                                        case 12: // increase by 6
+                                                            newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
+                                                            newRegion.copyFrom(region);
+                                                            regions.removeRegion(region.getId());
+                                                            regions.addRegion(newRegion);
+                                                            break;
+                                                        case 13: // increase by 8
+                                                            newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
+                                                            newRegion.copyFrom(region);
+                                                            regions.removeRegion(region.getId());
+                                                            regions.addRegion(newRegion);
+                                                            break;
+                                                        case 14: // increase by 10
+                                                            newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
+                                                            newRegion.copyFrom(region);
+                                                            regions.removeRegion(region.getId());
+                                                            regions.addRegion(newRegion);
+                                                            break;
+                                                        case 15: // increase by 12
+                                                            newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
+                                                            newRegion.copyFrom(region);
+                                                            regions.removeRegion(region.getId());
+                                                            regions.addRegion(newRegion);
+                                                            break;
+                                                        case 16: // increase by 14
+                                                            newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
+                                                            newRegion.copyFrom(region);
+                                                            regions.removeRegion(region.getId());
+                                                            regions.addRegion(newRegion);
+                                                            break;
+                                                    }
+                                                }
+                                                break;
+                                            case "banned":
+                                                break;
+                                            case "other":
+                                                if (event.getClickedInventory().getItem(event.getSlot()) != null) {
+                                                    ItemStack clickItem = event.getClickedInventory().getItem(event.getSlot());
+                                                    PersistentDataContainer clickData = clickItem.getPersistentDataContainer();
 
-                                    break;
-                                case "daily-reward":
-                                    if (event.getClickedInventory().getItem(event.getSlot()).getType().equals(Material.MINECART)) {
-                                        player.sendMessage(plugin.colourMessage("&cYou've already collected the daily reward!"));
-                                    } else if (event.getClickedInventory().getItem(event.getSlot()).getType().equals(Material.CHEST_MINECART)) {
-                                        int currStreak = 0;
-                                        int highestStreak = 0;
-                                        int totalCollected = 0;
-                                        String lastColl = "";
+                                                    if (clickItem.getType().equals(Material.PLAYER_HEAD)) {
+                                                        NamespacedKey isleKey = new NamespacedKey(plugin, "skyplot-owner");
+                                                        String isleOwner = clickData.get(isleKey, PersistentDataType.STRING);
+                                                        Location loc = skyPlot.getIsleLoc(isleOwner);
+                                                        player.teleportAsync(loc);
 
-                                        try {
-                                            Connection conn = hook.getSQLConnection();
-                                            PreparedStatement ps = conn.prepareStatement("SELECT current_streak, highest_streak, total_collected, last_collected FROM dailies WHERE user_id = '" + player.getUniqueId() + "'");
-                                            ResultSet rs = ps.executeQuery();
-                                            while (rs.next()) {
-                                                currStreak = rs.getInt(1);
-                                                highestStreak = rs.getInt(2);
-                                                totalCollected = rs.getInt(3);
-                                                lastColl = rs.getString(4);
-                                            }
-                                            hook.close(ps, rs, conn);
-                                        } catch (SQLException e) {
-                                            e.printStackTrace();
+                                                    } else if (event.getSlot() == 48 && clickItem.getType().equals(Material.PAPER)) {
+                                                        skyPlot.skyPlotGUI(player, "main", page - 1);
+                                                    } else if (event.getSlot() == 49) {
+                                                        skyPlot.skyPlotGUI(player, "main", 1);
+                                                    } else if (event.getSlot() == 50 && clickItem.getType().equals(Material.PAPER)) {
+                                                        skyPlot.skyPlotGUI(player, "main", page + 1);
+                                                    }
+                                                }
+                                                break;
                                         }
 
-                                        Random rand = new Random();
-                                        int tReward = rand.nextInt(25) + 25;
-
-                                        if ((currStreak + 1) % 7 == 0) {
-                                            tReward = 250;
-                                        }
-
-                                        Random rand2 = new Random();
-                                        int randInt = rand2.nextInt(1000) + 1;
-                                        if (randInt == 666) {
-                                            tReward = randInt;
-                                        }
-
-                                        plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tReward, "Daily Reward", currStreak + " Days");
-
-                                        int nCurrStreak = currStreak + 1;
-                                        int nTotalCollected = totalCollected + 1;
-
-                                        Date date = new Date();
-                                        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-                                        String currDate = formatter.format(date);
-
-                                        String sql;
-                                        List<Object> params;
-
-                                        if (!lastColl.isEmpty()) {
-                                            if (currStreak >= highestStreak) {
-                                                sql = "UPDATE dailies SET current_streak = ?, highest_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?";
-                                                params = new ArrayList<>() {{
-                                                    add(nCurrStreak);
-                                                    add(nCurrStreak);
-                                                    add(currDate);
-                                                    add(nTotalCollected);
-                                                    add(user.getUniqueId().toString());
-                                                }};
-                                            } else {
-                                                sql = "UPDATE dailies SET current_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?";
-                                                params = new ArrayList<>() {{
-                                                    add(nCurrStreak);
-                                                    add(currDate);
-                                                    add(nTotalCollected);
-                                                    add(user.getUniqueId().toString());
-                                                }};
-                                            }
-                                        } else {
-                                            sql = "INSERT INTO dailies (user_id, current_streak, total_collected, highest_streak, last_collected) VALUES (?, ?, ?, ?, ?)";
-                                            params = new ArrayList<>() {{
-                                                add(user.getUniqueId().toString());
-                                                add(nCurrStreak);
-                                                add(nTotalCollected);
-                                                add(nCurrStreak);
-                                                add(currDate);
-                                            }};
-                                        }
-
-                                        hook.sqlUpdate(sql, params);
-                                        daily.openGUI(player);
-                                    }
-                                    break;
-                                case "plotteleport":
-                                    if (clickInv.getItem(event.getSlot()) != null) {
-                                        ItemStack itemClick = clickInv.getItem(event.getSlot());
-                                        PersistentDataContainer plotData = Objects.requireNonNull(itemClick).getPersistentDataContainer();
-                                        NamespacedKey plotKey = new NamespacedKey(plugin, "x");
-                                        if (plotData.has(plotKey, PersistentDataType.DOUBLE)) {
-                                            NamespacedKey plotKey1 = new NamespacedKey(plugin, "y");
-                                            NamespacedKey plotKey2 = new NamespacedKey(plugin, "z");
-                                            NamespacedKey plotKey3 = new NamespacedKey(plugin, "world");
-                                            double x = plotData.get(plotKey, PersistentDataType.DOUBLE);
-                                            double y = plotData.get(plotKey1, PersistentDataType.DOUBLE);
-                                            double z = plotData.get(plotKey2, PersistentDataType.DOUBLE);
-                                            World world = Bukkit.getWorld(plotData.get(plotKey3, PersistentDataType.STRING));
-                                            Location loc = new Location(world, x, y, z);
-                                            if (player.getWorld().getName().equalsIgnoreCase("world_skycity") || player.hasPermission("cmi.command.tpa.warmupbypass")) {
-                                                player.teleportAsync(loc);
-                                                player.sendMessage(plugin.colourMessage("&aTeleported to plot!"));
-                                            } else {
-                                                player.closeInventory();
-                                                player.sendMessage(plugin.colourMessage("&aTeleporting to your plot in 5 seconds, Don't move!"));
-                                                BukkitTask task = plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                                                    plugin.teleportMove.remove(player.getUniqueId());
-                                                    player.teleport(loc);
-                                                    player.sendMessage(plugin.colourMessage("&aTeleported to plot!"));
-                                                }, 100L);
-                                                plugin.teleportMove.put(player.getUniqueId(), task.getTaskId());
-
-                                            }
-                                        }
-                                    }
-                                    break;
-                                case "tags":
-                                    if (clickInv.getItem(event.getSlot()) != null) {
-                                        ItemStack clickItem = event.getClickedInventory().getItem(event.getSlot());
-                                        PersistentDataContainer clickData = clickItem.getPersistentDataContainer();
-                                        if (clickItem.getType().equals(Material.NAME_TAG)) {
-                                            NamespacedKey tagKey = new NamespacedKey(plugin, "tag-id");
-                                            int tag_id = clickData.get(tagKey, PersistentDataType.INTEGER);
-                                            String tagsDisplay = "";
-                                            String tagsEffect = "";
+                                        break;
+                                    case "daily-reward":
+                                        if (event.getClickedInventory().getItem(event.getSlot()).getType().equals(Material.MINECART)) {
+                                            player.sendMessage(plugin.colourMessage("&cYou've already collected the daily reward!"));
+                                        } else if (event.getClickedInventory().getItem(event.getSlot()).getType().equals(Material.CHEST_MINECART)) {
+                                            int currStreak = 0;
+                                            int highestStreak = 0;
+                                            int totalCollected = 0;
+                                            String lastColl = "";
 
                                             try {
                                                 Connection conn = hook.getSQLConnection();
-                                                PreparedStatement ps = conn.prepareStatement("SELECT tags_display, tags_effect FROM tags WHERE tags_id = '" + tag_id + "'");
+                                                PreparedStatement ps = conn.prepareStatement("SELECT current_streak, highest_streak, total_collected, last_collected FROM dailies WHERE user_id = '" + player.getUniqueId() + "'");
                                                 ResultSet rs = ps.executeQuery();
                                                 while (rs.next()) {
-                                                    tagsDisplay = rs.getString(1);
-                                                    tagsEffect = rs.getString(2);
+                                                    currStreak = rs.getInt(1);
+                                                    highestStreak = rs.getInt(2);
+                                                    totalCollected = rs.getInt(3);
+                                                    lastColl = rs.getString(4);
                                                 }
                                                 hook.close(ps, rs, conn);
                                             } catch (SQLException e) {
                                                 e.printStackTrace();
                                             }
 
-                                            particles.resetActivePlayerParticles(player);
-                                            if (tagsEffect != null && !tagsEffect.isEmpty()) {
-                                                particles.addActivePlayerParticle(player, ParticleEffect.CLOUD, ParticleStyle.fromInternalName(tagsEffect));
+                                            Random rand = new Random();
+                                            int tReward = rand.nextInt(25) + 25;
+
+                                            if ((currStreak + 1) % 7 == 0) {
+                                                tReward = 250;
                                             }
 
-                                            String sql = "UPDATE users SET active_tag = ? WHERE user_id = ?";
-                                            List<Object> params = new ArrayList<>() {{
-                                                add(tag_id);
-                                                add(user.getUniqueId().toString());
-                                            }};
-                                            hook.sqlUpdate(sql, params);
+                                            Random rand2 = new Random();
+                                            int randInt = rand2.nextInt(1000) + 1;
+                                            if (randInt == 666) {
+                                                tReward = randInt;
+                                            }
 
-                                            plugin.userTags.put(player.getUniqueId(), tagsDisplay);
-                                            player.sendMessage(plugin.colourMessage("&aSelected Tag: &r" + tagsDisplay));
-                                            tag.openGUI(player, page);
-                                        } else if (event.getSlot() == 46 && clickItem.getType().equals(Material.PAPER)) {
-                                            tag.openGUI(player, page - 1);
-                                        } else if (event.getSlot() == 49 && clickItem.getType().equals(Material.BARRIER)) {
-                                            plugin.userTags.remove(player.getUniqueId());
-                                            particles.resetActivePlayerParticles(player);
-                                            String sql = "UPDATE users SET active_tag = ? WHERE user_id = ?";
-                                            List<Object> params = new ArrayList<>() {{
-                                                add(0);
-                                                add(user.getUniqueId().toString());
-                                            }};
+                                            plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tReward, "Daily Reward", currStreak + " Days");
+
+                                            int nCurrStreak = currStreak + 1;
+                                            int nTotalCollected = totalCollected + 1;
+
+                                            Date date = new Date();
+                                            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+                                            String currDate = formatter.format(date);
+
+                                            String sql;
+                                            List<Object> params;
+
+                                            if (!lastColl.isEmpty()) {
+                                                if (currStreak >= highestStreak) {
+                                                    sql = "UPDATE dailies SET current_streak = ?, highest_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?";
+                                                    params = new ArrayList<>() {{
+                                                        add(nCurrStreak);
+                                                        add(nCurrStreak);
+                                                        add(currDate);
+                                                        add(nTotalCollected);
+                                                        add(user.getUniqueId().toString());
+                                                    }};
+                                                } else {
+                                                    sql = "UPDATE dailies SET current_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?";
+                                                    params = new ArrayList<>() {{
+                                                        add(nCurrStreak);
+                                                        add(currDate);
+                                                        add(nTotalCollected);
+                                                        add(user.getUniqueId().toString());
+                                                    }};
+                                                }
+                                            } else {
+                                                sql = "INSERT INTO dailies (user_id, current_streak, total_collected, highest_streak, last_collected) VALUES (?, ?, ?, ?, ?)";
+                                                params = new ArrayList<>() {{
+                                                    add(user.getUniqueId().toString());
+                                                    add(nCurrStreak);
+                                                    add(nTotalCollected);
+                                                    add(nCurrStreak);
+                                                    add(currDate);
+                                                }};
+                                            }
+
                                             hook.sqlUpdate(sql, params);
-                                            tag.openGUI(player, page);
-                                        } else if (event.getSlot() == 52 && clickItem.getType().equals(Material.PAPER)) {
-                                            tag.openGUI(player, page + 1);
+                                            daily.openGUI(player);
                                         }
-                                    }
-                                    break;
-                                case "tags-edit-all":
-                                    if (clickInv.getItem(event.getSlot()) != null) {
-                                        ItemStack clickItem = event.getClickedInventory().getItem(event.getSlot());
-                                        PersistentDataContainer clickData = clickItem.getPersistentDataContainer();
+                                        break;
+                                    case "plotteleport":
+                                        if (clickInv.getItem(event.getSlot()) != null) {
+                                            ItemStack itemClick = clickInv.getItem(event.getSlot());
+                                            PersistentDataContainer plotData = Objects.requireNonNull(itemClick).getPersistentDataContainer();
+                                            NamespacedKey plotKey = new NamespacedKey(plugin, "x");
+                                            if (plotData.has(plotKey, PersistentDataType.DOUBLE)) {
+                                                NamespacedKey plotKey1 = new NamespacedKey(plugin, "y");
+                                                NamespacedKey plotKey2 = new NamespacedKey(plugin, "z");
+                                                NamespacedKey plotKey3 = new NamespacedKey(plugin, "world");
+                                                double x = plotData.get(plotKey, PersistentDataType.DOUBLE);
+                                                double y = plotData.get(plotKey1, PersistentDataType.DOUBLE);
+                                                double z = plotData.get(plotKey2, PersistentDataType.DOUBLE);
+                                                World world = Bukkit.getWorld(plotData.get(plotKey3, PersistentDataType.STRING));
+                                                Location loc = new Location(world, x, y, z);
+                                                if (player.getWorld().getName().equalsIgnoreCase("world_skycity") || player.hasPermission("cmi.command.tpa.warmupbypass")) {
+                                                    player.teleportAsync(loc);
+                                                    player.sendMessage(plugin.colourMessage("&aTeleported to plot!"));
+                                                } else {
+                                                    player.closeInventory();
+                                                    player.sendMessage(plugin.colourMessage("&aTeleporting to your plot in 5 seconds, Don't move!"));
+                                                    BukkitTask task = plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                                                        plugin.teleportMove.remove(player.getUniqueId());
+                                                        player.teleport(loc);
+                                                        player.sendMessage(plugin.colourMessage("&aTeleported to plot!"));
+                                                    }, 100L);
+                                                    plugin.teleportMove.put(player.getUniqueId(), task.getTaskId());
+
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    case "tags":
+                                        if (clickInv.getItem(event.getSlot()) != null) {
+                                            ItemStack clickItem = event.getClickedInventory().getItem(event.getSlot());
+                                            PersistentDataContainer clickData = clickItem.getPersistentDataContainer();
+                                            if (clickItem.getType().equals(Material.NAME_TAG)) {
+                                                NamespacedKey tagKey = new NamespacedKey(plugin, "tag-id");
+                                                int tag_id = clickData.get(tagKey, PersistentDataType.INTEGER);
+                                                String tagsDisplay = "";
+                                                String tagsEffect = "";
+
+                                                try {
+                                                    Connection conn = hook.getSQLConnection();
+                                                    PreparedStatement ps = conn.prepareStatement("SELECT tags_display, tags_effect FROM tags WHERE tags_id = '" + tag_id + "'");
+                                                    ResultSet rs = ps.executeQuery();
+                                                    while (rs.next()) {
+                                                        tagsDisplay = rs.getString(1);
+                                                        tagsEffect = rs.getString(2);
+                                                    }
+                                                    hook.close(ps, rs, conn);
+                                                } catch (SQLException e) {
+                                                    e.printStackTrace();
+                                                }
+
+                                                particles.resetActivePlayerParticles(player);
+                                                if (tagsEffect != null && !tagsEffect.isEmpty()) {
+                                                    particles.addActivePlayerParticle(player, ParticleEffect.CLOUD, ParticleStyle.fromInternalName(tagsEffect));
+                                                }
+
+                                                String sql = "UPDATE users SET active_tag = ? WHERE user_id = ?";
+                                                List<Object> params = new ArrayList<>() {{
+                                                    add(tag_id);
+                                                    add(user.getUniqueId().toString());
+                                                }};
+                                                hook.sqlUpdate(sql, params);
+
+                                                plugin.userTags.put(player.getUniqueId(), tagsDisplay);
+                                                player.sendMessage(plugin.colourMessage("&aSelected Tag: &r" + tagsDisplay));
+                                                tag.openGUI(player, page);
+                                            } else if (event.getSlot() == 46 && clickItem.getType().equals(Material.PAPER)) {
+                                                tag.openGUI(player, page - 1);
+                                            } else if (event.getSlot() == 49 && clickItem.getType().equals(Material.BARRIER)) {
+                                                plugin.userTags.remove(player.getUniqueId());
+                                                particles.resetActivePlayerParticles(player);
+                                                String sql = "UPDATE users SET active_tag = ? WHERE user_id = ?";
+                                                List<Object> params = new ArrayList<>() {{
+                                                    add(0);
+                                                    add(user.getUniqueId().toString());
+                                                }};
+                                                hook.sqlUpdate(sql, params);
+                                                tag.openGUI(player, page);
+                                            } else if (event.getSlot() == 52 && clickItem.getType().equals(Material.PAPER)) {
+                                                tag.openGUI(player, page + 1);
+                                            }
+                                        }
+                                        break;
+                                    case "tags-edit-all":
+                                        if (clickInv.getItem(event.getSlot()) != null) {
+                                            ItemStack clickItem = event.getClickedInventory().getItem(event.getSlot());
+                                            PersistentDataContainer clickData = clickItem.getPersistentDataContainer();
 
 
-                                        if (clickItem.getType().equals(Material.NAME_TAG)) {
+                                            if (clickItem.getType().equals(Material.NAME_TAG)) {
+                                                NamespacedKey tagKey = new NamespacedKey(plugin, "tag-id");
+                                                int tag_id = clickData.get(tagKey, PersistentDataType.INTEGER);
+                                                tag.openSpecificGUI(player, tag_id);
+                                            } else if (event.getSlot() == 46 && clickItem.getType().equals(Material.PAPER)) {
+                                                tag.openEditGUI(player, page - 1);
+                                            } else if (event.getSlot() == 52 && clickItem.getType().equals(Material.PAPER)) {
+                                                tag.openEditGUI(player, page + 1);
+                                            }
+                                        }
+                                        break;
+                                    case "tags-edit-specific":
+                                        if (clickInv.getItem(event.getSlot()) != null) {
                                             NamespacedKey tagKey = new NamespacedKey(plugin, "tag-id");
-                                            int tag_id = clickData.get(tagKey, PersistentDataType.INTEGER);
-                                            tag.openSpecificGUI(player, tag_id);
-                                        } else if (event.getSlot() == 46 && clickItem.getType().equals(Material.PAPER)) {
-                                            tag.openEditGUI(player, page - 1);
-                                        } else if (event.getSlot() == 52 && clickItem.getType().equals(Material.PAPER)) {
-                                            tag.openEditGUI(player, page + 1);
-                                        }
-                                    }
-                                    break;
-                                case "tags-edit-specific":
-                                    if (clickInv.getItem(event.getSlot()) != null) {
-                                        NamespacedKey tagKey = new NamespacedKey(plugin, "tag-id");
-                                        int tag_id = fData.get(tagKey, PersistentDataType.INTEGER);
+                                            int tag_id = fData.get(tagKey, PersistentDataType.INTEGER);
 
-                                        if (event.getSlot() == 22) {
-                                            tag.openEditGUI(player, page);
-                                        } else if (event.getSlot() == 11) {
-                                            plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-display", String.valueOf(tag_id)));
-                                            player.closeInventory();
-                                            player.sendMessage(plugin.colourMessage("&aType the new tag display:"));
-                                        } else if (event.getSlot() == 13) {
-                                            plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-lore", String.valueOf(tag_id)));
-                                            player.closeInventory();
-                                            player.sendMessage(plugin.colourMessage("&aType the new tag lore:"));
-                                        } else if (event.getSlot() == 15) {
-                                            plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-effect", String.valueOf(tag_id)));
-                                            player.closeInventory();
-                                            StringBuilder cosmetics = new StringBuilder();
-                                            int i = 0;
-                                            player.sendMessage(plugin.colourMessage("&aType the new tag effect (Write null to remove effect): \n&eAvailable Effects: " + cosmetics));
-                                        } else if (event.getSlot() == 17) {
-                                            tag.openEditGUI(player, page);
-                                            String sql = "DELETE FROM tags WHERE tags_id = ?";
-                                            List<Object> params = new ArrayList<>() {{
-                                                add(tag_id);
-                                            }};
-                                            hook.sqlUpdate(sql, params);
-                                            player.sendMessage(plugin.colourMessage("&aSuccessfully deleted tag!"));
-                                        }
-                                    }
-                                    break;
-                                case "tokencheck":
-                                    if (clickInv.getItem(event.getSlot()) != null) {
-                                        if (event.getCurrentItem().getType() == Material.PAPER) {
-                                            if (event.getSlot() == 46) {
-                                                plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page - 1, "default");
-                                            } else if (event.getSlot() == 52) {
-                                                plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page + 1, "default");
-                                            }
-                                        } else if (event.getCurrentItem().getType() == Material.BOOK) {
-                                            if (event.getSlot() == 47) {
-                                                plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page, "amounttop");
-                                            } else if (event.getSlot() == 48) {
-                                                plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page, "amountbottom");
-                                            } else if (event.getSlot() == 49) {
-                                                event.getWhoClicked().closeInventory();
-                                                event.getWhoClicked().sendMessage(ChatColor.RED + "/token check (player)");
-                                            } else if (event.getSlot() == 50) {
-                                                plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page, "usagebottom");
-                                            } else if (event.getSlot() == 51) {
-                                                plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page, "usagetop");
+                                            if (event.getSlot() == 22) {
+                                                tag.openEditGUI(player, page);
+                                            } else if (event.getSlot() == 11) {
+                                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-display", String.valueOf(tag_id)));
+                                                player.closeInventory();
+                                                player.sendMessage(plugin.colourMessage("&aType the new tag display:"));
+                                            } else if (event.getSlot() == 13) {
+                                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-lore", String.valueOf(tag_id)));
+                                                player.closeInventory();
+                                                player.sendMessage(plugin.colourMessage("&aType the new tag lore:"));
+                                            } else if (event.getSlot() == 15) {
+                                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-effect", String.valueOf(tag_id)));
+                                                player.closeInventory();
+                                                StringBuilder cosmetics = new StringBuilder();
+                                                int i = 0;
+                                                player.sendMessage(plugin.colourMessage("&aType the new tag effect (Write null to remove effect): \n&eAvailable Effects: " + cosmetics));
+                                            } else if (event.getSlot() == 17) {
+                                                tag.openEditGUI(player, page);
+                                                String sql = "DELETE FROM tags WHERE tags_id = ?";
+                                                List<Object> params = new ArrayList<>() {{
+                                                    add(tag_id);
+                                                }};
+                                                hook.sqlUpdate(sql, params);
+                                                player.sendMessage(plugin.colourMessage("&aSuccessfully deleted tag!"));
                                             }
                                         }
-                                    }
-                                    break;
-                                case "econcheck":
-                                    if (clickInv.getItem(event.getSlot()) != null) {
-                                        if (event.getCurrentItem().getType() == Material.PAPER) {
-                                            if (event.getSlot() == 46) {
-                                                econCheck.openGUI((Player) event.getWhoClicked(), page - 1, "default");
-                                            } else if (event.getSlot() == 52) {
-                                                econCheck.openGUI((Player) event.getWhoClicked(), page + 1, "default");
-                                            }
-                                        } else if (event.getCurrentItem().getType() == Material.BOOK) {
-                                            if (event.getSlot() == 47) {
-                                                econCheck.openGUI((Player) event.getWhoClicked(), page, "amounttop");
-                                            } else if (event.getSlot() == 48) {
-                                                econCheck.openGUI((Player) event.getWhoClicked(), page, "amountbottom");
-                                            } else if (event.getSlot() == 49) {
-                                                event.getWhoClicked().closeInventory();
-                                                event.getWhoClicked().sendMessage(ChatColor.RED + "/econcheck player <player>");
-                                            } else if (event.getSlot() == 50) {
-                                                econCheck.openGUI((Player) event.getWhoClicked(), page, "moneybottom");
-                                            } else if (event.getSlot() == 51) {
-                                                econCheck.openGUI((Player) event.getWhoClicked(), page, "moneytop");
+                                        break;
+                                    case "tokencheck":
+                                        if (clickInv.getItem(event.getSlot()) != null) {
+                                            if (event.getCurrentItem().getType() == Material.PAPER) {
+                                                if (event.getSlot() == 46) {
+                                                    plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page - 1, "default");
+                                                } else if (event.getSlot() == 52) {
+                                                    plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page + 1, "default");
+                                                }
+                                            } else if (event.getCurrentItem().getType() == Material.BOOK) {
+                                                if (event.getSlot() == 47) {
+                                                    plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page, "amounttop");
+                                                } else if (event.getSlot() == 48) {
+                                                    plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page, "amountbottom");
+                                                } else if (event.getSlot() == 49) {
+                                                    event.getWhoClicked().closeInventory();
+                                                    event.getWhoClicked().sendMessage(ChatColor.RED + "/token check (player)");
+                                                } else if (event.getSlot() == 50) {
+                                                    plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page, "usagebottom");
+                                                } else if (event.getSlot() == 51) {
+                                                    plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page, "usagetop");
+                                                }
                                             }
                                         }
-                                    }
-                                case "tags-new":
-                                    if (clickInv.getItem(event.getSlot()) != null) {
-                                        NamespacedKey key2 = new NamespacedKey(plugin, "tags-display");
-                                        NamespacedKey key3 = new NamespacedKey(plugin, "tags-lore");
-                                        NamespacedKey key4 = new NamespacedKey(plugin, "tags-effect");
-                                        String display = fData.get(key2, PersistentDataType.STRING);
-                                        String lore = fData.get(key3, PersistentDataType.STRING);
-                                        String effect = fData.get(key4, PersistentDataType.STRING);
+                                        break;
+                                    case "econcheck":
+                                        if (clickInv.getItem(event.getSlot()) != null) {
+                                            if (event.getCurrentItem().getType() == Material.PAPER) {
+                                                if (event.getSlot() == 46) {
+                                                    econCheck.openGUI((Player) event.getWhoClicked(), page - 1, "default");
+                                                } else if (event.getSlot() == 52) {
+                                                    econCheck.openGUI((Player) event.getWhoClicked(), page + 1, "default");
+                                                }
+                                            } else if (event.getCurrentItem().getType() == Material.BOOK) {
+                                                if (event.getSlot() == 47) {
+                                                    econCheck.openGUI((Player) event.getWhoClicked(), page, "amounttop");
+                                                } else if (event.getSlot() == 48) {
+                                                    econCheck.openGUI((Player) event.getWhoClicked(), page, "amountbottom");
+                                                } else if (event.getSlot() == 49) {
+                                                    event.getWhoClicked().closeInventory();
+                                                    event.getWhoClicked().sendMessage(ChatColor.RED + "/econcheck player <player>");
+                                                } else if (event.getSlot() == 50) {
+                                                    econCheck.openGUI((Player) event.getWhoClicked(), page, "moneybottom");
+                                                } else if (event.getSlot() == 51) {
+                                                    econCheck.openGUI((Player) event.getWhoClicked(), page, "moneytop");
+                                                }
+                                            }
+                                        }
+                                    case "tags-new":
+                                        if (clickInv.getItem(event.getSlot()) != null) {
+                                            NamespacedKey key2 = new NamespacedKey(plugin, "tags-display");
+                                            NamespacedKey key3 = new NamespacedKey(plugin, "tags-lore");
+                                            NamespacedKey key4 = new NamespacedKey(plugin, "tags-effect");
+                                            String display = fData.get(key2, PersistentDataType.STRING);
+                                            String lore = fData.get(key3, PersistentDataType.STRING);
+                                            String effect = fData.get(key4, PersistentDataType.STRING);
 
-                                        if (event.getSlot() == 0) {
-                                            tag.openEditGUI(player, page);
-                                        } else if (event.getSlot() == 11) {
-                                            plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-new-display", display, lore, effect));
-                                            player.closeInventory();
-                                            player.sendMessage(plugin.colourMessage("&aType the tag display:"));
-                                        } else if (event.getSlot() == 13) {
-                                            plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-new-lore", display, lore, effect));
-                                            player.closeInventory();
-                                            player.sendMessage(plugin.colourMessage("&aType the tag lore:"));
-                                        } else if (event.getSlot() == 15) {
-                                            plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-new-effect", display, lore, effect));
-                                            player.closeInventory();
-                                            StringBuilder cosmetics = new StringBuilder();
-                                            int i = 0;
-                                            player.sendMessage(plugin.colourMessage("&aType the tag effect (Write null to remove effect): \n&eAvailable Effects: " + cosmetics));
-                                        } else if (event.getSlot() == 22) {
-                                            String sql = "INSERT INTO tags (tags_display, tags_lore, tags_effect) VALUES (?, ?, ?)";
-                                            List<Object> params = new ArrayList<>() {{
-                                                add(display);
-                                                add(lore);
-                                                add(effect);
-                                            }};
-                                            hook.sqlUpdate(sql, params);
-                                            player.sendMessage(plugin.colourMessage("&aSuccessfully created the tag!"));
-                                            player.closeInventory();
+                                            if (event.getSlot() == 0) {
+                                                tag.openEditGUI(player, page);
+                                            } else if (event.getSlot() == 11) {
+                                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-new-display", display, lore, effect));
+                                                player.closeInventory();
+                                                player.sendMessage(plugin.colourMessage("&aType the tag display:"));
+                                            } else if (event.getSlot() == 13) {
+                                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-new-lore", display, lore, effect));
+                                                player.closeInventory();
+                                                player.sendMessage(plugin.colourMessage("&aType the tag lore:"));
+                                            } else if (event.getSlot() == 15) {
+                                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-new-effect", display, lore, effect));
+                                                player.closeInventory();
+                                                StringBuilder cosmetics = new StringBuilder();
+                                                int i = 0;
+                                                player.sendMessage(plugin.colourMessage("&aType the tag effect (Write null to remove effect): \n&eAvailable Effects: " + cosmetics));
+                                            } else if (event.getSlot() == 22) {
+                                                String sql = "INSERT INTO tags (tags_display, tags_lore, tags_effect) VALUES (?, ?, ?)";
+                                                List<Object> params = new ArrayList<>() {{
+                                                    add(display);
+                                                    add(lore);
+                                                    add(effect);
+                                                }};
+                                                hook.sqlUpdate(sql, params);
+                                                player.sendMessage(plugin.colourMessage("&aSuccessfully created the tag!"));
+                                                player.closeInventory();
+                                            }
                                         }
-                                    }
-                                    break;
-                            }
-                        } else if (clickCheck == 0) {
-                            if ("blacksmith-gui".equals(Objects.requireNonNull(guiType))) {
-                                if (event.getSlot() != 13) {
-                                    event.setCancelled(true);
-                                    if (event.getSlot() == 22) {
-                                        ItemStack item = clickInv.getItem(13);
-                                        if (item != null && !item.getType().isAir()) {
-                                            NamespacedKey enchKey = new NamespacedKey(plugin, "telekinesis");
-                                            List<Component> lore = new ArrayList<>();
-                                            ItemMeta iMeta = item.getItemMeta();
-                                            iMeta.getPersistentDataContainer().set(enchKey, PersistentDataType.INTEGER, 1);
-                                            if (iMeta.lore() != null)
-                                                lore = iMeta.lore();
-                                            lore.add(Component.text(plugin.colourMessage("&7Telekinesis")));
-                                            iMeta.lore(lore);
-                                            item.setItemMeta(iMeta);
-                                        }
-                                    }
-                                } else if (event.getSlot() == 13) {
-                                    ItemStack item = clickInv.getItem(13);
-                                    if (item != null && item.getType().isAir()) {
-                                        ArrayList<Material> allowedItems = new ArrayList<>();
-                                        allowedItems.add(Material.WOODEN_AXE);
-                                        allowedItems.add(Material.WOODEN_PICKAXE);
-                                        allowedItems.add(Material.WOODEN_HOE);
-                                        allowedItems.add(Material.WOODEN_SHOVEL);
-                                        allowedItems.add(Material.WOODEN_SWORD);
-                                        allowedItems.add(Material.STONE_AXE);
-                                        allowedItems.add(Material.STONE_PICKAXE);
-                                        allowedItems.add(Material.STONE_HOE);
-                                        allowedItems.add(Material.STONE_SHOVEL);
-                                        allowedItems.add(Material.STONE_SWORD);
-                                        allowedItems.add(Material.IRON_AXE);
-                                        allowedItems.add(Material.IRON_PICKAXE);
-                                        allowedItems.add(Material.IRON_HOE);
-                                        allowedItems.add(Material.IRON_SHOVEL);
-                                        allowedItems.add(Material.IRON_SWORD);
-                                        allowedItems.add(Material.DIAMOND_AXE);
-                                        allowedItems.add(Material.DIAMOND_PICKAXE);
-                                        allowedItems.add(Material.DIAMOND_HOE);
-                                        allowedItems.add(Material.DIAMOND_SHOVEL);
-                                        allowedItems.add(Material.DIAMOND_SWORD);
-                                        allowedItems.add(Material.NETHERITE_AXE);
-                                        allowedItems.add(Material.NETHERITE_PICKAXE);
-                                        allowedItems.add(Material.NETHERITE_HOE);
-                                        allowedItems.add(Material.NETHERITE_SHOVEL);
-                                        allowedItems.add(Material.NETHERITE_SWORD);
-                                        if (!allowedItems.contains(item.getType())) {
-                                            event.setCancelled(true);
+                                        break;
+                                }
+                            } else if (clickCheck == 0) {
+                                if (guiType.equalsIgnoreCase("tokenshop-edit")) {
+                                    if (event.isShiftClick()) {
+                                        if (event.getCurrentItem() != null && !event.getCurrentItem().getType().isAir()) {
+                                            ItemStack clickedItem = event.getCurrentItem();
+                                            ItemMeta cMeta = clickedItem.getItemMeta();
+                                            PersistentDataContainer cData = fMeta.getPersistentDataContainer();
+                                            NamespacedKey idKey = new NamespacedKey(plugin, "id");
+                                            if (cData.has(idKey, PersistentDataType.STRING)) {
+                                                event.setCancelled(true);
+                                                String itemId = cData.get(idKey, PersistentDataType.STRING);
+
+                                            }
                                         }
                                     }
                                 }
@@ -890,131 +904,129 @@ public class InventoryClick implements Listener {
                         }
                     }
                 }
-            }
-        }
-        if (ChatColor.stripColor(event.getView().getTitle()).contains("Secrets")) {
-            if (event.getCurrentItem() != null) {
-                event.setCancelled(true);
-            }
-            String[] title = event.getView().getTitle().split(" - ");
-            HumanEntity human = event.getWhoClicked();
-            if (human instanceof Player) {
-                switch (title[1].toLowerCase()) {
-                    case "grass":
-                    case "desert":
-                    case "nether":
-                    case "snow":
-                    case "skycity":
-                    case "marina":
-                    case "skycity-other":
-                    case "prison-other":
-                        if (event.getSlot() == 40) {
-                            secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "secrets");
-                        }
-                        break;
-                    case "all":
-                        switch (event.getSlot()) {
-                            case 31:
-                                secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "main-menu");
-                                break;
-                            case 11:
-                                secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "grass");
-                                break;
-                            case 12:
-                                secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "desert");
-                                break;
-                            case 13:
-                                secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "nether");
-                                break;
-                            case 14:
-                                secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "snow");
-                                break;
-                            case 15:
-                                secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "prison-other");
-                                break;
-                            case 22:
-                                secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "skycity");
-                                break;
-                        }
-                        break;
-                    case "rewards":
-                        if (event.getCurrentItem() == null) {
-                            break;
-                        }
-                        if (event.getSlot() == 49) {
-                            secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "main-menu");
-                        } else if (event.getCurrentItem().getType().equals(Material.CHEST_MINECART)) {
-                            Player player = Bukkit.getPlayer(human.getName());
-                            assert player != null;
-                            File rewardsDataFile = new File(plugin.getDataFolder() + File.separator
-                                    + "rewardsdata.yml");
-                            FileConfiguration rData = YamlConfiguration.loadConfiguration(rewardsDataFile);
-
-                            ItemStack currItem = event.getCurrentItem();
-                            NamespacedKey key = new NamespacedKey(plugin, "reward");
-                            ItemMeta itemMeta = currItem.getItemMeta();
-                            PersistentDataContainer container = itemMeta.getPersistentDataContainer();
-                            String foundValue;
-                            if(container.has(key, PersistentDataType.STRING)) {
-                                foundValue = container.get(key, PersistentDataType.STRING);
-                                if(Objects.requireNonNull(rData.getString(foundValue + ".reward-type")).equalsIgnoreCase("tokens")) {
-                                    int tokenAmount = rData.getInt(foundValue + ".reward");
-                                    plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tokenAmount, "Secret Region Found", foundValue);
-
-                                    String sql = "UPDATE rewards_data SET reward_collected = ? WHERE user_id = ? AND reward_name = ?";
-                                    List<Object> params = new ArrayList<>() {{
-                                        add(1);
-                                        add(player.getUniqueId().toString());
-                                        add(foundValue);
-                                    }};
-                                    hook.sqlUpdate(sql, params);
-
-                                    player.sendMessage(plugin.colourMessage("&f[&eSecrets&f] &aYou received " + tokenAmount + " tokens!"));
-                                    secretsGUI.openGUI(player, "rewards");
+                if (ChatColor.stripColor(event.getView().getTitle()).contains("Secrets")) {
+                    if (event.getCurrentItem() != null) {
+                        event.setCancelled(true);
+                    }
+                    String[] title = event.getView().getTitle().split(" - ");
+                    HumanEntity human = event.getWhoClicked();
+                    if (human instanceof Player) {
+                        switch (title[1].toLowerCase()) {
+                            case "grass":
+                            case "desert":
+                            case "nether":
+                            case "snow":
+                            case "skycity":
+                            case "marina":
+                            case "skycity-other":
+                            case "prison-other":
+                                if (event.getSlot() == 40) {
+                                    secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "secrets");
                                 }
-                            }
+                                break;
+                            case "all":
+                                switch (event.getSlot()) {
+                                    case 31:
+                                        secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "main-menu");
+                                        break;
+                                    case 11:
+                                        secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "grass");
+                                        break;
+                                    case 12:
+                                        secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "desert");
+                                        break;
+                                    case 13:
+                                        secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "nether");
+                                        break;
+                                    case 14:
+                                        secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "snow");
+                                        break;
+                                    case 15:
+                                        secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "prison-other");
+                                        break;
+                                    case 22:
+                                        secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "skycity");
+                                        break;
+                                }
+                                break;
+                            case "rewards":
+                                if (event.getCurrentItem() == null) {
+                                    break;
+                                }
+                                if (event.getSlot() == 49) {
+                                    secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "main-menu");
+                                } else if (event.getCurrentItem().getType().equals(Material.CHEST_MINECART)) {
+                                    assert player != null;
+                                    File rewardsDataFile = new File(plugin.getDataFolder() + File.separator
+                                            + "rewardsdata.yml");
+                                    FileConfiguration rData = YamlConfiguration.loadConfiguration(rewardsDataFile);
+
+                                    ItemStack currItem = event.getCurrentItem();
+                                    NamespacedKey key = new NamespacedKey(plugin, "reward");
+                                    ItemMeta itemMeta = currItem.getItemMeta();
+                                    PersistentDataContainer container = itemMeta.getPersistentDataContainer();
+                                    String foundValue;
+                                    if (container.has(key, PersistentDataType.STRING)) {
+                                        foundValue = container.get(key, PersistentDataType.STRING);
+                                        if (Objects.requireNonNull(rData.getString(foundValue + ".reward-type")).equalsIgnoreCase("tokens")) {
+                                            int tokenAmount = rData.getInt(foundValue + ".reward");
+                                            plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tokenAmount, "Secret Region Found", foundValue);
+
+                                            String sql = "UPDATE rewards_data SET reward_collected = ? WHERE user_id = ? AND reward_name = ?";
+                                            List<Object> params = new ArrayList<>() {{
+                                                add(1);
+                                                add(player.getUniqueId().toString());
+                                                add(foundValue);
+                                            }};
+                                            hook.sqlUpdate(sql, params);
+
+                                            player.sendMessage(plugin.colourMessage("&f[&eSecrets&f] &aYou received " + tokenAmount + " tokens!"));
+                                            secretsGUI.openGUI(player, "rewards");
+                                        }
+                                    }
+                                }
+                                break;
+                            case "main":
+                                switch (event.getSlot()) {
+                                    case 13:
+                                        break;
+                                    case 20:
+                                        secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "secrets");
+                                        break;
+                                    case 24:
+                                        secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "rewards");
+                                        break;
+                                }
                         }
-                        break;
-                    case "main":
-                        switch(event.getSlot()) {
-                            case 13:
-                                break;
-                            case 20:
-                                secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "secrets");
-                                break;
-                            case 24:
-                                secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "rewards");
-                                break;
-                        }
-                }
-            }
-        }
-        String[] dropChest = ChatColor.stripColor(event.getView().getTitle()).split(" ");
-        if(dropChest[0].equalsIgnoreCase("Drop") && dropChest[1].equalsIgnoreCase("Party")) {
-            if (event.getCurrentItem() != null) {
-                event.setCancelled(true);
-                if(event.getCurrentItem().getType() == Material.PAPER) {
-                    if(event.getSlot() == 46) {
-                        int page = Integer.parseInt(dropChest[4])-1;
-                        chestDrop.openGUI((Player) event.getWhoClicked(), page);
-                    } else if(event.getSlot() == 52) {
-                        int page = Integer.parseInt(dropChest[4])+1;
-                        chestDrop.openGUI((Player) event.getWhoClicked(), page);
                     }
                 }
-            }
-        }
+                String[] dropChest = ChatColor.stripColor(event.getView().getTitle()).split(" ");
+                if (dropChest[0].equalsIgnoreCase("Drop") && dropChest[1].equalsIgnoreCase("Party")) {
+                    if (event.getCurrentItem() != null) {
+                        event.setCancelled(true);
+                        if (event.getCurrentItem().getType() == Material.PAPER) {
+                            if (event.getSlot() == 46) {
+                                int page = Integer.parseInt(dropChest[4]) - 1;
+                                chestDrop.openGUI((Player) event.getWhoClicked(), page);
+                            } else if (event.getSlot() == 52) {
+                                int page = Integer.parseInt(dropChest[4]) + 1;
+                                chestDrop.openGUI((Player) event.getWhoClicked(), page);
+                            }
+                        }
+                    }
+                }
 
-        if (ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("Referral List")) {
-            if (event.getCurrentItem() != null) {
-                event.setCancelled(true);
-            }
-        }
+                if (ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("Referral List")) {
+                    if (event.getCurrentItem() != null) {
+                        event.setCancelled(true);
+                    }
+                }
 
-        Player player = (Player) event.getWhoClicked();
-        if (!player.hasPermission("skyprisoncore.contraband.itembypass")) {
-            if(event.getClickedInventory() instanceof PlayerInventory) {
-                plugin.InvGuardGearDelPlyr(player);
+                if (!player.hasPermission("skyprisoncore.contraband.itembypass")) {
+                    if (event.getClickedInventory() instanceof PlayerInventory) {
+                        plugin.InvGuardGearDelPlyr(player);
+                    }
+                }
             }
         }
     }

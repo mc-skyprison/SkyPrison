@@ -93,6 +93,9 @@ public class PlayerMove implements Listener {
                         }
                     } else if (!toFly && fromFly) {
                         player.setAllowFlight(false);
+                        if(player.isGliding()) {
+                            player.setGliding(false);
+                        }
                         player.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "You can no longer fly!");
                     }
                 }

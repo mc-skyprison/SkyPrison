@@ -33,7 +33,6 @@ public class Tags implements CommandExecutor {
     }
 
     public void openGUI(Player player, Integer page) {
-
         ArrayList<List> tags = new ArrayList<>();
 
         try {

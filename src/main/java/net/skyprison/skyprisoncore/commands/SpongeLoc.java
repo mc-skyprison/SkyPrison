@@ -1,201 +1,261 @@
 package net.skyprison.skyprisoncore.commands;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import org.bukkit.*;
+import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-import java.io.File;
-import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Random;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.List;
 
 public class SpongeLoc implements CommandExecutor {
 	private final SkyPrisonCore plugin;
+	private final DatabaseHook hook;
 
-	public SpongeLoc(SkyPrisonCore plugin) {
+	public SpongeLoc(SkyPrisonCore plugin, DatabaseHook hook) {
 		this.plugin = plugin;
+		this.hook = hook;
 	}
 
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {
 			Player player = (Player) sender;
-			File f = new File(plugin.getDataFolder() + File.separator + "spongelocations.yml");
-			YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
-			if (args.length < 1) {
-				Set<String> setList = yamlf.getConfigurationSection("locations").getKeys(false);
-				Double playerX = player.getLocation().getX();
-				Double playerY = player.getLocation().getY();
-				Double playerZ = player.getLocation().getZ();
-				for (int i = 0; i < setList.size()+2; i++) {
-					Double spongeX = yamlf.getDouble("locations." + i + ".x");
-					Double spongeY = yamlf.getDouble("locations." + i + ".y");
-					Double spongeZ = yamlf.getDouble("locations." + i + ".z");
-					if(playerX.equals(spongeX) && playerY.equals(spongeY) && playerZ.equals(spongeZ)) {
-						player.sendMessage(ChatColor.WHITE + "[" + ChatColor.YELLOW + "Sponge" + ChatColor.WHITE + "]" + ChatColor.RED + " There is already a sponge location here!");
-						break;
+
+			Component help = Component.text("⎯⎯⎯⎯⎯⎯ ").color(NamedTextColor.GRAY)
+					.append(Component.text("Spongeloc Commands").color(TextColor.fromHexString("#FFFF00")))
+					.append(Component.text(" ⎯⎯⎯⎯⎯⎯").color(NamedTextColor.GRAY))
+					.append(Component.text("\n/spongeloc set").color(TextColor.fromHexString("#008000")))
+					.append(Component.text("\n/spongeloc list").color(TextColor.fromHexString("#008000")))
+					.append(Component.text("\n/spongeloc delete <id>").color(TextColor.fromHexString("#008000")))
+					.append(Component.text("\n/spongeloc tp <id>").color(TextColor.fromHexString("#008000")))
+					.decoration(TextDecoration.ITALIC, false);
+
+			if (args.length > 0) {
+				if (args[0].equalsIgnoreCase("set")) {
+					double x = player.getLocation().getBlockX();
+					double y = player.getLocation().getBlockY();
+					double z = player.getLocation().getBlockZ();
+					World world = player.getWorld();
+
+					String loc = world.getName() + ";" + x + ";" + y + ";" + z;
+
+					try {
+						Connection conn = hook.getSQLConnection();
+						conn.setAutoCommit(false); // Start a transaction
+
+						PreparedStatement ps = conn.prepareStatement("SELECT * FROM sponge_locations WHERE location = ?");
+						ps.setString(1, loc);
+						ResultSet rs = ps.executeQuery();
+						if(rs.next()) {
+							Component msg = Component.text("[").color(NamedTextColor.WHITE)
+									.append(Component.text("Sponge").color(TextColor.fromHexString("#FFFF00")))
+									.append(Component.text("] ").color(NamedTextColor.WHITE))
+									.append(Component.text("There's already a sponge location here!").color(NamedTextColor.RED)).decoration(TextDecoration.ITALIC, false);
+							player.sendMessage(msg);
+							conn.rollback(); // Rollback the transaction in case of failure
+							hook.close(ps, rs, conn);
+							return true;
+						}
+						hook.close(ps, rs, null);  // Don't close the connection
+
+						int max = 0;
+						ps = conn.prepareStatement("SELECT MAX(loc_order) FROM sponge_locations");
+						rs = ps.executeQuery();
+						if (rs.next()) {
+							max = rs.getInt(1);
+						}
+						hook.close(ps, rs, null);  // Don't close the connection
+
+						ps = conn.prepareStatement("INSERT INTO sponge_locations (location, loc_order) VALUES (?, ?)");
+						ps.setString(1, loc);
+						ps.setInt(2, max + 1);
+						ps.executeUpdate();
+						hook.close(ps, null, null);  // Don't close the connection
+
+						conn.commit(); // Commit the transaction
+						hook.close(null, null, conn);  // Close the connection now
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+
+					Component msg = Component.text("[").color(NamedTextColor.WHITE)
+							.append(Component.text("Sponge").color(TextColor.fromHexString("#FFFF00")))
+							.append(Component.text("] ").color(NamedTextColor.WHITE))
+							.append(Component.text("Successfully created a sponge location!").color(TextColor.fromHexString("#008000"))).decoration(TextDecoration.ITALIC, false);
+					player.sendMessage(msg);
+				} else if (args[0].equalsIgnoreCase("list")) {
+					HashMap<Integer, String> locs = new HashMap<>();
+					try {
+						Connection conn = hook.getSQLConnection();
+						PreparedStatement ps = conn.prepareStatement("SELECT location, loc_order FROM sponge_locations");
+						ResultSet rs = ps.executeQuery();
+						while(rs.next()) {
+							String loc = rs.getString(1);
+							int loc_order = rs.getInt(2);
+							locs.put(loc_order, loc);
+						}
+						hook.close(ps, rs, conn);
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+					int page = 1;
+					int totalPages = (int) Math.ceil(locs.size() / 10.0);
+					if (args.length > 1) {
+						if (plugin.isInt(args[1])) {
+							page = Integer.parseInt(args[1]);
+							if (totalPages < page) {
+								page = 1;
+							}
+						} else {
+							Component msg = Component.text("Correct Usage: /spongeloc list (page)").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false);
+							player.sendMessage(msg);
+						}
+					}
+
+					int prevPage = page - 1;
+					int nextPage = page + 1;
+
+					int pageStart = (page * 10) - 9;
+					Component msg = Component.text("⎯⎯⎯⎯⎯⎯ ").color(NamedTextColor.GRAY)
+							.append(Component.text("Sponge Locations").color(TextColor.fromHexString("#FFFF00")))
+							.append(Component.text(" ⎯⎯⎯⎯⎯⎯").color(NamedTextColor.GRAY));
+					for (int i = pageStart; i < pageStart + 10; i++) {
+						if(!locs.containsKey(i)) {
+							break;
+						}
+						String[] loc = locs.get(i).split(";");
+						msg = msg.append(Component.text("\n" + i + ". ").color(TextColor.fromHexString("#cea916"))
+								.append(Component.text("X:" + loc[1] + " Y: " + loc[2] + " Z: " + loc[3]).color(TextColor.fromHexString("#008000")))
+								.hoverEvent(HoverEvent.showText(Component.text("Click to teleport to this location").color(NamedTextColor.GRAY)))
+								.clickEvent(ClickEvent.runCommand("/spongeloc tp " + i)));
+					}
+					if (page == 1) {
+						if(locs.size() > 10) {
+							msg = msg.append(Component.text("\n" + page).color(TextColor.fromHexString("#266d27"))
+									.append(Component.text("/").color(NamedTextColor.GRAY)
+											.append(Component.text(totalPages).color(TextColor.fromHexString("#266d27"))))
+									.append(Component.text(" Next --->").color(NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text(">>>").color(NamedTextColor.GRAY)))
+											.clickEvent(ClickEvent.runCommand("/spongeloc list " + nextPage))));
+						}
+					} else if (page == totalPages) {
+						msg = msg.append(Component.text("\n<--- Prev ").color(NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text("<<<").color(NamedTextColor.GRAY)))
+								.clickEvent(ClickEvent.runCommand("/spongeloc list " + prevPage))
+								.append(Component.text(page).color(TextColor.fromHexString("#266d27"))
+										.append(Component.text("/").color(NamedTextColor.GRAY)
+												.append(Component.text(totalPages).color(TextColor.fromHexString("#266d27"))))));
 					} else {
-						if (!yamlf.contains("locations." + i)) {
-							yamlf.set("locations." + i + ".world", player.getLocation().getWorld().getName());
-							yamlf.set("locations." + i + ".x", player.getLocation().getX());
-							yamlf.set("locations." + i + ".y", player.getLocation().getY());
-							yamlf.set("locations." + i + ".z", player.getLocation().getZ());
+						msg = msg.append(Component.text("\n<--- Prev ").color(NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text("<<<").color(NamedTextColor.GRAY)))
+								.clickEvent(ClickEvent.runCommand("/spongeloc list " + prevPage))
+								.append(Component.text(page).color(TextColor.fromHexString("#266d27"))
+										.append(Component.text("/").color(NamedTextColor.GRAY)
+												.append(Component.text(totalPages).color(TextColor.fromHexString("#266d27")))))
+								.append(Component.text(" Next --->").color(NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text(">>>").color(NamedTextColor.GRAY))))
+								.clickEvent(ClickEvent.runCommand("/spongeloc list " + nextPage)));
+					}
+
+					msg = msg.decoration(TextDecoration.ITALIC, false);
+					player.sendMessage(msg);
+				} else if (args[0].equalsIgnoreCase("delete")) {
+					// spongeloc delete <id>
+					if (args.length > 1) {
+						if (plugin.isInt(args[1])) {
+							int spongeId = Integer.parseInt(args[1]);
 							try {
-								yamlf.save(f);
-							} catch (IOException e) {
+								Connection conn = hook.getSQLConnection();
+								PreparedStatement ps = conn.prepareStatement("SELECT * FROM sponge_locations WHERE loc_order = '" + spongeId + "'");
+								ResultSet rs = ps.executeQuery();
+								if (!rs.next()) {
+									Component msg = Component.text("[").color(NamedTextColor.WHITE)
+											.append(Component.text("Sponge").color(TextColor.fromHexString("#FFFF00")))
+											.append(Component.text("] ").color(NamedTextColor.WHITE))
+											.append(Component.text("Id doesn't exist!").color(NamedTextColor.RED)).decoration(TextDecoration.ITALIC, false);
+									player.sendMessage(msg);
+									return true;
+								}
+								hook.close(ps, rs, conn);
+							} catch (SQLException e) {
 								e.printStackTrace();
 							}
-							break;
+
+							String sql = "DELETE FROM sponge_locations WHERE loc_order = ?";
+							List<Object> params = new ArrayList<>() {{
+								add(spongeId);
+							}};
+							hook.sqlUpdate(sql, params);
+
+							sql = "UPDATE sponge_locations SET loc_order = loc_order - 1 WHERE loc_order > ?";
+							params = new ArrayList<>() {{
+								add(spongeId);
+							}};
+							hook.sqlUpdate(sql, params);
+
+							Component msg = Component.text("[").color(NamedTextColor.WHITE)
+									.append(Component.text("Sponge").color(TextColor.fromHexString("#FFFF00")))
+									.append(Component.text("] ").color(NamedTextColor.WHITE))
+									.append(Component.text("Successfully deleted sponge location!").color(TextColor.fromHexString("#008000"))).decoration(TextDecoration.ITALIC, false);
+							player.sendMessage(msg);
+						} else {
+							Component msg = Component.text("Correct Usage: /spongeloc delete <id>").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false);
+							player.sendMessage(msg);
 						}
+					} else {
+						Component msg = Component.text("Correct Usage: /spongeloc delete <id>").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false);
+						player.sendMessage(msg);
 					}
-				}
-				setList = yamlf.getConfigurationSection("locations").getKeys(false);
-				String world;
-				double x;
-				double y;
-				double z;
-				ArrayList<ArrayList> arr = new ArrayList<>();
-				for (String spongeOrder : setList) {
-					ArrayList<Object> arr2 = new ArrayList<>();
-					world = yamlf.getString("locations." + spongeOrder + ".world");
-					x = yamlf.getDouble("locations." + spongeOrder + ".x");
-					y = yamlf.getDouble("locations." + spongeOrder + ".y");
-					z = yamlf.getDouble("locations." + spongeOrder + ".z");
-					arr2.add(world);
-					arr2.add(x);
-					arr2.add(y);
-					arr2.add(z);
-					arr.add(arr2);
-				}
-				yamlf.set("locations", null);
-				try {
-					yamlf.save(f);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				for(int i = 0; i < arr.size(); i++) {
-					yamlf.set("locations." + i + ".world", arr.get(i).get(0));
-					yamlf.set("locations." + i + ".x", arr.get(i).get(1));
-					yamlf.set("locations." + i + ".y", arr.get(i).get(2));
-					yamlf.set("locations." + i + ".z", arr.get(i).get(3));
-					try {
-						yamlf.save(f);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-				player.sendMessage(ChatColor.WHITE + "[" + ChatColor.YELLOW + "Sponge" + ChatColor.WHITE + "]" + ChatColor.GREEN + " Sponge location set at your location");
-			} else if (args[0].equalsIgnoreCase("list")) {
-				for (String key : yamlf.getConfigurationSection("locations").getKeys(false)) {
-					player.sendMessage(ChatColor.YELLOW + key + ChatColor.GREEN + ": X: " + yamlf.getInt("locations." + key + ".x") + " Y: " + yamlf.getInt("locations." + key + ".y") + " Z: " + yamlf.getInt("locations." + key + ".z"));
-				}
-			} else if (args[0].equalsIgnoreCase("delete")) {
-				if (args.length < 2) {
-					player.sendMessage(ChatColor.DARK_RED + "[" + ChatColor.AQUA + "Sponge" + ChatColor.DARK_RED + "]" + ChatColor.RED + " Please specify a location id... ");
-				} else if (!yamlf.getConfigurationSection("locations").contains(args[1])) {
-					player.sendMessage(ChatColor.DARK_RED + "[" + ChatColor.AQUA + "Sponge" + ChatColor.DARK_RED + "]" + ChatColor.RED + " Sponge location with id '" + args[1] + "' does not exist...");
-				} else {
-					yamlf.getConfigurationSection("locations").set(args[1], null);
-					try {
-						yamlf.save(f);
-						Set<String> setList = yamlf.getConfigurationSection("locations").getKeys(false);
-						String world;
-						double x;
-						double y;
-						double z;
-						ArrayList<ArrayList> arr = new ArrayList<>();
-						for (String spongeOrder : setList) {
-							ArrayList<Object> arr2 = new ArrayList<>();
-							world = yamlf.getString("locations." + spongeOrder + ".world");
-							x = yamlf.getDouble("locations." + spongeOrder + ".x");
-							y = yamlf.getDouble("locations." + spongeOrder + ".y");
-							z = yamlf.getDouble("locations." + spongeOrder + ".z");
-							arr2.add(world);
-							arr2.add(x);
-							arr2.add(y);
-							arr2.add(z);
-							arr.add(arr2);
-						}
-						yamlf.set("locations", null);
-						try {
-							yamlf.save(f);
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-						for(int i = 0; i < arr.size(); i++) {
-							yamlf.set("locations." + i + ".world", arr.get(i).get(0));
-							yamlf.set("locations." + i + ".x", arr.get(i).get(1));
-							yamlf.set("locations." + i + ".y", arr.get(i).get(2));
-							yamlf.set("locations." + i + ".z", arr.get(i).get(3));
+				} else if (args[0].equalsIgnoreCase(("tp"))) {
+					if (args.length > 1) {
+						if (plugin.isInt(args[1])) {
+							int spongeId = Integer.parseInt(args[1]);
+							String[] loc = new String[0];
 							try {
-								yamlf.save(f);
-							} catch (IOException e) {
+								Connection conn = hook.getSQLConnection();
+								PreparedStatement ps = conn.prepareStatement("SELECT location FROM sponge_locations WHERE loc_order = '" + spongeId + "'");
+								ResultSet rs = ps.executeQuery();
+								if (rs.next()) {
+									loc = rs.getString(1).split(";");
+								}
+								hook.close(ps, rs, conn);
+							} catch (SQLException e) {
 								e.printStackTrace();
 							}
+							Location sLoc = new Location(Bukkit.getWorld(loc[0]), Double.parseDouble(loc[1]), Double.parseDouble(loc[2]), Double.parseDouble(loc[3]));
+
+							if (player.teleport(sLoc)) {
+								Component msg = Component.text("Successfully teleported to location!").color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false);
+								player.sendMessage(msg);
+							} else {
+								Component msg = Component.text("Teleport failed!").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false);
+								player.sendMessage(msg);
+							}
+						} else {
+							Component msg = Component.text("Correct Usage: /spongeloc tp <id>").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false);
+							player.sendMessage(msg);
 						}
-					} catch (IOException e) {
-						e.printStackTrace();
+					} else {
+						Component msg = Component.text("Correct Usage: /spongeloc tp <id>").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false);
+						player.sendMessage(msg);
 					}
-					player.sendMessage(ChatColor.DARK_RED + "[" + ChatColor.AQUA + "Sponge" + ChatColor.DARK_RED + "]" + ChatColor.GREEN + " Sponge location with id '" + args[1] + "' successfully deleted...");
-				}
-			} else if (args[0].equalsIgnoreCase("tp")) {
-				if (args.length < 2) {
-					player.sendMessage(ChatColor.DARK_RED + "[" + ChatColor.AQUA + "Sponge" + ChatColor.DARK_RED + "]" + ChatColor.RED + " Please specify a location id... ");
-				} else if (!yamlf.getConfigurationSection("locations").contains(args[1])) {
-					player.sendMessage(ChatColor.DARK_RED + "[" + ChatColor.AQUA + "Sponge" + ChatColor.DARK_RED + "]" + ChatColor.RED + " Sponge location with id '" + args[1] + "' does not exist...");
 				} else {
-					World w = Bukkit.getServer().getWorld(yamlf.getString("locations." + args[1] + ".world"));
-					Location spongeLoc = new Location(w, yamlf.getDouble("locations." + args[1] + ".x"), yamlf.getDouble("locations." + args[1] + ".y"), yamlf.getDouble("locations." + args[1] + ".z"));
-					player.teleportAsync(spongeLoc);
+					player.sendMessage(help);
 				}
-			} else if (args[0].equalsIgnoreCase("help")) {
-				player.sendMessage("/spongeloc\n/spongeloc tp <id>\n/spongeloc list\n/spongeloc delete <id>");
-			} else if (args[0].equalsIgnoreCase(("place"))) {
-				Set<String> setList = yamlf.getConfigurationSection("locations").getKeys(false);
-				for(int i = 0; i < setList.size(); i++) {
-					if (yamlf.contains("locations." + i)) {
-						World w = Bukkit.getServer().getWorld(yamlf.getString("locations." + i + ".world"));
-						Location spongeLoc = new Location(w, yamlf.getDouble("locations." + i + ".x"), yamlf.getDouble("locations." + i + ".y"), yamlf.getDouble("locations." + i + ".z"));
-						if (spongeLoc.getBlock().getType() == Material.SPONGE) {
-							spongeLoc.getBlock().setType(Material.AIR);
-							break;
-						}
-					}
-				}
-				Random random = new Random();
-				int rand = random.nextInt(setList.size());
-				World w = Bukkit.getServer().getWorld(yamlf.getString("locations." + rand + ".world"));
-				Location placeSponge = new Location(w, yamlf.getDouble("locations." + rand + ".x"), yamlf.getDouble("locations." + rand + ".y"), yamlf.getDouble("locations." + rand + ".z"));
-				placeSponge = placeSponge.getBlock().getLocation();
-				placeSponge.getBlock().setType(Material.SPONGE);
 			} else {
-				player.sendMessage("/spongeloc\n/spongeloc tp <id>\n/spongeloc list\n/spongeloc delete <id>");
-			}
-		} else {
-			if (args[0].equalsIgnoreCase(("place"))) {
-				File f = new File(plugin.getDataFolder() + File.separator + "spongelocations.yml");
-				YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
-				Set<String> setList = yamlf.getConfigurationSection("locations").getKeys(false);
-				for (int i = 0; i < setList.size(); i++) {
-					if (yamlf.contains("locations." + i)) {
-						World w = Bukkit.getServer().getWorld(yamlf.getString("locations." + i + ".world"));
-						Location spongeLoc = new Location(w, yamlf.getDouble("locations." + i + ".x"), yamlf.getDouble("locations." + i + ".y"), yamlf.getDouble("locations." + i + ".z"));
-						if (spongeLoc.getBlock().getType() == Material.SPONGE) {
-							spongeLoc.getBlock().setType(Material.AIR);
-							break;
-						}
-					}
-				}
-				Random random = new Random();
-				int rand = random.nextInt(setList.size());
-				World w = Bukkit.getServer().getWorld(yamlf.getString("locations." + rand + ".world"));
-				Location placeSponge = new Location(w, yamlf.getDouble("locations." + rand + ".x"), yamlf.getDouble("locations." + rand + ".y"), yamlf.getDouble("locations." + rand + ".z"));
-				placeSponge = placeSponge.getBlock().getLocation();
-				placeSponge.getBlock().setType(Material.SPONGE);
+				player.sendMessage(help);
 			}
 		}
 		return true;

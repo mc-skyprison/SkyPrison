@@ -2,13 +2,21 @@ package net.skyprison.skyprisoncore;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.flags.StateFlag;
+import com.sk89q.worldguard.protection.flags.StringFlag;
+import com.sk89q.worldguard.protection.flags.registry.FlagConflictException;
+import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
+import com.sk89q.worldguard.session.SessionManager;
 import dev.esophose.playerparticles.api.PlayerParticlesAPI;
 import litebans.api.Entry;
 import litebans.api.Events;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
-import net.skyprison.skyprisonclaims.SkyPrisonClaims;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.skyprison.skyprisoncore.commands.*;
 import net.skyprison.skyprisoncore.commands.chats.Admin;
 import net.skyprison.skyprisoncore.commands.chats.Build;
@@ -31,6 +39,7 @@ import net.skyprison.skyprisoncore.listeners.discord.MessageCreate;
 import net.skyprison.skyprisoncore.listeners.discord.SlashCommandCreate;
 import net.skyprison.skyprisoncore.listeners.discord.UserRoleAdd;
 import net.skyprison.skyprisoncore.listeners.discord.UserRoleRemove;
+import net.skyprison.skyprisoncore.listeners.excellentcrates.CrateObtainReward;
 import net.skyprison.skyprisoncore.listeners.mcmmo.McMMOLevelUp;
 import net.skyprison.skyprisoncore.listeners.mcmmo.McMMOPartyChat;
 import net.skyprison.skyprisoncore.listeners.parkour.ParkourFinish;
@@ -43,6 +52,9 @@ import net.skyprison.skyprisoncore.listeners.quickshop.ShopSuccessPurchase;
 import net.skyprison.skyprisoncore.listeners.shopguiplus.ShopPostTransaction;
 import net.skyprison.skyprisoncore.listeners.shopguiplus.ShopPreTransaction;
 import net.skyprison.skyprisoncore.utils.*;
+import net.skyprison.skyprisoncore.utils.claims.ConsoleCommandFlagHandler;
+import net.skyprison.skyprisoncore.utils.claims.EffectFlagHandler;
+import net.skyprison.skyprisoncore.utils.claims.FlyFlagHandler;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -75,10 +87,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -105,7 +122,9 @@ public class SkyPrisonCore extends JavaPlugin {
 
     public HashMap<UUID, String> stickyChat = new HashMap<>();
 
-    public SkyPrisonClaims claimPlugin;
+    public HashMap<UUID, Boolean> customClaimHeight = new HashMap<>();
+
+    public HashMap<UUID, Boolean>  customClaimShape = new HashMap<>();
 
     public HashMap<Material, Double> minPrice = new HashMap<>();
 
@@ -125,6 +144,14 @@ public class SkyPrisonCore extends JavaPlugin {
 
     public Timer shinyTimer = new Timer();
 
+    public Timer spongeTimer = new Timer();
+
+
+    public StateFlag FLY;
+    public StringFlag EFFECTS;
+    public StringFlag CONSOLECMD;
+
+
     public HashMap<UUID, LinkedHashMap<String, Integer>> shopLogAmountPlayer = new HashMap<>();
     public HashMap<UUID, LinkedHashMap<String, Double>> shopLogPricePlayer = new HashMap<>();
     public HashMap<UUID, LinkedHashMap<String, Integer>> shopLogPagePlayer = new HashMap<>();
@@ -135,12 +162,54 @@ public class SkyPrisonCore extends JavaPlugin {
     public HashMap<UUID, LinkedHashMap<String, Integer>> tokenLogPagePlayer = new HashMap<>();
 
 
+    private final ScheduledExecutorService dailyExecutor = Executors.newSingleThreadScheduledExecutor();
+
+
+    @Override
+    public void onLoad() {
+        FlagRegistry registry = WorldGuard.getInstance().getFlagRegistry();
+        try {
+            StateFlag flag = new StateFlag("fly", false);
+            registry.register(flag);
+            FLY = flag;
+            this.getLogger().info("Loaded Fly Flag");
+
+            StringFlag eFlag = new StringFlag("give-effects");
+            registry.register(eFlag);
+            EFFECTS = eFlag;
+            this.getLogger().info("Loaded Effects Flag");
+
+            StringFlag cFlag = new StringFlag("console-command");
+            registry.register(cFlag);
+            CONSOLECMD = cFlag;
+            this.getLogger().info("Loaded Console Command Flag");
+        } catch (FlagConflictException e) {
+            Flag<?> existing = registry.get("fly");
+            if (existing instanceof StateFlag) {
+                FLY = (StateFlag) existing;
+            }
+            Flag<?> existing2 = registry.get("give-effects");
+            if (existing2 instanceof StringFlag) {
+                EFFECTS = (StringFlag) existing2;
+            }
+            Flag<?> existing3 = registry.get("console-command");
+            if (existing3 instanceof StringFlag) {
+                CONSOLECMD = (StringFlag) existing3;
+            }
+        }
+    }
+
     public void onEnable() {
         String dToken = getConfig().getString("discord-token");
 
         if (Bukkit.getPluginManager().isPluginEnabled("PlayerParticles")) {
             this.particles = PlayerParticlesAPI.getInstance();
         }
+
+        SessionManager sessionManager = WorldGuard.getInstance().getPlatform().getSessionManager();
+        sessionManager.registerHandler(FlyFlagHandler.FACTORY, null);
+        sessionManager.registerHandler(EffectFlagHandler.FACTORY, null);
+        sessionManager.registerHandler(ConsoleCommandFlagHandler.FACTORY, null);
 
 
         if(dToken != null && !dToken.isEmpty()) {
@@ -183,10 +252,6 @@ public class SkyPrisonCore extends JavaPlugin {
             new Placeholders(this, dailyMissions, getDatabase()).register();
             getLogger().info("Placeholders registered");
         }
-        
-        if(Bukkit.getPluginManager().getPlugin("SkyPrisonClaims") != null) {
-            claimPlugin = (SkyPrisonClaims) Bukkit.getPluginManager().getPlugin("SkyPrisonClaims");
-        }
 
         String line;
         String splitBy = ",";
@@ -200,6 +265,42 @@ public class SkyPrisonCore extends JavaPlugin {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
+        // Get the current time
+        LocalTime now = LocalTime.now();
+
+        // Calculate the initial delay by subtracting the current time from one minute past midnight
+        // If the current time is past one minute past midnight, this will be negative, so add 24 hours to get the delay until one minute past midnight the next day
+        long initialDelay = Duration.between(now, LocalTime.of(0, 1)).toMinutes();
+        if (initialDelay < 0) {
+            initialDelay += Duration.ofHours(24).toMinutes();
+        }
+
+/*
+        Timer timer = new Timer();
+        Calendar date = Calendar.getInstance();
+        date.set(
+                Calendar.DAY_OF_WEEK,
+                Calendar.SUNDAY
+        );
+        date.set(Calendar.HOUR, 0);
+        date.set(Calendar.MINUTE, 0);
+        date.set(Calendar.SECOND, 0);
+        date.set(Calendar.MILLISECOND, 0);
+        // Schedule to run every Sunday in midnight
+        timer.schedule(
+                new ReportGenerator(),
+                date.getTime(),
+                1000 * 60 * 60 * 24 * 7
+        );
+*/
+
+
+
+
+        // Schedule the task to run one minute past midnight, every 24 hours
+        dailyExecutor.scheduleAtFixedRate(this::checkDailies, initialDelay, TimeUnit.HOURS.toMinutes(24), TimeUnit.MINUTES);
 
         new BukkitRunnable() {
             @Override
@@ -269,6 +370,10 @@ public class SkyPrisonCore extends JavaPlugin {
             }
             discApi.disconnect();
         }
+
+        shinyTimer.cancel();
+        spongeTimer.cancel();
+        dailyExecutor.shutdown();
         getLogger().info("Disabled SkyPrisonCore v" + getDescription().getVersion());
     }
 
@@ -340,6 +445,11 @@ public class SkyPrisonCore extends JavaPlugin {
         }
     }
 
+    public final MiniMessage miniSerial = MiniMessage.builder()
+            .tags(TagResolver.standard()
+            )
+            .build();
+
     public void registerMinPrice() {
         minPrice.put(Material.BIRCH_LOG, 5.0);
         minPrice.put(Material.BIRCH_PLANKS, 2.0);
@@ -395,7 +505,7 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("purchases")).setExecutor(new Purchases(getDatabase(), this));
         Objects.requireNonNull(getCommand("econcheck")).setExecutor(new EconomyCheck(this));
         Objects.requireNonNull(getCommand("permshop")).setExecutor(new PermShop(this));
-        Objects.requireNonNull(getCommand("spongeloc")).setExecutor(new SpongeLoc(this));
+        Objects.requireNonNull(getCommand("spongeloc")).setExecutor(new SpongeLoc(this, getDatabase()));
         Objects.requireNonNull(getCommand("dropchest")).setExecutor(new DropChest(this));
         Objects.requireNonNull(getCommand("dontsell")).setExecutor(new DontSell(this, getDatabase()));
         Objects.requireNonNull(getCommand("endupgrade")).setExecutor(new EndUpgrade(this));
@@ -424,7 +534,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("plot")).setExecutor(new PlotTeleport(this));
         Objects.requireNonNull(getCommand("moneyhistory")).setExecutor(new MoneyHistory(this));
         Objects.requireNonNull(getCommand("donorreset")).setExecutor(new DonorReset(this));
-        Objects.requireNonNull(getCommand("customenchant")).setExecutor(new CustomEnchant(this));
         Objects.requireNonNull(getCommand("tags")).setExecutor(new Tags(this, getDatabase()));
         Objects.requireNonNull(getCommand("bomb")).setExecutor(new Bomb(this));
         Objects.requireNonNull(getCommand("furnace")).setExecutor(new VirtualFurnace(this));
@@ -432,6 +541,7 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("voucher")).setExecutor(new Voucher(this));
         Objects.requireNonNull(getCommand("randomgive")).setExecutor(new RandomGive(this));
         Objects.requireNonNull(getCommand("customrecipes")).setExecutor(new CustomRecipes(this));
+        Objects.requireNonNull(getCommand("claim")).setExecutor(new Claim(this, getDatabase()));
 
         if(discApi != null) {
             Objects.requireNonNull(getCommand("referral")).setExecutor(new Referral(this, discApi, getDatabase()));
@@ -458,7 +568,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EntityRemoveFromWorld(this), this);
         pm.registerEvents(new InventoryClick(this, new EconomyCheck(this), new DropChest(this), new Bounty(getDatabase(), this),
                 new SecretsGUI(this, getDatabase()), new Daily(this, getDatabase()), new MoneyHistory(this), new EndUpgrade(this),
-                new BuyBack(this, getDatabase()), new SkyPlot(this), getDatabase(), new Tags(this, getDatabase()), particles), this);
+                new BuyBack(this, getDatabase()), new SkyPlot(this), getDatabase(), new Tags(this, getDatabase()), particles, new CustomRecipes(this)), this);
         pm.registerEvents(new InventoryOpen(), this);
         pm.registerEvents(new LeavesDecay(), this);
         pm.registerEvents(new McMMOLevelUp(this), this);
@@ -483,7 +593,10 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PlayerCommandPreprocess(this), this);
         pm.registerEvents(new ParkourFinish(this, dailyMissions), this);
         pm.registerEvents(new PlayerTogglePvP(this), this);
-        pm.registerEvents(new ServerLoad(this, particles), this);
+        pm.registerEvents(new ServerLoad(this, particles, getDatabase()), this);
+        pm.registerEvents(new CrateObtainReward(this, getDatabase()), this);
+        pm.registerEvents(new EntityToggleGlide(), this);
+        pm.registerEvents(new PlayerBucketEmpty(), this);
 
         if(discApi != null) {
             pm.registerEvents(new AsyncPlayerChat(this, discApi, getDatabase(), new Tags(this, getDatabase())), this);
@@ -740,7 +853,14 @@ public class SkyPrisonCore extends JavaPlugin {
             return false;
         }
     }
-
+    public boolean isDouble(String str) {
+        try {
+            Double.parseDouble(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
     public boolean isInt(String str) {
         try {
             Integer.parseInt(str);
@@ -854,7 +974,6 @@ public class SkyPrisonCore extends JavaPlugin {
 
         players.forEach(missions.keySet()::remove);
 
-/*
         for(UUID pUUID : oPlayers) {
             OfflinePlayer offline = Bukkit.getOfflinePlayer(pUUID);
             if(offline.isOnline()) {
@@ -863,7 +982,6 @@ public class SkyPrisonCore extends JavaPlugin {
                 player.sendMessage(colourMessage("&aYour Daily Missions have refreshed!"));
             }
         }
-*/
 
         placeholders = oldMissions.stream().map(id -> "?").collect(Collectors.joining(","));
 

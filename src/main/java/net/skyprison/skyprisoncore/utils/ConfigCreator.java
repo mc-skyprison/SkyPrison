@@ -17,6 +17,7 @@ public class ConfigCreator {
 
 		config.addDefault("builder-worlds", Lists.newArrayList("world_staffbuild_second"));
 		config.addDefault("guard-worlds", Lists.newArrayList("world_prison"));
+		config.addDefault("claim-worlds", Lists.newArrayList("world_free"));
 		config.addDefault("discord-token", "");
 		config.options().copyDefaults(true);
 		plugin.saveConfig();

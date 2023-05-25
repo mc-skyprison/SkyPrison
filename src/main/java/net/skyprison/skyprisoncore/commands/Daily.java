@@ -9,24 +9,19 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 
 public class Daily implements CommandExecutor {
 
@@ -74,8 +69,8 @@ public class Daily implements CommandExecutor {
 		}
 
 		for (int i = 0; i < 27; i++) {
-			switch(i) {
-				case 0:
+			switch (i) {
+				case 0 -> {
 					ItemStack startPane = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
 					ItemMeta startMeta = startPane.getItemMeta();
 					startMeta.setDisplayName(" ");
@@ -85,10 +80,10 @@ public class Daily implements CommandExecutor {
 					startMeta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "daily-reward");
 					startPane.setItemMeta(startMeta);
 					dailyGUI.setItem(i, startPane);
-					break;
-				case 13:
+				}
+				case 13 -> {
 					ItemStack dReward;
-					if(!hasCollected) {
+					if (!hasCollected) {
 						dReward = new ItemStack(Material.CHEST_MINECART);
 					} else {
 						dReward = new ItemStack(Material.MINECART);
@@ -96,7 +91,7 @@ public class Daily implements CommandExecutor {
 					ItemMeta dMeta = dReward.getItemMeta();
 					dMeta.setDisplayName(plugin.colourMessage("&e&lDaily Reward"));
 					ArrayList<String> lore = new ArrayList<>();
-					if(!hasCollected) {
+					if (!hasCollected) {
 						lore.add(plugin.colourMessage("&aClick here to collect your reward!"));
 					} else {
 						lore.add(plugin.colourMessage("&cYou've already collected today!"));
@@ -107,10 +102,8 @@ public class Daily implements CommandExecutor {
 					dMeta.setLore(lore);
 					dReward.setItemMeta(dMeta);
 					dailyGUI.setItem(i, dReward);
-					break;
-				default:
-					dailyGUI.setItem(i, pane);
-					break;
+				}
+				default -> dailyGUI.setItem(i, pane);
 			}
 		}
 		player.openInventory(dailyGUI);

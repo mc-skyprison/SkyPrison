@@ -122,7 +122,7 @@ public class DatabaseHook {
 
         public void createDatabase() {
             ArrayList<String> tables = new ArrayList<>();
-            tables.add("user");
+            tables.add("casino_opens");
             for(String table : tables) {
                 Connection conn;
                 PreparedStatement ps;

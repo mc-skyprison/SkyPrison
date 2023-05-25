@@ -1,3 +1,4 @@
-.idea
-/target
-skyprisoncore.iml
+/.idea
+/.gradle
+/libs
+/build

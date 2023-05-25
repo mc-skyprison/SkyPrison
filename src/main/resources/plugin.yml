@@ -1,7 +1,7 @@
 name: SkyPrisonCore
 authors: [DrakePork, Redhelmet8]
 description: All the Custom Stuffs for SkyPrison
-version: ${project.version}
+version: 7.0.0
 main: net.skyprison.skyprisoncore.SkyPrisonCore
 api-version: 1.18
 website: https://skyprison.net/
@@ -270,11 +270,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.donorreset
     permission-message: §4Error:§c You do not have permission to execute this command...
-  customenchant:
-    description: command relating to donor mine reset
-    usage: /<command>
-    permission: skyprisoncore.command.customenchant
-    permission-message: §4Error:§c You do not have permission to execute this command...
   tags:
     description: Tags command
     usage: /<command>
@@ -314,9 +309,6 @@ permissions:
     description: Gives access to adminchat
   skyprisoncore.command.staff:
     description: Gives access to staffchat
-
-  skyprisoncore.command.customenchant:
-    description: Gives access to buildchat
 
   skyprisoncore.command.discord:
     description: Gives access to discord

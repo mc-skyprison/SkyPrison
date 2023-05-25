@@ -5,6 +5,8 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.command.Command;
@@ -13,16 +15,14 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.channel.TextChannel;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class Discord implements CommandExecutor {
     private final SkyPrisonCore plugin;
@@ -45,16 +45,18 @@ public class Discord implements CommandExecutor {
             }};
 
             db.sqlUpdate(sql, params);
-            player.sendMessage(plugin.colourMessage("&aSuccessfully unlinked your Minecraft and Discord accounts!"));
+            player.sendMessage(Component.text("Successfully unlinked your Minecraft and Discord accounts").color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
         }
     }
 
 
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if(sender instanceof Player) {
             Player player = (Player) sender;
+            Component discordLink = Component.text("Join our discord at ").color(NamedTextColor.DARK_AQUA).appendNewline().append(Component.text("https://skyprison.net/discord").color(NamedTextColor.DARK_BLUE).decorate(TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false);
+
             if(args.length == 0) {
-                player.sendMessage(plugin.colourMessage("&3Join our discord at &9&lhttp://discord.gg/T9DwRcPpgj&3!"));
+                player.sendMessage(discordLink);
             } else if(args.length == 1) {
                 long discordId = 0;
                 try {
@@ -90,11 +92,10 @@ public class Discord implements CommandExecutor {
                                 this::onUnlink,
                                 options
                         );
-                        String msg = plugin.colourMessage("&bTo link your discord account,  &l" + newCode);
-                        player.sendMessage(Component.text(msg).clickEvent(clickEvent));
+                        player.sendMessage(Component.text("To link your discord account, use /link on our discord server and type this code into the field: " + newCode).color(NamedTextColor.AQUA).clickEvent(clickEvent).decoration(TextDecoration.ITALIC, false));
                         plugin.discordLinking.put(newCode, player.getUniqueId());
                     } else {
-                        player.sendMessage(plugin.colourMessage("&cYou've already linked your account!"));
+                        player.sendMessage(Component.text("You've already linked your account!").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
                     }
                 } else if (args[0].equalsIgnoreCase("unlink")) {
                     if(discordId != 0) {
@@ -106,18 +107,12 @@ public class Discord implements CommandExecutor {
                                 this::onUnlink,
                                 options
                         );
-                        String msg = plugin.colourMessage("&bClick here to confirm you wish to unlink your discord account.");
-                        player.sendMessage(Component.text(msg).clickEvent(clickEvent));
+                        player.sendMessage(Component.text("Click here to confirm you wish to unlink your discord account.").color(NamedTextColor.AQUA).clickEvent(clickEvent).decoration(TextDecoration.ITALIC, false));
                     } else {
-                        player.sendMessage(plugin.colourMessage("&cYour account isn't linked to any discord account!"));
+                        player.sendMessage(Component.text("Your account isn't linked to any discord account!").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
                     }
                 } else {
-                    player.sendMessage(plugin.colourMessage("&3Join our discord at &9&lhttp://discord.gg/T9DwRcPpgj&3!"));
-                }
-            } else if(args.length == 2) {
-                if (player.hasPermission("skyprisoncore.command.discord.admin")) {
-/*                    db.deleteUser(args[1]);
-                    player.sendMessage("success???");*/
+                    player.sendMessage(discordLink);
                 }
             } else {
                 if (player.hasPermission("skyprisoncore.command.discord.broadcast")) {
@@ -134,11 +129,14 @@ public class Discord implements CommandExecutor {
                         for (String arg : orgMsg) {
                             cMessage.append(arg).append(" ");
                         }
-                        TextChannel channel = discApi.getTextChannelById(discordId).get();
-                        channel.sendMessage(cMessage.toString());
+                        Optional<TextChannel> optChannel = discApi.getTextChannelById(discordId);
+                        if(optChannel.isPresent()) {
+                            TextChannel channel = optChannel.get();
+                            channel.sendMessage(cMessage.toString());
+                        }
                     }
                 } else {
-                    player.sendMessage(plugin.colourMessage("&cYou do not have access to this!"));
+                    player.sendMessage(Component.text("You don't have access to this command!").color(NamedTextColor.RED));
                 }
             }
         } else {
@@ -156,8 +154,11 @@ public class Discord implements CommandExecutor {
                     for (String arg : orgMsg) {
                         cMessage.append(arg).append(" ");
                     }
-                    TextChannel channel = discApi.getTextChannelById(discordId).get();
-                    channel.sendMessage(cMessage.toString());
+                    Optional<TextChannel> optChannel = discApi.getTextChannelById(discordId);
+                    if(optChannel.isPresent()) {
+                        TextChannel channel = optChannel.get();
+                        channel.sendMessage(cMessage.toString());
+                    }
                 }
             }
         }

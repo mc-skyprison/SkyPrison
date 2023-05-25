@@ -164,7 +164,7 @@ public class DailyMissions {
                     missionsToGive.add(mission  + ":" + (randInt.nextInt(1500) + 500));
                     break;
                 case "sponge": // SpongeFound IMPLEMENTED
-                    missionsToGive.add(mission  + ":" + (randInt.nextInt(2) + 2));
+                    missionsToGive.add(mission  + ":" + (randInt.nextInt(1) + 2));
                     break;
                 case "bomb": // BlockPlace IMPLEMENTED
                     missionsToGive.add(mission  + ":" + (randInt.nextInt(5) + 5));

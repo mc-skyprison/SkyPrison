@@ -2,7 +2,9 @@ package net.skyprison.skyprisoncore.listeners;
 
 import dev.esophose.playerparticles.api.PlayerParticlesAPI;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.ShinyGrassTask;
+import net.skyprison.skyprisoncore.utils.SpongeTask;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -17,15 +19,19 @@ public class ServerLoad implements Listener {
 
     private final SkyPrisonCore plugin;
     private final PlayerParticlesAPI particles;
+    private final DatabaseHook hook;
 
-    public ServerLoad(SkyPrisonCore plugin, PlayerParticlesAPI particles) {
+    public ServerLoad(SkyPrisonCore plugin, PlayerParticlesAPI particles, DatabaseHook hook) {
         this.plugin = plugin;
         this.particles = particles;
+        this.hook = hook;
     }
 
 
     @EventHandler
     public void onServerLoad(ServerLoadEvent event) {
+        plugin.spongeTimer.schedule(new SpongeTask(plugin, hook), TimeUnit.MINUTES.toMillis(0));
+
         int radius = 300;
         World prisonWorld = Bukkit.getWorld("world_prison");
         for(int x = -radius; x <= radius; x++) {

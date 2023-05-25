@@ -28,10 +28,10 @@ public enum RandomReward {
     DIAMOND(1, "", "&8&oOooo, shiny!"),
     IRON_INGOT(5, "", "&8&oLooks rusty.."),
     GOLD_INGOT(2.5, "", "&8&oWe're rich!"),
-    LAPIS_LAZULI(2.5, "Allay Dust", "&8&oShould keep this hidden from the guards.."),
+    LAPIS_LAZULI(3, "Allay Dust", "&8&oShould keep this hidden from the guards.."),
     GOLD_NUGGET(2.5, "Lost Tooth", "&8&o"),
 
-    MAGGOTY_BREAD(2.5, "Maggoty Bread", "&8&oWe ain't had nothing but maggoty bread for three stinking days!"),
+    MAGGOTY_BREAD(3, "Maggoty Bread", "&8&oWe ain't had nothing but maggoty bread for three stinking days!"),
     SUSPICIOUS_MEAT(2.5, "Suspicous Meat", "&8&oLooks like meat's back on the menu, boys!"),
     GOLDEN_APPLE(1, "Golden Delight", "&8&oLooks delicious."),
 
@@ -40,6 +40,9 @@ public enum RandomReward {
     WORN_TOOL(5, "Worn", "&8&oStarted to rust.."),
     USED_TOOL(1.5, "Used", "&8&oSlightly used.."),
     NEW_TOOL(0.1, "Brand New", "&8&oSparkly new!"),
+
+    GLOW_BERRIES(1.5, "", ""),
+    SWEET_BERRIES(2.0, "", ""),
 
     FECES(0.5, "Brown Surprise", "&8&oThat wasnt a mushroom..");
 

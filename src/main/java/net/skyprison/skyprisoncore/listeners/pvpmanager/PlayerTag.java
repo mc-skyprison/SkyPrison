@@ -27,7 +27,7 @@ public class PlayerTag implements Listener {
         LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
         RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
         RegionQuery query = container.createQuery();
-        if (query.testState(toLoc, localPlayer, plugin.claimPlugin.FLY)) {
+        if (query.testState(toLoc, localPlayer, plugin.FLY)) {
             plugin.flyPvP.put(player.getUniqueId(), true);
         }
     }

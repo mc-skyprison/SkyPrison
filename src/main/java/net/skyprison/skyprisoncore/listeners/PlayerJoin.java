@@ -1,9 +1,18 @@
 package net.skyprison.skyprisoncore.listeners;
 
+import com.sk89q.worldedit.LocalSession;
+import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.regions.RegionSelector;
+import com.sk89q.worldedit.regions.selector.CuboidRegionSelector;
+import com.sk89q.worldedit.regions.selector.RegionSelectorType;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
 import dev.esophose.playerparticles.api.PlayerParticlesAPI;
@@ -14,6 +23,7 @@ import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -48,9 +58,32 @@ public class PlayerJoin implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            Player player = event.getPlayer();
+        Player player = event.getPlayer();
+        Location loc = player.getLocation();
+        if(plugin.customClaimShape.containsKey(player.getUniqueId())) {
+            LocalSession session = WorldEdit.getInstance().getSessionManager().get(BukkitAdapter.adapt(player));
+            RegionSelector newSelector = new CuboidRegionSelector(session.getRegionSelector(BukkitAdapter.adapt(player.getWorld())));
+            session.setDefaultRegionSelector(RegionSelectorType.CUBOID);
+            session.setRegionSelector(BukkitAdapter.adapt(player.getWorld()), newSelector);
+        }
+        if(loc.getWorld().getName().equalsIgnoreCase("world_prison")) {
+            RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+            RegionManager regions = container.get(BukkitAdapter.adapt(player.getWorld()));
+            assert regions != null;
+            ApplicableRegionSet regionList = regions.getApplicableRegions(BlockVector3.at(loc.getX(), loc.getY(), loc.getZ()));
+            for(ProtectedRegion region : regionList.getRegions()) {
+                if(region.getId().contains("mine")) {
+                    if(loc.getBlock().isSolid() && loc.clone().offset(0, 1, 0).toLocation(loc.getWorld()).getBlock().isSolid()) {
+                        plugin.asConsole("warp " + region.getId() + " " + player.getName());
+                    }
+                    break;
+                } else if(region.getId().equalsIgnoreCase("guard-secretview")) {
+                    plugin.asConsole("warp prison " + player.getName());
+                }
+            }
+        }
 
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             EmbedBuilder embedJoin;
             Connection conn;
             PreparedStatement ps;
@@ -108,7 +141,7 @@ public class PlayerJoin implements Listener {
             LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
             RegionQuery query = container.createQuery();
             if(!player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
-                player.setAllowFlight(query.testState(locWE, localPlayer, plugin.claimPlugin.FLY));
+                player.setAllowFlight(query.testState(locWE, localPlayer, plugin.FLY));
             }
 
             if(!plugin.userTags.containsKey(player.getUniqueId())) {
