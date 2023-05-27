@@ -20,20 +20,18 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class EntityDeath implements Listener {
     private final SkyPrisonCore plugin;
     private final Safezone safezone;
-    private final DatabaseHook hook;
+    private final DatabaseHook db;
     private final DailyMissions dailyMissions;
 
-    public EntityDeath(SkyPrisonCore plugin, Safezone safezone, DatabaseHook hook, DailyMissions dailyMissions) {
+    public EntityDeath(SkyPrisonCore plugin, Safezone safezone, DatabaseHook db, DailyMissions dailyMissions) {
         this.plugin = plugin;
         this.safezone = safezone;
-        this.hook = hook;
+        this.db = db;
         this.dailyMissions = dailyMissions;
     }
     @EventHandler
@@ -89,8 +87,7 @@ public class EntityDeath implements Listener {
             }
         }
 
-        if(event.getEntity() instanceof Player && event.getEntity().getKiller() != null) {
-            Player killed = (Player) event.getEntity();
+        if(event.getEntity() instanceof Player killed && killed.getKiller() != null) {
             Player killer = killed.getKiller();
             if(!killed.equals(killer)) {
                 if(!killed.getWorld().getName().equalsIgnoreCase("world_event") && !killed.getWorld().getName().equalsIgnoreCase("world_war")) {
@@ -99,15 +96,13 @@ public class EntityDeath implements Listener {
                     //
                     double bounty = 0.0;
                     boolean hasBounty = false;
-                    try {
-                        Connection conn = hook.getSQLConnection();
-                        PreparedStatement ps = conn.prepareStatement("SELECT prize FROM bounties WHERE user_id = '" + killed.getUniqueId() + "'");
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT prize FROM bounties WHERE user_id = ?")) {
+                        ps.setString(1, killed.getUniqueId().toString());
                         ResultSet rs = ps.executeQuery();
                         while(rs.next()) {
                             bounty = rs.getDouble(1);
                             hasBounty = true;
                         }
-                        hook.close(ps, rs, conn);
                     } catch (SQLException e) {
                         e.printStackTrace();
                     }
@@ -120,11 +115,12 @@ public class EntityDeath implements Listener {
                                 online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "]" + ChatColor.YELLOW + " " + killer.getName() + " has claimed the bounty on " + killed.getName() + "!");
                             }
                         }
-                        String sql = "DELETE FROM bounties WHERE user_id = ?";
-                        List<Object> params = new ArrayList<>() {{
-                            add(killed.getUniqueId().toString());
-                        }};
-                        hook.sqlUpdate(sql, params);
+                        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM bounties WHERE user_id = ?")) {
+                            ps.setString(1, killed.getUniqueId().toString());
+                            ps.executeUpdate();
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
                     }
 
                     //
@@ -137,41 +133,37 @@ public class EntityDeath implements Listener {
                     int deaths = 0;
                     int kills = 0;
                     int killstreak = 0;
-                    try {
-                        Connection conn = hook.getSQLConnection();
-                        PreparedStatement ps = conn.prepareStatement("SELECT pvp_kills, pvp_killstreak FROM users WHERE user_id = '" + killer.getUniqueId() + "'");
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT pvp_kills, pvp_killstreak FROM users WHERE user_id = ?")) {
+                        ps.setString(1, killer.getUniqueId().toString());
+
                         ResultSet rs = ps.executeQuery();
                         while(rs.next()) {
                             kills = rs.getInt(1);
                             killstreak = rs.getInt(2);
                         }
-                        hook.close(ps, rs, conn);
                     } catch (SQLException e) {
                         e.printStackTrace();
                     }
 
-                    try {
-                        Connection conn = hook.getSQLConnection();
-                        PreparedStatement ps = conn.prepareStatement("SELECT killed_on FROM recently_killed WHERE killer_id = '" + killer.getUniqueId() + "' AND killed_id = '" + killed.getUniqueId() + "'");
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT killed_on FROM recently_killed WHERE killer_id = ? AND killed_id = ?")) {
+                        ps.setString(1, killer.getUniqueId().toString());
+                        ps.setString(2, killed.getUniqueId().toString());
                         ResultSet rs = ps.executeQuery();
                         while(rs.next()) {
                             hasKilled = true;
                             killedOn = rs.getLong(1);
                         }
-                        hook.close(ps, rs, conn);
                     } catch (SQLException e) {
                         e.printStackTrace();
                     }
 
 
-                    try {
-                        Connection conn = hook.getSQLConnection();
-                        PreparedStatement ps = conn.prepareStatement("SELECT pvp_deaths FROM users WHERE user_id = '" + killed.getUniqueId() + "'");
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT pvp_deaths FROM users WHERE user_id = ?")) {
+                        ps.setString(1, killed.getUniqueId().toString());
                         ResultSet rs = ps.executeQuery();
                         while(rs.next()) {
                             deaths = rs.getInt(1);
                         }
-                        hook.close(ps, rs, conn);
                     } catch (SQLException e) {
                         e.printStackTrace();
                     }
@@ -227,20 +219,22 @@ public class EntityDeath implements Listener {
             plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 30, "Kill Streak", String.valueOf(pKillStreak));
         }
 
-        String sql = "UPDATE users SET pvp_kills = pvp_kills + ?, pvp_killstreak = pvp_killstreak + ? WHERE user_id = ?";
-        List<Object> params = new ArrayList<>() {{
-            add(1);
-            add(1);
-            add(killer.getUniqueId().toString());
-        }};
-        hook.sqlUpdate(sql, params);
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET pvp_kills = pvp_kills + ?, pvp_killstreak = pvp_killstreak + ? WHERE user_id = ?")) {
+            ps.setInt(1, 1);
+            ps.setInt(2, 1);
+            ps.setString(3, killer.getUniqueId().toString());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
-        sql = "UPDATE users SET pvp_deaths = pvp_deaths + ?, pvp_killstreak = 0 WHERE user_id = ?";
-        params = new ArrayList<>() {{
-            add(1);
-            add(killed.getUniqueId().toString());
-        }};
-        hook.sqlUpdate(sql, params);
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET pvp_deaths = pvp_deaths + ?, pvp_killstreak = 0 WHERE user_id = ?")) {
+            ps.setInt(1, 1);
+            ps.setString(2, killed.getUniqueId().toString());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public void pvpSet(Player killed, Player killer, boolean hasKilled) {
@@ -252,25 +246,13 @@ public class EntityDeath implements Listener {
             plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 1, "Player Kill", killed.getName());
         }
 
-
-        String sql;
-        List<Object> params;
-        if(hasKilled) {
-            sql = "UPDATE recently_killed SET killed_on = ? WHERE killer_id = ? AND killed_id = ?";
-            params = new ArrayList<>() {{
-                add(System.currentTimeMillis());
-                add(killer.getUniqueId().toString());
-                add(killed.getUniqueId().toString());
-            }};
-        } else {
-            sql = "INSERT INTO recently_killed (killer_id, killed_id, killed_on) VALUES (?, ?, ?)";
-            params = new ArrayList<>() {{
-                add(killer.getUniqueId().toString());
-                add(killed.getUniqueId().toString());
-                add(System.currentTimeMillis());
-            }};
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO recently_killed (killer_id, killed_id, killed_on) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE killed_on = VALUE(killed_on)")) {
+            ps.setString(1, killer.getUniqueId().toString());
+            ps.setString(2, killed.getUniqueId().toString());
+            ps.setLong(3, System.currentTimeMillis());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-
-        hook.sqlUpdate(sql, params);
     }
 }

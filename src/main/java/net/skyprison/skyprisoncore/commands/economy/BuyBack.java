@@ -27,24 +27,22 @@ import java.util.List;
 
 public class BuyBack implements CommandExecutor {
 	private final SkyPrisonCore plugin;
-	private final DatabaseHook hook;
+	private final DatabaseHook db;
 
-	public BuyBack(SkyPrisonCore plugin, DatabaseHook hook) {
+	public BuyBack(SkyPrisonCore plugin, DatabaseHook db) {
 		this.plugin = plugin;
-		this.hook = hook;
+		this.db = db;
 	}
 
 	public void openGUI(Player player) {
 		List<String> soldItems = new ArrayList<>();
 
-		try {
-			Connection conn = hook.getSQLConnection();
-			PreparedStatement ps = conn.prepareStatement("SELECT recent_item, recent_amount, recent_price, recent_id FROM recent_sells WHERE user_id = '" + player.getUniqueId() + "'");
+		try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT recent_item, recent_amount, recent_price, recent_id FROM recent_sells WHERE user_id = ?")) {
+			ps.setString(1, player.getUniqueId().toString());
 			ResultSet rs = ps.executeQuery();
 			while(rs.next()) {
 				soldItems.add(rs.getString(1) + "/" + rs.getInt(2) + "/" + rs.getFloat(3) + "/" + rs.getInt(4));
 			}
-			hook.close(ps, rs, conn);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}

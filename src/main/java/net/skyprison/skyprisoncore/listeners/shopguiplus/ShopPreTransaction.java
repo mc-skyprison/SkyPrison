@@ -13,10 +13,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class ShopPreTransaction implements Listener {
-    private final DatabaseHook hook;
+    private final DatabaseHook db;
 
-    public ShopPreTransaction(DatabaseHook hook) {
-        this.hook = hook;
+    public ShopPreTransaction(DatabaseHook db) {
+        this.db = db;
     }
 
     @EventHandler
@@ -27,14 +27,13 @@ public class ShopPreTransaction implements Listener {
             boolean isBlocked = false;
 
             String iName = event.getShopItem().getItem().getType().name();
-            try {
-                Connection conn = hook.getSQLConnection();
-                PreparedStatement ps = conn.prepareStatement("SELECT block_item FROM block_sells WHERE user_id = '" + player.getUniqueId() + "' AND block_item = '" + iName + "'");
+            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT block_item FROM block_sells WHERE user_id = ? AND block_item = ?")) {
+                ps.setString(1, player.getUniqueId().toString());
+                ps.setString(2, iName);
                 ResultSet rs = ps.executeQuery();
                 while(rs.next()) {
                     isBlocked = true;
                 }
-                hook.close(ps, rs, conn);
             } catch (SQLException e) {
                 e.printStackTrace();
             }

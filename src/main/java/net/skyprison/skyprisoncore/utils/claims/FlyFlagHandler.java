@@ -9,12 +9,15 @@ import com.sk89q.worldguard.session.MoveType;
 import com.sk89q.worldguard.session.Session;
 import com.sk89q.worldguard.session.handler.FlagValueChangeHandler;
 import com.sk89q.worldguard.session.handler.Handler;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 
 public class FlyFlagHandler extends FlagValueChangeHandler<State> {
-    public static final FlyFlagHandler.Factory FACTORY = new FlyFlagHandler.Factory();
+    public static final Factory FACTORY = new Factory();
     public static class Factory extends Handler.Factory<FlyFlagHandler> {
         @Override
         public FlyFlagHandler create(Session session) {
@@ -22,11 +25,21 @@ public class FlyFlagHandler extends FlagValueChangeHandler<State> {
         }
     }
     public FlyFlagHandler(Session session) {
-        super(session, CustomFlags.FLY);
+        super(session, SkyPrisonCore.FLY);
     }
 
     @Override
     protected void onInitialValue(LocalPlayer player, ApplicableRegionSet set, State value) {
+        Player p = BukkitAdapter.adapt(player);
+        if(!p.getGameMode().equals(GameMode.CREATIVE) && !p.getGameMode().equals(GameMode.SPECTATOR)) {
+            if (value == State.ALLOW) {
+                p.setAllowFlight(true);
+                p.sendMessage(Component.text("You can fly now!").color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+            } else if (value == State.DENY && p.getAllowFlight()) {
+                p.setAllowFlight(false);
+                p.sendMessage(Component.text("You can no longer fly!").color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+            }
+        }
     }
 
     @Override
@@ -35,10 +48,10 @@ public class FlyFlagHandler extends FlagValueChangeHandler<State> {
         if(!p.getGameMode().equals(GameMode.CREATIVE) && !p.getGameMode().equals(GameMode.SPECTATOR)) {
             if (currentValue == State.ALLOW && (lastValue == State.DENY || lastValue == null)) {
                 p.setAllowFlight(true);
-                p.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "You can fly now!");
+                p.sendMessage(Component.text("You can fly now!").color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
             } else if (currentValue == State.DENY && lastValue == State.ALLOW) {
                 p.setAllowFlight(false);
-                p.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "You can no longer fly!");
+                p.sendMessage(Component.text("You can no longer fly!").color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
             }
         }
         return true;
@@ -50,7 +63,7 @@ public class FlyFlagHandler extends FlagValueChangeHandler<State> {
         if(!p.getGameMode().equals(GameMode.CREATIVE) && !p.getGameMode().equals(GameMode.SPECTATOR)) {
             if (lastValue == State.ALLOW) {
                 p.setAllowFlight(false);
-                p.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "You can no longer fly!");
+                p.sendMessage(Component.text("You can no longer fly!").color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
             }
         }
         return true;

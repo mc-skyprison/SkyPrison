@@ -4,8 +4,10 @@ import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.world.entity.EntityType;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.flags.*;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
@@ -13,17 +15,19 @@ import com.sk89q.worldguard.protection.regions.RegionContainer;
 import dev.esophose.playerparticles.api.PlayerParticlesAPI;
 import dev.esophose.playerparticles.particles.ParticleEffect;
 import dev.esophose.playerparticles.styles.ParticleStyle;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.commands.CustomRecipes;
-import net.skyprison.skyprisoncore.commands.Daily;
-import net.skyprison.skyprisoncore.commands.SkyPlot;
-import net.skyprison.skyprisoncore.commands.Tags;
+import net.skyprison.skyprisoncore.commands.*;
 import net.skyprison.skyprisoncore.commands.economy.*;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
 import net.skyprison.skyprisoncore.inventories.ClaimFlags;
 import net.skyprison.skyprisoncore.inventories.ClaimFlagsMobs;
 import net.skyprison.skyprisoncore.inventories.ClaimMembers;
+import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import org.apache.commons.lang.WordUtils;
 import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -60,14 +64,14 @@ public class InventoryClick implements Listener {
     private final EndUpgrade endUpgrade;
     private final BuyBack buyBack;
     private final SkyPlot skyPlot;
-    private final DatabaseHook hook;
+    private final DatabaseHook db;
     private final Tags tag;
     private final PlayerParticlesAPI particles;
     private final CustomRecipes customRecipes;
 
     public InventoryClick(SkyPrisonCore plugin, EconomyCheck econCheck, DropChest dropChest, Bounty bounty,
                           SecretsGUI secretsGUI, Daily daily, MoneyHistory moneyHistory, EndUpgrade endUpgrade,
-                          BuyBack buyBack, SkyPlot skyPlot, DatabaseHook hook, Tags tag, PlayerParticlesAPI particles, CustomRecipes customRecipes) {
+                          BuyBack buyBack, SkyPlot skyPlot, DatabaseHook db, Tags tag, PlayerParticlesAPI particles, CustomRecipes customRecipes) {
         this.plugin = plugin;
         this.econCheck = econCheck;
         this.chestDrop = dropChest;
@@ -78,7 +82,7 @@ public class InventoryClick implements Listener {
         this.endUpgrade = endUpgrade;
         this.buyBack = buyBack;
         this.skyPlot = skyPlot;
-        this.hook = hook;
+        this.db = db;
         this.tag = tag;
         this.particles = particles;
         this.customRecipes = customRecipes;
@@ -87,7 +91,7 @@ public class InventoryClick implements Listener {
     public boolean isStick(ItemStack i) {
         if (i != null) {
             return i.getType() == Material.STICK && i.getItemMeta().hasDisplayName()
-                    && i.getItemMeta().getDisplayName().contains("Santa's")
+                    && PlainTextComponentSerializer.plainText().serialize(Objects.requireNonNull(i.getItemMeta().displayName())).contains("Santa's")
                     && (i.getItemMeta().hasEnchant(Enchantment.KNOCKBACK) && (i.getItemMeta().getEnchantLevel(Enchantment.KNOCKBACK) > 1));
         }
         return false;
@@ -97,7 +101,7 @@ public class InventoryClick implements Listener {
         for (int n = 0; n < player.getInventory().getSize(); n++) {
             ItemStack i = player.getInventory().getItem(n);
             if (isStick(i)) {
-                ItemMeta asd = i.getItemMeta();
+                ItemMeta asd = Objects.requireNonNull(i).getItemMeta();
                 asd.removeEnchant(Enchantment.KNOCKBACK);
                 asd.addEnchant(Enchantment.KNOCKBACK, 1, true);
                 i.setItemMeta(asd);
@@ -112,12 +116,215 @@ public class InventoryClick implements Listener {
             if (event.getClickedInventory() instanceof PlayerInventory) {
                 InvStickFix(player);
             }
-            if (Objects.requireNonNull(event.getClickedInventory()).getHolder() instanceof ClaimFlags) {
+            if(event.getClickedInventory() != null && event.getClickedInventory().getHolder() instanceof CustomInventory customInv) {
 
-            } else if (event.getClickedInventory().getHolder() instanceof ClaimFlagsMobs) {
+                switch (customInv.defaultClickBehavior()) {
+                    case DISABLE_ALL, ENABLE_SPECIFIC -> event.setCancelled(true);
+                }
 
-            } else if (event.getClickedInventory().getHolder() instanceof ClaimMembers) {
+                if (customInv instanceof ClaimFlags inv) {
+                    Component prefix = new Claim(plugin, db).prefix;
+                    if(event.getCurrentItem() != null) {
+                        Material clickedMat = event.getCurrentItem().getType();
+                        switch (event.getSlot()) {
+                            case 47 -> {
+                                if (clickedMat.equals(Material.PAPER)) {
+                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage() - 1).getInventory());
+                                }
+                            }
+                            case 48 -> {
+                                if (clickedMat.equals(Material.WRITABLE_BOOK)) {
+                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getNextCategory(inv.getCategory()), 1).getInventory());
+                                }
+                            }
+                            case 50 -> {
+                                if (clickedMat.equals(Material.ZOMBIE_SPAWN_EGG)) {
+                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), true, "", 1).getInventory());
+                                }
+                            }
+                            case 51 -> {
+                                if (clickedMat.equals(Material.PAPER)) {
+                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage() + 1).getInventory());
+                                }
+                            }
+                            default -> {
+                                if(!clickedMat.isEmpty() && !clickedMat.name().endsWith("GLASS_PANE")) {
+                                    plugin.tellConsole("wham1");
+                                    NamespacedKey flagKey = new NamespacedKey(plugin, "flags");
+                                    String flagsCombined = event.getCurrentItem().getPersistentDataContainer().get(flagKey, PersistentDataType.STRING);
+                                    if(flagsCombined != null) {
+                                        plugin.tellConsole("wham2");
+                                        RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
+                                        RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld(inv.getWorld()))));
+                                        if(regionManager != null) {
+                                            plugin.tellConsole("wham3");
+                                            ProtectedRegion region = regionManager.getRegion(inv.getClaimId());
+                                            if(region != null) {
+                                                plugin.tellConsole("wham3");
+                                                String[] flagStrings = flagsCombined.split(",");
+                                                Flag<?> flag = Flags.fuzzyMatchFlag(WorldGuard.getInstance().getFlagRegistry(), flagStrings[0]);
+                                                if(region.getFlag(flag) != null) {
+                                                    plugin.tellConsole("wham4");
+                                                    if(flag instanceof StateFlag stateFlag) {
+                                                        plugin.tellConsole("wham5-1");
+                                                        if(Objects.equals(region.getFlag(stateFlag), StateFlag.State.ALLOW)) {
+                                                            region.setFlag(stateFlag, StateFlag.State.ALLOW);
+                                                            player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()).getInventory());
+                                                        } else if(Objects.equals(region.getFlag(stateFlag), StateFlag.State.DENY)) {
+                                                            region.setFlag(stateFlag, null);
+                                                            player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()).getInventory());
+                                                        }
+                                                    } else if(flag instanceof StringFlag stringFlag) {
+                                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList(stringFlag, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
+                                                        player.closeInventory();
+                                                        if(!stringFlag.equals(Flags.TIME_LOCK)) {
+                                                            player.sendMessage(prefix
+                                                                    .append(Component.text("Enter the new " + WordUtils.capitalize(stringFlag.getName().replace("-", " ")))
+                                                                            .color(TextColor.fromHexString("#20df80"))));
+                                                        } else {
+                                                            player.sendMessage(prefix
+                                                                    .append(Component.text("Enter the time you want in 24:00 hour time")
+                                                                            .color(TextColor.fromHexString("#20df80"))));
+                                                        }
+                                                    } else if(flag instanceof RegistryFlag<?> registryFlag) {
+                                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList(registryFlag, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
+                                                        player.closeInventory();
+                                                    }
+                                                } else {
+                                                    plugin.tellConsole("wham4-1");
+                                                    if(flag instanceof StateFlag stateFlag) {
+                                                        plugin.tellConsole("wham5-1");
+                                                        region.setFlag(stateFlag, StateFlag.State.ALLOW);
+                                                        player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()).getInventory());
+                                                    } else if(flag instanceof StringFlag stringFlag) {
+                                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList(stringFlag, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
+                                                        player.closeInventory();
+                                                        if(!stringFlag.equals(Flags.TIME_LOCK)) {
+                                                            player.sendMessage(prefix
+                                                                    .append(Component.text("Enter the new " + WordUtils.capitalize(stringFlag.getName().replace("-", " ")))
+                                                                            .color(TextColor.fromHexString("#20df80"))));
+                                                        } else {
+                                                            player.sendMessage(prefix
+                                                                    .append(Component.text("Enter the time you want in 24:00 hour time")
+                                                                            .color(TextColor.fromHexString("#20df80"))));
+                                                        }
+                                                    } else if(flag instanceof RegistryFlag<?> registryFlag) {
+                                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList(registryFlag, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
+                                                        player.closeInventory();
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if (customInv instanceof ClaimFlagsMobs inv) {
+                    if(event.getCurrentItem() != null) {
+                        Material clickedMat = event.getCurrentItem().getType();
+                        switch (event.getSlot()) {
+                            case 45 -> {
+                                if (clickedMat.equals(Material.PLAYER_HEAD)) {
+                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), "", 1).getInventory());
+                                }
+                            }
+                            case 47 -> {
+                                if (clickedMat.equals(Material.PAPER)) {
+                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getIsAllowed(), inv.getCategory(), inv.getPage() - 1).getInventory());
+                                }
+                            }
+                            case 48 -> {
+                                if (clickedMat.equals(Material.SPAWNER)) {
+                                    RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
+                                    RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld(inv.getWorld()))));
+                                    if (regionManager != null) {
+                                        ProtectedRegion region = regionManager.getRegion(inv.getClaimId());
+                                        if (region != null) {
+                                            if(region.getFlag(Flags.MOB_SPAWNING) != null) {
+                                                region.setFlag(Flags.MOB_SPAWNING, null);
+                                            } else {
+                                                region.setFlag(Flags.MOB_SPAWNING, StateFlag.State.DENY);
+                                            }
+                                        }
+                                    }
+                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getIsAllowed(), inv.getCategory(), inv.getPage()).getInventory());
+                                }
+                            }
+                            case 49 -> {
+                                if(clickedMat.equals(Material.LIME_CONCRETE)) {
+                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), false, inv.getCategory(), inv.getPage()).getInventory());
+                                } else if(clickedMat.equals(Material.RED_CONCRETE)) {
+                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), true, inv.getCategory(), inv.getPage()).getInventory());
 
+                                }
+                            }
+/*                            case 50 -> {
+                                if (clickedMat.equals(Material.WRITABLE_BOOK)) {
+                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getIsAllowed(), inv.getNextCategory(inv.getCategory()), 1).getInventory());
+                                }
+                            }*/
+                            case 51 -> {
+                                if (clickedMat.equals(Material.PAPER)) {
+                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getIsAllowed(), inv.getCategory(), inv.getPage() + 1).getInventory());
+                                }
+                            }
+                            default -> {
+                                if(!clickedMat.isEmpty() && !clickedMat.name().endsWith("GLASS_PANE")) {
+                                    plugin.tellConsole("wham1");
+                                    NamespacedKey mobKey = new NamespacedKey(plugin, "mob");
+                                    String mobName = event.getCurrentItem().getPersistentDataContainer().get(mobKey, PersistentDataType.STRING);
+                                    if(mobName != null) {
+                                        plugin.tellConsole("wham2");
+                                        RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
+                                        RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld(inv.getWorld()))));
+                                        if(regionManager != null) {
+                                            plugin.tellConsole("wham3");
+                                            ProtectedRegion region = regionManager.getRegion(inv.getClaimId());
+                                            if(region != null) {
+                                                plugin.tellConsole("wham4");
+                                                Set<EntityType> deniedMobs = region.getFlag(Flags.DENY_SPAWN);
+                                                if(deniedMobs != null) {
+                                                    plugin.tellConsole("wham5");
+                                                    EntityType mob = BukkitAdapter.adapt(org.bukkit.entity.EntityType.valueOf(mobName));
+                                                    if (inv.getIsAllowed()) {
+                                                        plugin.tellConsole("wham6");
+                                                        deniedMobs.add(mob);
+                                                    } else {
+                                                        deniedMobs.remove(mob);
+                                                    }
+                                                    region.setFlag(Flags.DENY_SPAWN, deniedMobs);
+                                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getIsAllowed(), inv.getCategory(), inv.getPage()).getInventory());
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if (customInv instanceof ClaimMembers inv) {
+                    if(event.getCurrentItem() != null) {
+                        Material clickedMat = event.getCurrentItem().getType();
+                        switch (event.getSlot()) {
+                            case 47 -> {
+                                if (clickedMat.equals(Material.PAPER)) {
+                                    player.openInventory(new ClaimMembers(plugin, inv.getClaimName(), inv.getMembers(), inv.getCategory(), inv.getPage() - 1).getInventory());
+                                }
+                            }
+                            case 49 -> {
+                                if (clickedMat.equals(Material.WRITABLE_BOOK)) {
+                                    player.openInventory(new ClaimMembers(plugin, inv.getClaimName(), inv.getMembers(), inv.getNextCategory(inv.getCategory()), 1).getInventory());
+                                }
+                            }
+                            case 51 -> {
+                                if (clickedMat.equals(Material.PAPER)) {
+                                    player.openInventory(new ClaimMembers(plugin, inv.getClaimName(), inv.getMembers(), inv.getCategory(), inv.getPage() + 1).getInventory());
+                                }
+                            }
+                        }
+                    }
+                }
             } else {
                 CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
                 user.getCMIPlayTime().getPlayDayOfToday().getTotalTime();
@@ -200,14 +407,15 @@ public class InventoryClick implements Listener {
                                                         NamespacedKey posKey = new NamespacedKey(plugin, "sold-id");
                                                         int buyId = buyData.get(posKey, PersistentDataType.INTEGER);
 
-                                                        String sql = "DELETE FROM recent_sells WHERE recent_id = ?";
-                                                        List<Object> params = new ArrayList<>() {{
-                                                            add(buyId);
-                                                        }};
-                                                        hook.sqlUpdate(sql, params);
-                                                        plugin.asConsole("give " + player.getName() + " " + itemType + " " + itemAmount);
-                                                        plugin.asConsole("money take " + player.getName() + " " + itemPrice);
-                                                        buyBack.openGUI(player);
+                                                        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM recent_sells WHERE recent_id = ?")) {
+                                                            ps.setInt(1, buyId);
+                                                            ps.executeUpdate();
+                                                            plugin.asConsole("give " + player.getName() + " " + itemType + " " + itemAmount);
+                                                            plugin.asConsole("money take " + player.getName() + " " + itemPrice);
+                                                            buyBack.openGUI(player);
+                                                        } catch (SQLException e) {
+                                                            e.printStackTrace();
+                                                        }
                                                     } else {
                                                         player.sendMessage(plugin.colourMessage("&cYou do not have enough money!"));
                                                     }
@@ -589,9 +797,8 @@ public class InventoryClick implements Listener {
                                             int totalCollected = 0;
                                             String lastColl = "";
 
-                                            try {
-                                                Connection conn = hook.getSQLConnection();
-                                                PreparedStatement ps = conn.prepareStatement("SELECT current_streak, highest_streak, total_collected, last_collected FROM dailies WHERE user_id = '" + player.getUniqueId() + "'");
+                                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT current_streak, highest_streak, total_collected, last_collected FROM dailies WHERE user_id = ?")) {
+                                                ps.setString(1, player.getUniqueId().toString());
                                                 ResultSet rs = ps.executeQuery();
                                                 while (rs.next()) {
                                                     currStreak = rs.getInt(1);
@@ -599,7 +806,6 @@ public class InventoryClick implements Listener {
                                                     totalCollected = rs.getInt(3);
                                                     lastColl = rs.getString(4);
                                                 }
-                                                hook.close(ps, rs, conn);
                                             } catch (SQLException e) {
                                                 e.printStackTrace();
                                             }
@@ -631,35 +837,39 @@ public class InventoryClick implements Listener {
 
                                             if (!lastColl.isEmpty()) {
                                                 if (currStreak >= highestStreak) {
-                                                    sql = "UPDATE dailies SET current_streak = ?, highest_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?";
-                                                    params = new ArrayList<>() {{
-                                                        add(nCurrStreak);
-                                                        add(nCurrStreak);
-                                                        add(currDate);
-                                                        add(nTotalCollected);
-                                                        add(user.getUniqueId().toString());
-                                                    }};
+                                                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE dailies SET current_streak = ?, highest_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?")) {
+                                                        ps.setInt(1, nCurrStreak);
+                                                        ps.setInt(2, nCurrStreak);
+                                                        ps.setString(3, currDate);
+                                                        ps.setInt(4, nTotalCollected);
+                                                        ps.setString(5, user.getUniqueId().toString());
+                                                        ps.executeUpdate();
+                                                    } catch (SQLException e) {
+                                                        e.printStackTrace();
+                                                    }
                                                 } else {
-                                                    sql = "UPDATE dailies SET current_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?";
-                                                    params = new ArrayList<>() {{
-                                                        add(nCurrStreak);
-                                                        add(currDate);
-                                                        add(nTotalCollected);
-                                                        add(user.getUniqueId().toString());
-                                                    }};
+                                                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE dailies SET current_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?")) {
+                                                        ps.setInt(1, nCurrStreak);
+                                                        ps.setString(2, currDate);
+                                                        ps.setInt(3, nTotalCollected);
+                                                        ps.setString(4, user.getUniqueId().toString());
+                                                        ps.executeUpdate();
+                                                    } catch (SQLException e) {
+                                                        e.printStackTrace();
+                                                    }
                                                 }
                                             } else {
-                                                sql = "INSERT INTO dailies (user_id, current_streak, total_collected, highest_streak, last_collected) VALUES (?, ?, ?, ?, ?)";
-                                                params = new ArrayList<>() {{
-                                                    add(user.getUniqueId().toString());
-                                                    add(nCurrStreak);
-                                                    add(nTotalCollected);
-                                                    add(nCurrStreak);
-                                                    add(currDate);
-                                                }};
+                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO dailies (user_id, current_streak, total_collected, highest_streak, last_collected) VALUES (?, ?, ?, ?, ?)")) {
+                                                    ps.setString(1, user.getUniqueId().toString());
+                                                    ps.setInt(2, nCurrStreak);
+                                                    ps.setInt(3, nTotalCollected);
+                                                    ps.setInt(3, nCurrStreak);
+                                                    ps.setString(3, currDate);
+                                                    ps.executeUpdate();
+                                                } catch (SQLException e) {
+                                                    e.printStackTrace();
+                                                }
                                             }
-
-                                            hook.sqlUpdate(sql, params);
                                             daily.openGUI(player);
                                         }
                                         break;
@@ -704,15 +914,13 @@ public class InventoryClick implements Listener {
                                                 String tagsDisplay = "";
                                                 String tagsEffect = "";
 
-                                                try {
-                                                    Connection conn = hook.getSQLConnection();
-                                                    PreparedStatement ps = conn.prepareStatement("SELECT tags_display, tags_effect FROM tags WHERE tags_id = '" + tag_id + "'");
+                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tags_display, tags_effect FROM tags WHERE tags_id = ?")) {
+                                                    ps.setInt(1, tag_id);
                                                     ResultSet rs = ps.executeQuery();
                                                     while (rs.next()) {
                                                         tagsDisplay = rs.getString(1);
                                                         tagsEffect = rs.getString(2);
                                                     }
-                                                    hook.close(ps, rs, conn);
                                                 } catch (SQLException e) {
                                                     e.printStackTrace();
                                                 }
@@ -722,12 +930,13 @@ public class InventoryClick implements Listener {
                                                     particles.addActivePlayerParticle(player, ParticleEffect.CLOUD, ParticleStyle.fromInternalName(tagsEffect));
                                                 }
 
-                                                String sql = "UPDATE users SET active_tag = ? WHERE user_id = ?";
-                                                List<Object> params = new ArrayList<>() {{
-                                                    add(tag_id);
-                                                    add(user.getUniqueId().toString());
-                                                }};
-                                                hook.sqlUpdate(sql, params);
+                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET active_tag = ? WHERE user_id = ?")) {
+                                                    ps.setInt(1, tag_id);
+                                                    ps.setString(2, user.getUniqueId().toString());
+                                                    ps.executeUpdate();
+                                                } catch (SQLException e) {
+                                                    e.printStackTrace();
+                                                }
 
                                                 plugin.userTags.put(player.getUniqueId(), tagsDisplay);
                                                 player.sendMessage(plugin.colourMessage("&aSelected Tag: &r" + tagsDisplay));
@@ -737,12 +946,13 @@ public class InventoryClick implements Listener {
                                             } else if (event.getSlot() == 49 && clickItem.getType().equals(Material.BARRIER)) {
                                                 plugin.userTags.remove(player.getUniqueId());
                                                 particles.resetActivePlayerParticles(player);
-                                                String sql = "UPDATE users SET active_tag = ? WHERE user_id = ?";
-                                                List<Object> params = new ArrayList<>() {{
-                                                    add(0);
-                                                    add(user.getUniqueId().toString());
-                                                }};
-                                                hook.sqlUpdate(sql, params);
+                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET active_tag = ? WHERE user_id = ?")) {
+                                                    ps.setInt(1, 0);
+                                                    ps.setString(2, user.getUniqueId().toString());
+                                                    ps.executeUpdate();
+                                                } catch (SQLException e) {
+                                                    e.printStackTrace();
+                                                }
                                                 tag.openGUI(player, page);
                                             } else if (event.getSlot() == 52 && clickItem.getType().equals(Material.PAPER)) {
                                                 tag.openGUI(player, page + 1);
@@ -774,27 +984,28 @@ public class InventoryClick implements Listener {
                                             if (event.getSlot() == 22) {
                                                 tag.openEditGUI(player, page);
                                             } else if (event.getSlot() == 11) {
-                                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-display", String.valueOf(tag_id)));
+                                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-display", tag_id));
                                                 player.closeInventory();
                                                 player.sendMessage(plugin.colourMessage("&aType the new tag display:"));
                                             } else if (event.getSlot() == 13) {
-                                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-lore", String.valueOf(tag_id)));
+                                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-lore", tag_id));
                                                 player.closeInventory();
                                                 player.sendMessage(plugin.colourMessage("&aType the new tag lore:"));
                                             } else if (event.getSlot() == 15) {
-                                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-effect", String.valueOf(tag_id)));
+                                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-effect", tag_id));
                                                 player.closeInventory();
                                                 StringBuilder cosmetics = new StringBuilder();
                                                 int i = 0;
                                                 player.sendMessage(plugin.colourMessage("&aType the new tag effect (Write null to remove effect): \n&eAvailable Effects: " + cosmetics));
                                             } else if (event.getSlot() == 17) {
                                                 tag.openEditGUI(player, page);
-                                                String sql = "DELETE FROM tags WHERE tags_id = ?";
-                                                List<Object> params = new ArrayList<>() {{
-                                                    add(tag_id);
-                                                }};
-                                                hook.sqlUpdate(sql, params);
-                                                player.sendMessage(plugin.colourMessage("&aSuccessfully deleted tag!"));
+                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM tags WHERE tags_id = ?")) {
+                                                    ps.setInt(1, tag_id);
+                                                    ps.executeUpdate();
+                                                    player.sendMessage(plugin.colourMessage("&aSuccessfully deleted tag!"));
+                                                } catch (SQLException e) {
+                                                    e.printStackTrace();
+                                                }
                                             }
                                         }
                                         break;
@@ -868,18 +1079,18 @@ public class InventoryClick implements Listener {
                                                 plugin.chatLock.put(player.getUniqueId(), Arrays.asList("tags-new-effect", display, lore, effect));
                                                 player.closeInventory();
                                                 StringBuilder cosmetics = new StringBuilder();
-                                                int i = 0;
                                                 player.sendMessage(plugin.colourMessage("&aType the tag effect (Write null to remove effect): \n&eAvailable Effects: " + cosmetics));
                                             } else if (event.getSlot() == 22) {
-                                                String sql = "INSERT INTO tags (tags_display, tags_lore, tags_effect) VALUES (?, ?, ?)";
-                                                List<Object> params = new ArrayList<>() {{
-                                                    add(display);
-                                                    add(lore);
-                                                    add(effect);
-                                                }};
-                                                hook.sqlUpdate(sql, params);
-                                                player.sendMessage(plugin.colourMessage("&aSuccessfully created the tag!"));
-                                                player.closeInventory();
+                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO tags (tags_display, tags_lore, tags_effect) VALUES (?, ?, ?)")) {
+                                                    ps.setString(1, display);
+                                                    ps.setString(2, lore);
+                                                    ps.setString(3, effect);
+                                                    ps.executeUpdate();
+                                                    player.sendMessage(plugin.colourMessage("&aSuccessfully created the tag!"));
+                                                    player.closeInventory();
+                                                } catch (SQLException e) {
+                                                    e.printStackTrace();
+                                                }
                                             }
                                         }
                                         break;
@@ -969,19 +1180,18 @@ public class InventoryClick implements Listener {
                                     if (container.has(key, PersistentDataType.STRING)) {
                                         foundValue = container.get(key, PersistentDataType.STRING);
                                         if (Objects.requireNonNull(rData.getString(foundValue + ".reward-type")).equalsIgnoreCase("tokens")) {
-                                            int tokenAmount = rData.getInt(foundValue + ".reward");
-                                            plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tokenAmount, "Secret Region Found", foundValue);
-
-                                            String sql = "UPDATE rewards_data SET reward_collected = ? WHERE user_id = ? AND reward_name = ?";
-                                            List<Object> params = new ArrayList<>() {{
-                                                add(1);
-                                                add(player.getUniqueId().toString());
-                                                add(foundValue);
-                                            }};
-                                            hook.sqlUpdate(sql, params);
-
-                                            player.sendMessage(plugin.colourMessage("&f[&eSecrets&f] &aYou received " + tokenAmount + " tokens!"));
-                                            secretsGUI.openGUI(player, "rewards");
+                                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE rewards_data SET reward_collected = ? WHERE user_id = ? AND reward_name = ?")) {
+                                                ps.setInt(1, 1);
+                                                ps.setString(2, player.getUniqueId().toString());
+                                                ps.setString(3, foundValue);
+                                                ps.executeUpdate();
+                                                int tokenAmount = rData.getInt(foundValue + ".reward");
+                                                plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tokenAmount, "Secret Region Found", foundValue);
+                                                player.sendMessage(plugin.colourMessage("&f[&eSecrets&f] &aYou received " + tokenAmount + " tokens!"));
+                                                secretsGUI.openGUI(player, "rewards");
+                                            } catch (SQLException e) {
+                                                e.printStackTrace();
+                                            }
                                         }
                                     }
                                 }

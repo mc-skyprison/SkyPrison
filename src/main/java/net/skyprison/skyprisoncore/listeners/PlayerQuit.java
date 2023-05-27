@@ -12,8 +12,9 @@ import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class PlayerQuit implements Listener {
 
@@ -38,35 +39,30 @@ public class PlayerQuit implements Listener {
                 EmbedBuilder embedJoin = new EmbedBuilder()
                         .setAuthor(player.getName() + " left the server", "", "https://minotar.net/helm/" + player.getName())
                         .setColor(Color.RED);
-
-                discApi.getTextChannelById("788108242797854751").get().sendMessage(embedJoin);
+                if(discApi.getTextChannelById("788108242797854751").isPresent()) {
+                    discApi.getTextChannelById("788108242797854751").get().sendMessage(embedJoin);
+                }
             }
 
-            String sql;
-            List<Object> params;
-            sql = "UPDATE users SET blocks_mined = ? WHERE user_id = ?";
-            params = new ArrayList<>() {{
-                add(plugin.blockBreaks.get(player.getUniqueId()));
-                add(player.getUniqueId().toString());
-            }};
-            db.sqlUpdate(sql, params);
-
-            sql = "UPDATE users SET tokens = ? WHERE user_id = ?";
-            params = new ArrayList<>() {{
-                add(plugin.tokensData.get(player.getUniqueId()));
-                add(player.getUniqueId().toString());
-            }};
-            db.sqlUpdate(sql, params);
+            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET blocks_mined = ?, tokens = ? WHERE user_id = ?")) {
+                ps.setInt(1, plugin.blockBreaks.get(player.getUniqueId()));
+                ps.setInt(2, plugin.tokensData.get(player.getUniqueId()));
+                ps.setString(3, player.getUniqueId().toString());
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
 
             for(String mission : dm.getMissions(player)) {
-                sql = "UPDATE daily_missions SET amount = ?, completed = ? WHERE user_id = ? AND type = ?";
-                params = new ArrayList<>() {{
-                    add(dm.getMissionAmount(player, mission));
-                    add(dm.isCompleted(player, mission) ? 1 : 0);
-                    add(player.getUniqueId().toString());
-                    add(mission);
-                }};
-                db.sqlUpdate(sql, params);
+                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE daily_missions SET amount = ?, completed = ? WHERE user_id = ? AND type = ?")) {
+                    ps.setInt(1, dm.getMissionAmount(player, mission));
+                    ps.setInt(2, dm.isCompleted(player, mission) ? 1 : 0);
+                    ps.setString(3, player.getUniqueId().toString());
+                    ps.setString(4, mission);
+                    ps.executeUpdate();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         });
     }

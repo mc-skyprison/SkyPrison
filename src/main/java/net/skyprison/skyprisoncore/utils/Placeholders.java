@@ -2,6 +2,7 @@ package net.skyprison.skyprisoncore.utils;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
+import com.Zrips.CMI.Modules.PlayerOptions.PlayerOption;
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
@@ -17,12 +18,12 @@ import java.sql.SQLException;
 public class Placeholders extends PlaceholderExpansion {
 	private final SkyPrisonCore plugin;
 	private final DailyMissions dailyMissions;
-	private final DatabaseHook hook;
+	private final DatabaseHook db;
 
-	public Placeholders(SkyPrisonCore plugin, DailyMissions dailyMissions, DatabaseHook hook) {
+	public Placeholders(SkyPrisonCore plugin, DailyMissions dailyMissions, DatabaseHook db) {
 		this.plugin = plugin;
 		this.dailyMissions = dailyMissions;
-		this.hook = hook;
+		this.db = db;
 	}
 
 	@Override
@@ -128,14 +129,12 @@ public class Placeholders extends PlaceholderExpansion {
 
 		if(identifier.equalsIgnoreCase("daily_highest_streak")) {
 			int highestStreak = 0;
-			try {
-				Connection conn = hook.getSQLConnection();
-				PreparedStatement ps = conn.prepareStatement("SELECT highest_streak FROM dailies WHERE user_id = '" + player.getUniqueId() + "'");
+			try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT highest_streak FROM dailies WHERE user_id = ?")) {
+				ps.setString(1, player.getUniqueId().toString());
 				ResultSet rs = ps.executeQuery();
 				while(rs.next()) {
 					highestStreak = rs.getInt(1);
 				}
-				hook.close(ps, rs, conn);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -146,14 +145,12 @@ public class Placeholders extends PlaceholderExpansion {
 
 		if(identifier.equalsIgnoreCase("daily_total_collected")) {
 			int totalColl = 0;
-			try {
-				Connection conn = hook.getSQLConnection();
-				PreparedStatement ps = conn.prepareStatement("SELECT total_collected FROM dailies WHERE user_id = '" + player.getUniqueId() + "'");
+			try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT total_collected FROM dailies WHERE user_id = ?")) {
+				ps.setString(1, player.getUniqueId().toString());
 				ResultSet rs = ps.executeQuery();
 				while(rs.next()) {
 					totalColl = rs.getInt(1);
 				}
-				hook.close(ps, rs, conn);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -227,14 +224,12 @@ public class Placeholders extends PlaceholderExpansion {
 
 		if(identifier.equalsIgnoreCase("total_secrets")) {
 			int totalFound = 0;
-			try {
-				Connection conn = hook.getSQLConnection();
-				PreparedStatement ps = conn.prepareStatement("SELECT secret_amount FROM secrets_data WHERE user_id = '" + player.getUniqueId() + "'");
+			try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT secret_amount FROM secrets_data WHERE user_id = ?")) {
+				ps.setString(1, player.getUniqueId().toString());
 				ResultSet rs = ps.executeQuery();
 				while(rs.next()) {
 					totalFound += rs.getInt(1);
 				}
-				hook.close(ps, rs, conn);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -298,14 +293,12 @@ public class Placeholders extends PlaceholderExpansion {
 
 		if(identifier.equalsIgnoreCase("brews_drank")) {
 			int brewsDrank = 0;
-			try {
-				Connection conn = hook.getSQLConnection();
-				PreparedStatement ps = conn.prepareStatement("SELECT brews_drank FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+			try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT brews_drank FROM users WHERE user_id = ?")) {
+				ps.setString(1, player.getUniqueId().toString());
 				ResultSet rs = ps.executeQuery();
 				while(rs.next()) {
 					brewsDrank = rs.getInt(1);
 				}
-				hook.close(ps, rs, conn);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -315,7 +308,7 @@ public class Placeholders extends PlaceholderExpansion {
 
 		if(identifier.equalsIgnoreCase("silence_private")) {
 			CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-			if(!user.isAcceptingPM()) {
+			if(!user.getOptionState(PlayerOption.acceptingPM)) {
 				return ChatColor.GRAY + "Private Chat is " + ChatColor.DARK_RED + "DISABLED";
 			} else {
 				return ChatColor.GRAY + "Private Chat is " + ChatColor.GREEN + "ENABLED";
@@ -332,14 +325,12 @@ public class Placeholders extends PlaceholderExpansion {
 
 		if(identifier.equalsIgnoreCase("sponges_found")) {
 			int spongesFound = 0;
-			try {
-				Connection conn = hook.getSQLConnection();
-				PreparedStatement ps = conn.prepareStatement("SELECT sponges_found FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+			try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT sponges_found FROM users WHERE user_id = ?")) {
+				ps.setString(1, player.getUniqueId().toString());
 				ResultSet rs = ps.executeQuery();
 				while(rs.next()) {
 					spongesFound = rs.getInt(1);
 				}
-				hook.close(ps, rs, conn);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}

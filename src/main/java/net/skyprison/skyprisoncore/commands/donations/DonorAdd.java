@@ -14,14 +14,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class DonorAdd implements CommandExecutor {
-	private final DatabaseHook hook;
+	private final DatabaseHook db;
 
-	public DonorAdd(DatabaseHook hook) {
-		this.hook = hook;
+	public DonorAdd(DatabaseHook db) {
+		this.db = db;
 	}
 
 	@Override
@@ -41,29 +39,26 @@ public class DonorAdd implements CommandExecutor {
 
 				double totalDonor = Double.parseDouble(args[2]);
 
-				try {
-					Connection conn = hook.getSQLConnection();
-					PreparedStatement ps = conn.prepareStatement("SELECT price FROM donations WHERE user_id = '" + player.getUniqueId() + "'");
+				try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT price FROM donations WHERE user_id = '" + player.getUniqueId() + "'")) {
 					ResultSet rs = ps.executeQuery();
 					while(rs.next()) {
 						totalDonor += rs.getDouble(1);
 					}
-					hook.close(ps, rs, conn);
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
-
 				// /donoradd <player> <item-currency> <item-price> <date> <time> <amount of it bought> <item-bought>
-				String sql = "INSERT INTO donations (user_id, item_bought, price, currency, amount, date) VALUES (?, ?, ?, ?, ?, ?)";
-				List<Object> params = new ArrayList<>() {{
-					add(player.getUniqueId().toString());
-					add(String.valueOf(itemBought));
-					add(Double.parseDouble(args[2]));
-					add(args[1]);
-					add(Integer.parseInt(args[5]));
-					add(args[3] + " " + args[4]);
-				}};
-				hook.sqlUpdate(sql, params);
+				try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO donations (user_id, item_bought, price, currency, amount, date) VALUES (?, ?, ?, ?, ?, ?)")) {
+					ps.setString(1, player.getUniqueId().toString());
+					ps.setString(2, String.valueOf(itemBought));
+					ps.setDouble(3, Double.parseDouble(args[2]));
+					ps.setString(4, args[1]);
+					ps.setInt(5, Integer.parseInt(args[5]));
+					ps.setString(6, args[3] + " " + args[4]);
+					ps.executeUpdate();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
 
 				if (totalDonor >= 10.0) {
 					if(!player.hasPermission("group.donor1")) {

@@ -14,8 +14,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockDamageEvent;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Objects;
 import java.util.Set;
 
@@ -65,13 +66,14 @@ public class BlockDamage implements Listener {
                                         + " has found the sponge! A new one will be hidden somewhere in prison.");
                             }
 
-                            String sql = "UPDATE users SET sponges_found = sponges_found + 1 WHERE user_id = ?";
-                            List<Object> params = new ArrayList<>() {{
-                                add(player.getUniqueId());
-                            }};
-                            db.sqlUpdate(sql, params);
+                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET sponges_found = sponges_found + 1 WHERE user_id = ?")) {
+                                ps.setString(1, player.getUniqueId().toString());
+                                ps.executeUpdate();
+                                plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(event.getPlayer()), 25, "Found Sponge", "");
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                            }
 
-                            plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(event.getPlayer()), 25, "Found Sponge", "");
                             break;
                         }
                     }

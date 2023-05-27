@@ -14,6 +14,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -25,19 +26,17 @@ import java.util.List;
 
 public class Tags implements CommandExecutor {
     private final SkyPrisonCore plugin;
-    private final DatabaseHook hook;
+    private final DatabaseHook db;
 
-    public Tags(SkyPrisonCore plugin, DatabaseHook hook) {
+    public Tags(SkyPrisonCore plugin, DatabaseHook db) {
         this.plugin = plugin;
-        this.hook = hook;
+        this.db = db;
     }
 
     public void openGUI(Player player, Integer page) {
-        ArrayList<List> tags = new ArrayList<>();
+        ArrayList<List<Object>> tags = new ArrayList<>();
 
-        try {
-            Connection conn = hook.getSQLConnection();
-            PreparedStatement ps = conn.prepareStatement("SELECT tags_id, tags_display, tags_lore, tags_effect, tags_permission FROM tags");
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tags_id, tags_display, tags_lore, tags_effect, tags_permission FROM tags");) {
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
                 if(!player.hasPermission("skyprisoncore.command.tags.admin")) {
@@ -48,7 +47,6 @@ public class Tags implements CommandExecutor {
                     tags.add(Arrays.asList(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4)));
                 }
             }
-            hook.close(ps, rs, conn);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -59,12 +57,12 @@ public class Tags implements CommandExecutor {
 
         int toRemove = 45 * (page - 1);
         if(toRemove != 0) {
-            tags = (ArrayList<List>) tags.subList(toRemove, tags.size()-1);
+            tags = (ArrayList<List<Object>>) tags.subList(toRemove, tags.size()-1);
         }
 
         Inventory bounties = Bukkit.createInventory(null, 54, ChatColor.RED + "Tags | Page " + page);
         int j = 0;
-        for (List tag : tags) {  // id, display, lore, effect
+        for (List<Object> tag : tags) {  // id, display, lore, effect
             if(j == 45) break;
             ArrayList<String> lore = new ArrayList<>();
             ItemStack head = new ItemStack(Material.NAME_TAG);
@@ -238,16 +236,14 @@ public class Tags implements CommandExecutor {
         String lore = "";
         String effect = "";
 
-        try {
-            Connection conn = hook.getSQLConnection();
-            PreparedStatement ps = conn.prepareStatement("SELECT tags_display, tags_lore, tags_effect FROM tags WHERE tags_id = '" + tag_id + "'");
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tags_display, tags_lore, tags_effect FROM tags WHERE tags_id = ?")) {
+            ps.setInt(1, tag_id);
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
                 name = rs.getString(1);
                 lore = rs.getString(2);
                 effect = rs.getString(3);
             }
-            hook.close(ps, rs, conn);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -348,15 +344,12 @@ public class Tags implements CommandExecutor {
     }
 
     public void openEditGUI(Player player, Integer page) {
-        ArrayList<List> tags = new ArrayList<>();
-        try {
-            Connection conn = hook.getSQLConnection();
-            PreparedStatement ps = conn.prepareStatement("SELECT tags_id, tags_display, tags_lore, tags_effect FROM tags");
+        ArrayList<List<Object>> tags = new ArrayList<>();
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tags_id, tags_display, tags_lore, tags_effect FROM tags")) {
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
                 tags.add(Arrays.asList(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4)));
             }
-            hook.close(ps, rs, conn);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -365,12 +358,12 @@ public class Tags implements CommandExecutor {
 
         int toRemove = 45 * (page - 1);
         if(toRemove != 0) {
-            tags = (ArrayList<List>) tags.subList(toRemove, tags.size()-1);
+            tags = (ArrayList<List<Object>>) tags.subList(toRemove, tags.size()-1);
         }
 
         Inventory bounties = Bukkit.createInventory(null, 54, ChatColor.RED + "Tags | Page " + page);
         int j = 0;
-        for (List tag : tags) {  // id, display, lore, effect
+        for (List<Object> tag : tags) {  // id, display, lore, effect
             if(j == 45) break;
             ArrayList<String> lore = new ArrayList<>();
             ItemStack head = new ItemStack(Material.NAME_TAG);
@@ -439,9 +432,8 @@ public class Tags implements CommandExecutor {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if(sender instanceof Player) {
-            Player player = (Player) sender;
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+        if(sender instanceof Player player) {
             if(args.length == 0) {
                 openGUI(player, 1);
             } else {

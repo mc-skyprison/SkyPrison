@@ -19,18 +19,18 @@ public class ServerLoad implements Listener {
 
     private final SkyPrisonCore plugin;
     private final PlayerParticlesAPI particles;
-    private final DatabaseHook hook;
+    private final DatabaseHook db;
 
-    public ServerLoad(SkyPrisonCore plugin, PlayerParticlesAPI particles, DatabaseHook hook) {
+    public ServerLoad(SkyPrisonCore plugin, PlayerParticlesAPI particles, DatabaseHook db) {
         this.plugin = plugin;
         this.particles = particles;
-        this.hook = hook;
+        this.db = db;
     }
 
 
     @EventHandler
     public void onServerLoad(ServerLoadEvent event) {
-        plugin.spongeTimer.schedule(new SpongeTask(plugin, hook), TimeUnit.MINUTES.toMillis(0));
+        plugin.spongeTimer.schedule(new SpongeTask(plugin, db), TimeUnit.MINUTES.toMillis(0));
 
         int radius = 300;
         World prisonWorld = Bukkit.getWorld("world_prison");

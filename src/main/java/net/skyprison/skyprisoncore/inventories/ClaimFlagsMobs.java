@@ -54,7 +54,7 @@ public class ClaimFlagsMobs implements CustomInventory {
         this.category = category;
         this.canEdit = canEdit;
         this.isAllowed = isAllowed;
-        this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Claim Flags").color(TextColor.fromHexString("#a49a2b")).decoration(TextDecoration.ITALIC, false));
+        this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Mob Spawns").color(TextColor.fromHexString("#0fc3ff")).decoration(TextDecoration.ITALIC, false));
         ItemStack redPane = new ItemStack(isAllowed ? Material.LIME_STAINED_GLASS_PANE : Material.RED_STAINED_GLASS_PANE);
         ItemMeta redMeta = redPane.getItemMeta();
         redMeta.displayName(Component.text(" "));
@@ -145,7 +145,8 @@ public class ClaimFlagsMobs implements CustomInventory {
                 ItemStack returnItem = new ItemStack(isAllowed ? Material.LIME_CONCRETE : Material.RED_CONCRETE);
                 ItemMeta returnMeta = returnItem.getItemMeta();
                 TextColor color = NamedTextColor.GRAY;
-                returnMeta.displayName(Component.text("Switch to disabled mobs").color(color).decoration(TextDecoration.ITALIC, false));
+                returnMeta.displayName(Component.text("Switch view  ").append(Component.text(isAllowed ? "ENABLED" : "DISABLED").decorate(TextDecoration.BOLD))
+                        .append(Component.text(" mob spawns")).color(color).decoration(TextDecoration.ITALIC, false));
 
                 returnItem.setItemMeta(returnMeta);
                 this.inventory.setItem(i, returnItem);
@@ -168,7 +169,7 @@ public class ClaimFlagsMobs implements CustomInventory {
             } */
             else if (i > 35 && i < 45) {
                 this.inventory.setItem(i, redPane);
-            } else if (i > 45 && i < 53) {
+            } else if (i > 45 && i < 54) {
                 this.inventory.setItem(i, blackPane);
             } else {
                 if (mobsIterate.hasNext()) {

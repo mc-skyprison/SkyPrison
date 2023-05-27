@@ -7,29 +7,30 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import su.nightexpress.excellentcrates.api.event.CrateObtainRewardEvent;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class CrateObtainReward implements Listener {
     private final SkyPrisonCore plugin;
-    private final DatabaseHook hook;
+    private final DatabaseHook db;
 
-    public CrateObtainReward(SkyPrisonCore plugin, DatabaseHook hook) {
+    public CrateObtainReward(SkyPrisonCore plugin, DatabaseHook db) {
         this.plugin = plugin;
-        this.hook = hook;
+        this.db = db;
     }
 
     @EventHandler
     public void onCrateObtainReward(CrateObtainRewardEvent event) {
         Player player = event.getPlayer();
-        String sql = "INSERT INTO casino_opens (user_id, casino_name, opens_amount) " +
-                "VALUES (?, ?, ?) " +
-                "ON CONFLICT(user_id, casino_name) DO UPDATE SET opens_amount = opens_amount + excluded.opens_amount";
-        List<Object> params = new ArrayList<>() {{
-            add(player.getUniqueId().toString());
-            add(event.getCrate().getId());
-            add(1);
-        }};
-        hook.sqlUpdate(sql, params);
+
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO casino_opens (user_id, casino_name, opens_amount) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE opens_amount = opens_amount + VALUE(opens_amount)")) {
+            ps.setString(1, player.getUniqueId().toString());
+            ps.setString(2, event.getCrate().getId());
+            ps.setInt(3, 1);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }

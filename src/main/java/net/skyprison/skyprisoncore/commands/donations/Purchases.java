@@ -9,6 +9,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -17,31 +18,28 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class Purchases implements CommandExecutor {
-	private final DatabaseHook hook;
+	private final DatabaseHook db;
 	private final SkyPrisonCore plugin;
 
-	public Purchases(DatabaseHook hook, SkyPrisonCore plugin) {
-		this.hook = hook;
+	public Purchases(DatabaseHook db, SkyPrisonCore plugin) {
+		this.db = db;
 		this.plugin = plugin;
 	}
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if (sender instanceof Player) {
-			Player player = (Player) sender;
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+		if (sender instanceof Player player) {
 			if (args.length < 1) {
 				double totalDonor = 0;
 				ArrayList<String> donations = new ArrayList<>();
 
-				try {
-					Connection conn = hook.getSQLConnection();
-					PreparedStatement ps = conn.prepareStatement("SELECT item_bought, price, date FROM donations WHERE user_id = '" + player.getUniqueId() + "'");
+				try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT item_bought, price, date FROM donations WHERE user_id = ?")) {
+					ps.setString(1, player.getUniqueId().toString());
 					ResultSet rs = ps.executeQuery();
 					while(rs.next()) {
 						totalDonor += rs.getDouble(2);
 						donations.add("&3" + rs.getString(1) + " &f&l- &a" + rs.getDouble(2) + " &e" + rs.getString(3));
 					}
-					hook.close(ps, rs, conn);
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
@@ -62,15 +60,13 @@ public class Purchases implements CommandExecutor {
 						ArrayList<String> donations = new ArrayList<>();
 						CMIUser user = CMI.getInstance().getPlayerManager().getUser(args[0]);
 
-						try {
-							Connection conn = hook.getSQLConnection();
-							PreparedStatement ps = conn.prepareStatement("SELECT item_bought, price, date FROM donations WHERE user_id = '" + user.getUniqueId() + "'");
+						try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT item_bought, price, date FROM donations WHERE user_id = ?")) {
+							ps.setString(1, user.getUniqueId().toString());
 							ResultSet rs = ps.executeQuery();
 							while (rs.next()) {
 								totalDonor += rs.getDouble(2);
 								donations.add("&3" + rs.getString(1) + " &f&l- &a" + rs.getDouble(2) + " &e" + rs.getString(3));
 							}
-							hook.close(ps, rs, conn);
 						} catch (SQLException e) {
 							e.printStackTrace();
 						}

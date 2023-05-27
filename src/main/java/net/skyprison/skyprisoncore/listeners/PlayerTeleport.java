@@ -74,24 +74,24 @@ public class PlayerTeleport implements Listener {
                         fromRegion = rg;
                     }
                 }
-                if (query.testState(toLocWE, localPlayer, plugin.FLY) || (toRegion.getId().contains("fly") && !toRegion.getId().contains("nofly") && !toRegion.getId().contains("no-fly"))) {
+                if (query.testState(toLocWE, localPlayer, SkyPrisonCore.FLY) || (toRegion.getId().contains("fly") && !toRegion.getId().contains("nofly") && !toRegion.getId().contains("no-fly"))) {
                     plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> player.setAllowFlight(true), 1L);
-                    if (!query.testState(fromLocWE, localPlayer, plugin.FLY)) {
+                    if (!query.testState(fromLocWE, localPlayer, SkyPrisonCore.FLY)) {
                         player.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "You can fly now!");
                     }
-                } else if (query.testState(fromLocWE, localPlayer, plugin.FLY) || (fromRegion.getId().contains("fly") && !fromRegion.getId().contains("nofly") && !fromRegion.getId().contains("no-fly"))) {
+                } else if (query.testState(fromLocWE, localPlayer, SkyPrisonCore.FLY) || (fromRegion.getId().contains("fly") && !fromRegion.getId().contains("nofly") && !fromRegion.getId().contains("no-fly"))) {
                     plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> player.setAllowFlight(false), 1L);
                     if (!player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
                         player.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "You can no longer fly!");
                     }
                 }
             } else {
-                if (query.testState(toLocWE, localPlayer, plugin.FLY)) {
+                if (query.testState(toLocWE, localPlayer, SkyPrisonCore.FLY)) {
                     plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> player.setAllowFlight(true), 1L);
-                    if (!query.testState(fromLocWE, localPlayer, plugin.FLY)) {
+                    if (!query.testState(fromLocWE, localPlayer, SkyPrisonCore.FLY)) {
                         player.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "You can fly now!");
                     }
-                } else if (query.testState(fromLocWE, localPlayer, plugin.FLY)) {
+                } else if (query.testState(fromLocWE, localPlayer, SkyPrisonCore.FLY)) {
                     plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> player.setAllowFlight(false), 1L);
                     if (!player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
                         player.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "You can no longer fly!");
@@ -106,7 +106,7 @@ public class PlayerTeleport implements Listener {
                             fromRegion = rg;
                         }
                     }
-                    if (query.testState(fromLocWE, localPlayer, plugin.FLY) || (fromRegion.getId().contains("fly") && !fromRegion.getId().contains("nofly") && !fromRegion.getId().contains("no-fly"))) {
+                    if (query.testState(fromLocWE, localPlayer, SkyPrisonCore.FLY) || (fromRegion.getId().contains("fly") && !fromRegion.getId().contains("nofly") && !fromRegion.getId().contains("no-fly"))) {
                         plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> player.setAllowFlight(false), 1L);
                         if (!player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
                             player.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "You can no longer fly!");

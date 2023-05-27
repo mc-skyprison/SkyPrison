@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     java
     `maven-publish`
@@ -8,6 +10,7 @@ group = "net.skyprison"
 version = "7.0.0"
 description = "SkyPrisonCore"
 
+
 repositories {
     mavenCentral()
     maven("https://jitpack.io")
@@ -17,13 +20,6 @@ repositories {
     maven("https://maven.enginehub.org/repo/")
     maven("https://oss.sonatype.org/content/groups/public/")
     maven("https://maven.playpro.com/")
-    maven {
-        url = uri("https://repo.codemc.io/repository/maven-public/")
-        metadataSources {
-            artifact() //Look directly for artifact
-        }
-    }
-
     maven("https://oss.sonatype.org/content/repositories/snapshots/")
     maven("https://nexus.bencodez.com/repository/maven-public/")
     maven("https://repo.kryptonmc.org/releases")
@@ -35,11 +31,11 @@ repositories {
 
 dependencies {
     implementation("org.javacord:javacord:3.7.0")
+    implementation("org.mariadb.jdbc:mariadb-java-client:3.1.4")
     compileOnly("org.jetbrains:annotations:24.0.0")
     compileOnly("org.purpurmc.purpur:purpur-api:1.19.4-R0.1-SNAPSHOT")
     compileOnly("me.neznamy:tab-api:3.2.4")
     compileOnly("com.github.DieReicheErethons:Brewery:3.1.1")
-    compileOnly("org.maxgamer:QuickShop:5.1.2.0")
     compileOnly("com.arcaniax:HeadDatabase-API:1.3.1")
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.8-SNAPSHOT")
     compileOnly("me.clip:placeholderapi:2.10.10")
@@ -56,6 +52,7 @@ dependencies {
     compileOnly("com.wolfyscript.wolfyutilities:wolfyutilities:3.16.1.0")
     compileOnly("com.wolfyscript.customcrafting:customcrafting-spigot:3.16.3.3")
 
+
     // Jars
     compileOnly(fileTree("libs") { include("*.jar")})
 }
@@ -67,4 +64,9 @@ java {
 
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
+}
+
+tasks.withType<ShadowJar> {
+    //isEnableRelocation = true
+    relocate("org.mariadb.jdbc", "net.skyprison.skyprisoncore")
 }

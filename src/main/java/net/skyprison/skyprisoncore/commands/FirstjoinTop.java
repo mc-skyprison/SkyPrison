@@ -9,6 +9,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -19,11 +20,11 @@ import java.util.*;
 
 public class FirstjoinTop implements CommandExecutor {
 	private final SkyPrisonCore plugin;
-	private final DatabaseHook hook;
+	private final DatabaseHook db;
 
-	public FirstjoinTop(SkyPrisonCore plugin, DatabaseHook hook) {
+	public FirstjoinTop(SkyPrisonCore plugin, DatabaseHook db) {
 		this.plugin = plugin;
-		this.hook = hook;
+		this.db = db;
 	}
 
 	public static boolean isInteger(String s) {
@@ -42,21 +43,17 @@ public class FirstjoinTop implements CommandExecutor {
 		return true;
 	}
 
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if (sender instanceof Player) {
-			Player player = (Player) sender;
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+		if (sender instanceof Player player) {
 
 			LinkedHashMap<String, Long> firstJoins = new LinkedHashMap<>();
-			try {
-				Connection conn = hook.getSQLConnection();
-				PreparedStatement ps = conn.prepareStatement("SELECT user_id, first_join FROM users");
+			try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id, first_join FROM users")) {
 				ResultSet rs = ps.executeQuery();
 				while(rs.next()) {
 					if(rs.getLong(2) != 0) {
 						firstJoins.put(rs.getString(1), rs.getLong(2));
 					}
 				}
-				hook.close(ps, rs, conn);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}

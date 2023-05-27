@@ -8,14 +8,14 @@ import com.sk89q.worldguard.session.MoveType;
 import com.sk89q.worldguard.session.Session;
 import com.sk89q.worldguard.session.handler.FlagValueChangeHandler;
 import com.sk89q.worldguard.session.handler.Handler;
+import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.Objects;
 
 public class EffectFlagHandler extends FlagValueChangeHandler<String> {
-    public static final EffectFlagHandler.Factory FACTORY = new EffectFlagHandler.Factory();
-
+    public static final Factory FACTORY = new Factory();
     public static class Factory extends Handler.Factory<EffectFlagHandler> {
         @Override
         public EffectFlagHandler create(Session session) {
@@ -23,7 +23,7 @@ public class EffectFlagHandler extends FlagValueChangeHandler<String> {
         }
     }
     public EffectFlagHandler(Session session) {
-        super(session, CustomFlags.EFFECTS);
+        super(session, SkyPrisonCore.EFFECTS);
     }
 
     @Override

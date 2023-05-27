@@ -17,11 +17,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ShopPostTransaction implements Listener {
-    private final DatabaseHook hook;
+    private final DatabaseHook db;
     private final DailyMissions dailyMissions;
 
-    public ShopPostTransaction(DatabaseHook hook, DailyMissions dailyMissions) {
-        this.hook = hook;
+    public ShopPostTransaction(DatabaseHook db, DailyMissions dailyMissions) {
+        this.db = db;
         this.dailyMissions = dailyMissions;
     }
 
@@ -44,9 +44,8 @@ public class ShopPostTransaction implements Listener {
                 List<String> soldItems = new ArrayList<>();
                 int recentId = -1;
 
-                try {
-                    Connection conn = hook.getSQLConnection();
-                    PreparedStatement ps = conn.prepareStatement("SELECT recent_item, recent_amount, recent_price, recent_id FROM recent_sells WHERE user_id = '" + player.getUniqueId() + "'");
+                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT recent_item, recent_amount, recent_price, recent_id FROM recent_sells WHERE user_id = ?")) {
+                    ps.setString(1, player.getUniqueId().toString());
                     ResultSet rs = ps.executeQuery();
                     int first = 0;
                     while (rs.next()) {
@@ -56,7 +55,6 @@ public class ShopPostTransaction implements Listener {
                         }
                         soldItems.add(rs.getString(1) + "/" + rs.getInt(2) + "/" + rs.getFloat(3));
                     }
-                    hook.close(ps, rs, conn);
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
@@ -66,23 +64,24 @@ public class ShopPostTransaction implements Listener {
                         + "/" + event.getResult().getPrice());
                 if (soldItems.size() > 5) {
                     if (recentId >= 0) {
-                        String sql = "DELETE FROM recent_sells WHERE recent_id = ?";
-                        int finalRecentId = recentId;
-                        List<Object> params = new ArrayList<>() {{
-                            add(finalRecentId);
-                        }};
-                        hook.sqlUpdate(sql, params);
+                        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM recent_sells WHERE recent_id = ?")) {
+                            ps.setInt(1, recentId);
+                            ps.executeUpdate();
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
 
-                String sql = "INSERT INTO recent_sells (user_id, recent_item, recent_amount, recent_price) VALUES (?, ?, ?, ?)";
-                List<Object> params = new ArrayList<>() {{
-                    add(player.getUniqueId().toString());
-                    add(event.getResult().getShopItem().getItem().getType());
-                    add(event.getResult().getAmount());
-                    add(event.getResult().getPrice());
-                }};
-                hook.sqlUpdate(sql, params);
+                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO recent_sells (user_id, recent_item, recent_amount, recent_price) VALUES (?, ?, ?, ?)")) {
+                    ps.setString(1, player.getUniqueId().toString());
+                    ps.setString(2, event.getResult().getShopItem().getItem().getType().name());
+                    ps.setInt(3, event.getResult().getAmount());
+                    ps.setDouble(4, event.getResult().getPrice());
+                    ps.executeUpdate();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

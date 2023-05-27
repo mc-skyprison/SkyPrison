@@ -37,8 +37,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Objects;
 
 public class PlayerJoin implements Listener {
 
@@ -85,49 +84,47 @@ public class PlayerJoin implements Listener {
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             EmbedBuilder embedJoin;
-            Connection conn;
-            PreparedStatement ps;
-            ResultSet rs;
             if(!player.hasPlayedBefore()) {
                 embedJoin = new EmbedBuilder()
                         .setAuthor(player.getName() + " joined the server for the first time!", "",  "https://minotar.net/helm/" + player.getName())
                         .setColor(Color.YELLOW);
 
-                String sqls = "INSERT INTO users (user_id, current_name, first_join) VALUES (?, ?, ?)";
-                List<Object> params = new ArrayList<>() {{
-                    add(player.getUniqueId().toString());
-                    add(player.getName());
-                    add(player.getFirstPlayed());
-                }};
-                db.sqlUpdate(sqls, params);
+                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO users (user_id, current_name, first_join) VALUES (?, ?, ?)")) {
+                    ps.setString(1, player.getUniqueId().toString());
+                    ps.setString(2, player.getName());
+                    ps.setLong(3, player.getFirstPlayed());
+                    ps.executeUpdate();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+
             } else {
                 embedJoin = new EmbedBuilder()
                         .setAuthor(player.getName() + " joined the server", "",  "https://minotar.net/helm/" + player.getName())
                         .setColor(Color.GREEN);
                 boolean noData = false;
-                try {
-                    conn = db.getSQLConnection();
-                    ps = conn.prepareStatement("SELECT * FROM users WHERE user_id = '" + player.getUniqueId() + "'");
-                    rs = ps.executeQuery();
+                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT * FROM users WHERE user_id = ?")) {
+                    ps.setString(1, player.getUniqueId().toString());
+                    ResultSet rs = ps.executeQuery();
                     if(!rs.isBeforeFirst()) {
                         noData = true;
                     }
-                    db.close(ps, rs, conn);
                 } catch (SQLException ignored) {
                 }
 
                 if(noData) {
-                    String sqls = "INSERT INTO users (user_id, current_name, first_join) VALUES (?, ?, ?)";
-                    List<Object> params = new ArrayList<>() {{
-                        add(player.getUniqueId().toString());
-                        add(player.getName());
-                        add(player.getFirstPlayed());
-                    }};
-                    db.sqlUpdate(sqls, params);
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO users (user_id, current_name, first_join) VALUES (?, ?, ?)")) {
+                        ps.setString(1, player.getUniqueId().toString());
+                        ps.setString(2, player.getName());
+                        ps.setLong(3, player.getFirstPlayed());
+                        ps.executeUpdate();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
 
-            if(discApi != null)
+            if(discApi != null && discApi.getTextChannelById("788108242797854751").isPresent())
                 discApi.getTextChannelById("788108242797854751").get().sendMessage(embedJoin);
 
 
@@ -141,19 +138,18 @@ public class PlayerJoin implements Listener {
             LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
             RegionQuery query = container.createQuery();
             if(!player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
-                player.setAllowFlight(query.testState(locWE, localPlayer, plugin.FLY));
+                player.setAllowFlight(query.testState(locWE, localPlayer, SkyPrisonCore.FLY));
             }
 
             if(!plugin.userTags.containsKey(player.getUniqueId())) {
                 int tag_id = 0;
                 try {
-                    conn = db.getSQLConnection();
-                    ps = conn.prepareStatement("SELECT active_tag FROM users WHERE user_id = '" + player.getUniqueId() + "'");
-                    rs = ps.executeQuery();
+                    Connection conn = db.getConnection();
+                    PreparedStatement ps = conn.prepareStatement("SELECT active_tag FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+                    ResultSet rs = ps.executeQuery();
                     while(rs.next()) {
                         tag_id = rs.getInt(1);
                     }
-                    db.close(ps, rs, conn);
                 } catch (SQLException ignored) {
                 }
 
@@ -161,14 +157,13 @@ public class PlayerJoin implements Listener {
                     String tagsDisplay = "";
                     String tagsEffect = "";
                     try {
-                        conn = db.getSQLConnection();
-                        ps = conn.prepareStatement("SELECT tags_display, tags_effect FROM tags WHERE tags_id = '" + tag_id + "'");
-                        rs = ps.executeQuery();
+                        Connection conn = db.getConnection();
+                        PreparedStatement ps = conn.prepareStatement("SELECT tags_display, tags_effect FROM tags WHERE tags_id = '" + tag_id + "'");
+                        ResultSet rs = ps.executeQuery();
                         while(rs.next()) {
                             tagsDisplay = rs.getString(1);
                             tagsEffect = rs.getString(2);
                         }
-                        db.close(ps, rs, conn);
                     } catch (SQLException ignored) {
                     }
                     plugin.userTags.put(player.getUniqueId(), tagsDisplay);
@@ -178,35 +173,23 @@ public class PlayerJoin implements Listener {
             }
 
             plugin.blockBreaks.put(player.getUniqueId(), 0);
-            try {
-                conn = db.getSQLConnection();
-                ps = conn.prepareStatement("SELECT blocks_mined FROM users WHERE user_id = '" + player.getUniqueId() + "'");
-                rs = ps.executeQuery();
-                while(rs.next()) {
-                    plugin.blockBreaks.put(player.getUniqueId(), rs.getInt(1));
-                }
-                db.close(ps, rs, conn);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-
             plugin.tokensData.put(player.getUniqueId(), 0);
             try {
-                conn = db.getSQLConnection();
-                ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = '" + player.getUniqueId() + "'");
-                rs = ps.executeQuery();
+                Connection conn = db.getConnection();
+                PreparedStatement ps = conn.prepareStatement("SELECT blocks_mined, tokens FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+                ResultSet rs = ps.executeQuery();
                 while(rs.next()) {
-                    plugin.tokensData.put(player.getUniqueId(), rs.getInt(1));
+                    plugin.blockBreaks.put(player.getUniqueId(), rs.getInt(1));
+                    plugin.tokensData.put(player.getUniqueId(), rs.getInt(2));
                 }
-                db.close(ps, rs, conn);
             } catch (SQLException e) {
                 e.printStackTrace();
             }
 
             if(player.getWorld().getName().equalsIgnoreCase("world_prison") || player.getWorld().getName().equalsIgnoreCase("world_event") || player.getWorld().getName().equalsIgnoreCase("world_war")) {
-                player.getAttribute(Attribute.GENERIC_ATTACK_SPEED).setBaseValue(16);
+                Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_ATTACK_SPEED)).setBaseValue(16);
             } else {
-                player.getAttribute(Attribute.GENERIC_ATTACK_SPEED).setBaseValue(player.getAttribute(Attribute.GENERIC_ATTACK_SPEED).getDefaultValue());
+                Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_ATTACK_SPEED)).setBaseValue(Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_ATTACK_SPEED)).getDefaultValue());
             }
 
         });

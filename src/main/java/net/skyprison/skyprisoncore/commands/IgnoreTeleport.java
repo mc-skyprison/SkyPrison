@@ -10,39 +10,35 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 public class IgnoreTeleport implements CommandExecutor {
 	private final SkyPrisonCore plugin;
-	private final DatabaseHook hook;
+	private final DatabaseHook db;
 
-	public IgnoreTeleport(SkyPrisonCore plugin, DatabaseHook hook) {
+	public IgnoreTeleport(SkyPrisonCore plugin, DatabaseHook db) {
 		this.plugin = plugin;
-		this.hook = hook;
+		this.db = db;
 	}
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if(sender instanceof Player) {
-			Player player = (Player) sender;
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+		if(sender instanceof Player player) {
 			if(args.length == 1) {
 				ArrayList<String> ignoredPlayers = new ArrayList<>();
 
-				try {
-					Connection conn = hook.getSQLConnection();
-					PreparedStatement ps = conn.prepareStatement("SELECT ignore_id FROM teleport_ignore WHERE user_id = '" + player.getUniqueId() + "'");
+				try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT ignore_id FROM teleport_ignore WHERE user_id = '" + player.getUniqueId() + "'")) {
 					ResultSet rs = ps.executeQuery();
 					while (rs.next()) {
 						ignoredPlayers.add(rs.getString(1));
 					}
-					hook.close(ps, rs, conn);
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
@@ -66,22 +62,24 @@ public class IgnoreTeleport implements CommandExecutor {
 								ignoredPlayers.remove(ignorePlayer.getUniqueId().toString());
 								player.sendMessage(plugin.colourMessage("&aSuccessfully removed " + ignorePlayer.getName() + " from your ignore list!"));
 
-								String sql = "DELETE FROM teleport_ignore WHERE user_id = ? AND ignore_id = ?";
-								List<Object> params = new ArrayList<>() {{
-									add(player.getUniqueId().toString());
-									add(ignorePlayer.getUniqueId().toString());
-								}};
-								hook.sqlUpdate(sql, params);
+								try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM teleport_ignore WHERE user_id = ? AND ignore_id = ?")) {
+									ps.setString(1, player.getUniqueId().toString());
+									ps.setString(2, ignorePlayer.getUniqueId().toString());
+									ps.executeUpdate();
+								} catch (SQLException e) {
+									e.printStackTrace();
+								}
 							} else {
 								ignoredPlayers.add(ignorePlayer.getUniqueId().toString());
 								player.sendMessage(plugin.colourMessage("&aSuccessfully added " + ignorePlayer.getName() + " to your ignore list!"));
 
-								String sql = "INSERT INTO teleport_ignore (user_id, ignore_id) VALUES (?, ?)";
-								List<Object> params = new ArrayList<>() {{
-									add(player.getUniqueId().toString());
-									add(ignorePlayer.getUniqueId().toString());
-								}};
-								hook.sqlUpdate(sql, params);
+								try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO teleport_ignore (user_id, ignore_id) VALUES (?, ?)")) {
+									ps.setString(1, player.getUniqueId().toString());
+									ps.setString(2, ignorePlayer.getUniqueId().toString());
+									ps.executeUpdate();
+								} catch (SQLException e) {
+									e.printStackTrace();
+								}
 							}
 						} else {
 							player.sendMessage(plugin.colourMessage("&cYou cannot ignore this player!"));

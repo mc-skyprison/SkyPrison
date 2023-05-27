@@ -16,25 +16,23 @@ import java.util.UUID;
 
 public class UserRoleAdd implements UserRoleAddListener {
     private final SkyPrisonCore plugin;
-    private final DatabaseHook hook;
+    private final DatabaseHook db;
 
-    public UserRoleAdd(SkyPrisonCore plugin, DatabaseHook hook) {
+    public UserRoleAdd(SkyPrisonCore plugin, DatabaseHook db) {
         this.plugin = plugin;
-        this.hook = hook;
+        this.db = db;
     }
 
     @Override
     public void onUserRoleAdd(UserRoleAddEvent event) {
         if(event.getRole().getId() == Long.parseLong("799644093742448711")) {
             String pUUID = "";
-            try {
-                Connection conn = hook.getSQLConnection();
-                PreparedStatement ps = conn.prepareStatement("SELECT user_id FROM users WHERE discord_id = '" + event.getUser().getId() + "'");
+            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id FROM users WHERE discord_id = ?")) {
+                ps.setLong(1, event.getUser().getId());
                 ResultSet rs = ps.executeQuery();
                 while(rs.next()) {
                     pUUID = rs.getString(1);
                 }
-                hook.close(ps, rs, conn);
             } catch (SQLException e) {
                 e.printStackTrace();
             }

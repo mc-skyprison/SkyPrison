@@ -16,11 +16,11 @@ import java.util.*;
 public class DailyMissions {
 
     private final SkyPrisonCore plugin;
-    private final DatabaseHook hook;
+    private final DatabaseHook db;
 
-    public DailyMissions(SkyPrisonCore plugin, DatabaseHook hook) {
+    public DailyMissions(SkyPrisonCore plugin, DatabaseHook db) {
         this.plugin = plugin;
-        this.hook = hook;
+        this.db = db;
     }
 
 
@@ -180,9 +180,7 @@ public class DailyMissions {
 
     public void setPlayerMissions(Player player) {
         ArrayList<String> missions = new ArrayList<>();
-        try {
-            Connection conn = hook.getSQLConnection();
-            PreparedStatement ps = conn.prepareStatement("SELECT type, amount, needed, completed FROM daily_missions WHERE user_id = '" + player.getUniqueId() + "'");
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT type, amount, needed, completed FROM daily_missions WHERE user_id = '" + player.getUniqueId() + "'")) {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 if (rs.getInt(4) == 0) {
@@ -191,7 +189,6 @@ public class DailyMissions {
                     missions.add(rs.getString(1) + ":" + rs.getInt(3) + "_" + rs.getInt(2) + ":completed");
                 }
             }
-            hook.close(ps, rs, conn);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -208,16 +205,18 @@ public class DailyMissions {
 
             for (String mission : missions) {
                 String[] mSplit = mission.split(":");
-                String sql = "INSERT INTO daily_missions (user_id, date, type, amount, needed, completed) VALUES (?, ?, ?, ?, ?, ?) ";
-                List<Object> params = new ArrayList<>() {{
-                    add(player.getUniqueId().toString());
-                    add(currDate);
-                    add(mSplit[0]);
-                    add(0);
-                    add(mSplit[1]);
-                    add(0);
-                }};
-                hook.sqlUpdate(sql, params);
+
+                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO daily_missions (user_id, date, type, amount, needed, completed) VALUES (?, ?, ?, ?, ?, ?)")) {
+                    ps.setString(1, player.getUniqueId().toString());
+                    ps.setString(2, currDate);
+                    ps.setString(3, mSplit[0]);
+                    ps.setInt(4, 0);
+                    ps.setString(5, mSplit[1]);
+                    ps.setInt(6, 0);
+                    ps.executeUpdate();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         }
         plugin.missions.put(player.getUniqueId(), missions);
@@ -327,26 +326,26 @@ public class DailyMissions {
 
             uMission = uMission + ":completed";
 
-            String sql = "UPDATE users SET missions_completed = missions_completed + ? WHERE user_id = ?";
-            List<Object> params = new ArrayList<>() {{
-                add(1);
-                add(player.getUniqueId());
-            }};
-            hook.sqlUpdate(sql, params);
+            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET missions_completed = missions_completed + ? WHERE user_id = ?")) {
+                ps.setInt(1, 1);
+                ps.setString(2, player.getUniqueId().toString());
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
 
         missions.set(missions.indexOf(mission), uMission);
         plugin.missions.put(player.getUniqueId(), missions);
 
-        String sql = "UPDATE daily_missions SET amount = ?, completed = ? WHERE user_id = ? AND type = ?";
-        int finalCompleted = completed;
-        int finalAmount = amount;
-        List<Object> params = new ArrayList<>() {{
-            add(finalAmount);
-            add(finalCompleted);
-            add(player.getUniqueId().toString());
-            add(mSplit[0]);
-        }};
-        hook.sqlUpdate(sql, params);
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE daily_missions SET amount = ?, completed = ? WHERE user_id = ? AND type = ?")) {
+            ps.setInt(1, amount);
+            ps.setInt(2, completed);
+            ps.setString(2, player.getUniqueId().toString());
+            ps.setString(2, mSplit[0]);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }

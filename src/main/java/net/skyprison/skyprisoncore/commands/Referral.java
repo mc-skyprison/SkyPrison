@@ -17,6 +17,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.permission.Role;
 import org.javacord.api.entity.user.User;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -24,31 +25,32 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class Referral implements CommandExecutor {
 	private final SkyPrisonCore plugin;
 	private final DiscordApi discApi;
-	private final DatabaseHook hook;
+	private final DatabaseHook db;
 
-	public Referral(SkyPrisonCore plugin, DiscordApi discApi, DatabaseHook hook) {
+	public Referral(SkyPrisonCore plugin, DiscordApi discApi, DatabaseHook db) {
 		this.plugin = plugin;
 		this.discApi = discApi;
-		this.hook = hook;
+		this.db = db;
 	}
 
 	public void openGUI(Player player) {
 		HashMap<String, String> reffedBy = new HashMap<>();
-		try {
-			Connection conn = hook.getSQLConnection();
-			PreparedStatement ps = conn.prepareStatement("SELECT referred_by, refer_date FROM referrals WHERE user_id = '" + player.getUniqueId() + "'");
+		try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT referred_by, refer_date FROM referrals WHERE user_id = ?")) {
+			ps.setString(1, player.getUniqueId().toString());
 			ResultSet rs = ps.executeQuery();
 			while(rs.next()) {
 				reffedBy.put(rs.getString(1), rs.getString(2));
 			}
-			hook.close(ps, rs, conn);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -78,7 +80,7 @@ public class Referral implements CommandExecutor {
 		player.openInventory(referred);
 	}
 
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
 		if (sender instanceof Player) {
 			CMIUser player = CMI.getInstance().getPlayerManager().getUser((Player) sender);
 			if(args.length == 1) {
@@ -90,14 +92,12 @@ public class Referral implements CommandExecutor {
 					long playtime = TimeUnit.MILLISECONDS.toHours(player.getTotalPlayTime());
 
 					boolean hasReferred = false;
-					try {
-						Connection conn = hook.getSQLConnection();
-						PreparedStatement ps = conn.prepareStatement("SELECT * FROM referrals WHERE referred_by = '" + player.getUniqueId() + "'");
+					try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT * FROM referrals WHERE referred_by = ?")) {
+						ps.setString(1, player.getUniqueId().toString());
 						ResultSet rs = ps.executeQuery();
 						if(rs.next()) {
 							hasReferred = true;
 						}
-						hook.close(ps, rs, conn);
 					} catch (SQLException e) {
 						e.printStackTrace();
 					}
@@ -108,14 +108,12 @@ public class Referral implements CommandExecutor {
 								CMIUser reffedPlayer = CMI.getInstance().getPlayerManager().getUser(args[0]);
 								if(!player.getLastIp().equalsIgnoreCase(reffedPlayer.getLastIp())) {
 									long discordId = 0;
-									try {
-										Connection conn = hook.getSQLConnection();
-										PreparedStatement ps = conn.prepareStatement("SELECT discord_id FROM users WHERE user_id = '" + reffedPlayer.getUniqueId() + "'");
+									try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT discord_id FROM users WHERE user_id = ?")) {
+										ps.setString(1, reffedPlayer.getUniqueId().toString());
 										ResultSet rs = ps.executeQuery();
 										while(rs.next()) {
 											discordId = rs.getLong(1);
 										}
-										hook.close(ps, rs, conn);
 									} catch (SQLException e) {
 										e.printStackTrace();
 									}
@@ -124,14 +122,12 @@ public class Referral implements CommandExecutor {
 										try {
 											User user = discApi.getUserById(discordId).get();
 											int refs = 0;
-											try {
-												Connection conn = hook.getSQLConnection();
-												PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM referrals WHERE user_id = '" + reffedPlayer.getUniqueId() + "'");
+											try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM referrals WHERE user_id = ?")) {
+												ps.setString(1, reffedPlayer.getUniqueId().toString());
 												ResultSet rs = ps.executeQuery();
 												while(rs.next()) {
 													refs = rs.getInt(1);
 												}
-												hook.close(ps, rs, conn);
 											} catch (SQLException e) {
 												e.printStackTrace();
 											}
@@ -150,14 +146,14 @@ public class Referral implements CommandExecutor {
 											e.printStackTrace();
 										}
 									}
-
-									String sql = "INSERT INTO referrals (user_id, referred_by, refer_date) VALUES (?, ?, ?)";
-									List<Object> params = new ArrayList<>() {{
-										add(reffedPlayer.getUniqueId().toString());
-										add(player.getUniqueId().toString());
-										add(System.currentTimeMillis());
-									}};
-									hook.sqlUpdate(sql, params);
+									try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO referrals (user_id, referred_by, refer_date) VALUES (?, ?, ?)")) {
+										ps.setString(1, reffedPlayer.getUniqueId().toString());
+										ps.setString(2, player.getUniqueId().toString());
+										ps.setLong(3, System.currentTimeMillis());
+										ps.executeUpdate();
+									} catch (SQLException e) {
+										e.printStackTrace();
+									}
 
 									if(reffedPlayer.isOnline()) {
 										reffedPlayer.sendMessage(ChatColor.AQUA + player.getName() + ChatColor.DARK_AQUA

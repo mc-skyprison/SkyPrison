@@ -7,25 +7,28 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class BrewDrink implements Listener {
     private final SkyPrisonCore plugin;
-    private final DatabaseHook hook;
+    private final DatabaseHook db;
 
-    public BrewDrink(SkyPrisonCore plugin, DatabaseHook hook) {
+    public BrewDrink(SkyPrisonCore plugin, DatabaseHook db) {
         this.plugin = plugin;
-        this.hook = hook;
+        this.db = db;
     }
 
     @EventHandler
     public void onBrewDrink(BrewDrinkEvent event) {
         Player player = event.getPlayer();
-        String sql = "UPDATE users SET brews_drank = brews_drank + 1 WHERE user_id = ?";
-        List<Object> params = new ArrayList<>() {{
-            add(player.getUniqueId().toString());
-        }};
-        hook.sqlUpdate(sql, params);
+
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET brews_drank = brews_drank + 1 WHERE user_id = ?")) {
+            ps.setString(1, player.getUniqueId().toString());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }

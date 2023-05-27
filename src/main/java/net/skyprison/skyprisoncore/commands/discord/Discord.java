@@ -22,7 +22,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.Random;
 
 public class Discord implements CommandExecutor {
     private final SkyPrisonCore plugin;
@@ -36,37 +39,33 @@ public class Discord implements CommandExecutor {
     }
 
     private void onUnlink(Audience audience) {
-        if(audience instanceof Player) {
-            Player player = (Player) audience;
-            String sql = "UPDATE users SET discord_id = ? WHERE user_id = ?";
-            List<Object> params = new ArrayList<>() {{
-                add(0);
-                add(player.getUniqueId().toString());
-            }};
-
-            db.sqlUpdate(sql, params);
-            player.sendMessage(Component.text("Successfully unlinked your Minecraft and Discord accounts").color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+        if(audience instanceof Player player) {
+            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET discord_id = ? WHERE user_id = ?")) {
+                ps.setInt(1, 0);
+                ps.setString(2, player.getUniqueId().toString());
+                ps.executeUpdate();
+                player.sendMessage(Component.text("Successfully unlinked your Minecraft and Discord accounts").color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
 
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
-        if(sender instanceof Player) {
-            Player player = (Player) sender;
+        if(sender instanceof Player player) {
             Component discordLink = Component.text("Join our discord at ").color(NamedTextColor.DARK_AQUA).appendNewline().append(Component.text("https://skyprison.net/discord").color(NamedTextColor.DARK_BLUE).decorate(TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false);
 
             if(args.length == 0) {
                 player.sendMessage(discordLink);
             } else if(args.length == 1) {
                 long discordId = 0;
-                try {
-                    Connection conn = db.getSQLConnection();
-                    PreparedStatement ps = conn.prepareStatement("SELECT discord_id FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT discord_id FROM users WHERE user_id = ?")) {
+                    ps.setString(1, player.getUniqueId().toString());
                     ResultSet rs = ps.executeQuery();
                     while(rs.next()) {
                         discordId = rs.getLong(1);
                     }
-                    db.close(ps, rs, conn);
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }

@@ -14,11 +14,11 @@ import java.sql.SQLException;
 
 public class ShopPurchase implements Listener {
     private final SkyPrisonCore plugin;
-    private final DatabaseHook hook;
+    private final DatabaseHook db;
 
-    public ShopPurchase(SkyPrisonCore plugin, DatabaseHook hook) {
+    public ShopPurchase(SkyPrisonCore plugin, DatabaseHook db) {
         this.plugin = plugin;
-        this.hook = hook;
+        this.db = db;
     }
 
     @EventHandler
@@ -27,14 +27,13 @@ public class ShopPurchase implements Listener {
         String bannedPlayer = event.getPurchaser().toString();
 
         boolean isBanned = false;
-        try {
-            Connection conn = hook.getSQLConnection();
-            PreparedStatement ps = conn.prepareStatement("SELECT banned_user FROM shop_banned WHERE user_id = '" + player + "' AND banned_user = '" + bannedPlayer + "'");
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT banned_user FROM shop_banned WHERE user_id = ? AND banned_user = ?")) {
+            ps.setString(1, player);
+            ps.setString(2, bannedPlayer);
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
                 isBanned = true;
             }
-            hook.close(ps, rs, conn);
         } catch (SQLException e) {
             e.printStackTrace();
         }

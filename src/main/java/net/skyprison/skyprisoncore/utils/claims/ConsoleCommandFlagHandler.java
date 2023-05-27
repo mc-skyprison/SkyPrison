@@ -8,13 +8,13 @@ import com.sk89q.worldguard.session.MoveType;
 import com.sk89q.worldguard.session.Session;
 import com.sk89q.worldguard.session.handler.FlagValueChangeHandler;
 import com.sk89q.worldguard.session.handler.Handler;
+import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
 
 import java.util.Objects;
 
 public class ConsoleCommandFlagHandler extends FlagValueChangeHandler<String> {
-    public static final ConsoleCommandFlagHandler.Factory FACTORY = new ConsoleCommandFlagHandler.Factory();
-
+    public static final Factory FACTORY = new Factory();
     public static class Factory extends Handler.Factory<ConsoleCommandFlagHandler> {
         @Override
         public ConsoleCommandFlagHandler create(Session session) {
@@ -22,7 +22,7 @@ public class ConsoleCommandFlagHandler extends FlagValueChangeHandler<String> {
         }
     }
     public ConsoleCommandFlagHandler(Session session) {
-        super(session, CustomFlags.CONSOLECMD);
+        super(session, SkyPrisonCore.CONSOLECMD);
     }
 
     @Override

@@ -14,6 +14,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -26,11 +27,11 @@ import java.util.Date;
 public class Daily implements CommandExecutor {
 
 	private final SkyPrisonCore plugin;
-	private final DatabaseHook hook;
+	private final DatabaseHook db;
 
-	public Daily(SkyPrisonCore plugin, DatabaseHook hook) {
+	public Daily(SkyPrisonCore plugin, DatabaseHook db) {
 		this.plugin = plugin;
-		this.hook = hook;
+		this.db = db;
 	}
 
 	public void openGUI(Player player) {
@@ -38,16 +39,14 @@ public class Daily implements CommandExecutor {
 		int highestStreak = 0;
 		String lastCollected = "";
 
-		try {
-			Connection conn = hook.getSQLConnection();
-			PreparedStatement ps = conn.prepareStatement("SELECT current_streak, highest_streak, last_collected FROM dailies WHERE user_id = '" + player.getUniqueId() + "'");
+		try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT current_streak, highest_streak, last_collected FROM dailies WHERE user_id = ?")) {
+			ps.setString(1, player.getUniqueId().toString());
 			ResultSet rs = ps.executeQuery();
 			while(rs.next()) {
 				currStreak = rs.getInt(1);
 				highestStreak = rs.getInt(2);
 				lastCollected = rs.getString(3);
 			}
-			hook.close(ps, rs, conn);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -110,12 +109,9 @@ public class Daily implements CommandExecutor {
 	}
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if(sender instanceof Player) {
-			Player player = (Player) sender;
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+		if(sender instanceof Player player) {
 			openGUI(player);
-		} else {
-			hook.createDatabase();
 		}
 		return true;
 	}

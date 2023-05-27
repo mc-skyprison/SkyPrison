@@ -6,6 +6,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -15,10 +16,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class KillInfo implements CommandExecutor {
-	private final DatabaseHook hook;
+	private final DatabaseHook db;
 
-	public KillInfo(DatabaseHook hook) {
-		this.hook = hook;
+	public KillInfo(DatabaseHook db) {
+		this.db = db;
 	}
 
 
@@ -29,23 +30,19 @@ public class KillInfo implements CommandExecutor {
 		return bd.doubleValue();
 	}
 
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if (sender instanceof Player) {
-			Player player = (Player) sender;
-
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+		if (sender instanceof Player player) {
 			int deaths = 0;
 			int pKills = 0;
 			int streak = 0;
-			try {
-				Connection conn = hook.getSQLConnection();
-				PreparedStatement ps = conn.prepareStatement("SELECT pvp_deaths, pvp_kills, pvp_killstreak FROM users WHERE user_id = '" + player.getUniqueId() + "'");
+			try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT pvp_deaths, pvp_kills, pvp_killstreak FROM users WHERE user_id = ?")) {
+				ps.setString(1, player.getUniqueId().toString());
 				ResultSet rs = ps.executeQuery();
 				while(rs.next()) {
 					deaths = rs.getInt(1);
 					pKills = rs.getInt(2);
 					streak = rs.getInt(3);
 				}
-				hook.close(ps, rs, conn);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}

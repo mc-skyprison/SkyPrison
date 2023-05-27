@@ -14,8 +14,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class SlashCommandCreate implements SlashCommandCreateListener {
 
@@ -31,53 +29,55 @@ public class SlashCommandCreate implements SlashCommandCreateListener {
     public void onSlashCommandCreate(SlashCommandCreateEvent event) {
         SlashCommandInteraction command = event.getSlashCommandInteraction();
         if(command.getCommandName().equalsIgnoreCase("link")) {
-            int code = command.getOptionByIndex(0).get().getLongValue().get().intValue();
-            if (plugin.discordLinking.containsKey(code)) {
-                User author = command.getUser();
-                long userId = author.getId();
-                CMIUser player = CMI.getInstance().getPlayerManager().getUser(plugin.discordLinking.get(code));
-                boolean gottenReward = false;
-                try {
-                    Connection conn = db.getSQLConnection();
-                    PreparedStatement ps = conn.prepareStatement("SELECT discord_id FROM users WHERE user_id = '" + player.getUniqueId() + "'");
-                    ResultSet rs = ps.executeQuery();
-                    while(rs.next()) {
-                        gottenReward = true;
+            if(command.getOptionByIndex(0).isPresent() && command.getOptionByIndex(0).get().getLongValue().isPresent()) {
+                int code = command.getOptionByIndex(0).get().getLongValue().get().intValue();
+                if (plugin.discordLinking.containsKey(code)) {
+                    User author = command.getUser();
+                    long userId = author.getId();
+                    CMIUser player = CMI.getInstance().getPlayerManager().getUser(plugin.discordLinking.get(code));
+                    boolean gottenReward = false;
+                    try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT discord_id FROM users WHERE user_id = ?")) {
+                        ps.setString(1, player.getUniqueId().toString());
+                        ResultSet rs = ps.executeQuery();
+                        while (rs.next()) {
+                            gottenReward = true;
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
                     }
-                    db.close(ps, rs, conn);
-                } catch (SQLException e) {
-                    e.printStackTrace();
+
+                    try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET discord_id = ? WHERE user_id = ?")) {
+                        ps.setLong(1, userId);
+                        ps.setString(2, player.getUniqueId().toString());
+                        ps.setString(3, "owner");
+                        ps.executeUpdate();
+
+                        String msg = "Successfully linked your Discord account with the minecraft Account " + player.getName() + "!";
+
+                        if (!gottenReward) {
+                            msg += "\nYou've also received 500 tokens for having linked your discord!";
+                            plugin.tokens.addTokens(player, 500, "Linking Discord", "");
+                        }
+
+                        command.createImmediateResponder()
+                                .setContent(msg)
+                                .setFlags(MessageFlag.EPHEMERAL)
+                                .respond();
+                        if (player.isOnline()) {
+                            player.sendMessage(plugin.colourMessage("&aYour discord account was successfully linked!"));
+                        }
+                        if (command.getServer().isPresent()) {
+                            author.updateNickname(command.getServer().get(), player.getName());
+                        }
+                    } catch (SQLException e) {
+                        command.createImmediateResponder()
+                                .setContent("Something went wrong while linking your account! Contact an admin.")
+                                .setFlags(MessageFlag.EPHEMERAL)
+                                .respond();
+                        e.printStackTrace();
+                    }
+                    plugin.discordLinking.remove(code);
                 }
-
-                String sql = "UPDATE users SET discord_id = ? WHERE user_id = ?";
-                List<Object> params = new ArrayList<>() {{
-                    add(userId);
-                    add(player.getUniqueId().toString());
-                }};
-
-                if(db.sqlUpdate(sql, params)) {
-                    String msg = "Successfully linked your Discord account with the minecraft Account " + player.getName() + "!";
-
-                    if(!gottenReward) {
-                        msg += "\nYou've also received 500 tokens for having linked your discord!";
-                        plugin.tokens.addTokens(player, 500, "Linking Discord", "");
-                    }
-
-                    command.createImmediateResponder()
-                            .setContent(msg)
-                            .setFlags(MessageFlag.EPHEMERAL)
-                            .respond();
-                    if(player.isOnline()) {
-                        player.sendMessage(plugin.colourMessage("&aYour discord account was successfully linked!"));
-                    }
-                    author.updateNickname(command.getServer().get(), player.getName());
-                } else {
-                    command.createImmediateResponder()
-                        .setContent("Something went wrong while linking your account! Contact an admin.")
-                        .setFlags(MessageFlag.EPHEMERAL)
-                        .respond();
-                }
-                plugin.discordLinking.remove(code);
             }
         }
     }

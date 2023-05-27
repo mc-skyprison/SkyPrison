@@ -15,27 +15,25 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 public class SpongeLoc implements CommandExecutor {
 	private final SkyPrisonCore plugin;
-	private final DatabaseHook hook;
+	private final DatabaseHook db;
 
-	public SpongeLoc(SkyPrisonCore plugin, DatabaseHook hook) {
+	public SpongeLoc(SkyPrisonCore plugin, DatabaseHook db) {
 		this.plugin = plugin;
-		this.hook = hook;
+		this.db = db;
 	}
 
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if (sender instanceof Player) {
-			Player player = (Player) sender;
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+		if (sender instanceof Player player) {
 
 			Component help = Component.text("⎯⎯⎯⎯⎯⎯ ").color(NamedTextColor.GRAY)
 					.append(Component.text("Spongeloc Commands").color(TextColor.fromHexString("#FFFF00")))
@@ -55,11 +53,7 @@ public class SpongeLoc implements CommandExecutor {
 
 					String loc = world.getName() + ";" + x + ";" + y + ";" + z;
 
-					try {
-						Connection conn = hook.getSQLConnection();
-						conn.setAutoCommit(false); // Start a transaction
-
-						PreparedStatement ps = conn.prepareStatement("SELECT * FROM sponge_locations WHERE location = ?");
+					try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT * FROM sponge_locations WHERE location = ?")) {
 						ps.setString(1, loc);
 						ResultSet rs = ps.executeQuery();
 						if(rs.next()) {
@@ -68,28 +62,24 @@ public class SpongeLoc implements CommandExecutor {
 									.append(Component.text("] ").color(NamedTextColor.WHITE))
 									.append(Component.text("There's already a sponge location here!").color(NamedTextColor.RED)).decoration(TextDecoration.ITALIC, false);
 							player.sendMessage(msg);
-							conn.rollback(); // Rollback the transaction in case of failure
-							hook.close(ps, rs, conn);
 							return true;
 						}
-						hook.close(ps, rs, null);  // Don't close the connection
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
 
-						int max = 0;
-						ps = conn.prepareStatement("SELECT MAX(loc_order) FROM sponge_locations");
-						rs = ps.executeQuery();
-						if (rs.next()) {
-							max = rs.getInt(1);
-						}
-						hook.close(ps, rs, null);  // Don't close the connection
+					int max = 0;
+					try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT MAX(loc_order) FROM sponge_locations")) {
+						ResultSet rs = ps.executeQuery();
+						if(rs.next()) max = rs.getInt(1);
+					} catch(SQLException e) {
+							e.printStackTrace();
+					}
 
-						ps = conn.prepareStatement("INSERT INTO sponge_locations (location, loc_order) VALUES (?, ?)");
+					try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO sponge_locations (location, loc_order) VALUES (?, ?)")) {
 						ps.setString(1, loc);
 						ps.setInt(2, max + 1);
 						ps.executeUpdate();
-						hook.close(ps, null, null);  // Don't close the connection
-
-						conn.commit(); // Commit the transaction
-						hook.close(null, null, conn);  // Close the connection now
 					} catch (SQLException e) {
 						e.printStackTrace();
 					}
@@ -101,16 +91,13 @@ public class SpongeLoc implements CommandExecutor {
 					player.sendMessage(msg);
 				} else if (args[0].equalsIgnoreCase("list")) {
 					HashMap<Integer, String> locs = new HashMap<>();
-					try {
-						Connection conn = hook.getSQLConnection();
-						PreparedStatement ps = conn.prepareStatement("SELECT location, loc_order FROM sponge_locations");
+					try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT location, loc_order FROM sponge_locations")) {
 						ResultSet rs = ps.executeQuery();
 						while(rs.next()) {
 							String loc = rs.getString(1);
 							int loc_order = rs.getInt(2);
 							locs.put(loc_order, loc);
 						}
-						hook.close(ps, rs, conn);
 					} catch (SQLException e) {
 						e.printStackTrace();
 					}
@@ -176,9 +163,8 @@ public class SpongeLoc implements CommandExecutor {
 					if (args.length > 1) {
 						if (plugin.isInt(args[1])) {
 							int spongeId = Integer.parseInt(args[1]);
-							try {
-								Connection conn = hook.getSQLConnection();
-								PreparedStatement ps = conn.prepareStatement("SELECT * FROM sponge_locations WHERE loc_order = '" + spongeId + "'");
+							try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT * FROM sponge_locations WHERE loc_order = ?")) {
+								ps.setInt(1, spongeId);
 								ResultSet rs = ps.executeQuery();
 								if (!rs.next()) {
 									Component msg = Component.text("[").color(NamedTextColor.WHITE)
@@ -188,22 +174,23 @@ public class SpongeLoc implements CommandExecutor {
 									player.sendMessage(msg);
 									return true;
 								}
-								hook.close(ps, rs, conn);
 							} catch (SQLException e) {
 								e.printStackTrace();
 							}
 
-							String sql = "DELETE FROM sponge_locations WHERE loc_order = ?";
-							List<Object> params = new ArrayList<>() {{
-								add(spongeId);
-							}};
-							hook.sqlUpdate(sql, params);
+							try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM sponge_locations WHERE loc_order = ?")) {
+								ps.setInt(1, spongeId);
+								ps.executeUpdate();
+							} catch (SQLException e) {
+								e.printStackTrace();
+							}
 
-							sql = "UPDATE sponge_locations SET loc_order = loc_order - 1 WHERE loc_order > ?";
-							params = new ArrayList<>() {{
-								add(spongeId);
-							}};
-							hook.sqlUpdate(sql, params);
+							try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE sponge_locations SET loc_order = loc_order - 1 WHERE loc_order > ?")) {
+								ps.setInt(1, spongeId);
+								ps.executeUpdate();
+							} catch (SQLException e) {
+								e.printStackTrace();
+							}
 
 							Component msg = Component.text("[").color(NamedTextColor.WHITE)
 									.append(Component.text("Sponge").color(TextColor.fromHexString("#FFFF00")))
@@ -223,14 +210,12 @@ public class SpongeLoc implements CommandExecutor {
 						if (plugin.isInt(args[1])) {
 							int spongeId = Integer.parseInt(args[1]);
 							String[] loc = new String[0];
-							try {
-								Connection conn = hook.getSQLConnection();
-								PreparedStatement ps = conn.prepareStatement("SELECT location FROM sponge_locations WHERE loc_order = '" + spongeId + "'");
+							try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT location FROM sponge_locations WHERE loc_order = ?")) {
+								ps.setInt(1, spongeId);
 								ResultSet rs = ps.executeQuery();
 								if (rs.next()) {
 									loc = rs.getString(1).split(";");
 								}
-								hook.close(ps, rs, conn);
 							} catch (SQLException e) {
 								e.printStackTrace();
 							}

@@ -7,26 +7,25 @@ import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 public class Casino implements CommandExecutor {
     private final SkyPrisonCore plugin;
-    private final DatabaseHook hook;
+    private final DatabaseHook db;
 
-    public Casino(SkyPrisonCore plugin, DatabaseHook hook) {
+    public Casino(SkyPrisonCore plugin, DatabaseHook db) {
         this.plugin = plugin;
-        this.hook = hook;
+        this.db = db;
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         /*
         args[0] = player
         args[1] = key
@@ -37,14 +36,11 @@ public class Casino implements CommandExecutor {
         CMIUser user = CMI.getInstance().getPlayerManager().getUser(args[0]);
 
         HashMap<String, Long> casinoCools = new HashMap<>();
-        try {
-            Connection conn = hook.getSQLConnection();
-            PreparedStatement ps = conn.prepareStatement("SELECT casino_name, casino_cooldown FROM casino_cooldowns WHERE user_id = '" + user.getUniqueId() + "'");
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT casino_name, casino_cooldown FROM casino_cooldowns WHERE user_id = '" + user.getUniqueId() + "'")) {
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
                 casinoCools.put(rs.getString(1), rs.getLong(2));
             }
-            hook.close(ps, rs, conn);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -56,15 +52,14 @@ public class Casino implements CommandExecutor {
                     if (user.getBalance() >= Integer.parseInt(args[2])) {
                         plugin.asConsole("money take " + user.getName() + " " + args[2]);
                         plugin.asConsole("crates key give " + user.getName() + " " + args[1] + " 1");
-
-
-                        String sql = "UPDATE casino_cooldowns SET casino_cooldown = ? WHERE user_id = ? AND casino_name = ?";
-                        List<Object> params = new ArrayList<>() {{
-                            add(nCooldown);
-                            add(user.getUniqueId().toString());
-                            add(args[1]);
-                        }};
-                        hook.sqlUpdate(sql, params);
+                        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE casino_cooldowns SET casino_cooldown = ? WHERE user_id = ? AND casino_name = ?")) {
+                            ps.setLong(1, nCooldown);
+                            ps.setString(2, user.getUniqueId().toString());
+                            ps.setString(3, args[1]);
+                            ps.executeUpdate();
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
                     }
                 } else {
                     long distance = cooldown - System.currentTimeMillis();
@@ -87,26 +82,28 @@ public class Casino implements CommandExecutor {
                     }
                 }
             } else {
-                String sql = "INSERT INTO casino_cooldowns (user_id, casino_name, casino_cooldown) VALUES (?, ?, ?)";
-                List<Object> params = new ArrayList<>() {{
-                    add(user.getUniqueId().toString());
-                    add(args[1]);
-                    add(nCooldown);
-                }};
-                hook.sqlUpdate(sql, params);
+                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO casino_cooldowns (user_id, casino_name, casino_cooldown) VALUES (?, ?, ?)")) {
+                    ps.setString(1, user.getUniqueId().toString());
+                    ps.setString(2, args[1]);
+                    ps.setLong(3, nCooldown);
+                    ps.executeUpdate();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         } else {
             if (user.getBalance() >= Integer.parseInt(args[2])) {
                 plugin.asConsole("money take " + user.getName() + " " + args[2]);
                 plugin.asConsole("crates key give " + user.getName() + " " + args[1] + " 1");
 
-                String sql = "INSERT INTO casino_cooldowns (user_id, casino_name, casino_cooldown) VALUES (?, ?, ?)";
-                List<Object> params = new ArrayList<>() {{
-                    add(user.getUniqueId().toString());
-                    add(args[1]);
-                    add(nCooldown);
-                }};
-                hook.sqlUpdate(sql, params);
+                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO casino_cooldowns (user_id, casino_name, casino_cooldown) VALUES (?, ?, ?)")) {
+                    ps.setString(1, user.getUniqueId().toString());
+                    ps.setString(2, args[1]);
+                    ps.setLong(3, nCooldown);
+                    ps.executeUpdate();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         }
         return true;

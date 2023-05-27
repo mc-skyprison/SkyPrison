@@ -27,7 +27,7 @@ public class PlayerUntag implements Listener {
         LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
         RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
         RegionQuery query = container.createQuery();
-        if (query.testState(toLoc, localPlayer, plugin.FLY)) {
+        if (query.testState(toLoc, localPlayer, SkyPrisonCore.FLY)) {
             player.setAllowFlight(true);
         }
     }

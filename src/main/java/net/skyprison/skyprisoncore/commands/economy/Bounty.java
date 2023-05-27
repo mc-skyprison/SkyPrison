@@ -18,6 +18,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -29,24 +30,21 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class Bounty implements CommandExecutor {
-	private final DatabaseHook hook;
+	private final DatabaseHook db;
 	private final SkyPrisonCore plugin;
 
-	public Bounty(DatabaseHook hook, SkyPrisonCore plugin) {
-		this.hook = hook;
+	public Bounty(DatabaseHook db, SkyPrisonCore plugin) {
+		this.db = db;
 		this.plugin = plugin;
 	}
 
 	public void openGUI(Player player, int page) {
 		HashMap<UUID, Double> bountyPlayers = new HashMap<>();
-		try {
-			Connection conn = hook.getSQLConnection();
-			PreparedStatement ps = conn.prepareStatement("SELECT user_id, prize FROM bounties");
+		try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id, prize FROM bounties")) {
 			ResultSet rs = ps.executeQuery();
 			while(rs.next()) {
 				bountyPlayers.put(UUID.fromString(rs.getString(1)), rs.getDouble(2));
 			}
-			hook.close(ps, rs, conn);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -141,9 +139,8 @@ public class Bounty implements CommandExecutor {
 	private final CooldownManager cooldownManager = new CooldownManager();
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if (sender instanceof Player) {
-			Player player = (Player) sender;
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+		if (sender instanceof Player player) {
 			CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
 
 			//  /bounty set <player> <prize>
@@ -163,9 +160,8 @@ public class Bounty implements CommandExecutor {
 										String bountiedBy = "";
 										boolean hasBounty = false;
 
-										try {
-											Connection conn = hook.getSQLConnection();
-											PreparedStatement ps = conn.prepareStatement("SELECT bountied_by FROM bounties WHERE user_id = '" + bountyTarget + "'");
+										try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT bountied_by FROM bounties WHERE user_id = ?")) {
+											ps.setString(1, bountyTarget);
 											ResultSet rs = ps.executeQuery();
 											while(rs.next()) {
 												hasBounty = true;
@@ -174,7 +170,6 @@ public class Bounty implements CommandExecutor {
 												bountiedBy = bountiedBy.replace("]", "");
 												bountiedBy = bountiedBy.replace(" ", "");
 											}
-											hook.close(ps, rs, conn);
 										} catch (SQLException e) {
 											e.printStackTrace();
 										}
@@ -191,15 +186,14 @@ public class Bounty implements CommandExecutor {
 												Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money take " + player.getName() + " " + bountyPrize);
 												cooldownManager.setCooldown(player.getUniqueId(), System.currentTimeMillis());
 
-												String sql = "UPDATE bounties SET prize = prize + ?, bountied_by = ? WHERE user_id = ?";
-												bountiedBy += "," + player.getUniqueId();
-												String finalBountiedBy = bountiedBy;
-												List<Object> params = new ArrayList<>() {{
-													add(bountyPrize);
-													add(finalBountiedBy);
-													add(bountyTarget);
-												}};
-												hook.sqlUpdate(sql, params);
+												try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE bounties SET prize = prize + ?, bountied_by = ? WHERE user_id = ?")) {
+													ps.setDouble(1, bountyPrize);
+													ps.setString(2, bountiedBy);
+													ps.setString(3, bountyTarget);
+													ps.executeUpdate();
+												} catch (SQLException e) {
+													e.printStackTrace();
+												}
 											} else {
 												for (Player online : Bukkit.getServer().getOnlinePlayers()) {
 													if (!online.hasPermission("skyprisoncore.command.bounty.silent")) {
@@ -210,13 +204,14 @@ public class Bounty implements CommandExecutor {
 												Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money take " + player.getName() + " " + bountyPrize);
 												cooldownManager.setCooldown(player.getUniqueId(), System.currentTimeMillis());
 
-												String sql = "INSERT INTO bounties (user_id, prize, bountied_by) VALUES (?, ?, ?)";
-												List<Object> params = new ArrayList<>() {{
-													add(bountyTarget);
-													add(bountyPrize);
-													add(player.getUniqueId().toString());
-												}};
-												hook.sqlUpdate(sql, params);
+												try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO bounties (user_id, prize, bountied_by) VALUES (?, ?, ?)")) {
+													ps.setString(1, bountyTarget);
+													ps.setDouble(2, bountyPrize);
+													ps.setString(3, player.getUniqueId().toString());
+													ps.executeUpdate();
+												} catch (SQLException e) {
+													e.printStackTrace();
+												}
 											}
 										} else {
 											player.sendMessage(ChatColor.RED + "You do not have enough money..");

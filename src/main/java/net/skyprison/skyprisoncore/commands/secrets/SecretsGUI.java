@@ -20,6 +20,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.sql.Connection;
@@ -30,11 +31,11 @@ import java.util.*;
 
 public class SecretsGUI implements CommandExecutor {
 	private final SkyPrisonCore plugin;
-	private final DatabaseHook hook;
+	private final DatabaseHook db;
 
-	public SecretsGUI(SkyPrisonCore plugin, DatabaseHook hook) {
+	public SecretsGUI(SkyPrisonCore plugin, DatabaseHook db) {
 		this.plugin = plugin;
-		this.hook = hook;
+		this.db = db;
 	}
 
 	private ItemStack decorativeItemStack(Material material, int amount, String name, Player player) {
@@ -71,16 +72,14 @@ public class SecretsGUI implements CommandExecutor {
 			itemmeta.setDisplayName(name);
 			int secretsFound = 0;
 
-			try {
-				Connection conn = hook.getSQLConnection();
-				PreparedStatement ps = conn.prepareStatement("SELECT secret_name FROM secrets_data WHERE user_id = '" + player.getUniqueId() + "'");
+			try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT secret_name FROM secrets_data WHERE user_id = ?")) {
+				ps.setString(1, player.getUniqueId().toString());
 				ResultSet rs = ps.executeQuery();
 				while(rs.next()) {
 					if(rs.getString(1).contains(category)) {
 						secretsFound += 1;
 					}
 				}
-				hook.close(ps, rs, conn);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -132,14 +131,13 @@ public class SecretsGUI implements CommandExecutor {
 
 
 		int amountFound = 0;
-		try {
-			Connection conn = hook.getSQLConnection();
-			PreparedStatement ps = conn.prepareStatement("SELECT secret_amount FROM secrets_data WHERE user_id = '" + player.getUniqueId() + "' AND secret_name = '" + secretId + "'");
+		try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT secret_amount FROM secrets_data WHERE user_id = ? AND secret_name = ?")) {
+			ps.setString(1, player.getUniqueId().toString());
+			ps.setString(2, secretId);
 			ResultSet rs = ps.executeQuery();
 			while(rs.next()) {
 				amountFound = rs.getInt(1);
 			}
-			hook.close(ps, rs, conn);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -264,14 +262,13 @@ public class SecretsGUI implements CommandExecutor {
 						String secretId = yamlf.getString("inventory." + guiType + "." + i + ".id");
 
 						boolean hasFound = false;
-						try {
-							Connection conn = hook.getSQLConnection();
-							PreparedStatement ps = conn.prepareStatement("SELECT secret_amount FROM secrets_data WHERE user_id = '" + player.getUniqueId() + "' AND secret_name = '" + secretId + "'");
+						try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT secret_amount FROM secrets_data WHERE user_id = ? AND secret_name = ?")) {
+							ps.setString(1, player.getUniqueId().toString());
+							ps.setString(1, secretId);
 							ResultSet rs = ps.executeQuery();
 							while(rs.next()) {
 								hasFound = true;
 							}
-							hook.close(ps, rs, conn);
 						} catch (SQLException e) {
 							e.printStackTrace();
 						}
@@ -301,14 +298,12 @@ public class SecretsGUI implements CommandExecutor {
 				} else if(guiType.equalsIgnoreCase("rewards")) {
 					HashMap<String, Integer> rewards = new HashMap<>();
 
-					try {
-						Connection conn = hook.getSQLConnection();
-						PreparedStatement ps = conn.prepareStatement("SELECT reward_name, reward_collected FROM rewards_data WHERE user_id = '" + player.getUniqueId() + "'");
+					try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT reward_name, reward_collected FROM rewards_data WHERE user_id = ?")) {
+						ps.setString(1, player.getUniqueId().toString());
 						ResultSet rs = ps.executeQuery();
 						while(rs.next()) {
 							rewards.put(rs.getString(1), rs.getInt(2));
 						}
-						hook.close(ps, rs, conn);
 					} catch (SQLException e) {
 						e.printStackTrace();
 					}
@@ -335,9 +330,8 @@ public class SecretsGUI implements CommandExecutor {
 		}
 	}
 
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if(sender instanceof Player) {
-			Player player = (Player) sender;
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+		if(sender instanceof Player player) {
 			if (args.length < 1) {
 				World pWorld = player.getWorld();
 				String guiType = "main-menu";

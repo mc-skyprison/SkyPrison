@@ -3,6 +3,7 @@ package net.skyprison.skyprisoncore.inventories;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
@@ -50,7 +51,7 @@ public class ClaimFlags implements CustomInventory {
         this.page = page;
         this.category = category;
         this.canEdit = canEdit;
-        this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Claim Flags").color(TextColor.fromHexString("#a49a2b")).decoration(TextDecoration.ITALIC, false));
+        this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Claim Flags").color(TextColor.fromHexString("#0fc3ff")).decoration(TextDecoration.ITALIC, false));
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
         ItemMeta redMeta = redPane.getItemMeta();
         redMeta.displayName(Component.text(" "));
@@ -92,14 +93,14 @@ public class ClaimFlags implements CustomInventory {
         for(int i = 0; i < this.inventory.getSize();i++) {
             if (i == 47 && page != 1) {
                 this.inventory.setItem(i, prevPage);
-            } else if (i == 52 && page != totalPages) {
+            } else if (i == 51 && page != totalPages) {
                 this.inventory.setItem(i, nextPage);
-            } else if (i == 49) {
-                ItemStack cat = new ItemStack(Material.BOOK);
+            } else if (i == 48) {
+                ItemStack cat = new ItemStack(Material.WRITABLE_BOOK);
                 ItemMeta catMeta = cat.getItemMeta();
                 TextColor color = NamedTextColor.GRAY;
                 TextColor selectedColor = TextColor.fromHexString("#0fffc3");
-                catMeta.displayName(Component.text("Toggle Flags").color(color).decoration(TextDecoration.ITALIC, false));
+                catMeta.displayName(Component.text("Toggle Flags").color(TextColor.fromHexString("#20df80")).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = new ArrayList<>();
                 lore.add(Component.text("All Flags").color(category.equalsIgnoreCase("") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
                 lore.add(Component.text("General Flags").color(category.equalsIgnoreCase("general") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
@@ -108,12 +109,20 @@ public class ClaimFlags implements CustomInventory {
                 lore.add(Component.text("Purchased Flags").color(category.equalsIgnoreCase("purchased") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
                 catMeta.lore(lore);
 
-                NamespacedKey key = new NamespacedKey(plugin, "category");
-                catMeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, category);
+                cat.setItemMeta(catMeta);
+                this.inventory.setItem(i, cat);
+            } else if (i == 50) {
+                ItemStack cat = new ItemStack(Material.ZOMBIE_SPAWN_EGG);
+                ItemMeta catMeta = cat.getItemMeta();
+                TextColor color = NamedTextColor.GRAY;
+                catMeta.displayName(Component.text("Mob Spawning").color(TextColor.fromHexString("#20df80")).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                List<Component> lore = new ArrayList<>();
+                lore.add(Component.text("Open the mob spawning GUI").color(color).decoration(TextDecoration.ITALIC, false));
+                catMeta.lore(lore);
 
                 cat.setItemMeta(catMeta);
                 this.inventory.setItem(i, cat);
-            } else if (i == 1 || i == 8 || i == 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35 || i == 36 || i == 44 || i == 45 || i == 53) {
+            } else if (i == 0 || i == 8 || i == 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35 || i == 36 || i == 44 || i == 45 || i == 53) {
                 this.inventory.setItem(i, redPane);
             } else if (i < 8 || i > 45 && i < 53) {
                 this.inventory.setItem(i, blackPane);
@@ -123,7 +132,7 @@ public class ClaimFlags implements CustomInventory {
 
                     ItemStack flagItem = new ItemStack(flag.getType());
                     ItemMeta flagMeta = flagItem.getItemMeta();
-                    flagMeta.displayName(Component.text(flag.getTitle()).color(TextColor.fromHexString("#0fffc3")).decoration(TextDecoration.ITALIC, false));
+                    flagMeta.displayName(Component.text(flag.getTitle()).color(TextColor.fromHexString("#0fffc3")).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
                     List<Component> lore = new ArrayList<>();
                     lore.add(Component.text(flag.getDescription()).color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
                     lore.add(Component.text(""));
@@ -134,7 +143,11 @@ public class ClaimFlags implements CustomInventory {
                     switch (flagState) {
                         case MESSAGE -> {
                             if(isSet) {
-                                flagStatus = LegacyComponentSerializer.legacyAmpersand().deserialize(flagState.toString());
+                                if(flag.getFlags().get(0).equals(Flags.TIME_LOCK)) {
+                                    flagStatus = Component.text(plugin.ticksToTime(Integer.parseInt(flagState.toString()))).color(NamedTextColor.GREEN).decorate(TextDecoration.BOLD);
+                                } else {
+                                    flagStatus = LegacyComponentSerializer.legacyAmpersand().deserialize(flagState.toString());
+                                }
                             } else {
                                 flagStatus = Component.text(flag.getNotSet()).color(NamedTextColor.GRAY).decorate(TextDecoration.BOLD);
                             }
@@ -147,7 +160,7 @@ public class ClaimFlags implements CustomInventory {
                                     flagStatus = Component.text(flag.getDenied()).color(NamedTextColor.RED).decorate(TextDecoration.BOLD);
                                 }
                             } else {
-                                flagStatus = Component.text(flag.getNotSet()).color(NamedTextColor.RED).decorate(TextDecoration.BOLD);
+                                flagStatus = Component.text(flag.getNotSet()).color(flag.getNotSet().equalsIgnoreCase("enabled") ? NamedTextColor.GREEN : NamedTextColor.RED).decorate(TextDecoration.BOLD);
                             }
                         }
                         case OTHER -> {
@@ -177,6 +190,19 @@ public class ClaimFlags implements CustomInventory {
             }
         }
     }
+
+    public String getNextCategory(String category) {
+        String nextCat = "";
+        switch (category) {
+            case "" -> nextCat = "general";
+            case "general" -> nextCat = "protection";
+            case "protection" -> nextCat = "terrain";
+            case "terrain" -> nextCat = "purchased";
+            case "purchased" -> nextCat = "";
+        }
+        return nextCat;
+    }
+
 
     @Override
     public @NotNull Inventory getInventory() {
