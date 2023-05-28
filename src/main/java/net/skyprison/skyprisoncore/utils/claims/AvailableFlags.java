@@ -4,7 +4,6 @@ import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.Flags;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Material;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,7 +16,7 @@ public enum AvailableFlags {
         "",
         "Non-members CAN enter",
         "Non-members CAN'T enter",
-        "Non-members CAN enter",
+        "",
         "general",
         Material.BARRIER,
         FlagState.BOOLEAN
@@ -28,7 +27,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "general",
         Material.DIAMOND,
         FlagState.BOOLEAN
@@ -61,7 +60,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "protection",
         Material.FEATHER,
         FlagState.BOOLEAN
@@ -72,7 +71,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "protection",
         Material.IRON_SWORD,
         FlagState.BOOLEAN
@@ -83,7 +82,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "protection",
         Material.CREEPER_HEAD,
         FlagState.BOOLEAN
@@ -94,7 +93,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "protection",
         Material.TNT,
         FlagState.BOOLEAN
@@ -105,7 +104,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "protection",
         Material.ROTTEN_FLESH,
         FlagState.BOOLEAN
@@ -116,7 +115,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "terrain",
         Material.LAVA_BUCKET,
         FlagState.BOOLEAN
@@ -127,7 +126,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "terrain",
         Material.WATER_BUCKET,
         FlagState.BOOLEAN
@@ -138,7 +137,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "terrain",
         Material.SNOWBALL,
         FlagState.BOOLEAN
@@ -149,7 +148,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "terrain",
         Material.SNOW,
         FlagState.BOOLEAN
@@ -160,7 +159,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "terrain",
         Material.ICE,
         FlagState.BOOLEAN
@@ -171,7 +170,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "terrain",
         Material.BLUE_ICE,
         FlagState.BOOLEAN
@@ -182,7 +181,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "terrain",
         Material.OAK_LEAVES,
         FlagState.BOOLEAN
@@ -193,7 +192,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "terrain",
         Material.GRASS_BLOCK,
         FlagState.BOOLEAN
@@ -204,7 +203,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "terrain",
         Material.MYCELIUM,
         FlagState.BOOLEAN
@@ -215,7 +214,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "terrain",
         Material.VINE,
         FlagState.BOOLEAN
@@ -226,7 +225,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "general",
         Material.CHORUS_FRUIT,
         FlagState.BOOLEAN
@@ -237,7 +236,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "general",
         Material.ENDER_PEARL,
         FlagState.BOOLEAN
@@ -270,7 +269,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "protection",
         Material.ENDERMAN_SPAWN_EGG,
         FlagState.BOOLEAN
@@ -281,7 +280,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "protection",
         Material.FLINT_AND_STEEL,
         FlagState.BOOLEAN
@@ -292,7 +291,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "protection",
         Material.LIGHTNING_ROD,
         FlagState.BOOLEAN
@@ -303,7 +302,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "terrain",
         Material.BRAIN_CORAL,
         FlagState.BOOLEAN
@@ -314,7 +313,7 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "terrain",
         Material.SNOW_GOLEM_SPAWN_EGG,
         FlagState.BOOLEAN
@@ -325,13 +324,13 @@ public enum AvailableFlags {
         "",
         "ENABLED",
         "DISABLED",
-        "ENABLED",
+        "",
         "purchased",
         Material.WHEAT_SEEDS,
         FlagState.BOOLEAN
     ),
     FLY(
-        Collections.singletonList(JavaPlugin.getPlugin(SkyPrisonCore.class).FLY),
+        Collections.singletonList(SkyPrisonCore.FLY),
         "Flight",
         "",
         "ENABLED",

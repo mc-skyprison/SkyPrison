@@ -2,7 +2,6 @@ package net.skyprison.skyprisoncore.inventories;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.WorldGuard;
-import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
@@ -144,9 +143,9 @@ public class ClaimFlags implements CustomInventory {
                         case MESSAGE -> {
                             if(isSet) {
                                 if(flag.getFlags().get(0).equals(Flags.TIME_LOCK)) {
-                                    flagStatus = Component.text(plugin.ticksToTime(Integer.parseInt(flagState.toString()))).color(NamedTextColor.GREEN).decorate(TextDecoration.BOLD);
+                                    flagStatus = Component.text(plugin.ticksToTime(Integer.parseInt(currFlagState.toString()))).color(NamedTextColor.GREEN).decorate(TextDecoration.BOLD);
                                 } else {
-                                    flagStatus = LegacyComponentSerializer.legacyAmpersand().deserialize(flagState.toString());
+                                    flagStatus = LegacyComponentSerializer.legacyAmpersand().deserialize(currFlagState.toString());
                                 }
                             } else {
                                 flagStatus = Component.text(flag.getNotSet()).color(NamedTextColor.GRAY).decorate(TextDecoration.BOLD);
@@ -155,12 +154,14 @@ public class ClaimFlags implements CustomInventory {
                         case BOOLEAN -> {
                             if(isSet) {
                                 if(currFlagState.equals(StateFlag.State.ALLOW)) {
-                                    flagStatus = Component.text(flag.getAllowed()).color(NamedTextColor.GREEN).decorate(TextDecoration.BOLD);
+                                    flagStatus = Component.text(flag.getAllowed(), flag.getAllowed().equalsIgnoreCase("enabled") ? NamedTextColor.GREEN : NamedTextColor.RED, TextDecoration.BOLD);
                                 } else {
                                     flagStatus = Component.text(flag.getDenied()).color(NamedTextColor.RED).decorate(TextDecoration.BOLD);
                                 }
                             } else {
-                                flagStatus = Component.text(flag.getNotSet()).color(flag.getNotSet().equalsIgnoreCase("enabled") ? NamedTextColor.GREEN : NamedTextColor.RED).decorate(TextDecoration.BOLD);
+                                flagStatus = Component.text(flag.getNotSet().isEmpty() ? flag.getAllowed() : flag.getNotSet(),
+                                        flag.getNotSet().isEmpty() ? NamedTextColor.GREEN : flag.getNotSet().equalsIgnoreCase("disabled") ? NamedTextColor.RED : NamedTextColor.GREEN,
+                                        TextDecoration.BOLD);
                             }
                         }
                         case OTHER -> {
@@ -173,16 +174,8 @@ public class ClaimFlags implements CustomInventory {
                     }
                     lore.add(flagStatus.decoration(TextDecoration.ITALIC, false));
                     flagMeta.lore(lore);
-                    StringBuilder combinedFlag = new StringBuilder();
-                    for (Iterator<Flag<?>> it = flag.getFlags().iterator(); it.hasNext();) {
-                        Flag<?> combFlag = it.next();
-                        combinedFlag.append(combFlag.getName());
-                        if(it.hasNext()) {
-                            combinedFlag.append(",");
-                        }
-                    }
-                    NamespacedKey key = new NamespacedKey(plugin, "flags");
-                    flagMeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, combinedFlag.toString());
+                    NamespacedKey key = new NamespacedKey(plugin, "flag");
+                    flagMeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, flag.name());
 
                     flagItem.setItemMeta(flagMeta);
                     this.inventory.setItem(i, flagItem);

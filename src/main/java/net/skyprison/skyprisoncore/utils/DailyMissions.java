@@ -180,7 +180,8 @@ public class DailyMissions {
 
     public void setPlayerMissions(Player player) {
         ArrayList<String> missions = new ArrayList<>();
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT type, amount, needed, completed FROM daily_missions WHERE user_id = '" + player.getUniqueId() + "'")) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT type, amount, needed, completed FROM daily_missions WHERE user_id = ?")) {
+            ps.setString(1, player.getUniqueId().toString());
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 if (rs.getInt(4) == 0) {
@@ -211,7 +212,7 @@ public class DailyMissions {
                     ps.setString(2, currDate);
                     ps.setString(3, mSplit[0]);
                     ps.setInt(4, 0);
-                    ps.setString(5, mSplit[1]);
+                    ps.setInt(5, Integer.parseInt(mSplit[1]));
                     ps.setInt(6, 0);
                     ps.executeUpdate();
                 } catch (SQLException e) {
@@ -341,8 +342,8 @@ public class DailyMissions {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE daily_missions SET amount = ?, completed = ? WHERE user_id = ? AND type = ?")) {
             ps.setInt(1, amount);
             ps.setInt(2, completed);
-            ps.setString(2, player.getUniqueId().toString());
-            ps.setString(2, mSplit[0]);
+            ps.setString(3, player.getUniqueId().toString());
+            ps.setString(4, mSplit[0]);
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

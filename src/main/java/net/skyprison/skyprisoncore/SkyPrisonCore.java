@@ -16,6 +16,7 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.skyprison.skyprisoncore.commands.*;
 import net.skyprison.skyprisoncore.commands.chats.Admin;
 import net.skyprison.skyprisoncore.commands.chats.Build;
@@ -76,32 +77,23 @@ import org.javacord.api.interaction.SlashCommand;
 import org.javacord.api.interaction.SlashCommandOption;
 import org.javacord.api.interaction.SlashCommandOptionType;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
 public class SkyPrisonCore extends JavaPlugin {
-    public HashMap<String, String> hexColour = new HashMap<>();
     public HashMap<UUID, Boolean> flyPvP = new HashMap<>();
     public HashMap<UUID, Integer> teleportMove = new HashMap<>();
     public Map<UUID, Integer> tokensData = new HashMap<>();
@@ -133,7 +125,7 @@ public class SkyPrisonCore extends JavaPlugin {
 
     private DiscordApi discApi;
 
-    private DailyMissions dailyMissions;
+    public DailyMissions dailyMissions;
 
     public ArrayList<Location> bombLocs = new ArrayList<>();
 
@@ -198,12 +190,10 @@ public class SkyPrisonCore extends JavaPlugin {
             this.particles = PlayerParticlesAPI.getInstance();
         }
 
-
         SessionManager sessionManager = WorldGuard.getInstance().getPlatform().getSessionManager();
         sessionManager.registerHandler(FlyFlagHandler.FACTORY, null);
         sessionManager.registerHandler(EffectFlagHandler.FACTORY, null);
         sessionManager.registerHandler(ConsoleCommandFlagHandler.FACTORY, null);
-
 
         if(dToken != null && !dToken.isEmpty()) {
             discApi = new DiscordApiBuilder()
@@ -246,61 +236,13 @@ public class SkyPrisonCore extends JavaPlugin {
             getLogger().info("Placeholders registered");
         }
 
-        String line;
-        String splitBy = ",";
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(this.getDataFolder() + File.separator
-                    + "colors.csv"));
-            while ((line = br.readLine()) != null) {
-                String[] colors = line.split(splitBy);
-                hexColour.put(colors[0].toLowerCase().replaceAll(" ", ""), colors[1]);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-
-        // Get the current time
-        LocalTime now = LocalTime.now();
-
-        // Calculate the initial delay by subtracting the current time from one minute past midnight
-        // If the current time is past one minute past midnight, this will be negative, so add 24 hours to get the delay until one minute past midnight the next day
-        long initialDelay = Duration.between(now, LocalTime.of(0, 1)).toMinutes();
-        if (initialDelay < 0) {
-            initialDelay += Duration.ofHours(24).toMinutes();
-        }
-
-/*
         Timer timer = new Timer();
         Calendar date = Calendar.getInstance();
-        date.set(
-                Calendar.DAY_OF_WEEK,
-                Calendar.SUNDAY
-        );
         date.set(Calendar.HOUR, 0);
-        date.set(Calendar.MINUTE, 0);
+        date.set(Calendar.MINUTE, 1);
         date.set(Calendar.SECOND, 0);
         date.set(Calendar.MILLISECOND, 0);
-        // Schedule to run every Sunday in midnight
-        timer.schedule(
-                new ReportGenerator(),
-                date.getTime(),
-                1000 * 60 * 60 * 24 * 7
-        );
-*/
-
-
-
-
-        // Schedule the task to run one minute past midnight, every 24 hours
-        dailyExecutor.scheduleAtFixedRate(this::checkDailies, initialDelay, TimeUnit.HOURS.toMinutes(24), TimeUnit.MINUTES);
-
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                checkDailies();
-            }
-        }.runTaskTimerAsynchronously(this, 20 * 1800, 20 * 1800);
+        timer.schedule(new NextDayTask(this, getDatabase()), date.getTime());
 
         File infoFile = new File(this.getDataFolder() + File.separator + "info.yml");
         infoConf = YamlConfiguration.loadConfiguration(infoFile);
@@ -591,12 +533,12 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EntityToggleGlide(), this);
         pm.registerEvents(new PlayerBucketEmpty(), this);
 
-        if(discApi != null) {
-            pm.registerEvents(new AsyncChat(this, discApi, getDatabase(), new Tags(this, getDatabase())), this);
-            pm.registerEvents(new PlayerQuit(this, getDatabase(), discApi, dailyMissions), this);
-            pm.registerEvents(new PlayerJoin(this, getDatabase(), discApi, dailyMissions, particles), this);
-            pm.registerEvents(new McMMOPartyChat(discApi), this);
+        pm.registerEvents(new AsyncChat(this, discApi, getDatabase(), new Tags(this, getDatabase())), this);
+        pm.registerEvents(new PlayerQuit(this, getDatabase(), discApi, dailyMissions), this);
+        pm.registerEvents(new PlayerJoin(this, getDatabase(), discApi, dailyMissions, particles), this);
+        pm.registerEvents(new McMMOPartyChat(discApi), this);
 
+        if(discApi != null) {
             Events.get().register(new Events.Listener() {
                 @Override
                 public void entryAdded(Entry entry) {
@@ -770,11 +712,92 @@ public class SkyPrisonCore extends JavaPlugin {
         }
     }
 
+    public String hasNotification(String id, OfflinePlayer player) {
+        String notification = "";
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT extra_data FROM notifications WHERE id = ? AND user_id = ? ")) {
+            ps.setString(1, id);
+            ps.setString(2, player.getUniqueId().toString());
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                notification = rs.getString(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return notification;
+    }
+
+    public List<String> hasNotifications(String type, List<String> extraData, OfflinePlayer player) {
+        List<String> notifications = new ArrayList<>();
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT extra_data FROM notifications WHERE type = ? AND user_id = ? AND extra_data IN "
+                + getQuestionMarks(extraData))) {
+            ps.setString(1, type);
+            ps.setString(2, player.getUniqueId().toString());
+
+            for (int i = 0; i < extraData.size(); i++) {
+                ps.setString(i + 3, extraData.get(i));
+            }
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                notifications.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return notifications;
+    }
+
+    public void createNotification(String type, String extraData, OfflinePlayer player, Component msg, String id, boolean deleteOnView) {
+        if(id == null || id.isEmpty()) id = UUID.randomUUID().toString();
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO notifications (id, type, extra_data, user_id, message, delete_on_view) VALUES (?, ?, ?, ?, ?, ?)")) {
+            ps.setString(1, id);
+            ps.setString(2, type);
+            ps.setString(3, extraData);
+            ps.setString(4, player.getUniqueId().toString());
+            ps.setString(5, GsonComponentSerializer.gson().serialize(msg));
+            ps.setInt(6, deleteOnView ? 1 : 0);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteNotification(String id) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM notifications WHERE id = ?")) {
+            ps.setString(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteNotification(String type, String extraData, OfflinePlayer player) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM notifications WHERE extra_data = ? AND user_id = ? AND type = ?")) {
+            ps.setString(1, extraData);
+            ps.setString(2, player.getUniqueId().toString());
+            ps.setString(3, type);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
     public String ticksToTime(int ticks) { // 500 -> 24:00
         String time = String.valueOf(ticks / 1000.0);
         String[] split = time.split("\\.");
         int minutes = (Integer.parseInt(split[1]) * 60) % 60;
-        return split[0] + ":" + minutes;
+        int hours = Integer.parseInt(split[0]);
+        String sMinutes = String.valueOf(minutes);
+        String sHours = String.valueOf(hours);
+        if(minutes < 10) {
+            sMinutes = "0" + sMinutes;
+        }
+        if(hours < 10) {
+            sHours = "0" + sHours;
+        }
+        return sHours + ":" + sMinutes;
     }
 
 
@@ -787,7 +810,7 @@ public class SkyPrisonCore extends JavaPlugin {
 
     private final static int CENTER_PX_HOVER = 114;
 
-    public static String getCenteredHover(String message){
+    public static String getCenteredHover(String message) {
         message = ChatColor.translateAlternateColorCodes('&', message);
 
         int messagePxSize = 0;
@@ -881,17 +904,7 @@ public class SkyPrisonCore extends JavaPlugin {
         return message;
     }
 
-
-
     public String translateHexColorCodes(String message) {
-        if(StringUtils.substringsBetween(message, "{#", "}") != null) {
-            String[] hexNames = StringUtils.substringsBetween(message, "{#", "}");
-            for (String hexName : hexNames) {
-                if (hexColour.get(hexName.toLowerCase()) != null) {
-                    message = message.replaceAll(hexName, hexColour.get(hexName.toLowerCase()).substring(1));
-                }
-            }
-        }
         final Pattern hexPattern = Pattern.compile("\\{#" + "([A-Fa-f0-9]{6})" + "}");
         Matcher matcher = hexPattern.matcher(message);
         StringBuffer buffer = new StringBuffer(message.length() + 4 * 8);
@@ -929,73 +942,11 @@ public class SkyPrisonCore extends JavaPlugin {
         }
     }
 
-    public void checkDailies() {
-        ArrayList<String> dailyPlayers = new ArrayList<>();
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        LocalDate yestererday = LocalDate.now().minusDays(2);
-        String yestererDate = yestererday.format(formatter);
-
-        try(Connection conn = getDatabase().getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id, current_streak FROM dailies WHERE last_collected = ?")) {
-            ps.setString(1, yestererDate);
-            ResultSet rs = ps.executeQuery();
-            while(rs.next()) {
-                if(rs.getInt(2) > 0) dailyPlayers.add(rs.getString(1));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        String placeholders = dailyPlayers.stream().map(id -> "?").collect(Collectors.joining(","));
-
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE dailies SET current_streak = 0 WHERE user_id IN (" + placeholders + ")")) {
-            for (int i = 0; i < dailyPlayers.size(); i++) {
-                ps.setString(i + 1, dailyPlayers.get(i));
-            }
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        LocalDate yesterday = LocalDate.now().minusDays(1);
-        String yesterDate = yesterday.format(formatter);
-        ArrayList<Integer> oldMissions = new ArrayList<>();
-        ArrayList<UUID> players = new ArrayList<>();
-        ArrayList<UUID> oPlayers = new ArrayList<>();
-        try(Connection conn = getDatabase().getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT mission_id, user_id FROM daily_missions WHERE date = ?")) {
-            ps.setString(1, yesterDate);
-            ResultSet rs = ps.executeQuery();
-            while(rs.next()) {
-                oldMissions.add(rs.getInt(1));
-                UUID pUUID = UUID.fromString(rs.getString(2));
-                players.add(pUUID);
-                if(Bukkit.getOfflinePlayer(pUUID).isOnline() && !oPlayers.contains(pUUID)) {
-                    oPlayers.add(pUUID);
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        players.forEach(missions.keySet()::remove);
-
-        for(UUID pUUID : oPlayers) {
-            OfflinePlayer offline = Bukkit.getOfflinePlayer(pUUID);
-            if(offline.isOnline()) {
-                Player player = offline.getPlayer();
-                dailyMissions.setPlayerMissions(player);
-                player.sendMessage(colourMessage("&aYour Daily Missions have refreshed!"));
-            }
-        }
-
-        placeholders = oldMissions.stream().map(id -> "?").collect(Collectors.joining(","));
-
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM daily_missions WHERE mission_id IN (" + placeholders + ")")) {
-            for (int i = 0; i < oldMissions.size(); i++) {
-                ps.setInt(i + 1, oldMissions.get(i));
-            }
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+    public String getQuestionMarks(List<String> list) {
+        if(!list.isEmpty()) {
+            return "(" + list.stream().map(id -> "?").collect(Collectors.joining(",")) + ")";
+        } else {
+            return "";
         }
     }
 

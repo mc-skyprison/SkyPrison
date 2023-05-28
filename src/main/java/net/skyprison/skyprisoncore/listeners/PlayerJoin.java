@@ -18,6 +18,11 @@ import com.sk89q.worldguard.protection.regions.RegionQuery;
 import dev.esophose.playerparticles.api.PlayerParticlesAPI;
 import dev.esophose.playerparticles.particles.ParticleEffect;
 import dev.esophose.playerparticles.styles.ParticleStyle;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
@@ -37,6 +42,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class PlayerJoin implements Listener {
@@ -82,8 +89,46 @@ public class PlayerJoin implements Listener {
             }
         }
 
+        Component messages = Component.text("");
+        messages = messages.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
+                .append(Component.text(" Messages ", TextColor.fromHexString("#0fc3ff"), TextDecoration.BOLD))
+                .append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
+        messages = messages.append(Component.text("\nYou've received some messages while you were offline!", NamedTextColor.GRAY));
+
+        List<String> ids = new ArrayList<>();
+
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id, message FROM notifications WHERE user_id = ?")) {
+            ps.setString(1, player.getUniqueId().toString());
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()) {
+                messages = messages.append(Component.newline().appendNewline().append(GsonComponentSerializer.gson().deserialize(rs.getString(2))));
+
+                if(!rs.getString(1).equalsIgnoreCase("claim-invite") && !rs.getString(2).equalsIgnoreCase("claim-transfer")) {
+                    ids.add(rs.getString(1));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        if(!ids.isEmpty()) {
+            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM notifications WHERE delete_on_view = ? AND id IN " + plugin.getQuestionMarks(ids))) {
+                ps.setInt(1, 1);
+                for (int i = 0; i < ids.size(); i++) {
+                    ps.setString(i + 2, ids.get(i));
+                }
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            player.sendMessage(messages);
+        }
+
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             EmbedBuilder embedJoin;
+            plugin.blockBreaks.put(player.getUniqueId(), 0);
+            plugin.tokensData.put(player.getUniqueId(), 0);
             if(!player.hasPlayedBefore()) {
                 embedJoin = new EmbedBuilder()
                         .setAuthor(player.getName() + " joined the server for the first time!", "",  "https://minotar.net/helm/" + player.getName())
@@ -109,7 +154,8 @@ public class PlayerJoin implements Listener {
                     if(!rs.isBeforeFirst()) {
                         noData = true;
                     }
-                } catch (SQLException ignored) {
+                } catch (SQLException e) {
+                    e.printStackTrace();
                 }
 
                 if(noData) {
@@ -141,49 +187,37 @@ public class PlayerJoin implements Listener {
                 player.setAllowFlight(query.testState(locWE, localPlayer, SkyPrisonCore.FLY));
             }
 
-            if(!plugin.userTags.containsKey(player.getUniqueId())) {
-                int tag_id = 0;
-                try {
-                    Connection conn = db.getConnection();
-                    PreparedStatement ps = conn.prepareStatement("SELECT active_tag FROM users WHERE user_id = '" + player.getUniqueId() + "'");
-                    ResultSet rs = ps.executeQuery();
-                    while(rs.next()) {
-                        tag_id = rs.getInt(1);
-                    }
-                } catch (SQLException ignored) {
+            int tag_id = 0;
+            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT blocks_mined, tokens, active_tag FROM users WHERE user_id = ?")) {
+                ps.setString(1, player.getUniqueId().toString());
+                ResultSet rs = ps.executeQuery();
+                while(rs.next()) {
+                    plugin.blockBreaks.put(player.getUniqueId(), rs.getInt(1));
+                    plugin.tokensData.put(player.getUniqueId(), rs.getInt(2));
+                    tag_id = rs.getInt(3);
                 }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
 
+            if(!plugin.userTags.containsKey(player.getUniqueId())) {
                 if(tag_id != 0) {
                     String tagsDisplay = "";
                     String tagsEffect = "";
-                    try {
-                        Connection conn = db.getConnection();
-                        PreparedStatement ps = conn.prepareStatement("SELECT tags_display, tags_effect FROM tags WHERE tags_id = '" + tag_id + "'");
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tags_display, tags_effect FROM tags WHERE tags_id = ?")) {
+                        ps.setInt(1, tag_id);
                         ResultSet rs = ps.executeQuery();
                         while(rs.next()) {
                             tagsDisplay = rs.getString(1);
                             tagsEffect = rs.getString(2);
                         }
-                    } catch (SQLException ignored) {
+                    } catch (SQLException e) {
+                        e.printStackTrace();
                     }
                     plugin.userTags.put(player.getUniqueId(), tagsDisplay);
                     particles.resetActivePlayerParticles(player);
                     particles.addActivePlayerParticle(player, ParticleEffect.CLOUD, ParticleStyle.fromInternalName(tagsEffect));
                 }
-            }
-
-            plugin.blockBreaks.put(player.getUniqueId(), 0);
-            plugin.tokensData.put(player.getUniqueId(), 0);
-            try {
-                Connection conn = db.getConnection();
-                PreparedStatement ps = conn.prepareStatement("SELECT blocks_mined, tokens FROM users WHERE user_id = '" + player.getUniqueId() + "'");
-                ResultSet rs = ps.executeQuery();
-                while(rs.next()) {
-                    plugin.blockBreaks.put(player.getUniqueId(), rs.getInt(1));
-                    plugin.tokensData.put(player.getUniqueId(), rs.getInt(2));
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
             }
 
             if(player.getWorld().getName().equalsIgnoreCase("world_prison") || player.getWorld().getName().equalsIgnoreCase("world_event") || player.getWorld().getName().equalsIgnoreCase("world_war")) {

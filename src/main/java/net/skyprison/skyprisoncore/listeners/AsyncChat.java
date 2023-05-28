@@ -19,6 +19,7 @@ import net.skyprison.skyprisoncore.commands.Claim;
 import net.skyprison.skyprisoncore.commands.Tags;
 import net.skyprison.skyprisoncore.inventories.ClaimFlags;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -34,7 +35,6 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -64,9 +64,7 @@ public class AsyncChat implements Listener {
                 boolean removeChatLock = true;
                 List<Object> chatLock = plugin.chatLock.get(player.getUniqueId());
                 Object lockType = chatLock.get(0);
-                String sql;
-                List<Object> params;
-                if(lockType instanceof Flag<?> lockedFlag) {
+                if(lockType instanceof AvailableFlags flag) {
                     // flag, claimId, world, canEdit, category, page
                     RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
                     RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld((String) chatLock.get(2)))));
@@ -74,7 +72,8 @@ public class AsyncChat implements Listener {
                         ProtectedRegion region = regionManager.getRegion((String) chatLock.get(1));
                         Component prefix = new Claim(plugin, db).prefix;
                         if(region != null) {
-                            if (lockedFlag instanceof StringFlag stringFlag) {
+                            Flag<?> wgFlag = flag.getFlags().get(0);
+                            if (wgFlag instanceof StringFlag stringFlag) {
                                 if (stringFlag.equals(Flags.GREET_MESSAGE)) {
                                     region.setFlag(Flags.GREET_MESSAGE, msg);
                                 } else if (stringFlag.equals(Flags.GREET_TITLE)) {
@@ -98,7 +97,7 @@ public class AsyncChat implements Listener {
                                         }
                                     }
                                 }
-                            } else if (lockedFlag instanceof RegistryFlag<?> registryFlag) {
+                            } else if (wgFlag instanceof RegistryFlag<?> registryFlag) {
                                 if (registryFlag.equals(Flags.WEATHER_LOCK)) {
                                     if(WeatherTypes.get(msg) != null) {
                                         region.setFlag(Flags.WEATHER_LOCK, WeatherTypes.get(msg));
@@ -115,7 +114,7 @@ public class AsyncChat implements Listener {
                                 }
                             }
                             if(removeChatLock) {
-                                ClaimFlags claimFlags = new ClaimFlags(plugin, (String) chatLock.get(1), (String) chatLock.get(2), (Boolean) chatLock.get(3), (String) chatLock.get(4), (Integer) chatLock.get(5));
+                                ClaimFlags claimFlags = new ClaimFlags(plugin, (String) chatLock.get(1), (String) chatLock.get(2), (boolean) chatLock.get(3), (String) chatLock.get(4), (int) chatLock.get(5));
                                 player.openInventory(claimFlags.getInventory());
                             }
                         }
@@ -195,16 +194,21 @@ public class AsyncChat implements Listener {
                     }
                 }
                 Bukkit.getConsoleSender().sendMessage(plugin.translateHexColorCodes(ChatColor.translateAlternateColorCodes('&', msgContent)));
-
+                if(discApi != null) {
+                    String dFormat = Objects.requireNonNull(langConf.getString("chat.discordSRV.format")).replaceAll("\\[name]", Matcher.quoteReplacement(player.getName()));
+                    String dMessage = dFormat.replaceAll("\\[message]", Matcher.quoteReplacement(msg));
+                    if(discApi.getTextChannelById(split[1]).isPresent()) {
+                        TextChannel channel = discApi.getTextChannelById(split[1]).get();
+                        channel.sendMessage(dMessage);
+                    }
+                }
+            } else if(discApi != null) {
                 String dFormat = Objects.requireNonNull(langConf.getString("chat.discordSRV.format")).replaceAll("\\[name]", Matcher.quoteReplacement(player.getName()));
                 String dMessage = dFormat.replaceAll("\\[message]", Matcher.quoteReplacement(msg));
-                TextChannel channel = discApi.getTextChannelById(split[1]).get();
-                channel.sendMessage(dMessage);
-            } else {
-                String dFormat = Objects.requireNonNull(langConf.getString("chat.discordSRV.format")).replaceAll("\\[name]", Matcher.quoteReplacement(player.getName()));
-                String dMessage = dFormat.replaceAll("\\[message]", Matcher.quoteReplacement(msg));
-                Collection<TextChannel> channels = discApi.getTextChannelsByName("global-chat");
-                channels.iterator().next().sendMessage(dMessage);
+                if(discApi.getTextChannelById("788108242797854751").isPresent()) {
+                    TextChannel channel = discApi.getTextChannelById("788108242797854751").get();
+                    channel.sendMessage(dMessage);
+                }
             }
         }
     }

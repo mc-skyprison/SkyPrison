@@ -74,7 +74,6 @@ public class BlockBreak implements Listener {
             }
 
             if (!CoreProtect.getInstance().getAPI().hasPlaced(player.getName(), event.getBlock(), 300, 0) && !loc.getWorld().getName().equalsIgnoreCase("world_event")) {
-                plugin.tellConsole("Wham: " + plugin.blockBreaks);
                 int brokeBlocks = plugin.blockBreaks.get(player.getUniqueId());
                 if (brokeBlocks >= 2000) {
                     plugin.blockBreaks.put(player.getUniqueId(), 0);
@@ -238,44 +237,44 @@ public class BlockBreak implements Listener {
                 String[] missSplit = mission.split("-");
                 if (missSplit[0].equalsIgnoreCase("break")) {
                     switch (missSplit[1].toLowerCase()) {
-                        case "any":
+                        case "any" -> {
                             if (!(b.getBlockData() instanceof Ageable)) {
                                 dm.updatePlayerMission(player, mission);
                             }
-                            break;
-                        case "birch_log":
+                        }
+                        case "birch_log" -> {
                             if (bType.equals(Material.BIRCH_LOG) || bType.equals(Material.BIRCH_WOOD)) {
                                 dm.updatePlayerMission(player, mission);
                             }
-                            break;
+                        }
                     }
                 } else if (missSplit[0].equalsIgnoreCase("harvest")) {
                     switch (missSplit[1].toLowerCase()) {
-                        case "any":
+                        case "any" -> {
                             if (b.getBlockData() instanceof Ageable) {
                                 dm.updatePlayerMission(player, mission);
                             }
-                            break;
-                        case "cactus":
+                        }
+                        case "cactus" -> {
                             if (bType.equals(Material.CACTUS)) {
                                 dm.updatePlayerMission(player, mission);
                             }
-                            break;
-                        case "sugar_cane":
+                        }
+                        case "sugar_cane" -> {
                             if (bType.equals(Material.SUGAR_CANE)) {
                                 dm.updatePlayerMission(player, mission);
                             }
-                            break;
-                        case "pumpkin":
+                        }
+                        case "pumpkin" -> {
                             if (bType.equals(Material.PUMPKIN)) {
                                 dm.updatePlayerMission(player, mission);
                             }
-                        break;
-                        case "bamboo":
+                        }
+                        case "bamboo" -> {
                             if (bType.equals(Material.BAMBOO)) {
                                 dm.updatePlayerMission(player, mission);
                             }
-                            break;
+                        }
                     }
                 }
             }

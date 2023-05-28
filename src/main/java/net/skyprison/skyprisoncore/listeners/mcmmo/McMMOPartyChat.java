@@ -19,8 +19,10 @@ public class McMMOPartyChat implements Listener {
 
     @EventHandler
     public void onMcMMOPartyChat(McMMOPartyChatEvent event) {
-        TextChannel channel = discApi.getTextChannelById("811643634562367498").get();
-        channel.sendMessage("(**" + event.getAuthorParty().getName() + "**) "
-                + Objects.requireNonNull(Bukkit.getPlayer(event.getPartyChatMessage().getAuthor().uuid())).getName() + " » " + event.getRawMessage());
+        if(discApi != null && discApi.getTextChannelById("811643634562367498").isPresent()) {
+            TextChannel channel = discApi.getTextChannelById("811643634562367498").get();
+            channel.sendMessage("(**" + event.getAuthorParty().getName() + "**) "
+                    + Objects.requireNonNull(Bukkit.getPlayer(event.getPartyChatMessage().getAuthor().uuid())).getName() + " » " + event.getRawMessage());
+        }
     }
 }

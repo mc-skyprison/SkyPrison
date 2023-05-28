@@ -102,8 +102,8 @@ public class ClaimFlagsMobs implements CustomInventory {
 
         Iterator<EntityType> mobsIterate = mobs.iterator();
 
-        TextColor mobColor = isAllowed ? NamedTextColor.GREEN : NamedTextColor.RED;
-        Component mobState = Component.text(isAllowed ? "ENABLE" : "DISABLE").color(mobColor).decorate(TextDecoration.BOLD);
+        TextColor mobColor = !isAllowed ? NamedTextColor.GREEN : NamedTextColor.RED;
+        Component mobState = Component.text(!isAllowed ? "ENABLE" : "DISABLE").color(mobColor).decorate(TextDecoration.BOLD);
         HeadDatabaseAPI hAPI = new HeadDatabaseAPI();
         for(int i = 0; i < this.inventory.getSize();i++) {
             if (i == 47 && page != 1) {

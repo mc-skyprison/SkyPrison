@@ -27,6 +27,7 @@ import net.skyprison.skyprisoncore.inventories.ClaimFlagsMobs;
 import net.skyprison.skyprisoncore.inventories.ClaimMembers;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -149,69 +150,60 @@ public class InventoryClick implements Listener {
                             }
                             default -> {
                                 if(!clickedMat.isEmpty() && !clickedMat.name().endsWith("GLASS_PANE")) {
-                                    plugin.tellConsole("wham1");
-                                    NamespacedKey flagKey = new NamespacedKey(plugin, "flags");
-                                    String flagsCombined = event.getCurrentItem().getPersistentDataContainer().get(flagKey, PersistentDataType.STRING);
-                                    if(flagsCombined != null) {
-                                        plugin.tellConsole("wham2");
-                                        RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-                                        RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld(inv.getWorld()))));
-                                        if(regionManager != null) {
-                                            plugin.tellConsole("wham3");
-                                            ProtectedRegion region = regionManager.getRegion(inv.getClaimId());
-                                            if(region != null) {
-                                                plugin.tellConsole("wham3");
-                                                String[] flagStrings = flagsCombined.split(",");
-                                                Flag<?> flag = Flags.fuzzyMatchFlag(WorldGuard.getInstance().getFlagRegistry(), flagStrings[0]);
-                                                if(region.getFlag(flag) != null) {
-                                                    plugin.tellConsole("wham4");
-                                                    if(flag instanceof StateFlag stateFlag) {
-                                                        plugin.tellConsole("wham5-1");
-                                                        if(Objects.equals(region.getFlag(stateFlag), StateFlag.State.ALLOW)) {
-                                                            region.setFlag(stateFlag, StateFlag.State.ALLOW);
-                                                            player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()).getInventory());
-                                                        } else if(Objects.equals(region.getFlag(stateFlag), StateFlag.State.DENY)) {
-                                                            region.setFlag(stateFlag, null);
-                                                            player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()).getInventory());
-                                                        }
-                                                    } else if(flag instanceof StringFlag stringFlag) {
-                                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList(stringFlag, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
-                                                        player.closeInventory();
-                                                        if(!stringFlag.equals(Flags.TIME_LOCK)) {
-                                                            player.sendMessage(prefix
-                                                                    .append(Component.text("Enter the new " + WordUtils.capitalize(stringFlag.getName().replace("-", " ")))
-                                                                            .color(TextColor.fromHexString("#20df80"))));
-                                                        } else {
-                                                            player.sendMessage(prefix
-                                                                    .append(Component.text("Enter the time you want in 24:00 hour time")
-                                                                            .color(TextColor.fromHexString("#20df80"))));
-                                                        }
-                                                    } else if(flag instanceof RegistryFlag<?> registryFlag) {
-                                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList(registryFlag, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
-                                                        player.closeInventory();
+                                    NamespacedKey flagKey = new NamespacedKey(plugin, "flag");
+                                    AvailableFlags flag = AvailableFlags.valueOf(event.getCurrentItem().getPersistentDataContainer().get(flagKey, PersistentDataType.STRING));
+                                    RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
+                                    RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld(inv.getWorld()))));
+                                    if(regionManager != null) {
+                                        ProtectedRegion region = regionManager.getRegion(inv.getClaimId());
+                                        if(region != null) {
+                                            List<Flag<?>> flags = flag.getFlags();
+                                            if(region.getFlag(flags.get(0)) != null) {
+                                                if(flags.get(0) instanceof StateFlag stateFlag) {
+                                                    if(Objects.equals(region.getFlag(stateFlag), StateFlag.State.ALLOW)) {
+                                                        flags.forEach(wgFlag -> region.setFlag((StateFlag) wgFlag,
+                                                                flag.getNotSet().equalsIgnoreCase("disabled") ? null : StateFlag.State.DENY));
+                                                    } else if(Objects.equals(region.getFlag(stateFlag), StateFlag.State.DENY)) {
+                                                        flags.forEach(wgFlag -> region.setFlag((StateFlag) wgFlag, null));
                                                     }
-                                                } else {
-                                                    plugin.tellConsole("wham4-1");
-                                                    if(flag instanceof StateFlag stateFlag) {
-                                                        plugin.tellConsole("wham5-1");
-                                                        region.setFlag(stateFlag, StateFlag.State.ALLOW);
-                                                        player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()).getInventory());
-                                                    } else if(flag instanceof StringFlag stringFlag) {
-                                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList(stringFlag, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
-                                                        player.closeInventory();
-                                                        if(!stringFlag.equals(Flags.TIME_LOCK)) {
-                                                            player.sendMessage(prefix
-                                                                    .append(Component.text("Enter the new " + WordUtils.capitalize(stringFlag.getName().replace("-", " ")))
-                                                                            .color(TextColor.fromHexString("#20df80"))));
-                                                        } else {
-                                                            player.sendMessage(prefix
-                                                                    .append(Component.text("Enter the time you want in 24:00 hour time")
-                                                                            .color(TextColor.fromHexString("#20df80"))));
-                                                        }
-                                                    } else if(flag instanceof RegistryFlag<?> registryFlag) {
-                                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList(registryFlag, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
-                                                        player.closeInventory();
+                                                    player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
+                                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()).getInventory());
+                                                } else if(flags.get(0) instanceof StringFlag stringFlag) {
+                                                    plugin.chatLock.put(player.getUniqueId(), Arrays.asList(flag, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
+                                                    player.closeInventory();
+                                                    if(!stringFlag.equals(Flags.TIME_LOCK)) {
+                                                        player.sendMessage(prefix.append(Component.text("Enter the new "
+                                                                        + WordUtils.capitalize(stringFlag.getName().replace("-", " ")), TextColor.fromHexString("#20df80"))));
+                                                    } else {
+                                                        player.sendMessage(prefix.append(Component.text("Enter the time you want in 24:00 hour time (Enter null to unset)",
+                                                                TextColor.fromHexString("#20df80"))));
                                                     }
+                                                } else if(flags.get(0) instanceof RegistryFlag<?>) {
+                                                    plugin.chatLock.put(player.getUniqueId(), Arrays.asList(flag, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
+                                                    player.closeInventory();
+                                                    player.sendMessage(Component.text("Enter the weather you want (Available types are 'Clear', 'Rain', 'Thunder', Enter null to unset)",
+                                                            TextColor.fromHexString("#20df80")));
+                                                }
+                                            } else {
+                                                if(flags.get(0) instanceof StateFlag) {
+                                                    flags.forEach(wgFlag -> region.setFlag((StateFlag) wgFlag, flag.getNotSet().isEmpty() ? StateFlag.State.DENY : StateFlag.State.ALLOW));
+                                                    player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
+                                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()).getInventory());
+                                                } else if(flags.get(0) instanceof StringFlag stringFlag) {
+                                                    plugin.chatLock.put(player.getUniqueId(), Arrays.asList(flag, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
+                                                    player.closeInventory();
+                                                    if(!stringFlag.equals(Flags.TIME_LOCK)) {
+                                                        player.sendMessage(prefix.append(Component.text("Enter the new "
+                                                                + WordUtils.capitalize(stringFlag.getName().replace("-", " ")), TextColor.fromHexString("#20df80"))));
+                                                    } else {
+                                                        player.sendMessage(prefix.append(Component.text("Enter the time you want in 24:00 hour time",
+                                                                TextColor.fromHexString("#20df80"))));
+                                                    }
+                                                } else if(flags.get(0) instanceof RegistryFlag<?>) {
+                                                    plugin.chatLock.put(player.getUniqueId(), Arrays.asList(flag, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
+                                                    player.closeInventory();
+                                                    player.sendMessage(Component.text("Enter the weather you want (Available types are 'Clear', 'Rain', 'Thunder'",
+                                                            TextColor.fromHexString("#20df80")));
                                                 }
                                             }
                                         }
@@ -271,31 +263,25 @@ public class InventoryClick implements Listener {
                             }
                             default -> {
                                 if(!clickedMat.isEmpty() && !clickedMat.name().endsWith("GLASS_PANE")) {
-                                    plugin.tellConsole("wham1");
                                     NamespacedKey mobKey = new NamespacedKey(plugin, "mob");
                                     String mobName = event.getCurrentItem().getPersistentDataContainer().get(mobKey, PersistentDataType.STRING);
                                     if(mobName != null) {
-                                        plugin.tellConsole("wham2");
                                         RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
                                         RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld(inv.getWorld()))));
                                         if(regionManager != null) {
-                                            plugin.tellConsole("wham3");
                                             ProtectedRegion region = regionManager.getRegion(inv.getClaimId());
                                             if(region != null) {
-                                                plugin.tellConsole("wham4");
                                                 Set<EntityType> deniedMobs = region.getFlag(Flags.DENY_SPAWN);
-                                                if(deniedMobs != null) {
-                                                    plugin.tellConsole("wham5");
-                                                    EntityType mob = BukkitAdapter.adapt(org.bukkit.entity.EntityType.valueOf(mobName));
-                                                    if (inv.getIsAllowed()) {
-                                                        plugin.tellConsole("wham6");
-                                                        deniedMobs.add(mob);
-                                                    } else {
-                                                        deniedMobs.remove(mob);
-                                                    }
-                                                    region.setFlag(Flags.DENY_SPAWN, deniedMobs);
-                                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getIsAllowed(), inv.getCategory(), inv.getPage()).getInventory());
+                                                if(deniedMobs == null || deniedMobs.isEmpty()) deniedMobs = new HashSet<>();
+                                                EntityType mob = BukkitAdapter.adapt(org.bukkit.entity.EntityType.valueOf(mobName));
+                                                if (inv.getIsAllowed()) {
+                                                    deniedMobs.add(mob);
+                                                } else {
+                                                    deniedMobs.remove(mob);
                                                 }
+                                                region.setFlag(Flags.DENY_SPAWN, deniedMobs);
+                                                player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
+                                                player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getIsAllowed(), inv.getCategory(), inv.getPage()).getInventory());
                                             }
                                         }
                                     }
