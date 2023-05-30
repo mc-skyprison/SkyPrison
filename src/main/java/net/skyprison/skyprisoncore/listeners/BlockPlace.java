@@ -71,24 +71,14 @@ public class BlockPlace implements Listener {
                             Location loc = block.getLocation();
                             List<Block> blocks = new ArrayList<>();
                             Random random = new Random();
-                            int radius = 0;
-                            switch (bombType) {
-                                case "small":
-                                    radius = 2;
-                                    break;
-                                case "medium":
-                                    radius = 3;
-                                    break;
-                                case "large":
-                                    radius = 4;
-                                    break;
-                                case "massive":
-                                    radius = 5;
-                                    break;
-                                case "nuke":
-                                    radius = 6;
-                                    break;
-                            }
+                            int radius = switch (bombType) {
+                                case "small" -> 2;
+                                case "medium" -> 3;
+                                case "large" -> 4;
+                                case "massive" -> 5;
+                                case "nuke" -> 6;
+                                default -> 0;
+                            };
 
                             World world = loc.getWorld();
                             if(radius != 6) {
@@ -142,9 +132,8 @@ public class BlockPlace implements Listener {
                             RegionQuery query = regionContainer.createQuery();
                             plugin.bombLocs.add(loc);
 
-                            int finalRadius = radius;
                             new BukkitRunnable() {
-                                int redAmount = finalRadius;
+                                int redAmount = radius;
                                 int greenAmount = 0;
                                 @Override
                                 public void run() {
@@ -186,6 +175,14 @@ public class BlockPlace implements Listener {
                                     }
                                 }
                             }.runTaskTimer(plugin, 20, 20);
+                            for (String mission : dm.getMissions(player)) {
+                                if(!dm.isCompleted(player, mission)) {
+                                    String[] missSplit = mission.split("-");
+                                    if (missSplit[0].equalsIgnoreCase("bomb")) {
+                                        dm.updatePlayerMission(player, mission);
+                                    }
+                                }
+                            }
                         } else {
                             player.sendMessage(plugin.colourMessage("&cYou can only use this in the mines!"));
                             event.setCancelled(true);

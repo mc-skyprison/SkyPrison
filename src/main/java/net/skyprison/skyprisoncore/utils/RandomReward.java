@@ -173,41 +173,41 @@ public enum RandomReward {
             boolean addEnchants = false;
             int enchantLevel = 0;
 
-            switch(condition) {
-                case "broken":
+            switch (condition) {
+                case "broken" -> {
                     damage = (int) (maxDura * 0.95);
-                    if(rand.nextInt(100) < 20) {
+                    if (rand.nextInt(100) < 20) {
                         addEnchants = true;
                         enchantLevel = ThreadLocalRandom.current().nextInt(1, 6 - rand.nextInt(2));
                     }
-                    break;
-                case "damaged":
+                }
+                case "damaged" -> {
                     damage = (int) (maxDura * 0.75);
-                    if(rand.nextInt(100) < 15) {
+                    if (rand.nextInt(100) < 15) {
                         addEnchants = true;
                         enchantLevel = ThreadLocalRandom.current().nextInt(1, 6 - rand.nextInt(2));
                     }
-                    break;
-                case "worn":
+                }
+                case "worn" -> {
                     damage = maxDura / 2;
-                    if(rand.nextInt(100) < 10) {
+                    if (rand.nextInt(100) < 10) {
                         addEnchants = true;
                         enchantLevel = ThreadLocalRandom.current().nextInt(1, 6 - rand.nextInt(3));
                     }
-                    break;
-                case "used":
+                }
+                case "used" -> {
                     damage = (int) (maxDura * 0.25);
-                    if(rand.nextInt(100) < 5) {
+                    if (rand.nextInt(100) < 5) {
                         addEnchants = true;
                         enchantLevel = ThreadLocalRandom.current().nextInt(1, 6 - rand.nextInt(4));
                     }
-                    break;
-                case "new":
-                    if(rand.nextInt(100) < 1) {
+                }
+                case "new" -> {
+                    if (rand.nextInt(100) < 1) {
                         addEnchants = true;
                         enchantLevel = ThreadLocalRandom.current().nextInt(1, 6 - rand.nextInt(5));
                     }
-                    break;
+                }
             }
 
             if(addEnchants) {

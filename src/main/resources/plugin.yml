@@ -85,7 +85,7 @@ commands:
   #
   # Minigame Commands
   #
-  spongeloc:
+  sponge:
     description: Sponge Commands
     usage: /<command>
     permission: skyprisoncore.command.sponge
@@ -360,7 +360,7 @@ permissions:
   # Minigame Permissions
   #
   skyprisoncore.command.sponge:
-    description: Gives acess to /spongeloc
+    description: Gives acess to /sponge
   #
   # Teleport Permissions
   #

@@ -22,10 +22,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.*;
 import net.skyprison.skyprisoncore.commands.economy.*;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
-import net.skyprison.skyprisoncore.inventories.ClaimFlags;
-import net.skyprison.skyprisoncore.inventories.ClaimFlagsMobs;
-import net.skyprison.skyprisoncore.inventories.ClaimMembers;
-import net.skyprison.skyprisoncore.inventories.CustomInventory;
+import net.skyprison.skyprisoncore.inventories.*;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
 import org.apache.commons.lang.WordUtils;
@@ -306,6 +303,27 @@ public class InventoryClick implements Listener {
                             case 51 -> {
                                 if (clickedMat.equals(Material.PAPER)) {
                                     player.openInventory(new ClaimMembers(plugin, inv.getClaimName(), inv.getMembers(), inv.getCategory(), inv.getPage() + 1).getInventory());
+                                }
+                            }
+                        }
+                    }
+                } else if (customInv instanceof ClaimPending inv) {
+                    if(event.getCurrentItem() != null) {
+                        Material clickedMat = event.getCurrentItem().getType();
+                        switch (event.getSlot()) {
+                            case 47 -> {
+                                if (clickedMat.equals(Material.PAPER)) {
+                                    player.openInventory(new ClaimPending(plugin, inv.getClaimIds(), inv.getCategory(), inv.getPage() - 1).getInventory());
+                                }
+                            }
+                            case 49 -> {
+                                if (clickedMat.equals(Material.WRITABLE_BOOK)) {
+                                    player.openInventory(new ClaimPending(plugin, inv.getClaimIds(), inv.getNextCategory(inv.getCategory()), 1).getInventory());
+                                }
+                            }
+                            case 51 -> {
+                                if (clickedMat.equals(Material.PAPER)) {
+                                    player.openInventory(new ClaimPending(plugin, inv.getClaimIds(), inv.getCategory(), inv.getPage() + 1).getInventory());
                                 }
                             }
                         }

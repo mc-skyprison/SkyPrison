@@ -32,6 +32,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.ClaimFlags;
 import net.skyprison.skyprisoncore.inventories.ClaimMembers;
+import net.skyprison.skyprisoncore.inventories.ClaimPending;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
@@ -54,7 +55,10 @@ public class Claim implements CommandExecutor {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
 
-    public final Component prefix = Component.text("Claims", TextColor.fromHexString("#0fc3ff")).append(Component.text(" | ", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false);
+    public final Component prefix = Component.text("Claims", TextColor.fromHexString("#0fc3ff")).append(Component.text(" | ", NamedTextColor.WHITE));
+
+    public final Component notFound = prefix.append(Component.text("No claim(s) were found!", NamedTextColor.RED));
+
 
     public Claim(SkyPrisonCore plugin, DatabaseHook db) {
         this.plugin = plugin;
@@ -207,16 +211,14 @@ public class Claim implements CommandExecutor {
             ps.setString(1, claimId);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                if(rs.getString(1) != null) {
-                    childClaims.add(rs.getString(1));
-                }
+                childClaims.add(rs.getString(1));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return childClaims;
     }
-    public boolean removeClaim(Player player, String claimName, RegionManager regionManager) {
+    public void deleteClaim(Player player, String claimName, RegionManager regionManager) {
         List<String> claimIds = getClaimIdsFromNames(player, claimName, Collections.singletonList("owner"));
         if(!claimIds.isEmpty() && regionManager.hasRegion(claimIds.get(0))) {
             String claimId = claimIds.get(0);
@@ -251,9 +253,10 @@ public class Claim implements CommandExecutor {
 
 
             regionManager.removeRegion(claimId);
-            return true;
+            player.sendMessage(prefix.append(Component.text("Successfully deleted the claim with the name ", TextColor.fromHexString("#20df80"))
+                    .append(Component.text(claimName, TextColor.fromHexString("#20df80"), TextDecoration.BOLD))));
         } else {
-            return false;
+            player.sendMessage(prefix.append(Component.text("Failed to find your claim on deletion! Contact an admin..", NamedTextColor.RED)));
         }
     }
 
@@ -490,8 +493,6 @@ public class Claim implements CommandExecutor {
                         int blocksLeft = pClaimBlocks.get("total") - pClaimBlocks.get("used");
 
                         if(blocksLeft - additionalBlocksUsed >= 0) {
-                            plugin.tellConsole("left: " + (blocksLeft - additionalBlocksUsed));
-
                             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks_used = claim_blocks_used + ? WHERE user_id = ?")) {
                                 ps.setInt(1, additionalBlocksUsed);
                                 ps.setString(2, player.getUniqueId().toString());
@@ -543,17 +544,14 @@ public class Claim implements CommandExecutor {
                 .append(Component.text("\n/claim info (claim)", TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
                 .append(Component.text("Get info about a claim", TextColor.fromHexString("#dbb976"))))
 
-/*                .append(Component.text("\n/claim blocks", TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
-                .append(Component.text("Get info about your", TextColor.fromHexString("#dbb976"))))*/
-
                 .append(Component.text("\n/claim buyblocks <amount>", TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
                 .append(Component.text("Buy more claimblocks", TextColor.fromHexString("#dbb976"))))
 
                 .append(Component.text("\n/claim create <claim>", TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
                 .append(Component.text("Create a new claim", TextColor.fromHexString("#dbb976"))))
 
-                .append(Component.text("\n/claim remove <claim>", TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
-                .append(Component.text("Remove a claim", TextColor.fromHexString("#dbb976"))))
+                .append(Component.text("\n/claim delete <claim>", TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
+                .append(Component.text("delete a claim", TextColor.fromHexString("#dbb976"))))
 
                 .append(Component.text("\n/claim flags (claim)", TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
                 .append(Component.text("View/edit flags", TextColor.fromHexString("#dbb976"))))
@@ -589,6 +587,9 @@ public class Claim implements CommandExecutor {
 
                 .append(Component.text("\n/claim expand <amount>", TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
                 .append(Component.text("Expand a claim in the direction you are facing", TextColor.fromHexString("#dbb976"))))
+
+                .append(Component.text("\n/claim pending", TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
+                .append(Component.text("See all pending invites/transfers", TextColor.fromHexString("#dbb976"))))
 
                 .append(Component.text("\n/claim customheight", TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
                 .append(Component.text("Enable/disable custom height on claim create", TextColor.fromHexString("#dbb976"))))
@@ -628,9 +629,9 @@ public class Claim implements CommandExecutor {
 
             List<String> claimsToShow = new ArrayList<>(claimsData.keySet());
 
-            int toRemove = 10 * (page - 1);
-            if(toRemove != 0) {
-                claimsToShow = claimsToShow.subList(toRemove, claimsToShow.size()-1);
+            int todelete = 10 * (page - 1);
+            if(todelete != 0) {
+                claimsToShow = claimsToShow.subList(todelete, claimsToShow.size()-1);
             }
             int i = 0;
             for (String claimId : claimsToShow) {
@@ -843,65 +844,70 @@ public class Claim implements CommandExecutor {
     }
 
     public void inviteDecline(Player player, String claimId, String notifId) {
-        String claimName = (String) getClaimData(Collections.singletonList(claimId)).get(claimId).get("name");
-        HashMap<UUID, String> toNotify = getClaimUsers(Collections.singletonList(claimId), Arrays.asList("owner", "co-owner")).get(claimId);
+        if(!plugin.hasNotification(notifId, player).isEmpty()) {
+            String claimName = (String) getClaimData(Collections.singletonList(claimId)).get(claimId).get("name");
+            HashMap<UUID, String> toNotify = getClaimUsers(Collections.singletonList(claimId), Arrays.asList("owner", "co-owner")).get(claimId);
 
-        plugin.deleteNotification(notifId);
+            plugin.deleteNotification(notifId);
 
-        player.sendMessage(prefix.append(Component.text("You've successfully declined the invite to join the claim ", TextColor.fromHexString("#20df80"))
-                .append(Component.text(claimName, TextColor.fromHexString("#20df80"), TextDecoration.BOLD))));
+            player.sendMessage(prefix.append(Component.text("You've successfully declined the invite to join the claim ", TextColor.fromHexString("#20df80"))
+                    .append(Component.text(claimName, TextColor.fromHexString("#20df80"), TextDecoration.BOLD))));
 
-        for(UUID pUUID : toNotify.keySet()) {
-            OfflinePlayer oPlayer = Bukkit.getOfflinePlayer(pUUID);
-            Component msg = prefix.append(Component.text("Player ", TextColor.fromHexString("#20df80"))
-                    .append(Component.text(player.getName(), TextColor.fromHexString("#20df80"), TextDecoration.BOLD))
-                    .append(Component.text(" has REJECTED the invite to join the claim ", TextColor.fromHexString("#20df80")))
-                    .append(Component.text(claimName, TextColor.fromHexString("#20df80"), TextDecoration.BOLD)));
-            if(oPlayer.isOnline()) {
-                Objects.requireNonNull(oPlayer.getPlayer()).sendMessage(msg);
-            } else {
-                plugin.createNotification("claim-invite-declined", claimId, oPlayer, msg, null, true);
+            for (UUID pUUID : toNotify.keySet()) {
+                OfflinePlayer oPlayer = Bukkit.getOfflinePlayer(pUUID);
+                Component msg = prefix.append(Component.text("Player ", TextColor.fromHexString("#20df80"))
+                        .append(Component.text(player.getName(), TextColor.fromHexString("#20df80"), TextDecoration.BOLD))
+                        .append(Component.text(" has REJECTED the invite to join the claim ", TextColor.fromHexString("#20df80")))
+                        .append(Component.text(claimName, TextColor.fromHexString("#20df80"), TextDecoration.BOLD)));
+                if (oPlayer.isOnline()) {
+                    Objects.requireNonNull(oPlayer.getPlayer()).sendMessage(msg);
+                } else {
+                    plugin.createNotification("claim-invite-declined", claimId, oPlayer, msg, null, true);
+                }
             }
         }
     }
 
     public void inviteAccept(Player player, String claimId, String notifId) {
-        HashMap<String, Object> claimData = getClaimData(Collections.singletonList(claimId)).get(claimId);
-        final RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-        final RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld((String) claimData.get("world")))));
-        assert regionManager != null;
-        Objects.requireNonNull(regionManager.getRegion(claimId)).getMembers().addPlayer(player.getUniqueId());
-        String claimName = (String) claimData.get("name");
-        HashMap<UUID, String> toNotify = getClaimUsers(Collections.singletonList(claimId), Arrays.asList("owner", "co-owner")).get(claimId);
+        if(!plugin.hasNotification(notifId, player).isEmpty()) {
+            HashMap<String, Object> claimData = getClaimData(Collections.singletonList(claimId)).get(claimId);
+            final RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
+            final RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld((String) claimData.get("world")))));
+            assert regionManager != null;
+            Objects.requireNonNull(regionManager.getRegion(claimId)).getMembers().addPlayer(player.getUniqueId());
+            String claimName = (String) claimData.get("name");
+            HashMap<UUID, String> toNotify = getClaimUsers(Collections.singletonList(claimId), Arrays.asList("owner", "co-owner")).get(claimId);
 
-        plugin.deleteNotification(notifId);
+            plugin.deleteNotification(notifId);
 
 
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO claims_members (user_id, claim_id, user_rank) VALUES (?, ?, ?)")) {
-            ps.setString(1, player.getUniqueId().toString());
-            ps.setString(2, claimId);
-            ps.setString(3, "member");
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO claims_members (user_id, claim_id, user_rank) VALUES (?, ?, ?)")) {
+                ps.setString(1, player.getUniqueId().toString());
+                ps.setString(2, claimId);
+                ps.setString(3, "member");
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
 
-        player.sendMessage(prefix.append(Component.text("You've successfully joined the claim ", TextColor.fromHexString("#20df80"))
-                .append(Component.text(claimName, TextColor.fromHexString("#20df80"), TextDecoration.BOLD))));
+            player.sendMessage(prefix.append(Component.text("You've successfully joined the claim ", TextColor.fromHexString("#20df80"))
+                    .append(Component.text(claimName, TextColor.fromHexString("#20df80"), TextDecoration.BOLD))));
 
-        for(UUID pUUID : toNotify.keySet()) {
-            OfflinePlayer oPlayer = Bukkit.getOfflinePlayer(pUUID);
+            for (UUID pUUID : toNotify.keySet()) {
+                OfflinePlayer oPlayer = Bukkit.getOfflinePlayer(pUUID);
                 Component msg = prefix.append(Component.text("Player ", TextColor.fromHexString("#20df80"))
                         .append(Component.text(player.getName(), TextColor.fromHexString("#20df80"), TextDecoration.BOLD))
                         .append(Component.text(" has accepted the invite to join the claim ", TextColor.fromHexString("#20df80")))
                         .append(Component.text(claimName, TextColor.fromHexString("#20df80"), TextDecoration.BOLD)));
-            if(oPlayer.isOnline()) {
-                Objects.requireNonNull(oPlayer.getPlayer()).sendMessage(msg);
-            } else {
-                plugin.createNotification("claim-invite-accepted", claimId, oPlayer, msg, null, true);
+                if (oPlayer.isOnline()) {
+                    Objects.requireNonNull(oPlayer.getPlayer()).sendMessage(msg);
+                } else {
+                    plugin.createNotification("claim-invite-accepted", claimId, oPlayer, msg, null, true);
+                }
             }
         }
     }
+
     public void kickPlayerMultiple(Player player, CMIUser kickedPlayer, List<String> claimIds) {
         Component info = Component.text("");
         info = info.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
@@ -1011,6 +1017,13 @@ public class Claim implements CommandExecutor {
     public void transferClaim(Player player, CMIUser transferPlayer, String claimId) {
         HashMap<String, Object> claimData = getClaimData(Collections.singletonList(claimId)).get(claimId);
         int claimBlocks = (int) claimData.get("blocks");
+        List<String> childClaims = getChildren(claimId);
+        if(!getChildren(claimId).isEmpty()) {
+            HashMap<String, HashMap<String, Object>> childData = getClaimData(childClaims);
+            for(String child : childData.keySet()) {
+                claimBlocks += (int) childData.get(child).get("blocks");
+            }
+        }
 
         HashMap<UUID, HashMap<String, Integer>> pBlocks = getPlayersBlocks(Collections.singletonList(transferPlayer.getOfflinePlayer()));
         if(!pBlocks.isEmpty()) {
@@ -1047,106 +1060,161 @@ public class Claim implements CommandExecutor {
     }
 
     public void transferDecline(Player transferPlayer, String claimId, String notifId) {
-        plugin.deleteNotification(notifId);
+        if(!plugin.hasNotification(notifId, transferPlayer).isEmpty()) {
+            plugin.deleteNotification(notifId);
 
-        String claimName = (String) getClaimData(Collections.singletonList(claimId)).get(claimId).get("name");
+            String claimName = (String) getClaimData(Collections.singletonList(claimId)).get(claimId).get("name");
 
-        transferPlayer.sendMessage(prefix.append(Component.text("You've successfully declined the transfer to become the owner of the claim ", TextColor.fromHexString("#20df80"))
-                .append(Component.text(claimName, TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))));
-        Component msg = prefix.append(Component.text("Player ", NamedTextColor.RED)
-                .append(Component.text(transferPlayer.getName(), NamedTextColor.RED, TextDecoration.BOLD))
-                .append(Component.text(" has declined the transfer request to become the owner of the claim ", NamedTextColor.RED))
-                .append(Component.text(claimName, NamedTextColor.RED, TextDecoration.BOLD)));
+            transferPlayer.sendMessage(prefix.append(Component.text("You've successfully declined the transfer to become the owner of the claim ", TextColor.fromHexString("#20df80"))
+                    .append(Component.text(claimName, TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))));
+            Component msg = prefix.append(Component.text("Player ", NamedTextColor.RED)
+                    .append(Component.text(transferPlayer.getName(), NamedTextColor.RED, TextDecoration.BOLD))
+                    .append(Component.text(" has declined the transfer request to become the owner of the claim ", NamedTextColor.RED))
+                    .append(Component.text(claimName, NamedTextColor.RED, TextDecoration.BOLD)));
 
-        UUID owner = getClaimOwners(Collections.singletonList(claimId)).get(claimId);
+            UUID owner = getClaimOwners(Collections.singletonList(claimId)).get(claimId);
 
-        if (Bukkit.getPlayer(owner) != null) {
-            Objects.requireNonNull(Bukkit.getPlayer(owner)).sendMessage(msg);
-        } else {
-            plugin.createNotification("claim-transfer-declined", claimId, Bukkit.getOfflinePlayer(owner), msg, null, true);
+            if (Bukkit.getPlayer(owner) != null) {
+                Objects.requireNonNull(Bukkit.getPlayer(owner)).sendMessage(msg);
+            } else {
+                plugin.createNotification("claim-transfer-declined", claimId, Bukkit.getOfflinePlayer(owner), msg, null, true);
+            }
         }
     }
 
     public void transferAccept(Player transferPlayer, String claimId, String notifId) {
-        plugin.deleteNotification(notifId);
-        HashMap<String, HashMap<String, Object>> claims = getClaimData(Collections.singletonList(claimId));
-        if(!claims.isEmpty()) {
-            HashMap<String, Object> claimData = getClaimData(Collections.singletonList(claimId)).get(claimId);
-            int claimBlocks = (int) claimData.get("blocks");
-            String claimName = (String) claimData.get("name");
-            int pBlocks = hasNeededBlocks(transferPlayer, claimBlocks);
-            if (pBlocks != -1) {
-                String oldClaimName = claimName;
-                List<String> nameTaken = getClaimIdsFromNames(transferPlayer, claimName, Collections.singletonList("owner"));
-                if (!nameTaken.isEmpty()) {
-                    int leftLimit = 97; // letter 'a'
-                    int rightLimit = 122; // letter 'z'
-                    int targetStringLength = 10;
-                    Random random = new Random();
-                    claimName = random.ints(leftLimit, rightLimit + 1)
-                            .limit(targetStringLength)
-                            .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
-                            .toString();
-                    updateClaimName(claimId, claimName);
+        if(!plugin.hasNotification(notifId, transferPlayer).isEmpty()) {
+            plugin.deleteNotification(notifId);
+            HashMap<String, HashMap<String, Object>> claims = getClaimData(Collections.singletonList(claimId));
+            if (!claims.isEmpty()) {
+                HashMap<String, Object> claimData = getClaimData(Collections.singletonList(claimId)).get(claimId);
+                int claimBlocks = (int) claimData.get("blocks");
+
+                List<String> childClaims = getChildren(claimId);
+                List<String> childTaken = new ArrayList<>();
+                if(!getChildren(claimId).isEmpty()) {
+                    HashMap<String, HashMap<String, Object>> childData = getClaimData(childClaims);
+                    for(String child : childData.keySet()) {
+                        claimBlocks += (int) childData.get(child).get("blocks");
+                        if(!getClaimIdsFromNames(transferPlayer, childData.get(child).get("name").toString(), Collections.singletonList("owner")).isEmpty()) {
+                            childTaken.add(child);
+                        }
+                    }
                 }
 
-                try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks_used = ? WHERE user_id = ?")) {
-                    ps.setInt(1, pBlocks);
-                    ps.setString(2, transferPlayer.getUniqueId().toString());
-                    ps.executeUpdate();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-                UUID owner = getClaimOwners(Collections.singletonList(claimId)).get(claimId);
-                try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks_used = claim_blocks_used - ? WHERE user_id = ?")) {
-                    ps.setInt(1, claimBlocks);
-                    ps.setString(2, owner.toString());
-                    ps.executeUpdate();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
+                String claimName = (String) claimData.get("name");
+                int pBlocks = hasNeededBlocks(transferPlayer, claimBlocks);
+                if (pBlocks != -1) {
+                    String oldClaimName = claimName;
+                    List<String> nameTaken = getClaimIdsFromNames(transferPlayer, claimName, Collections.singletonList("owner"));
+                    if (!nameTaken.isEmpty()) {
+                        int leftLimit = 97; // letter 'a'
+                        int rightLimit = 122; // letter 'z'
+                        int targetStringLength = 10;
+                        Random random = new Random();
+                        claimName = random.ints(leftLimit, rightLimit + 1)
+                                .limit(targetStringLength)
+                                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                                .toString();
+                        updateClaimName(claimId, claimName);
+                    }
 
-                try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE claims_members SET user_rank = ? WHERE user_id = ? AND claim_id = ?")) {
-                    ps.setString(1, "owner");
-                    ps.setString(2, transferPlayer.getUniqueId().toString());
-                    ps.setString(3, claimId);
-                    ps.executeUpdate();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
+                    if(!childTaken.isEmpty()) {
+                        for(String child : childTaken) {
+                            int leftLimit = 97; // letter 'a'
+                            int rightLimit = 122; // letter 'z'
+                            int targetStringLength = 10;
+                            Random random = new Random();
+                            claimName = random.ints(leftLimit, rightLimit + 1)
+                                    .limit(targetStringLength)
+                                    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                                    .toString();
+                            updateClaimName(child, claimName);
+                        }
+                    }
 
-                try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE claims_members SET user_rank = ? WHERE user_id = ? AND claim_id = ?")) {
-                    ps.setString(1, "co-owner");
-                    ps.setString(2, owner.toString());
-                    ps.setString(3, claimId);
-                    ps.executeUpdate();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
 
-                if (!nameTaken.isEmpty()) {
-                    transferPlayer.sendMessage(prefix.append(Component.text("You already own a claim with the name ", TextColor.fromHexString("#20df80"))
-                            .append(Component.text(oldClaimName, TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
-                            .append(Component.text("! Renaming transferred claim to ", TextColor.fromHexString("#20df80")))
+                    try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks_used = ? WHERE user_id = ?")) {
+                        ps.setInt(1, pBlocks);
+                        ps.setString(2, transferPlayer.getUniqueId().toString());
+                        ps.executeUpdate();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                    UUID owner = getClaimOwners(Collections.singletonList(claimId)).get(claimId);
+                    try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks_used = claim_blocks_used - ? WHERE user_id = ?")) {
+                        ps.setInt(1, claimBlocks);
+                        ps.setString(2, owner.toString());
+                        ps.executeUpdate();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+
+                    try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE claims_members SET user_rank = ? WHERE user_id = ? AND claim_id = ?")) {
+                        ps.setString(1, "owner");
+                        ps.setString(2, transferPlayer.getUniqueId().toString());
+                        ps.setString(3, claimId);
+                        ps.executeUpdate();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+
+                    try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE claims_members SET user_rank = ? WHERE user_id = ? AND claim_id = ?")) {
+                        ps.setString(1, "co-owner");
+                        ps.setString(2, owner.toString());
+                        ps.setString(3, claimId);
+                        ps.executeUpdate();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+
+                    if(!childClaims.isEmpty()) {
+                        for(String child : childClaims) {
+                            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO claims_members (user_id, claim_id, user_rank) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE user_rank = VALUE(user_rank)")) {
+                                ps.setString(1, transferPlayer.getUniqueId().toString());
+                                ps.setString(2, child);
+                                ps.setString(3, "owner");
+                                ps.executeUpdate();
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                            }
+
+                            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE claims_members SET user_rank = ? WHERE user_id = ? AND claim_id = ?")) {
+                                ps.setString(1, "co-owner");
+                                ps.setString(2, owner.toString());
+                                ps.setString(3, child);
+                                ps.executeUpdate();
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+
+
+                    if (!nameTaken.isEmpty()) {
+                        transferPlayer.sendMessage(prefix.append(Component.text("You already own a claim with the name ", TextColor.fromHexString("#20df80"))
+                                .append(Component.text(oldClaimName, TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                                .append(Component.text("! Renaming transferred claim to ", TextColor.fromHexString("#20df80")))
+                                .append(Component.text(claimName, TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))));
+                    }
+                    transferPlayer.sendMessage(prefix.append(Component.text("You're now the owner of the claim ", TextColor.fromHexString("#20df80"))
                             .append(Component.text(claimName, TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))));
-                }
-                transferPlayer.sendMessage(prefix.append(Component.text("You're now the owner of the claim ", TextColor.fromHexString("#20df80"))
-                        .append(Component.text(claimName, TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))));
 
-                Component msg = prefix.append(Component.text("Your claim ", TextColor.fromHexString("#20df80"))
-                        .append(Component.text(oldClaimName, TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
-                        .append(Component.text(" was successfully transferred to ", TextColor.fromHexString("#20df80")))
-                        .append(Component.text(transferPlayer.getName(), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD)));
-                if (Bukkit.getPlayer(owner) != null) {
-                    Objects.requireNonNull(Bukkit.getPlayer(owner)).sendMessage(msg);
+                    Component msg = prefix.append(Component.text("Your claim ", TextColor.fromHexString("#20df80"))
+                            .append(Component.text(oldClaimName, TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                            .append(Component.text(" was successfully transferred to ", TextColor.fromHexString("#20df80")))
+                            .append(Component.text(transferPlayer.getName(), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD)));
+                    if (Bukkit.getPlayer(owner) != null) {
+                        Objects.requireNonNull(Bukkit.getPlayer(owner)).sendMessage(msg);
+                    } else {
+                        plugin.createNotification("claim-transfer-accepted", claimId, Bukkit.getOfflinePlayer(owner), msg, null, true);
+                    }
                 } else {
-                    plugin.createNotification("claim-transfer-accepted", claimId, Bukkit.getOfflinePlayer(owner), msg, null, true);
+                    transferPlayer.sendMessage(prefix.append(Component.text("You don't have enough claim blocks for this claim transfer! Cancelling transfer..", NamedTextColor.RED)));
                 }
             } else {
-                transferPlayer.sendMessage(prefix.append(Component.text("You don't have enough claim blocks for this claim transfer! Cancelling transfer..", NamedTextColor.RED)));
+                transferPlayer.sendMessage(prefix.append(Component.text("Couldn't find the claim to transfer! Cancelling transfer..", NamedTextColor.RED)));
             }
-        } else {
-            transferPlayer.sendMessage(prefix.append(Component.text("Couldn't find the claim to transfer! Cancelling transfer..", NamedTextColor.RED)));
         }
     }
 
@@ -1276,9 +1344,7 @@ public class Claim implements CommandExecutor {
         public HashMap<UUID, HashMap<String, String>> getUserClaims(Location loc, List<OfflinePlayer> players, List<String> claimIds, RegionManager regionManager, List<String> ranks, boolean getLocationRegardless) {
         HashMap<UUID, HashMap<String, String>> userClaims = new HashMap<>();
         List<String> playerIds = new ArrayList<>();
-            plugin.tellConsole("Wham: " + players);
         players.forEach(i -> playerIds.add(i.getUniqueId().toString()));
-        plugin.tellConsole("Wham: " + playerIds);
         if(!claimIds.isEmpty()) {
             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id, claim_id, user_rank FROM claims_members WHERE user_id IN "
                     + plugin.getQuestionMarks(playerIds) + " AND claim_id IN " + plugin.getQuestionMarks(claimIds) + " AND user_rank IN " + plugin.getQuestionMarks(ranks))) {
@@ -1297,7 +1363,6 @@ public class Claim implements CommandExecutor {
                 }
                 ResultSet rs = ps.executeQuery();
                 while (rs.next()) {
-                    plugin.tellConsole("NEXT!");
                     UUID user = UUID.fromString(rs.getString(1));
                     HashMap<String, String> claims = new HashMap<>();
                     if(userClaims.containsKey(user)) claims = userClaims.get(user);
@@ -1337,7 +1402,6 @@ public class Claim implements CommandExecutor {
                                 }
                                 ResultSet rs = ps.executeQuery();
                                 while (rs.next()) {
-                                    plugin.tellConsole("NEXT!");
                                     UUID user = UUID.fromString(rs.getString(1));
                                     HashMap<String, String> claims = new HashMap<>();
                                     if (userClaims.containsKey(user)) claims = userClaims.get(user);
@@ -1357,7 +1421,6 @@ public class Claim implements CommandExecutor {
                 }
             }
         }
-        plugin.tellConsole("WHAM: " + userClaims);
         return userClaims;
     }
 
@@ -1388,16 +1451,33 @@ public class Claim implements CommandExecutor {
 
             if (args.length > 0) {
                 switch (args[0].toLowerCase()) {
-                    case "remove" -> { // /claim remove <claimname>
+                    case "delete" -> { // /claim delete <claimname>
                         if (args.length > 1) {
-                            if (removeClaim(player, args[1], regionManager)) {
-                                player.sendMessage(prefix.append(Component.text("Successfully removed the claim with the name ", TextColor.fromHexString("#20df80"))
-                                        .append(Component.text(args[1], TextColor.fromHexString("#20df80"), TextDecoration.BOLD))));
+                            claimIds = getClaimIdsFromNames(player, args[1], Collections.singletonList("owner"));
+                            if(!claimIds.isEmpty()) {
+                                String claimId = claimIds.get(0);
+                                plugin.deleteClaim.add(player.getUniqueId());
+                                Component msg = prefix.append(Component.text("Are you sure you want to delete the claim ", TextColor.fromHexString("#20df80"))
+                                                .append(Component.text((String) getClaimData(Collections.singletonList(claimId)).get(claimId).get("name"), TextColor.fromHexString("#20df80"), TextDecoration.BOLD))
+                                                .append(Component.text("?", TextColor.fromHexString("#20df80")))
+                                                .append(Component.text(player.getName(), TextColor.fromHexString("#20df80"), TextDecoration.BOLD)))
+                                        .append(Component.text("\nDELETE CLAIM", NamedTextColor.RED, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            if(plugin.deleteClaim.contains(player.getUniqueId())) {
+                                                plugin.deleteClaim.remove(player.getUniqueId());
+                                                deleteClaim(player, args[1], regionManager);
+                                            }
+                                        })))
+                                        .append(Component.text("     "))
+                                        .append(Component.text("CANCEL DELETION", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            plugin.deleteClaim.remove(player.getUniqueId());
+                                            audience.sendMessage(prefix.append(Component.text("Claim deletion cancelled!", NamedTextColor.GRAY)));
+                                        })));
+                                player.sendMessage(msg);
                             } else {
-                                player.sendMessage(prefix.append(Component.text("You don't have any claims with that name!", NamedTextColor.RED)));
+                                player.sendMessage(notFound);
                             }
                         } else {
-                            player.sendMessage(prefix.append(Component.text("Correct usage: /claim remove <claimname>", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false)));
+                            player.sendMessage(prefix.append(Component.text("Correct usage: /claim delete <claimname>", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false)));
                         }
                     }
                     case "create" -> {
@@ -1462,7 +1542,7 @@ public class Claim implements CommandExecutor {
                                 claimInfoMultiple(player, claimIds);
                             }
                         } else {
-                            player.sendMessage(prefix.append(Component.text("No claims were found!", NamedTextColor.RED)));
+                            player.sendMessage(notFound);
                         }
                     }
                     case "invite" -> { // claim invite <player> (claim)
@@ -1500,7 +1580,7 @@ public class Claim implements CommandExecutor {
                                         }
                                     }
                                 } else {
-                                    player.sendMessage(prefix.append(Component.text("No claims were found!", NamedTextColor.RED)));
+                                    player.sendMessage(notFound);
                                 }
                             } else {
                                 player.sendMessage(prefix.append(Component.text("No such player exists!", NamedTextColor.RED)));
@@ -1545,7 +1625,7 @@ public class Claim implements CommandExecutor {
                                         player.sendMessage(prefix.append(Component.text("The player isn't a member of this claim!", NamedTextColor.RED)));
                                     }
                                 } else {
-                                    player.sendMessage(prefix.append(Component.text("No claims were found!", NamedTextColor.RED)));
+                                    player.sendMessage(notFound);
                                 }
                             } else {
                                 player.sendMessage(prefix.append(Component.text("No such player exists!", NamedTextColor.RED)));
@@ -1561,22 +1641,40 @@ public class Claim implements CommandExecutor {
                                 if(args.length > 2) claimIds = getClaimIdsFromNames(player, args[2], List.of("owner"));
                                 HashMap<String, String> userClaims = getUserClaims(player.getLocation(), player, claimIds, regionManager, List.of("owner"), false);
 
-
                                 if(!userClaims.isEmpty()) {
                                     claimIds = userClaims.keySet().stream().toList();
-                                    HashMap<String, String> promoteClaims = getUserClaims(player.getLocation(), iUser.getOfflinePlayer(), claimIds, regionManager, Arrays.asList("owner", "co-owner", "member"), false);
-                                    if(!promoteClaims.isEmpty()) {
-                                        String userRank = promoteClaims.get(claimIds.get(0));
-                                        if (userRank.equalsIgnoreCase("member")) {
-                                            promotePlayer(player, iUser, claimIds.get(0));
-                                        } else {
-                                            player.sendMessage(prefix.append(Component.text("This player has already been promoted!", NamedTextColor.RED)));
-                                        }
-                                    } else {
+                                    HashMap<String, String> promoteClaims = getUserClaims(player.getLocation(), iUser.getOfflinePlayer(), claimIds, regionManager, Arrays.asList("owner", "co-owner", "member"), true);
+                                    if(promoteClaims.isEmpty()) {
                                         player.sendMessage(prefix.append(Component.text("The player isn't a member of this claim!", NamedTextColor.RED)));
+                                        return true;
+                                    }
+
+                                    String claimId = promoteClaims.keySet().stream().toList().get(0);
+
+                                    ProtectedRegion region = null;
+                                    if(promoteClaims.size() > 1) {
+                                        for(String userClaim : promoteClaims.keySet()) {
+                                            ProtectedRegion claimRegion = regionManager.getRegion(userClaim);
+                                            assert claimRegion != null;
+                                            if(region == null) {
+                                                region = claimRegion;
+                                            } else if(claimRegion.getPriority() > region.getPriority()) {
+                                                region = claimRegion;
+                                            }
+                                        }
+                                        claimId = region.getId();
+                                    }
+
+                                    String userRank = promoteClaims.get(claimId);
+                                    if (userRank != null && userRank.equalsIgnoreCase("member")) {
+                                        promotePlayer(player, iUser, claimId);
+                                    } else if(userRank == null) {
+                                        player.sendMessage(prefix.append(Component.text("The player isn't a member of this claim!", NamedTextColor.RED)));
+                                    } else {
+                                        player.sendMessage(prefix.append(Component.text("This player has already been promoted!", NamedTextColor.RED)));
                                     }
                                 } else {
-                                    player.sendMessage(prefix.append(Component.text("No claims were found!", NamedTextColor.RED)));
+                                    player.sendMessage(notFound);
                                 }
                             } else {
                                 player.sendMessage(prefix.append(Component.text("No such player exists!", NamedTextColor.RED)));
@@ -1596,18 +1694,36 @@ public class Claim implements CommandExecutor {
                                     claimIds = userClaims.keySet().stream().toList();
                                     HashMap<String, String> demoteClaims = getUserClaims(player.getLocation(), iUser.getOfflinePlayer(), claimIds,
                                             regionManager, Arrays.asList("owner", "co-owner", "member"), false);
-                                    if(!demoteClaims.isEmpty()) {
-                                        String userRank = demoteClaims.get(claimIds.get(0));
-                                        if (userRank.equalsIgnoreCase("co-owner")) {
-                                            demotePlayer(player, iUser, claimIds.get(0));
-                                        } else {
-                                            player.sendMessage(prefix.append(Component.text("This player can't be demoted!", NamedTextColor.RED)));
-                                        }
-                                    } else {
+                                    if(demoteClaims.isEmpty()) {
                                         player.sendMessage(prefix.append(Component.text("The player isn't a member of this claim!", NamedTextColor.RED)));
+                                        return true;
+                                    }
+                                    String claimId = demoteClaims.keySet().stream().toList().get(0);
+
+                                    ProtectedRegion region = null;
+                                    if(demoteClaims.size() > 1) {
+                                        for(String userClaim : demoteClaims.keySet()) {
+                                            ProtectedRegion claimRegion = regionManager.getRegion(userClaim);
+                                            assert claimRegion != null;
+                                            if(region == null) {
+                                                region = claimRegion;
+                                            } else if(claimRegion.getPriority() > region.getPriority()) {
+                                                region = claimRegion;
+                                            }
+                                        }
+                                        claimId = region.getId();
+                                    }
+
+                                    String userRank = demoteClaims.get(claimId);
+                                    if (userRank != null && userRank.equalsIgnoreCase("co-owner")) {
+                                        demotePlayer(player, iUser, claimId);
+                                    } else if(userRank == null) {
+                                        player.sendMessage(prefix.append(Component.text("The player isn't a member of this claim!", NamedTextColor.RED)));
+                                    } else {
+                                        player.sendMessage(prefix.append(Component.text("This player can't be demoted!", NamedTextColor.RED)));
                                     }
                                 } else {
-                                    player.sendMessage(prefix.append(Component.text("No claims were found!", NamedTextColor.RED)));
+                                    player.sendMessage(notFound);
                                 }
                             } else {
                                 player.sendMessage(prefix.append(Component.text("No such player exists!", NamedTextColor.RED)));
@@ -1628,12 +1744,27 @@ public class Claim implements CommandExecutor {
                                     HashMap<String, String> transferClaims = getUserClaims(player.getLocation(), iUser.getOfflinePlayer(), claimIds,
                                             regionManager, List.of("co-owner"), false);
                                     if(!transferClaims.isEmpty()) {
-                                        transferClaim(player, iUser, claimIds.get(0));
+                                        String claimId = transferClaims.keySet().stream().toList().get(0);
+
+                                        for (String claim : transferClaims.keySet()) {
+                                            ProtectedRegion rg = regionManager.getRegion(claim);
+                                            assert rg != null;
+                                            if(rg.getParent() != null) {
+                                                player.sendMessage(prefix.append(Component.text("Can't transfer individual child claims!", NamedTextColor.RED)));
+                                                return true;
+                                            }
+                                        }
+
+                                        if(claimId != null) {
+                                            transferClaim(player, iUser, claimId);
+                                        } else {
+                                            player.sendMessage(notFound);
+                                        }
                                     } else {
                                         player.sendMessage(prefix.append(Component.text("The player must be a promoted member of the claim!", NamedTextColor.RED)));
                                     }
                                 } else {
-                                    player.sendMessage(prefix.append(Component.text("You don't have any claims with that name!", NamedTextColor.RED)));
+                                    player.sendMessage(notFound);
                                 }
                             } else {
                                 player.sendMessage(prefix.append(Component.text("No such player exists!", NamedTextColor.RED)));
@@ -1655,7 +1786,7 @@ public class Claim implements CommandExecutor {
                                     claimFlagsMultiple(player, userClaims);
                                 }
                             } else {
-                                player.sendMessage(prefix.append(Component.text("No claims were found!", NamedTextColor.RED)));
+                                player.sendMessage(notFound);
                             }
                     }
                     case "wand" -> player.performCommand("//wand");
@@ -1704,7 +1835,7 @@ public class Claim implements CommandExecutor {
                                         expandClaimMultiple(player, claims, Integer.parseInt(args[1]), player.getFacing());
                                     }
                                 } else {
-                                    player.sendMessage(prefix.append(Component.text("No claims were found!", NamedTextColor.RED)));
+                                    player.sendMessage(notFound);
                                 }
                             } else {
                                 player.sendMessage(prefix.append(Component.text("Incorrect Usage! Amount must be a number!", NamedTextColor.RED)));
@@ -1754,7 +1885,7 @@ public class Claim implements CommandExecutor {
                                         });
                                         claimInfoMultiple(player, regionIds);
                                     } else {
-                                        player.sendMessage(prefix.append(Component.text("No claims found!", TextColor.fromHexString("#20df80"))));
+                                        player.sendMessage(notFound);
                                     }
                                 } else {
                                     player.sendMessage(prefix.append(Component.text("Incorrect Usage! Max radius is 200 blocks.", NamedTextColor.RED)));
@@ -1764,6 +1895,18 @@ public class Claim implements CommandExecutor {
                             }
                         } else {
                             player.sendMessage(prefix.append(Component.text("Incorrect Usage! /claim nearby <radius>", NamedTextColor.RED)));
+                        }
+                    }
+                    case "pending" -> { // /claim pending (claim)
+                        if(args.length > 1) {
+                            List<String> claims = getClaimIdsFromNames(player, args[1], Arrays.asList("owner", "co-owner"));
+                            if(!claims.isEmpty()) {
+                                player.openInventory(new ClaimPending(plugin, getClaimData(claims), "", 1).getInventory());
+                            } else {
+                                player.sendMessage(notFound);
+                            }
+                        } else {
+                            player.openInventory(new ClaimPending(plugin, getClaimData(getAllUserClaims(player, Arrays.asList("owner", "co-owner")).keySet().stream().toList()), "", 1).getInventory());
                         }
                     }
                     default -> {

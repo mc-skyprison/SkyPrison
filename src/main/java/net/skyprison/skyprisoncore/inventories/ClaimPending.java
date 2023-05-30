@@ -5,7 +5,6 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -18,20 +17,21 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class ClaimMembers implements CustomInventory {
+public class ClaimPending implements CustomInventory {
 
     private final Inventory inventory;
     private final String category;
-    private final String claimName;
-    private final HashMap<UUID, String> members;
+    private final HashMap<String, HashMap<String, Object>> claimIds;
+
+
     private final int page;
 
-    public ClaimMembers(SkyPrisonCore plugin, String claimName, HashMap<UUID, String> members, String category, int page) {
-        this.claimName = claimName;
-        this.members = members;
+    public ClaimPending(SkyPrisonCore plugin, HashMap<String, HashMap<String, Object>> claimIds, String category, int page) {
+        this.claimIds = claimIds;
         this.category = category;
         this.page = page;
-        this.inventory = plugin.getServer().createInventory(this, 54, Component.text(claimName).color(TextColor.fromHexString("#0fc3ff")).decoration(TextDecoration.ITALIC, false));
+
+        this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Pending Claim Descisions").color(TextColor.fromHexString("#0fc3ff")).decoration(TextDecoration.ITALIC, false));
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
         ItemMeta redMeta = redPane.getItemMeta();
         redMeta.displayName(Component.text(" "));
@@ -51,20 +51,23 @@ public class ClaimMembers implements CustomInventory {
         prevMeta.displayName(Component.text("Previous Page").color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
         prevPage.setItemMeta(prevMeta);
 
-        int totalPages = (int) Math.ceil((double) members.size() / 28);
+
+        HashMap<Integer, List<String>> pending = plugin.getNotificationsFromExtra(claimIds.keySet().stream().toList());
+
+        int totalPages = (int) Math.ceil((double) pending.size() / 28);
 
         if(page > totalPages) {
             page = 1;
         }
 
-        List<UUID> membersToShow = new ArrayList<>(members.keySet());
-        if(!category.isEmpty()) membersToShow.removeIf(member -> !members.get(member).equalsIgnoreCase(category));
+        List<Integer> pendingToShow = new ArrayList<>(pending.keySet());
+        if(!category.isEmpty()) pendingToShow.removeIf(notif -> !pending.get(notif).get(0).equalsIgnoreCase(category));
 
         int toRemove = 28 * (page - 1);
         if(toRemove != 0) {
-            membersToShow = membersToShow.subList(toRemove, membersToShow.size()-1);
+            pendingToShow = pendingToShow.subList(toRemove, pendingToShow.size()-1);
         }
-        Iterator<UUID> memberUUIDs = membersToShow.iterator();
+        Iterator<Integer> pendingNotifs = pendingToShow.iterator();
         int finalPage = page;
         new BukkitRunnable() {
             @Override
@@ -72,19 +75,18 @@ public class ClaimMembers implements CustomInventory {
                 for(int i = 0; i < inventory.getSize();i++) {
                     if (i == 47 && finalPage != 1) {
                         inventory.setItem(i, prevPage);
-                    } else if (i == 51 && totalPages > 1 && finalPage != totalPages) {
+                    } else if (i == 51 && totalPages > 1  && finalPage != totalPages) {
                         inventory.setItem(i, nextPage);
                     } else if (i == 49) {
                         ItemStack itemSort = new ItemStack(Material.WRITABLE_BOOK);
                         ItemMeta sortMeta = itemSort.getItemMeta();
                         TextColor color = NamedTextColor.GRAY;
                         TextColor selectedColor = TextColor.fromHexString("#0fffc3");
-                        sortMeta.displayName(Component.text("Toggle Members", TextColor.fromHexString("#20df80")).decoration(TextDecoration.ITALIC, false));
+                        sortMeta.displayName(Component.text("Toggle Type", TextColor.fromHexString("#20df80")).decoration(TextDecoration.ITALIC, false));
                         List<Component> lore = new ArrayList<>();
-                        lore.add(Component.text("All Members").color(category.equalsIgnoreCase("") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
-                        lore.add(Component.text("Owner").color(category.equalsIgnoreCase("owner") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
-                        lore.add(Component.text("Co-owners").color(category.equalsIgnoreCase("co-owner") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
-                        lore.add(Component.text("Members").color(category.equalsIgnoreCase("member") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
+                        lore.add(Component.text("All Pending", category.equalsIgnoreCase("") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
+                        lore.add(Component.text("Invites", category.equalsIgnoreCase("claim-invite") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
+                        lore.add(Component.text("Transfers", category.equalsIgnoreCase("claim-transfer") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
                         sortMeta.lore(lore);
                         itemSort.setItemMeta(sortMeta);
                         inventory.setItem(i, itemSort);
@@ -93,15 +95,16 @@ public class ClaimMembers implements CustomInventory {
                     } else if (i < 8 || i > 45 && i < 53) {
                         inventory.setItem(i, blackPane);
                     } else {
-                        if (memberUUIDs.hasNext()) {
-                            UUID memberUUID = memberUUIDs.next();
-                            OfflinePlayer oPlayer = Bukkit.getOfflinePlayer(memberUUID);
+                        if (pendingNotifs.hasNext()) {
+                            int notif = pendingNotifs.next();
+                            OfflinePlayer oPlayer = Bukkit.getOfflinePlayer(UUID.fromString(pending.get(notif).get(2)));
                             ItemStack item = new ItemStack(Material.PLAYER_HEAD);
                             SkullMeta itemMeta = (SkullMeta) item.getItemMeta();
                             itemMeta.setOwningPlayer(oPlayer);
-                            itemMeta.displayName(Component.text(Objects.requireNonNull(oPlayer.getName())).color(TextColor.fromHexString("#0fffc3")).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                            itemMeta.displayName(Component.text(Objects.requireNonNull(oPlayer.getName()), TextColor.fromHexString("#0fffc3"), TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
                             List<Component> lore = new ArrayList<>();
-                            lore.add(Component.text(WordUtils.capitalize(members.get(memberUUID)), TextColor.fromHexString("#ffba75")).decoration(TextDecoration.ITALIC, false));
+                            lore.add(Component.text((pending.get(notif).get(0).equalsIgnoreCase("claim-transfer") ? "Pending transfer for " : "Pending invite to ") +
+                                    claimIds.get(pending.get(notif).get(1)).get("name").toString(), TextColor.fromHexString("#ffba75")).decoration(TextDecoration.ITALIC, false));
                             itemMeta.lore(lore);
                             item.setItemMeta(itemMeta);
                             inventory.setItem(i, item);
@@ -115,20 +118,14 @@ public class ClaimMembers implements CustomInventory {
     public String getNextCategory(String category) {
         String nextCat = "";
         switch (category) {
-            case "" -> nextCat = "owner";
-            case "owner" -> nextCat = "co-owner";
-            case "co-owner" -> nextCat = "member";
-            case "member" -> nextCat = "";
+            case "" -> nextCat = "claim-invite";
+            case "claim-invite" -> nextCat = "claim-transfer";
+            case "claim-transfer" -> nextCat = "";
         }
         return nextCat;
     }
-
-    public String getClaimName() {
-        return this.claimName;
-    }
-
-    public HashMap<UUID, String> getMembers() {
-        return this.members;
+    public HashMap<String, HashMap<String, Object>> getClaimIds() {
+        return this.claimIds;
     }
 
     public String getCategory() {

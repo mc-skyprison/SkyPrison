@@ -14,9 +14,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
-import org.javacord.api.DiscordApi;
-import org.javacord.api.entity.permission.Role;
-import org.javacord.api.entity.user.User;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -29,17 +26,14 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class Referral implements CommandExecutor {
 	private final SkyPrisonCore plugin;
-	private final DiscordApi discApi;
 	private final DatabaseHook db;
 
-	public Referral(SkyPrisonCore plugin, DiscordApi discApi, DatabaseHook db) {
+	public Referral(SkyPrisonCore plugin, DatabaseHook db) {
 		this.plugin = plugin;
-		this.discApi = discApi;
 		this.db = db;
 	}
 
@@ -107,45 +101,6 @@ public class Referral implements CommandExecutor {
 							if(CMI.getInstance().getPlayerManager().getUser(args[0]) != null) {
 								CMIUser reffedPlayer = CMI.getInstance().getPlayerManager().getUser(args[0]);
 								if(!player.getLastIp().equalsIgnoreCase(reffedPlayer.getLastIp())) {
-									long discordId = 0;
-									try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT discord_id FROM users WHERE user_id = ?")) {
-										ps.setString(1, reffedPlayer.getUniqueId().toString());
-										ResultSet rs = ps.executeQuery();
-										while(rs.next()) {
-											discordId = rs.getLong(1);
-										}
-									} catch (SQLException e) {
-										e.printStackTrace();
-									}
-
-									if (discordId != 0) {
-										try {
-											User user = discApi.getUserById(discordId).get();
-											int refs = 0;
-											try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM referrals WHERE user_id = ?")) {
-												ps.setString(1, reffedPlayer.getUniqueId().toString());
-												ResultSet rs = ps.executeQuery();
-												while(rs.next()) {
-													refs = rs.getInt(1);
-												}
-											} catch (SQLException e) {
-												e.printStackTrace();
-											}
-
-											if(refs == 3) {
-												Role refRole = discApi.getRoleById("807052387734519858").get();
-												user.addRole(refRole);
-											} else if(refs == 5) {
-												Role refRole = discApi.getRoleById("807052580547067964").get();
-												user.addRole(refRole);
-											} else if(refs == 10) {
-												Role refRole = discApi.getRoleById("807052646015434792").get();
-												user.addRole(refRole);
-											}
-										} catch (InterruptedException | ExecutionException e) {
-											e.printStackTrace();
-										}
-									}
 									try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO referrals (user_id, referred_by, refer_date) VALUES (?, ?, ?)")) {
 										ps.setString(1, reffedPlayer.getUniqueId().toString());
 										ps.setString(2, player.getUniqueId().toString());

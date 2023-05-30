@@ -1,24 +1,24 @@
 package net.skyprison.skyprisoncore.listeners;
 
 import com.Zrips.CMI.CMI;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import org.bukkit.*;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockDamageEvent;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Objects;
-import java.util.Set;
 
 public class BlockDamage implements Listener {
     private final SkyPrisonCore plugin;
@@ -36,45 +36,39 @@ public class BlockDamage implements Listener {
         Block b = event.getBlock();
         Location loc = b.getLocation();
         Player player = event.getPlayer();
-
-        if (b.getType() == Material.SPONGE) {
-
-            for (String mission : dailyMissions.getMissions(player)) {
-                if(!dailyMissions.isCompleted(player, mission)) {
-                    String[] missSplit = mission.split("-");
-                    if (missSplit[0].equalsIgnoreCase("sponge")) {
-                        dailyMissions.updatePlayerMission(player, mission);
-                    }
+        if (loc.getWorld().getName().equalsIgnoreCase("world_prison") && b.getType() == Material.SPONGE) {
+            Location sLoc = null;
+            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id FROM sponge_locations WHERE world = ? AND x = ? AND y = ? And z = ?")) {
+                ps.setString(1, loc.getWorld().getName());
+                ps.setInt(2, loc.getBlockX());
+                ps.setInt(3, loc.getBlockY());
+                ps.setInt(4, loc.getBlockZ());
+                ResultSet rs = ps.executeQuery();
+                if(rs.next()) {
+                    sLoc = loc;
                 }
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
 
-            if (loc.getWorld().getName().equalsIgnoreCase("world_prison")) {
-                File f = new File(plugin.getDataFolder() + File.separator + "spongelocations.yml");
-                FileConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
-                Set<String> setList = Objects.requireNonNull(yamlf.getConfigurationSection("locations")).getKeys(false);
-                for (int i = 0; i < setList.size(); i++) {
-                    if (yamlf.contains("locations." + i)) {
-                        World w = Bukkit.getServer().getWorld(Objects.requireNonNull(yamlf.getString("locations." + i + ".world")));
-                        Location spongeLoc = new Location(w, yamlf.getDouble("locations." + i + ".x"),
-                                yamlf.getDouble("locations." + i + ".y"), yamlf.getDouble("locations." + i + ".z"));
-                        spongeLoc = spongeLoc.getBlock().getLocation();
-                        if (loc.equals(spongeLoc)) {
-                            loc.getBlock().setType(Material.AIR);
-                            for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-                                online.sendMessage(ChatColor.WHITE + "[" + ChatColor.YELLOW + "Sponge" + ChatColor.WHITE + "] "
-                                        + ChatColor.GOLD + event.getPlayer().getName() + ChatColor.YELLOW
-                                        + " has found the sponge! A new one will be hidden somewhere in prison.");
-                            }
+            if(sLoc != null) {
+                b.setType(Material.AIR);
+                plugin.getServer().broadcast(Component.text(player.getName(), TextColor.fromHexString("#E97C07"), TextDecoration.BOLD)
+                        .append(Component.text(" has found the ", TextColor.fromHexString("#FFFF00"))).append(Component.text("SPONGE!", TextColor.fromHexString("#FFFF00"), TextDecoration.BOLD)).append(Component.text(" A new one will be hidden somewhere in prison.", TextColor.fromHexString("#FFFF00"))));
 
-                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET sponges_found = sponges_found + 1 WHERE user_id = ?")) {
-                                ps.setString(1, player.getUniqueId().toString());
-                                ps.executeUpdate();
-                                plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(event.getPlayer()), 25, "Found Sponge", "");
-                            } catch (SQLException e) {
-                                e.printStackTrace();
-                            }
+                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET sponges_found = sponges_found + 1 WHERE user_id = ?")) {
+                    ps.setString(1, player.getUniqueId().toString());
+                    ps.executeUpdate();
+                    plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(event.getPlayer()), 25, "Found Sponge", "");
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
 
-                            break;
+                for (String mission : dailyMissions.getMissions(player)) {
+                    if(!dailyMissions.isCompleted(player, mission)) {
+                        String[] missSplit = mission.split("-");
+                        if (missSplit[0].equalsIgnoreCase("sponge")) {
+                            dailyMissions.updatePlayerMission(player, mission);
                         }
                     }
                 }

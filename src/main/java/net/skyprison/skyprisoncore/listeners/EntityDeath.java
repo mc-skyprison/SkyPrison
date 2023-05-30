@@ -48,39 +48,39 @@ public class EntityDeath implements Listener {
                     String[] missSplit = mission.split("-");
                     if (missSplit[0].equalsIgnoreCase("kill")) {
                         switch (missSplit[1].toLowerCase()) {
-                            case "any":
+                            case "any" -> {
                                 if (event.getEntity() instanceof Monster) {
                                     dailyMissions.updatePlayerMission(player, mission);
                                 }
-                                break;
-                            case "zombie":
+                            }
+                            case "zombie" -> {
                                 if (event.getEntityType().equals(EntityType.ZOMBIE)) {
                                     dailyMissions.updatePlayerMission(player, mission);
                                 }
-                                break;
-                            case "skeleton":
+                            }
+                            case "skeleton" -> {
                                 if (event.getEntityType().equals(EntityType.SKELETON)) {
                                     dailyMissions.updatePlayerMission(player, mission);
                                 }
-                                break;
+                            }
                         }
                     } else if (missSplit[0].equalsIgnoreCase("slaughter")) {
                         switch (missSplit[1].toLowerCase()) {
-                            case "any":
+                            case "any" -> {
                                 if (event.getEntity() instanceof Animals) {
                                     dailyMissions.updatePlayerMission(player, mission);
                                 }
-                                break;
-                            case "pig":
+                            }
+                            case "pig" -> {
                                 if (event.getEntityType().equals(EntityType.PIG)) {
                                     dailyMissions.updatePlayerMission(player, mission);
                                 }
-                                break;
-                            case "cow":
+                            }
+                            case "cow" -> {
                                 if (event.getEntityType().equals(EntityType.COW)) {
                                     dailyMissions.updatePlayerMission(player, mission);
                                 }
-                                break;
+                            }
                         }
                     }
                 }
@@ -145,7 +145,7 @@ public class EntityDeath implements Listener {
                         e.printStackTrace();
                     }
 
-                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT killed_on FROM recently_killed WHERE killer_id = ? AND killed_id = ?")) {
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT killed_on FROM player_kills WHERE killer_id = ? AND killed_id = ?")) {
                         ps.setString(1, killer.getUniqueId().toString());
                         ps.setString(2, killed.getUniqueId().toString());
                         ResultSet rs = ps.executeQuery();
@@ -246,7 +246,7 @@ public class EntityDeath implements Listener {
             plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 1, "Player Kill", killed.getName());
         }
 
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO recently_killed (killer_id, killed_id, killed_on) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE killed_on = VALUE(killed_on)")) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO player_kills (killer_id, killed_id, killed_on) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE killed_on = VALUE(killed_on)")) {
             ps.setString(1, killer.getUniqueId().toString());
             ps.setString(2, killed.getUniqueId().toString());
             ps.setLong(3, System.currentTimeMillis());

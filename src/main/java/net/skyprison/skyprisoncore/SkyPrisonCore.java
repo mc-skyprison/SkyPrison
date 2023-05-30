@@ -109,6 +109,8 @@ public class SkyPrisonCore extends JavaPlugin {
 
     public Map<UUID, Integer> blockBreaks = new HashMap<>();
 
+    public List<UUID> deleteClaim = new ArrayList<>();
+
     private FileConfiguration infoConf;
 
     public HashMap<UUID, String> stickyChat = new HashMap<>();
@@ -440,7 +442,7 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("purchases")).setExecutor(new Purchases(getDatabase(), this));
         Objects.requireNonNull(getCommand("econcheck")).setExecutor(new EconomyCheck(this));
         Objects.requireNonNull(getCommand("permshop")).setExecutor(new PermShop(this));
-        Objects.requireNonNull(getCommand("spongeloc")).setExecutor(new SpongeLoc(this, getDatabase()));
+        Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, getDatabase()));
         Objects.requireNonNull(getCommand("dropchest")).setExecutor(new DropChest(this));
         Objects.requireNonNull(getCommand("dontsell")).setExecutor(new DontSell(this, getDatabase()));
         Objects.requireNonNull(getCommand("endupgrade")).setExecutor(new EndUpgrade(this));
@@ -478,14 +480,12 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("customrecipes")).setExecutor(new CustomRecipes(this));
         Objects.requireNonNull(getCommand("claim")).setExecutor(new Claim(this, getDatabase()));
 
-        if(discApi != null) {
-            Objects.requireNonNull(getCommand("referral")).setExecutor(new Referral(this, discApi, getDatabase()));
-            Objects.requireNonNull(getCommand("discord")).setExecutor(new Discord(this, getDatabase(), discApi));
-            Objects.requireNonNull(getCommand("g")).setExecutor(new Guard(new ChatUtils(this, discApi)));
-            Objects.requireNonNull(getCommand("b")).setExecutor(new Build(new ChatUtils(this, discApi)));
-            Objects.requireNonNull(getCommand("a")).setExecutor(new Admin(new ChatUtils(this, discApi)));
-            Objects.requireNonNull(getCommand("s")).setExecutor(new Staff(new ChatUtils(this, discApi)));
-        }
+        Objects.requireNonNull(getCommand("referral")).setExecutor(new Referral(this, getDatabase()));
+        Objects.requireNonNull(getCommand("discord")).setExecutor(new Discord(this, getDatabase(), discApi));
+        Objects.requireNonNull(getCommand("g")).setExecutor(new Guard(new ChatUtils(this, discApi)));
+        Objects.requireNonNull(getCommand("b")).setExecutor(new Build(new ChatUtils(this, discApi)));
+        Objects.requireNonNull(getCommand("a")).setExecutor(new Admin(new ChatUtils(this, discApi)));
+        Objects.requireNonNull(getCommand("s")).setExecutor(new Staff(new ChatUtils(this, discApi)));
     }
 
 
@@ -726,6 +726,29 @@ public class SkyPrisonCore extends JavaPlugin {
         }
         return notification;
     }
+
+    public HashMap<Integer, List<String>> getNotificationsFromExtra(List<String> extraData) {
+        HashMap<Integer, List<String>> notifications = new HashMap<>();
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT type, extra_data, user_id FROM notifications WHERE extra_data IN " + getQuestionMarks(extraData))) {
+            for (int i = 0; i < extraData.size(); i++) {
+                ps.setString(i + 1, extraData.get(i));
+            }
+            ResultSet rs = ps.executeQuery();
+            int i = 0;
+            while (rs.next()) {
+                List<String> data = new ArrayList<>();
+                data.add(rs.getString(1)); // type
+                data.add(rs.getString(2)); // data
+                data.add(rs.getString(3)); // uuid
+                notifications.put(i, data);
+                i++;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return notifications;
+    }
+
 
     public List<String> hasNotifications(String type, List<String> extraData, OfflinePlayer player) {
         List<String> notifications = new ArrayList<>();
