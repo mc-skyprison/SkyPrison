@@ -52,7 +52,6 @@ dependencies {
     compileOnly("com.wolfyscript.wolfyutilities:wolfyutilities:3.16.1.0")
     compileOnly("com.wolfyscript.customcrafting:customcrafting-spigot:3.16.3.3")
 
-
     // Jars
     compileOnly(fileTree("libs") { include("*.jar")})
 }
@@ -67,6 +66,5 @@ tasks.withType<JavaCompile> {
 }
 
 tasks.withType<ShadowJar> {
-    //isEnableRelocation = true
     relocate("org.mariadb.jdbc", "net.skyprison.skyprisoncore")
 }

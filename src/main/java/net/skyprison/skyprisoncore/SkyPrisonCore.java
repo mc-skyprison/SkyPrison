@@ -110,6 +110,7 @@ public class SkyPrisonCore extends JavaPlugin {
     public Map<UUID, Integer> blockBreaks = new HashMap<>();
 
     public List<UUID> deleteClaim = new ArrayList<>();
+    public List<UUID> transferClaim = new ArrayList<>();
 
     private FileConfiguration infoConf;
 
@@ -145,7 +146,6 @@ public class SkyPrisonCore extends JavaPlugin {
     public static StateFlag FLY;
     public static StringFlag EFFECTS;
     public static StringFlag CONSOLECMD;
-
 
     public HashMap<UUID, LinkedHashMap<String, Integer>> shopLogAmountPlayer = new HashMap<>();
     public HashMap<UUID, LinkedHashMap<String, Double>> shopLogPricePlayer = new HashMap<>();
@@ -330,6 +330,8 @@ public class SkyPrisonCore extends JavaPlugin {
                 }
             } catch (InterruptedException | ExecutionException ignored) {
             }
+
+
 
             SlashCommand link = SlashCommand.with("link", "Link your Discord and Minecraft Account", List.of(
                             SlashCommandOption.createWithChoices(SlashCommandOptionType.STRING, "link-code", "Code for linking", true)
@@ -729,6 +731,7 @@ public class SkyPrisonCore extends JavaPlugin {
 
     public HashMap<Integer, List<String>> getNotificationsFromExtra(List<String> extraData) {
         HashMap<Integer, List<String>> notifications = new HashMap<>();
+        if(extraData.isEmpty()) return notifications;
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT type, extra_data, user_id FROM notifications WHERE extra_data IN " + getQuestionMarks(extraData))) {
             for (int i = 0; i < extraData.size(); i++) {
                 ps.setString(i + 1, extraData.get(i));
@@ -752,6 +755,7 @@ public class SkyPrisonCore extends JavaPlugin {
 
     public List<String> hasNotifications(String type, List<String> extraData, OfflinePlayer player) {
         List<String> notifications = new ArrayList<>();
+        if(extraData.isEmpty()) return notifications;
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT extra_data FROM notifications WHERE type = ? AND user_id = ? AND extra_data IN "
                 + getQuestionMarks(extraData))) {
             ps.setString(1, type);

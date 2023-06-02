@@ -36,6 +36,7 @@ public class EffectFlagHandler extends FlagValueChangeHandler<String> {
             if(lastValue != null && !lastValue.isEmpty()) {
                 BukkitAdapter.adapt(player).removePotionEffect(Objects.requireNonNull(PotionEffectType.getByName(lastValue)));
             }
+
             BukkitAdapter.adapt(player).addPotionEffect(new PotionEffect(Objects.requireNonNull(PotionEffectType.getByName(currentValue)), 100000, 1));
         }
         return true;
