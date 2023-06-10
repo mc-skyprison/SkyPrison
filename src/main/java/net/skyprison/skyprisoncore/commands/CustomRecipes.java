@@ -24,6 +24,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,18 +65,18 @@ public class CustomRecipes implements CommandExecutor {
             } else if(i == 12) {
                 ItemStack disabled = new ItemStack(Material.BARRIER, 1);
                 ItemMeta dMeta = disabled.getItemMeta();
-                dMeta.displayName(Component.text("Disabled Recipes").color(TextColor.fromHexString("#e51b1e")).decoration(TextDecoration.ITALIC, false));
+                dMeta.displayName(Component.text("Blocked Recipes", TextColor.fromHexString("#e51b1e")).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Click here to see all disabled recipes").color(NamedTextColor.RED));
+                lore.add(Component.text("Click here to see all blocked recipes", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
                 dMeta.lore(lore);
                 disabled.setItemMeta(dMeta);
                 recipeGUI.setItem(i, disabled);
             } else if(i == 14) {
                 ItemStack custom = new ItemStack(Material.KNOWLEDGE_BOOK, 1);
                 ItemMeta cMeta = custom.getItemMeta();
-                cMeta.displayName(Component.text("Custom Recipes").color(TextColor.fromHexString("#50C878")).decoration(TextDecoration.ITALIC, false));
+                cMeta.displayName(Component.text("Custom Recipes", TextColor.fromHexString("#50C878")).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Click here to see all custom recipes").color(NamedTextColor.RED));
+                lore.add(Component.text("Click here to see all custom recipes", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
                 cMeta.lore(lore);
                 custom.setItemMeta(cMeta);
                 recipeGUI.setItem(i, custom);
@@ -114,9 +115,9 @@ public class CustomRecipes implements CommandExecutor {
             } else if(i == 45) {
                 ItemStack back = new ItemStack(Material.PAPER, 1);
                 ItemMeta backMeta = back.getItemMeta();
-                backMeta.displayName(Component.text("Back to Main Page").color(TextColor.fromHexString("#cc6b10")).decoration(TextDecoration.ITALIC, false));
+                backMeta.displayName(Component.text("Back to Main Page", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Click here to go back to main recipes page").color(NamedTextColor.RED));
+                lore.add(Component.text("Click here to go back to main recipes page", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
                 backMeta.lore(lore);
                 back.setItemMeta(backMeta);
                 recipeGUI.setItem(i, back);
@@ -164,9 +165,9 @@ public class CustomRecipes implements CommandExecutor {
             } else if(i == 36) {
                 ItemStack back = new ItemStack(Material.PAPER, 1);
                 ItemMeta backMeta = back.getItemMeta();
-                backMeta.displayName(Component.text("Back to Custom Recipes").color(TextColor.fromHexString("#cc6b10")).decoration(TextDecoration.ITALIC, false));
+                backMeta.displayName(Component.text("Back to Custom Recipes", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Click here to go back to all custom recipes").color(NamedTextColor.RED));
+                lore.add(Component.text("Click here to go back to all custom recipes").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
                 backMeta.lore(lore);
                 back.setItemMeta(backMeta);
                 recipeGUI.setItem(i, back);
@@ -185,41 +186,20 @@ public class CustomRecipes implements CommandExecutor {
             for(String shapeRow : shape) {
                 String[] shapeSlots = shapeRow.split("");
                 for(String shapeSlot : shapeSlots) {
-                    switch(shapeSlot.toLowerCase()) {
-                        case "a":
-                            ingPos.add(11);
-                            break;
-                        case "b":
-                            ingPos.add(12);
-                            break;
-                        case "c":
-                            ingPos.add(13);
-                            break;
-                        case "d":
-                            ingPos.add(20);
-                            break;
-                        case "e":
-                            ingPos.add(21);
-                            break;
-                        case "f":
-                            ingPos.add(22);
-                            break;
-                        case "g":
-                            ingPos.add(29);
-                            break;
-                        case "h":
-                            ingPos.add(30);
-                            break;
-                        case "i":
-                            ingPos.add(31);
-                            break;
+                    switch (shapeSlot.toLowerCase()) {
+                        case "a" -> ingPos.add(11);
+                        case "b" -> ingPos.add(12);
+                        case "c" -> ingPos.add(13);
+                        case "d" -> ingPos.add(20);
+                        case "e" -> ingPos.add(21);
+                        case "f" -> ingPos.add(22);
+                        case "g" -> ingPos.add(29);
+                        case "h" -> ingPos.add(30);
+                        case "i" -> ingPos.add(31);
                     }
                 }
             }
         }
-        // 11 12 13
-        // 20 21 22 || 24
-        // 29 30 31
         int i = 0;
         for (Ingredient ing : recipe.getIngredients()) {
             if(!ing.getItemStack().getType().isAir()) {
@@ -243,8 +223,17 @@ public class CustomRecipes implements CommandExecutor {
         blackMeta.displayName(Component.text(" "));
         blackPane.setItemMeta(blackMeta);
 
-        Inventory recipeGUI = Bukkit.createInventory(null, 54, Component.text("Recipes - Disabled").color(TextColor.fromHexString("#3B5998")));
-        List<Recipe> recipes = CustomCrafting.inst().getDisableRecipesHandler().getCachedVanillaRecipes();
+        Inventory recipeGUI = Bukkit.createInventory(null, 54, Component.text("Recipes - Blocked").color(TextColor.fromHexString("#3B5998")));
+        List<Recipe> disabledRecipes = CustomCrafting.inst().getDisableRecipesHandler().getCachedVanillaRecipes();
+        List<CustomRecipe<?>> customRecipes = CustomCrafting.inst().getRegistries().getRecipes().getAvailable();
+
+        List<Recipe> recipes = new ArrayList<>();
+        List<ItemStack> customStacks = new ArrayList<>();
+        customRecipes.forEach(cr -> customStacks.add(cr.getResult().getItemStack()));
+        disabledRecipes.forEach(dc -> {
+            if(!customStacks.contains(dc.getResult()) && !dc.getResult().getType().name().startsWith("NETHERITE_")) recipes.add(dc);
+        });
+
         int b = 0;
         for(int i = 0; i < recipeGUI.getSize(); i++) {
             if(i == 0) {
@@ -261,9 +250,9 @@ public class CustomRecipes implements CommandExecutor {
             } else if(i == 45) {
                 ItemStack back = new ItemStack(Material.PAPER, 1);
                 ItemMeta backMeta = back.getItemMeta();
-                backMeta.displayName(Component.text("Back to Main Page").color(TextColor.fromHexString("#cc6b10")).decoration(TextDecoration.ITALIC, false));
+                backMeta.displayName(Component.text("Back to Main Page", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Click here to go back to main recipes page").color(NamedTextColor.RED));
+                lore.add(Component.text("Click here to go back to main recipes page", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
                 backMeta.lore(lore);
                 back.setItemMeta(backMeta);
                 recipeGUI.setItem(i, back);
@@ -272,6 +261,7 @@ public class CustomRecipes implements CommandExecutor {
                     Recipe recipe = recipes.get(b);
                     ItemStack item = recipe.getResult();
                     item.setAmount(1);
+
                     recipeGUI.setItem(i, item);
                     b++;
                 }
@@ -281,9 +271,8 @@ public class CustomRecipes implements CommandExecutor {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if(sender instanceof Player) {
-            Player player = (Player) sender;
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+        if(sender instanceof Player player) {
             openMainGUI(player);
         }
         return true;

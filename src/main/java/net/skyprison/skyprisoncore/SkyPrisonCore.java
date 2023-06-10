@@ -481,6 +481,7 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("randomgive")).setExecutor(new RandomGive(this));
         Objects.requireNonNull(getCommand("customrecipes")).setExecutor(new CustomRecipes(this));
         Objects.requireNonNull(getCommand("claim")).setExecutor(new Claim(this, getDatabase()));
+        Objects.requireNonNull(getCommand("dbimport")).setExecutor(new DatabaseImport(this, getDatabase()));
 
         Objects.requireNonNull(getCommand("referral")).setExecutor(new Referral(this, getDatabase()));
         Objects.requireNonNull(getCommand("discord")).setExecutor(new Discord(this, getDatabase(), discApi));

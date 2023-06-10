@@ -292,17 +292,17 @@ public class InventoryClick implements Listener {
                         switch (event.getSlot()) {
                             case 47 -> {
                                 if (clickedMat.equals(Material.PAPER)) {
-                                    player.openInventory(new ClaimMembers(plugin, inv.getClaimName(), inv.getMembers(), inv.getCategory(), inv.getPage() - 1).getInventory());
+                                    player.openInventory(new ClaimMembers(plugin, inv.getDatabase(), inv.getClaimName(), inv.getMembers(), inv.getCategory(), inv.getPage() - 1).getInventory());
                                 }
                             }
                             case 49 -> {
                                 if (clickedMat.equals(Material.WRITABLE_BOOK)) {
-                                    player.openInventory(new ClaimMembers(plugin, inv.getClaimName(), inv.getMembers(), inv.getNextCategory(inv.getCategory()), 1).getInventory());
+                                    player.openInventory(new ClaimMembers(plugin, inv.getDatabase(), inv.getClaimName(), inv.getMembers(), inv.getNextCategory(inv.getCategory()), 1).getInventory());
                                 }
                             }
                             case 51 -> {
                                 if (clickedMat.equals(Material.PAPER)) {
-                                    player.openInventory(new ClaimMembers(plugin, inv.getClaimName(), inv.getMembers(), inv.getCategory(), inv.getPage() + 1).getInventory());
+                                    player.openInventory(new ClaimMembers(plugin, inv.getDatabase(), inv.getClaimName(), inv.getMembers(), inv.getCategory(), inv.getPage() + 1).getInventory());
                                 }
                             }
                         }

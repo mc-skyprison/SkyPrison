@@ -113,7 +113,7 @@ public class Claim implements CommandExecutor {
                 claimInfo.put("name", rs.getString(2));
                 claimInfo.put("parent", rs.getString(3));
                 claimInfo.put("world", rs.getString(4));
-                claimInfo.put("blocks", rs.getInt(5));
+                claimInfo.put("blocks", rs.getLong(5));
                 claimInfos.put(rs.getString(1), claimInfo);
             }
         } catch (SQLException e) {
@@ -162,14 +162,14 @@ public class Claim implements CommandExecutor {
         return claimIds;
     }
 
-    public HashMap<String, Integer> getPlayerBlocks(OfflinePlayer player) {
-        HashMap<String, Integer>  playerBlocks = new HashMap<>();
+    public HashMap<String, Long> getPlayerBlocks(OfflinePlayer player) {
+        HashMap<String, Long>  playerBlocks = new HashMap<>();
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT claim_blocks, claim_blocks_used FROM users WHERE user_id = ? ")) {
             ps.setString(1, player.getUniqueId().toString());
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                playerBlocks.put("total", rs.getInt(1));
-                playerBlocks.put("used", rs.getInt(2));
+                playerBlocks.put("total", rs.getLong(1));
+                playerBlocks.put("used", rs.getLong(2));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -177,8 +177,8 @@ public class Claim implements CommandExecutor {
         return playerBlocks;
     }
 
-    public HashMap<UUID, HashMap<String, Integer>> getPlayersBlocks(List<OfflinePlayer> players) {
-        HashMap<UUID, HashMap<String, Integer>>  playerBlocks = new HashMap<>();
+    public HashMap<UUID, HashMap<String, Long>> getPlayersBlocks(List<OfflinePlayer> players) {
+        HashMap<UUID, HashMap<String, Long>>  playerBlocks = new HashMap<>();
         List<String> playerIds = new ArrayList<>();
         players.forEach(i -> playerIds.add(i.getUniqueId().toString()));
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id, claim_blocks, claim_blocks_used FROM users WHERE user_id IN "
@@ -189,9 +189,9 @@ public class Claim implements CommandExecutor {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 UUID user = UUID.fromString(rs.getString(1));
-                HashMap<String, Integer> blocks = new HashMap<>();
-                blocks.put("total", rs.getInt(2));
-                blocks.put("used", rs.getInt(3));
+                HashMap<String, Long> blocks = new HashMap<>();
+                blocks.put("total", rs.getLong(2));
+                blocks.put("used", rs.getLong(3));
                 playerBlocks.put(user, blocks);
             }
         } catch (SQLException e) {
@@ -212,22 +212,22 @@ public class Claim implements CommandExecutor {
             return false;
         }
     }
-    public int hasNeededBlocks(OfflinePlayer player, int amount) {
-        int pClaimBlocks = 0;
-        int pClaimBlocksUsed = 0;
+    public long hasNeededBlocks(OfflinePlayer player, long amount) {
+        long pClaimBlocks = 0;
+        long pClaimBlocksUsed = 0;
 
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT claim_blocks, claim_blocks_used FROM users WHERE user_id = ?")) {
             ps.setString(1, player.getUniqueId().toString());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                pClaimBlocks = rs.getInt(1);
-                pClaimBlocksUsed = rs.getInt(2);
+                pClaimBlocks = rs.getLong(1);
+                pClaimBlocksUsed = rs.getLong(2);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
 
-        int pClaimBlocksLeft = pClaimBlocks - pClaimBlocksUsed;
+        long pClaimBlocksLeft = pClaimBlocks - pClaimBlocksUsed;
 
         if(pClaimBlocksLeft < amount) {
             return -1;
@@ -261,14 +261,14 @@ public class Claim implements CommandExecutor {
         if(!claimIds.isEmpty() && regionManager.hasRegion(claimIds.get(0))) {
             String claimId = claimIds.get(0);
             HashMap<String, Object> claimData = getClaimData(Collections.singletonList(claimId)).get(claimId);
-            int claimBlocksUsed = (int) claimData.get("blocks");
+            long claimBlocksUsed = (long) claimData.get("blocks");
 
             List<String> childClaims = getChildren(claimId);
             if(!childClaims.isEmpty()) {
                 HashMap<String, HashMap<String, Object>> childClaimData = getClaimData(childClaims);
 
                 for (String childClaim : childClaimData.keySet()) {
-                    claimBlocksUsed += (int) childClaimData.get(childClaim).get("blocks");
+                    claimBlocksUsed += (long) childClaimData.get(childClaim).get("blocks");
                 }
             }
 
@@ -279,11 +279,11 @@ public class Claim implements CommandExecutor {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-            int playerClaimBlocksUsed = getPlayersBlocks(Collections.singletonList(targetPlayer)).get(targetPlayer.getUniqueId()).get("used");
-            int newClaimBlocksUsed = playerClaimBlocksUsed - claimBlocksUsed;
+            long playerClaimBlocksUsed = getPlayersBlocks(Collections.singletonList(targetPlayer)).get(targetPlayer.getUniqueId()).get("used");
+            long newClaimBlocksUsed = playerClaimBlocksUsed - claimBlocksUsed;
 
             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks_used = ? WHERE user_id = ?")) {
-                ps.setInt(1, newClaimBlocksUsed);
+                ps.setLong(1, newClaimBlocksUsed);
                 ps.setString(2, targetPlayer.getUniqueId().toString());
                 ps.executeUpdate();
             } catch (SQLException e) {
@@ -309,7 +309,7 @@ public class Claim implements CommandExecutor {
         }
     }
 
-    public void createClaim(Player player, String claimName, RegionManager regionManager, RegionSelector regionSelector, int playerClaimBlocks, int playerClaimBlocksUsed) {
+    public void createClaim(Player player, String claimName, RegionManager regionManager, RegionSelector regionSelector, long playerClaimBlocks, long playerClaimBlocksUsed) {
         try {
             List<String> nameTaken = getClaimIdsFromNames(player, claimName, Collections.singletonList("owner"));
             if(nameTaken.isEmpty()) {
@@ -324,17 +324,17 @@ public class Claim implements CommandExecutor {
                 }
 
                 ProtectedRegion region;
-                int claimBlocks;
+                long claimBlocks;
 
                 if (plugin.customClaimShape.containsKey(player.getUniqueId())) {
                     Polygonal2DRegion regionSel = (Polygonal2DRegion) regionSelector.getRegion();
                     region = new ProtectedPolygonalRegion(claimId, regionSel.getPoints(), minY, maxY);
-                    claimBlocks = (int) new Polygonal2DRegion(BukkitAdapter.adapt(player.getWorld()), regionSel.getPoints(), 1, 1).getVolume();
+                    claimBlocks = new Polygonal2DRegion(BukkitAdapter.adapt(player.getWorld()), regionSel.getPoints(), 1, 1).getVolume();
                 } else {
                     BlockVector3 p1 = regionSelector.getRegion().getMinimumPoint();
                     BlockVector3 p2 = regionSelector.getRegion().getMaximumPoint();
                     region = new ProtectedCuboidRegion(claimId, BlockVector3.at(p1.getBlockX(), minY, p1.getBlockZ()), BlockVector3.at(p2.getBlockX(), maxY, p2.getBlockZ()));
-                    claimBlocks = (int) new CuboidRegion(BlockVector3.at(p1.getBlockX(), 1, p1.getBlockZ()), BlockVector3.at(p2.getBlockX(), 1, p2.getBlockZ())).getVolume();
+                    claimBlocks = new CuboidRegion(BlockVector3.at(p1.getBlockX(), 1, p1.getBlockZ()), BlockVector3.at(p2.getBlockX(), 1, p2.getBlockZ())).getVolume();
                 }
 
                 ProtectedRegion parentRegion = null;
@@ -406,9 +406,9 @@ public class Claim implements CommandExecutor {
                         map.put(Flags.LIGHTNING, StateFlag.State.DENY);
                         region.setFlags(map);
 
-                        int newClaimBlocksUsed = playerClaimBlocksUsed + claimBlocks;
+                        long newClaimBlocksUsed = playerClaimBlocksUsed + claimBlocks;
                         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks_used = ? WHERE user_id = ?")) {
-                            ps.setInt(1, newClaimBlocksUsed);
+                            ps.setLong(1, newClaimBlocksUsed);
                             ps.setString(2, player.getUniqueId().toString());
                             ps.executeUpdate();
                         } catch (SQLException e) {
@@ -420,7 +420,7 @@ public class Claim implements CommandExecutor {
                             ps.setString(2, claimName);
                             ps.setString(3, parentId);
                             ps.setString(4, player.getWorld().getName());
-                            ps.setInt(5, claimBlocks);
+                            ps.setLong(5, claimBlocks);
                             ps.executeUpdate();
                         } catch (SQLException e) {
                             e.printStackTrace();
@@ -534,18 +534,18 @@ public class Claim implements CommandExecutor {
                             }
                         }
 
-                        int currentClaimBlocks = (int) new CuboidRegion(region.getMinimumPoint().withY(1), region.getMaximumPoint().withY(1)).getVolume();
-                        int expandedClaimBlocks = (int) new CuboidRegion(expandedRegion.getMinimumPoint().withY(1), expandedRegion.getMaximumPoint().withY(1)).getVolume();
+                        long currentClaimBlocks = new CuboidRegion(region.getMinimumPoint().withY(1), region.getMaximumPoint().withY(1)).getVolume();
+                        long expandedClaimBlocks = new CuboidRegion(expandedRegion.getMinimumPoint().withY(1), expandedRegion.getMaximumPoint().withY(1)).getVolume();
 
-                        int additionalBlocksUsed = expandedClaimBlocks - currentClaimBlocks;
+                        long additionalBlocksUsed = expandedClaimBlocks - currentClaimBlocks;
 
-                        HashMap<String, Integer> pClaimBlocks = getPlayersBlocks(Collections.singletonList(targetPlayer)).get(targetPlayer.getUniqueId());
+                        HashMap<String, Long> pClaimBlocks = getPlayersBlocks(Collections.singletonList(targetPlayer)).get(targetPlayer.getUniqueId());
 
-                        int blocksLeft = pClaimBlocks.get("total") - pClaimBlocks.get("used");
+                        long blocksLeft = pClaimBlocks.get("total") - pClaimBlocks.get("used");
 
                         if(blocksLeft - additionalBlocksUsed >= 0) {
                             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks_used = claim_blocks_used + ? WHERE user_id = ?")) {
-                                ps.setInt(1, additionalBlocksUsed);
+                                ps.setLong(1, additionalBlocksUsed);
                                 ps.setString(2, targetPlayer.getUniqueId().toString());
                                 ps.executeUpdate();
                             } catch (SQLException e) {
@@ -554,7 +554,7 @@ public class Claim implements CommandExecutor {
 
 
                             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE claims SET blocks_used = blocks_used + ? WHERE claim_id = ?")) {
-                                ps.setInt(1, additionalBlocksUsed);
+                                ps.setLong(1, additionalBlocksUsed);
                                 ps.setString(2, claimId);
                                 ps.executeUpdate();
                             } catch (SQLException e) {
@@ -670,13 +670,13 @@ public class Claim implements CommandExecutor {
 
         List<String> claimIds = new ArrayList<>();
 
-        int totalBlocksUsed = 0;
+        long totalBlocksUsed = 0;
 
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT claim_id, blocks_used FROM claims")) {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 claimIds.add(rs.getString(1));
-                totalBlocksUsed += rs.getInt(2);
+                totalBlocksUsed += rs.getLong(2);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -705,7 +705,7 @@ public class Claim implements CommandExecutor {
             for (String claimId : claimsToShow) {
                 if (i == 10) break;
                 String name = claimsData.get(claimId).get("name").toString();
-                int blocksUsed = (int) claimsData.get(claimId).get("blocks");
+                long blocksUsed = (long) claimsData.get(claimId).get("blocks");
 
                 List<Integer> coords = getClaimCoords(claimId);
 
@@ -762,7 +762,7 @@ public class Claim implements CommandExecutor {
 
         HashMap<String, String> userClaims = getAllUserClaims(targetPlayer, Arrays.asList("owner", "co-owner", "member"));
 
-        HashMap<String, Integer> pBlocks =  getPlayerBlocks(targetPlayer);
+        HashMap<String, Long> pBlocks =  getPlayerBlocks(targetPlayer);
 
         msg = msg.append(Component.text("\nTotal Blocks", TextColor.fromHexString("#0fffc3")).append(Component.text(" ⇒ ", NamedTextColor.GRAY)
                         .append(Component.text(pBlocks.get("used") + "/" + pBlocks.get("total"), TextColor.fromHexString("#ffba75")))));
@@ -791,7 +791,7 @@ public class Claim implements CommandExecutor {
                 if (i == 10) break;
                 String name = claimsData.get(claimId).get("name").toString();
                 String userRank = WordUtils.capitalize(userClaims.get(claimId));
-                int blocksUsed = (int) claimsData.get(claimId).get("blocks");
+                long blocksUsed = (long) claimsData.get(claimId).get("blocks");
 
                 List<Integer> coords = getClaimCoords(claimId);
 
@@ -852,9 +852,9 @@ public class Claim implements CommandExecutor {
         HashMap<String, HashMap<String, Object>> claimsData = getClaimData(claimIds);
 
         for(String claimId : ownersData.keySet()) {
-            OfflinePlayer oPlayer = Bukkit.getOfflinePlayer(ownersData.get(claimId));
+            String  ownerName = getOfflineName(ownersData.get(claimId));
             info = info.append(Component.text("\n- ", NamedTextColor.WHITE).append(Component.text(claimsData.get(claimId).get("name").toString(), TextColor.fromHexString("#0fffc3"))
-                            .append(Component.text(" ⇒ ", NamedTextColor.GRAY)).append(Component.text("Owner: " + oPlayer.getName(), TextColor.fromHexString("#ffba75"))))
+                            .append(Component.text(" ⇒ ", NamedTextColor.GRAY)).append(Component.text("Owner: " + ownerName, TextColor.fromHexString("#ffba75"))))
                     .hoverEvent(HoverEvent.showText(Component.text("Click here to show info for " + claimsData.get(claimId).get("name").toString(), NamedTextColor.GRAY)))
                     .clickEvent(ClickEvent.callback(audience -> claimInfo(player, claimId))));
         }
@@ -873,10 +873,10 @@ public class Claim implements CommandExecutor {
         HashMap<String, HashMap<String, Object>> claimsData = getClaimData(claimIds);
 
         for(String claimId : ownersData.keySet()) {
-            OfflinePlayer oPlayer = Bukkit.getOfflinePlayer(ownersData.get(claimId));
+            String ownerName = getOfflineName(ownersData.get(claimId));
             info = info.append(Component.text("\n- ", NamedTextColor.WHITE).append(Component.text(claimsData.get(claimId).get("name").toString(), TextColor.fromHexString("#0fffc3")))
                     .append(claimsData.get(claimId).get("parent") != null ? Component.text(" (Child)" , TextColor.fromHexString("#0fffc3")) : Component.text(""))
-                    .append(Component.text(" ⇒ ", NamedTextColor.GRAY)).append(Component.text("Owner: " + oPlayer.getName(), TextColor.fromHexString("#ffba75")))
+                    .append(Component.text(" ⇒ ", NamedTextColor.GRAY)).append(Component.text("Owner: " + ownerName, TextColor.fromHexString("#ffba75")))
                     .hoverEvent(HoverEvent.showText(Component.text("Click here to show info for " + claimsData.get(claimId).get("name").toString(), NamedTextColor.GRAY)))
                     .clickEvent(ClickEvent.callback(audience -> claimInfo(player, claimId))));
         }
@@ -903,6 +903,19 @@ public class Claim implements CommandExecutor {
     }
 
 
+    public String getOfflineName(UUID playerUUID) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT current_name FROM users WHERE user_id = ?")) {
+            ps.setString(1, playerUUID.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public void claimInfo(Player player, String claimId) {
         Component info = Component.text("");
         info = info.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
@@ -911,7 +924,7 @@ public class Claim implements CommandExecutor {
         HashMap<String, Object> claimData = getClaimData(Collections.singletonList(claimId)).get(claimId);
         String claimName = (String) claimData.get("name");
         String parentId = (String) claimData.get("parent");
-        int blocksUsed = (int) claimData.get("blocks");
+        long blocksUsed = (long) claimData.get("blocks");
 
         info = info.append(Component.text("\nName", TextColor.fromHexString("#0fffc3")).append(Component.text(" ⇒ ", NamedTextColor.GRAY))
                 .append(Component.text(claimName, TextColor.fromHexString("#ffba75"))));
@@ -929,12 +942,11 @@ public class Claim implements CommandExecutor {
             boolean canEdit = members.containsKey(player.getUniqueId()) && (members.get(player.getUniqueId()).equalsIgnoreCase("owner") || members.get(player.getUniqueId()).equalsIgnoreCase("co-owner"));
             if(hasPerm(player)) canEdit = true;
 
-            OfflinePlayer oPlayer = Bukkit.getOfflinePlayer(getClaimOwner(claimId));
             info = info.append(Component.text("\nBlocks", TextColor.fromHexString("#0fffc3")).append(Component.text(" ⇒ ", NamedTextColor.GRAY))
                     .append(Component.text(blocksUsed, TextColor.fromHexString("#ffba75"))));
 
             info = info.append(Component.text("\nOwner", TextColor.fromHexString("#0fffc3")).append(Component.text(" ⇒ ", NamedTextColor.GRAY))
-                    .append(Component.text(Objects.requireNonNull(oPlayer.getName()), TextColor.fromHexString("#ffba75"))));
+                    .append(Component.text(Objects.requireNonNull(getOfflineName(getClaimOwner(claimId))), TextColor.fromHexString("#ffba75"))));
 
             List<Integer> coords = getClaimCoords(claimId);
 
@@ -943,7 +955,7 @@ public class Claim implements CommandExecutor {
 
             info = info.append(Component.text("\n\nVIEW MEMBERS", TextColor.fromHexString("#0fffc3"))
                     .hoverEvent(HoverEvent.showText(Component.text("View members", NamedTextColor.GRAY)))
-                    .clickEvent(ClickEvent.callback(audience -> player.openInventory(new ClaimMembers(plugin, claimName, members, "", 1).getInventory())))
+                    .clickEvent(ClickEvent.callback(audience -> player.openInventory(new ClaimMembers(plugin, db, claimName, members, "", 1).getInventory())))
                     .decorate(TextDecoration.BOLD));
 
             boolean finalCanEdit = canEdit;
@@ -968,10 +980,10 @@ public class Claim implements CommandExecutor {
         HashMap<String, UUID> owners = getClaimOwners(claimIds);
 
         for(String claimId : claimData.keySet()) {
-            OfflinePlayer oPlayer = Bukkit.getOfflinePlayer(owners.get(claimId));
+            String ownerName = getOfflineName(owners.get(claimId));
             info = info.append(Component.text("\n- ", NamedTextColor.WHITE).append(Component.text(claimData.get(claimId).get("name").toString(), TextColor.fromHexString("#0fffc3")))
                     .append(claimData.get(claimId).get("parent") != null ? Component.text(" (Child)" , TextColor.fromHexString("#0fffc3")) : Component.text(""))
-                    .append(Component.text(" ⇒ ", NamedTextColor.GRAY)).append(Component.text("Owner: " + oPlayer.getName(), TextColor.fromHexString("#ffba75")))
+                    .append(Component.text(" ⇒ ", NamedTextColor.GRAY)).append(Component.text("Owner: " + ownerName, TextColor.fromHexString("#ffba75")))
                     .hoverEvent(HoverEvent.showText(Component.text("Click here to invite player to " + claimData.get(claimId).get("name").toString(), NamedTextColor.GRAY)))
                     .clickEvent(ClickEvent.callback(audience -> invitePlayer(executorPlayer, targetPlayer, iUser, claimId))));
         }
@@ -1079,10 +1091,10 @@ public class Claim implements CommandExecutor {
 
 
         for(String claimId : claimData.keySet()) {
-            OfflinePlayer oPlayer = Bukkit.getOfflinePlayer(owners.get(claimId));
+            String ownerName = getOfflineName(owners.get(claimId));
             info = info.append(Component.text("\n- ", NamedTextColor.WHITE).append(Component.text(claimData.get(claimId).get("name").toString(), TextColor.fromHexString("#0fffc3")))
                     .append(claimData.get(claimId).get("parent") != null ? Component.text(" (Child)" , TextColor.fromHexString("#0fffc3")) : Component.text(""))
-                    .append(Component.text(" ⇒ ", NamedTextColor.GRAY)).append(Component.text("Owner: " + oPlayer.getName(), TextColor.fromHexString("#ffba75")))
+                    .append(Component.text(" ⇒ ", NamedTextColor.GRAY)).append(Component.text("Owner: " + ownerName, TextColor.fromHexString("#ffba75")))
                     .hoverEvent(HoverEvent.showText(Component.text("Click here to kick player from " + claimData.get(claimId).get("name"), NamedTextColor.GRAY)))
                     .clickEvent(ClickEvent.callback(audience -> kickPlayer(executorPlayer, targetPlayer, kickedPlayer, claimId))));
         }
@@ -1179,22 +1191,22 @@ public class Claim implements CommandExecutor {
     public void transferClaim(Player executorPlayer, OfflinePlayer targetPlayer, CMIUser transferPlayer, String claimId) {
         if(!Objects.equals(executorPlayer.getUniqueId(), targetPlayer.getUniqueId()) && !hasPerm(executorPlayer)) return;
         HashMap<String, Object> claimData = getClaimData(Collections.singletonList(claimId)).get(claimId);
-        int claimBlocks = (int) claimData.get("blocks");
+        long claimBlocks = (long) claimData.get("blocks");
         List<String> childClaims = getChildren(claimId);
         if(!getChildren(claimId).isEmpty()) {
             HashMap<String, HashMap<String, Object>> childData = getClaimData(childClaims);
             for(String child : childData.keySet()) {
-                claimBlocks += (int) childData.get(child).get("blocks");
+                claimBlocks += (long) childData.get(child).get("blocks");
             }
         }
 
-        HashMap<UUID, HashMap<String, Integer>> pBlocks = getPlayersBlocks(Collections.singletonList(transferPlayer.getOfflinePlayer()));
+        HashMap<UUID, HashMap<String, Long>> pBlocks = getPlayersBlocks(Collections.singletonList(transferPlayer.getOfflinePlayer()));
         if(!pBlocks.isEmpty()) {
-            HashMap<String, Integer> tBlocks = pBlocks.get(transferPlayer.getUniqueId());
-            int pClaimBlocks = tBlocks.get("total");
-            int pClaimBlocksUsed = tBlocks.get("used");
+            HashMap<String, Long> tBlocks = pBlocks.get(transferPlayer.getUniqueId());
+            long pClaimBlocks = tBlocks.get("total");
+            long pClaimBlocksUsed = tBlocks.get("used");
 
-            int pClaimBlocksLeft = pClaimBlocks - pClaimBlocksUsed;
+            long pClaimBlocksLeft = pClaimBlocks - pClaimBlocksUsed;
 
             if (claimBlocks > 0 && claimBlocks < pClaimBlocksLeft) {
                 String notifId = UUID.randomUUID().toString();
@@ -1252,7 +1264,7 @@ public class Claim implements CommandExecutor {
             HashMap<String, HashMap<String, Object>> claims = getClaimData(Collections.singletonList(claimId));
             if (!claims.isEmpty()) {
                 HashMap<String, Object> claimData = getClaimData(Collections.singletonList(claimId)).get(claimId);
-                int claimBlocks = (int) claimData.get("blocks");
+                long claimBlocks = (long) claimData.get("blocks");
 
                 List<String> childClaims = getChildren(claimId);
                 List<String> childTaken = new ArrayList<>();
@@ -1267,7 +1279,7 @@ public class Claim implements CommandExecutor {
                 }
 
                 String claimName = (String) claimData.get("name");
-                int pBlocks = hasNeededBlocks(transferPlayer, claimBlocks);
+                long pBlocks = hasNeededBlocks(transferPlayer, claimBlocks);
                 if (pBlocks >= 0) {
                     String oldClaimName = claimName;
                     List<String> nameTaken = getClaimIdsFromNames(transferPlayer, claimName, Collections.singletonList("owner"));
@@ -1299,7 +1311,7 @@ public class Claim implements CommandExecutor {
 
 
                     try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks_used = ? WHERE user_id = ?")) {
-                        ps.setInt(1, pBlocks);
+                        ps.setLong(1, pBlocks);
                         ps.setString(2, transferPlayer.getUniqueId().toString());
                         ps.executeUpdate();
                     } catch (SQLException e) {
@@ -1307,7 +1319,7 @@ public class Claim implements CommandExecutor {
                     }
                     UUID owner = getClaimOwners(Collections.singletonList(claimId)).get(claimId);
                     try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks_used = claim_blocks_used - ? WHERE user_id = ?")) {
-                        ps.setInt(1, claimBlocks);
+                        ps.setLong(1, claimBlocks);
                         ps.setString(2, owner.toString());
                         ps.executeUpdate();
                     } catch (SQLException e) {
@@ -1396,10 +1408,10 @@ public class Claim implements CommandExecutor {
         HashMap<String, UUID> owners = getClaimOwners(claimIds);
 
         for(String claimId : claimData.keySet()) {
-            OfflinePlayer oPlayer = Bukkit.getOfflinePlayer(owners.get(claimId));
+            String ownerName = getOfflineName(owners.get(claimId));
             info = info.append(Component.text("\n- ", NamedTextColor.WHITE).append(Component.text(claimData.get(claimId).get("name").toString(), TextColor.fromHexString("#0fffc3")))
                     .append(claimData.get(claimId).get("parent") != null ? Component.text(" (Child)" , TextColor.fromHexString("#0fffc3")) : Component.text(""))
-                    .append(Component.text(" ⇒ ", NamedTextColor.GRAY)).append(Component.text("Owner: " + oPlayer.getName(), TextColor.fromHexString("#ffba75")))
+                    .append(Component.text(" ⇒ ", NamedTextColor.GRAY)).append(Component.text("Owner: " + ownerName, TextColor.fromHexString("#ffba75")))
                     .hoverEvent(HoverEvent.showText(Component.text("Click here to view flags for " + claimData.get(claimId).get("name").toString(), NamedTextColor.GRAY)))
                         .clickEvent(ClickEvent.callback(audience -> claimFlags(executorPlayer, targetPlayer, claimId, claimData.get(claimId).get("world").toString(), userRanks.get(claimId)))));
         }
@@ -1600,16 +1612,16 @@ public class Claim implements CommandExecutor {
             final RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(player.getWorld()));
             assert regionManager != null;
             final RegionSelector regionSelector = WorldEdit.getInstance().getSessionManager().get(BukkitAdapter.adapt(player)).getRegionSelector(BukkitAdapter.adapt(player.getWorld()));
-            int claimBlocks = 0;
-            int claimBlocksUsed = 0;
+            long claimBlocks = 0;
+            long claimBlocksUsed = 0;
             List<String> claimIds = new ArrayList<>();
 
             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT claim_blocks, claim_blocks_used FROM users WHERE user_id = ?")) {
                 ps.setString(1, player.getUniqueId().toString());
                 ResultSet rs = ps.executeQuery();
                 while(rs.next()) {
-                    claimBlocks = rs.getInt(1);
-                    claimBlocksUsed = rs.getInt(2);
+                    claimBlocks = rs.getLong(1);
+                    claimBlocksUsed = rs.getLong(2);
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -2163,19 +2175,19 @@ public class Claim implements CommandExecutor {
                             player.sendMessage(notFound);
                         }
                     }
-                    case "wand" -> player.performCommand("//wand");
+                    case "wand" -> player.performCommand("/wand");
                     case "blocks" -> { // claim blocks buy/give/set/take <player> <amount>
                         if(args.length > 1) {
                             switch(args[1].toLowerCase()) {
                                 case "buy" -> {
                                     if(plugin.isInt(args[2])) {
-                                        int blocks = Integer.parseInt(args[2]);
+                                        long blocks = Integer.parseInt(args[2]);
                                         double price = 40 * blocks;
                                         if(user.getBalance() >= price) {
                                             user.withdraw(price);
 
                                             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks = claim_blocks + ? WHERE user_id = ?")) {
-                                                ps.setInt(1, blocks);
+                                                ps.setLong(1, blocks);
                                                 ps.setString(2, user.getUniqueId().toString());
                                                 ps.executeUpdate();
                                             } catch (SQLException e) {
@@ -2187,7 +2199,7 @@ public class Claim implements CommandExecutor {
                                                     .append(Component.text(" blocks for $", TextColor.fromHexString("#20df80")))
                                                     .append(Component.text(plugin.formatNumber(price), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))));
                                         } else {
-                                            int needed = (int) (price - user.getBalance());
+                                            long needed = (long) (price - user.getBalance());
                                             player.sendMessage(prefix.append(Component.text("You don't have enough money! You need $" + plugin.formatNumber(needed) + " more..", NamedTextColor.RED)));
                                         }
                                     } else {
@@ -2199,10 +2211,10 @@ public class Claim implements CommandExecutor {
                                         CMIUser tUser = CMI.getInstance().getPlayerManager().getUser(args[2]);
                                         if (tUser != null) {
                                             if (plugin.isInt(args[3])) {
-                                                int blocks = Integer.parseInt(args[3]);
+                                                long blocks = Integer.parseInt(args[3]);
 
                                                 try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks = claim_blocks + ? WHERE user_id = ?")) {
-                                                    ps.setInt(1, blocks);
+                                                    ps.setLong(1, blocks);
                                                     ps.setString(2, tUser.getUniqueId().toString());
                                                     ps.executeUpdate();
                                                 } catch (SQLException e) {
@@ -2239,14 +2251,14 @@ public class Claim implements CommandExecutor {
                                         CMIUser tUser = CMI.getInstance().getPlayerManager().getUser(args[2]);
                                         if(tUser != null) {
                                             if (plugin.isInt(args[3])) {
-                                                int blocks = Integer.parseInt(args[3]);
+                                                long blocks = Integer.parseInt(args[3]);
 
-                                                HashMap<String, Integer> tBlocksData = getPlayerBlocks(tUser.getOfflinePlayer());
-                                                int tBlocks = tBlocksData.get("used");
+                                                HashMap<String, Long> tBlocksData = getPlayerBlocks(tUser.getOfflinePlayer());
+                                                long tBlocks = tBlocksData.get("used");
                                                 if(tBlocks >= 0) {
                                                     if(blocks - tBlocks >= 0) {
                                                         try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks = ? WHERE user_id = ?")) {
-                                                            ps.setInt(1, blocks);
+                                                            ps.setLong(1, blocks);
                                                             ps.setString(2, tUser.getUniqueId().toString());
                                                             ps.executeUpdate();
                                                         } catch (SQLException e) {
@@ -2288,12 +2300,12 @@ public class Claim implements CommandExecutor {
                                         CMIUser tUser = CMI.getInstance().getPlayerManager().getUser(args[2]);
                                         if(tUser != null) {
                                             if (plugin.isInt(args[3])) {
-                                                int blocks = Integer.parseInt(args[3]);
+                                                long blocks = Integer.parseInt(args[3]);
 
-                                                int tLeft = hasNeededBlocks(tUser.getOfflinePlayer(), blocks);
+                                                long tLeft = hasNeededBlocks(tUser.getOfflinePlayer(), blocks);
                                                 if(tLeft >= 0) {
                                                     try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks = claim_blocks - ? WHERE user_id = ?")) {
-                                                        ps.setInt(1, blocks);
+                                                        ps.setLong(1, blocks);
                                                         ps.setString(2, tUser.getUniqueId().toString());
                                                         ps.executeUpdate();
                                                     } catch (SQLException e) {

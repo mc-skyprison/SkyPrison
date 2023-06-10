@@ -5,6 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -16,6 +17,10 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 public class ClaimMembers implements CustomInventory {
@@ -26,7 +31,10 @@ public class ClaimMembers implements CustomInventory {
     private final HashMap<UUID, String> members;
     private final int page;
 
-    public ClaimMembers(SkyPrisonCore plugin, String claimName, HashMap<UUID, String> members, String category, int page) {
+    private final DatabaseHook db;
+
+    public ClaimMembers(SkyPrisonCore plugin, DatabaseHook db, String claimName, HashMap<UUID, String> members, String category, int page) {
+        this.db = db;
         this.claimName = claimName;
         this.members = members;
         this.category = category;
@@ -99,7 +107,18 @@ public class ClaimMembers implements CustomInventory {
                             ItemStack item = new ItemStack(Material.PLAYER_HEAD);
                             SkullMeta itemMeta = (SkullMeta) item.getItemMeta();
                             itemMeta.setOwningPlayer(oPlayer);
-                            itemMeta.displayName(Component.text(Objects.requireNonNull(oPlayer.getName())).color(TextColor.fromHexString("#0fffc3")).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                            String name = "";
+                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT current_name FROM users WHERE user_id = ?")) {
+                                ps.setString(1, memberUUID.toString());
+                                ResultSet rs = ps.executeQuery();
+                                if (rs.next()) {
+                                    name = rs.getString(1);
+                                }
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                            }
+
+                            itemMeta.displayName(Component.text(Objects.requireNonNull(name)).color(TextColor.fromHexString("#0fffc3")).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
                             List<Component> lore = new ArrayList<>();
                             lore.add(Component.text(WordUtils.capitalize(members.get(memberUUID)), TextColor.fromHexString("#ffba75")).decoration(TextDecoration.ITALIC, false));
                             itemMeta.lore(lore);
@@ -133,6 +152,10 @@ public class ClaimMembers implements CustomInventory {
 
     public String getCategory() {
         return this.category;
+    }
+
+    public DatabaseHook getDatabase() {
+        return this.db;
     }
 
     @Override

@@ -305,6 +305,11 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.claim
     permission-message: §4Error:§c You do not have permission to execute this command...
+  dbimport:
+    description: DB commands
+    usage: /<command>
+    permission: skyprisoncore.command.dbimport
+    permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
   skyprisoncore.command.build:
     description: Gives access to buildchat
@@ -466,4 +471,6 @@ permissions:
   skyprisoncore.command.customrecipes:
     description: Gives access to tags stuff
   skyprisoncore.command.claim:
+    description: Gives access to tags stuff
+  skyprisoncore.command.dbimport:
     description: Gives access to tags stuff
