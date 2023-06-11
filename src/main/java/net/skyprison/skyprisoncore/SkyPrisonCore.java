@@ -238,8 +238,10 @@ public class SkyPrisonCore extends JavaPlugin {
             getLogger().info("Placeholders registered");
         }
 
+
         Timer timer = new Timer();
         Calendar date = Calendar.getInstance();
+        date.add(Calendar.DAY_OF_YEAR, 1);
         date.set(Calendar.HOUR, 0);
         date.set(Calendar.MINUTE, 1);
         date.set(Calendar.SECOND, 0);
