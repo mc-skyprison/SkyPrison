@@ -99,7 +99,7 @@ public class DatabaseImport implements CommandExecutor {
 
             List<UUID> members = new ArrayList<>(newClaim.getMembers().getUniqueIds());
 
-            admins.forEach(members::remove);
+            members.removeAll(admins);
 
             for(UUID member : members) {
                 try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO claims_members (user_id, claim_id, user_rank) VALUES (?, ?, ?)")) {
@@ -112,14 +112,11 @@ public class DatabaseImport implements CommandExecutor {
                 }
             }
 
+            for(UUID admin : admins) {
+                newClaim.getMembers().addPlayer(admin);
+                plugin.tellConsole("ADDED " + admin);
+            }
             newClaim.getOwners().removeAll();
-
-            admins.forEach(admin -> {
-                if (!newClaim.getMembers().contains(admin)) {
-                    newClaim.getMembers().addPlayer(admin);
-                }
-            });
-
             regionManager.addRegion(newClaim);
 
             if(parents.containsValue(claim.getId())) {

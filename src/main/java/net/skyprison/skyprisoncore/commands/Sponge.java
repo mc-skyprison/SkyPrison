@@ -68,14 +68,14 @@ public class Sponge implements CommandExecutor {
 						}
 
 						int max = 0;
-						try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT MAX(order) FROM sponge_locations")) {
+						try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT MAX(order_id) FROM sponge_locations")) {
 							ResultSet rs = ps.executeQuery();
 							if(rs.next()) max = rs.getInt(1);
 						} catch(SQLException e) {
 							e.printStackTrace();
 						}
 
-						try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO sponge_locations (order, world, x, y, z) VALUES (?, ?, ?, ?, ?)")) {
+						try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO sponge_locations (order_id, world, x, y, z) VALUES (?, ?, ?, ?, ?)")) {
 							ps.setInt(1, max + 1);
 							ps.setString(2, world);
 							ps.setInt(3, x);
@@ -90,7 +90,7 @@ public class Sponge implements CommandExecutor {
 					}
 					case "list" -> {
 						HashMap<Integer, Location> locs = new HashMap<>();
-						try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT order, world, x, y, z FROM sponge_locations")) {
+						try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT order_id, world, x, y, z FROM sponge_locations")) {
 							ResultSet rs = ps.executeQuery();
 							while(rs.next()) {
 								int order = rs.getInt(1);
@@ -109,7 +109,7 @@ public class Sponge implements CommandExecutor {
 									page = 1;
 								}
 							} else {
-								Component msg = Component.text("Correct Usage: /spongeloc list (page)", NamedTextColor.RED);
+								Component msg = Component.text("Correct Usage: /sponge list (page)", NamedTextColor.RED);
 								player.sendMessage(msg);
 							}
 						}
@@ -128,7 +128,7 @@ public class Sponge implements CommandExecutor {
 							msg = msg.append(Component.text("\n" + i + ". ").color(TextColor.fromHexString("#cea916"))
 									.append(Component.text("X " + loc.getBlockX() + " Y " + loc.getBlockY() + " Z " + loc.getBlockZ()).color(TextColor.fromHexString("#7fff00")))
 									.hoverEvent(HoverEvent.showText(Component.text("Click to teleport to this location").color(NamedTextColor.GRAY)))
-									.clickEvent(ClickEvent.runCommand("/spongeloc tp " + i)));
+									.clickEvent(ClickEvent.runCommand("/sponge tp " + i)));
 						}
 						if (page == 1) {
 							if(locs.size() > 10) {
@@ -136,31 +136,31 @@ public class Sponge implements CommandExecutor {
 										.append(Component.text("/").color(NamedTextColor.GRAY)
 												.append(Component.text(totalPages).color(TextColor.fromHexString("#266d27"))))
 										.append(Component.text(" Next --->").color(NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text(">>>").color(NamedTextColor.GRAY)))
-												.clickEvent(ClickEvent.runCommand("/spongeloc list " + nextPage))));
+												.clickEvent(ClickEvent.runCommand("/sponge list " + nextPage))));
 							}
 						} else if (page == totalPages) {
 							msg = msg.append(Component.text("\n<--- Prev ").color(NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text("<<<").color(NamedTextColor.GRAY)))
-									.clickEvent(ClickEvent.runCommand("/spongeloc list " + prevPage))
+									.clickEvent(ClickEvent.runCommand("/sponge list " + prevPage))
 									.append(Component.text(page).color(TextColor.fromHexString("#266d27"))
 											.append(Component.text("/").color(NamedTextColor.GRAY)
 													.append(Component.text(totalPages).color(TextColor.fromHexString("#266d27"))))));
 						} else {
 							msg = msg.append(Component.text("\n<--- Prev ").color(NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text("<<<").color(NamedTextColor.GRAY)))
-									.clickEvent(ClickEvent.runCommand("/spongeloc list " + prevPage))
+									.clickEvent(ClickEvent.runCommand("/sponge list " + prevPage))
 									.append(Component.text(page).color(TextColor.fromHexString("#266d27"))
 											.append(Component.text("/").color(NamedTextColor.GRAY)
 													.append(Component.text(totalPages).color(TextColor.fromHexString("#266d27")))))
 									.append(Component.text(" Next --->").color(NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text(">>>").color(NamedTextColor.GRAY))))
-									.clickEvent(ClickEvent.runCommand("/spongeloc list " + nextPage)));
+									.clickEvent(ClickEvent.runCommand("/sponge list " + nextPage)));
 						}
 						player.sendMessage(msg);
 					}
 					case "delete" -> {
-						// spongeloc delete <id>
+						// sponge delete <id>
 						if (args.length > 1) {
 							if (plugin.isInt(args[1])) {
 								int spongeId = Integer.parseInt(args[1]);
-								try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT order FROM sponge_locations WHERE order = ?")) {
+								try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT order_id FROM sponge_locations WHERE order_id = ?")) {
 									ps.setInt(1, spongeId);
 									ResultSet rs = ps.executeQuery();
 									if (!rs.next()) {
@@ -171,14 +171,14 @@ public class Sponge implements CommandExecutor {
 									e.printStackTrace();
 								}
 
-								try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM sponge_locations WHERE order = ?")) {
+								try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM sponge_locations WHERE order_id = ?")) {
 									ps.setInt(1, spongeId);
 									ps.executeUpdate();
 								} catch (SQLException e) {
 									e.printStackTrace();
 								}
 
-								try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE sponge_locations SET order = order - 1 WHERE order > ?")) {
+								try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE sponge_locations SET order_id = order_id - 1 WHERE order_id > ?")) {
 									ps.setInt(1, spongeId);
 									ps.executeUpdate();
 								} catch (SQLException e) {
@@ -188,11 +188,11 @@ public class Sponge implements CommandExecutor {
 								Component msg = prefix.append(Component.text("Successfully deleted sponge location!").color(TextColor.fromHexString("#7fff00")));
 								player.sendMessage(msg);
 							} else {
-								Component msg = Component.text("Correct Usage: /spongeloc delete <id>", NamedTextColor.RED);
+								Component msg = Component.text("Correct Usage: /sponge delete <id>", NamedTextColor.RED);
 								player.sendMessage(msg);
 							}
 						} else {
-							Component msg = Component.text("Correct Usage: /spongeloc delete <id>", NamedTextColor.RED);
+							Component msg = Component.text("Correct Usage: /sponge delete <id>", NamedTextColor.RED);
 							player.sendMessage(msg);
 						}
 					}
@@ -201,7 +201,7 @@ public class Sponge implements CommandExecutor {
 							if (plugin.isInt(args[1])) {
 								int spongeId = Integer.parseInt(args[1]);
 								Location loc = null;
-								try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT world, x, y, z FROM sponge_locations WHERE order = ?")) {
+								try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT world, x, y, z FROM sponge_locations WHERE order_id = ?")) {
 									ps.setInt(1, spongeId);
 									ResultSet rs = ps.executeQuery();
 									if (rs.next()) {
@@ -216,10 +216,10 @@ public class Sponge implements CommandExecutor {
 									player.sendMessage(prefix.append(Component.text("Teleport failed!", NamedTextColor.RED)));
 								}
 							} else {
-								player.sendMessage(prefix.append(Component.text("Correct Usage: /spongeloc tp <id>", NamedTextColor.RED)));
+								player.sendMessage(prefix.append(Component.text("Correct Usage: /sponge tp <id>", NamedTextColor.RED)));
 							}
 						} else {
-							player.sendMessage(prefix.append(Component.text("Correct Usage: /spongeloc tp <id>", NamedTextColor.RED)));
+							player.sendMessage(prefix.append(Component.text("Correct Usage: /sponge tp <id>", NamedTextColor.RED)));
 						}
 					}
 					default -> player.sendMessage(help);

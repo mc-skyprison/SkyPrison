@@ -4,6 +4,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -38,7 +39,12 @@ public class SpongeTask extends TimerTask {
         }
         if(!locs.isEmpty()) {
             Collections.shuffle(locs);
-            locs.get(0).getBlock().setType(Material.SPONGE);
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    locs.get(0).getBlock().setType(Material.SPONGE);
+                }
+            }.runTask(plugin);
         }
 
         int randTime = ThreadLocalRandom.current().nextInt(20, 41);

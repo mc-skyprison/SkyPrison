@@ -327,7 +327,7 @@ public class DailyMissions {
 
             uMission = uMission + ":completed";
 
-            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET missions_completed = missions_completed + ? WHERE user_id = ?")) {
+            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET daily_missions_completed = daily_missions_completed + ? WHERE user_id = ?")) {
                 ps.setInt(1, 1);
                 ps.setString(2, player.getUniqueId().toString());
                 ps.executeUpdate();

@@ -36,7 +36,8 @@ public class Casino implements CommandExecutor {
         CMIUser user = CMI.getInstance().getPlayerManager().getUser(args[0]);
 
         HashMap<String, Long> casinoCools = new HashMap<>();
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT casino_name, casino_cooldown FROM casino_cooldowns WHERE user_id = '" + user.getUniqueId() + "'")) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT casino_name, casino_cooldown FROM casino_cooldowns WHERE user_id = ?")) {
+            ps.setString(1, user.getUniqueId().toString());
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
                 casinoCools.put(rs.getString(1), rs.getLong(2));
@@ -82,13 +83,18 @@ public class Casino implements CommandExecutor {
                     }
                 }
             } else {
-                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO casino_cooldowns (user_id, casino_name, casino_cooldown) VALUES (?, ?, ?)")) {
-                    ps.setString(1, user.getUniqueId().toString());
-                    ps.setString(2, args[1]);
-                    ps.setLong(3, nCooldown);
-                    ps.executeUpdate();
-                } catch (SQLException e) {
-                    e.printStackTrace();
+                if (user.getBalance() >= Integer.parseInt(args[2])) {
+                    plugin.asConsole("money take " + user.getName() + " " + args[2]);
+                    plugin.asConsole("crates key give " + user.getName() + " " + args[1] + " 1");
+
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO casino_cooldowns (user_id, casino_name, casino_cooldown) VALUES (?, ?, ?)")) {
+                        ps.setString(1, user.getUniqueId().toString());
+                        ps.setString(2, args[1]);
+                        ps.setLong(3, nCooldown);
+                        ps.executeUpdate();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         } else {

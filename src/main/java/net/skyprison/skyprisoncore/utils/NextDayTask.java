@@ -30,7 +30,6 @@ public class NextDayTask extends TimerTask {
 
     @Override
     public void run() {
-        plugin.tellConsole("DAILY TASK RAN");
         ArrayList<String> dailyPlayers = new ArrayList<>();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");

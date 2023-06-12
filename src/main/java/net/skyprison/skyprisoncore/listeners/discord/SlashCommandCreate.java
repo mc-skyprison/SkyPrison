@@ -29,9 +29,10 @@ public class SlashCommandCreate implements SlashCommandCreateListener {
     public void onSlashCommandCreate(SlashCommandCreateEvent event) {
         SlashCommandInteraction command = event.getSlashCommandInteraction();
         if(command.getCommandName().equalsIgnoreCase("link")) {
-            if(command.getOptionByIndex(0).isPresent() && command.getOptionByIndex(0).get().getLongValue().isPresent()) {
-                int code = command.getOptionByIndex(0).get().getLongValue().get().intValue();
+            if(command.getOptionByIndex(0).isPresent()) {
+                int code = Integer.parseInt(command.getOptionByIndex(0).get().getStringValue().get());
                 if (plugin.discordLinking.containsKey(code)) {
+                    plugin.tellConsole("wham4");
                     User author = command.getUser();
                     long userId = author.getId();
                     CMIUser player = CMI.getInstance().getPlayerManager().getUser(plugin.discordLinking.get(code));
@@ -47,6 +48,7 @@ public class SlashCommandCreate implements SlashCommandCreateListener {
                     }
 
                     try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET discord_id = ? WHERE user_id = ?")) {
+                        plugin.tellConsole("wham5");
                         ps.setLong(1, userId);
                         ps.setString(2, player.getUniqueId().toString());
                         ps.setString(3, "owner");
@@ -77,6 +79,12 @@ public class SlashCommandCreate implements SlashCommandCreateListener {
                         e.printStackTrace();
                     }
                     plugin.discordLinking.remove(code);
+                } else {
+                    plugin.tellConsole("whamFAIL");
+                    command.createImmediateResponder()
+                            .setContent("You don't have an active discord linking attempt!")
+                            .setFlags(MessageFlag.EPHEMERAL)
+                            .respond();
                 }
             }
         }

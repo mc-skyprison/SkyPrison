@@ -175,14 +175,6 @@ public class BlockPlace implements Listener {
                                     }
                                 }
                             }.runTaskTimer(plugin, 20, 20);
-                            for (String mission : dm.getMissions(player)) {
-                                if(!dm.isCompleted(player, mission)) {
-                                    String[] missSplit = mission.split("-");
-                                    if (missSplit[0].equalsIgnoreCase("bomb")) {
-                                        dm.updatePlayerMission(player, mission);
-                                    }
-                                }
-                            }
                         } else {
                             player.sendMessage(plugin.colourMessage("&cYou can only use this in the mines!"));
                             event.setCancelled(true);

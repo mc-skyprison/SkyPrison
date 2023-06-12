@@ -30,7 +30,7 @@ public class ServerLoad implements Listener {
 
     @EventHandler
     public void onServerLoad(ServerLoadEvent event) {
-        plugin.spongeTimer.schedule(new SpongeTask(plugin, db), TimeUnit.MINUTES.toMillis(0));
+        plugin.spongeTimer.schedule(new SpongeTask(plugin, db), TimeUnit.MINUTES.toMillis(10));
 
         int radius = 300;
         World prisonWorld = Bukkit.getWorld("world_prison");
