@@ -216,7 +216,8 @@ public class PlayerJoin implements Listener {
                     }
                     plugin.userTags.put(player.getUniqueId(), tagsDisplay);
                     particles.resetActivePlayerParticles(player);
-                    particles.addActivePlayerParticle(player, ParticleEffect.CLOUD, ParticleStyle.fromInternalName(tagsEffect));
+                    if(tagsEffect != null && !tagsEffect.isEmpty())
+                        particles.addActivePlayerParticle(player, ParticleEffect.CLOUD, ParticleStyle.fromInternalName(tagsEffect));
                 }
             }
 

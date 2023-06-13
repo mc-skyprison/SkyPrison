@@ -1,9 +1,11 @@
 package net.skyprison.skyprisoncore.commands.economy;
 
 import me.clip.placeholderapi.PlaceholderAPI;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
@@ -16,6 +18,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -35,14 +38,14 @@ public class Bartender implements CommandExecutor {
 		File f = new File(plugin.getDataFolder() + File.separator + "bartender.yml");
 		FileConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
 		Set<String> alchohols = yamlf.getConfigurationSection(bar).getKeys(false);
-		Inventory bartenderGUI = Bukkit.createInventory(null, 45, ChatColor.RED + "Bartender Shop");
+		Inventory bartenderGUI = Bukkit.createInventory(null, 45, Component.text("Bartender Shop", NamedTextColor.RED));
 		ItemStack whitePane = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
 		ItemStack grayPane = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
 		ItemMeta whiteMeta = whitePane.getItemMeta();
 		ItemMeta grayMeta = grayPane.getItemMeta();
-		whiteMeta.setDisplayName(" ");
+		whiteMeta.displayName(Component.empty());
 		whitePane.setItemMeta(whiteMeta);
-		grayMeta.setDisplayName(" ");
+		whiteMeta.displayName(Component.empty());
 		grayPane.setItemMeta(grayMeta);
 		for (int i = 0; i < 45; i++) {
 			if(i == 0) {
@@ -59,8 +62,8 @@ public class Bartender implements CommandExecutor {
 			} else if(i == 40) {
 				ItemStack balance = new ItemStack(Material.NETHER_STAR);
 				ItemMeta bMeta = balance.getItemMeta();
-				bMeta.setDisplayName(plugin.colourMessage("&6&lYour Balance"));
-				bMeta.setLore(Collections.singletonList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
+				bMeta.displayName(Component.text("Your Balance", NamedTextColor.GOLD, TextDecoration.BOLD));
+				bMeta.lore(Collections.singletonList(Component.text(PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%"), NamedTextColor.GRAY)));
 				balance.setItemMeta(bMeta);
 				bartenderGUI.setItem(i, balance);
 			}
@@ -68,19 +71,21 @@ public class Bartender implements CommandExecutor {
 		if(!alchohols.isEmpty()) {
 			for (String dropItem : alchohols) {
 				ItemStack alcohol = yamlf.getItemStack(bar + "." + dropItem + ".item");
-				ItemMeta alcMeta = alcohol.getItemMeta();
-				List<String> lore = new ArrayList<>();
-				if(alcMeta.getLore() != null && !alcMeta.getLore().isEmpty()) {
-					lore = alcMeta.getLore();
+				if(alcohol != null) {
+					ItemMeta alcMeta = alcohol.getItemMeta();
+					List<Component> lore = new ArrayList<>();
+					if (alcMeta.lore() != null && !alcMeta.lore().isEmpty()) {
+						lore = alcMeta.lore();
+					}
+					String price = plugin.formatNumber(yamlf.getDouble(bar + "." + dropItem + ".price"));
+					lore.add(0, Component.text("Price: ", NamedTextColor.YELLOW).append(Component.text("$" + price, NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
+					alcMeta.lore(lore);
+					NamespacedKey key = new NamespacedKey(plugin, "alc-type");
+					alcMeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, dropItem);
+					alcohol.setItemMeta(alcMeta);
+					int slot = yamlf.getInt(bar + "." + dropItem + ".slot");
+					bartenderGUI.setItem(slot, alcohol);
 				}
-				String price = plugin.formatNumber(yamlf.getDouble(bar + "." + dropItem + ".price"));
-				lore.add(0, plugin.colourMessage("&ePrice: &7$" + price));
-				alcMeta.setLore(lore);
-				NamespacedKey key = new NamespacedKey(plugin, "alc-type");
-				alcMeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, dropItem);
-				alcohol.setItemMeta(alcMeta);
-				int slot = yamlf.getInt(bar + "." + dropItem + ".slot");
-				bartenderGUI.setItem(slot, alcohol);
 			}
 		}
 
@@ -88,9 +93,8 @@ public class Bartender implements CommandExecutor {
 	}
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if (sender instanceof Player) {
-			Player player = (Player) sender;
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+		if (sender instanceof Player player) {
 			if (args.length == 1) {
 				openGUI(player, args[0]);
 			}

@@ -14,8 +14,10 @@ import litebans.api.Events;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import net.kyori.adventure.text.minimessage.tag.standard.StandardTags;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.skyprison.skyprisoncore.commands.*;
 import net.skyprison.skyprisoncore.commands.chats.Admin;
@@ -238,7 +240,6 @@ public class SkyPrisonCore extends JavaPlugin {
             getLogger().info("Placeholders registered");
         }
 
-
         Timer timer = new Timer();
         Calendar date = Calendar.getInstance();
         date.add(Calendar.DAY_OF_YEAR, 1);
@@ -246,6 +247,8 @@ public class SkyPrisonCore extends JavaPlugin {
         date.set(Calendar.MINUTE, 1);
         date.set(Calendar.SECOND, 0);
         date.set(Calendar.MILLISECOND, 0);
+        tellConsole(date.getTime().toString());
+
         timer.schedule(new NextDayTask(this, getDatabase()), date.getTime());
 
         File infoFile = new File(this.getDataFolder() + File.separator + "info.yml");
@@ -295,6 +298,49 @@ public class SkyPrisonCore extends JavaPlugin {
                 }
             }
         }.runTaskTimerAsynchronously(this, 20 * 635, 20 * 635);
+    }
+
+    private final Map<String, TagResolver> DEFAULT_TAGS = Map.ofEntries(
+            Map.entry("color", StandardTags.color()),
+            Map.entry("reset", StandardTags.reset()),
+            Map.entry("click", StandardTags.clickEvent()),
+            Map.entry("hover", StandardTags.hoverEvent()),
+            Map.entry("keybind", StandardTags.keybind()),
+            Map.entry("translatable", StandardTags.translatable()),
+            Map.entry("insertion", StandardTags.insertion()),
+            Map.entry("rainbow", StandardTags.rainbow()),
+            Map.entry("gradient", StandardTags.gradient()),
+            Map.entry("transition", StandardTags.transition()),
+            Map.entry("font", StandardTags.font()),
+            Map.entry("newline", StandardTags.newline()),
+            Map.entry("selector", StandardTags.selector()),
+            Map.entry("score", StandardTags.score()),
+            Map.entry("nbt", StandardTags.nbt())
+    );
+
+    public Component getParsedMessage(Player player, String message) {
+        TagResolver.Builder resolver = TagResolver.builder();
+        if(player != null) {
+            if (!player.hasPermission("skyprisoncore.chat.format")) return Component.text(message);
+
+
+            for (Map.Entry<String, TagResolver> entry : DEFAULT_TAGS.entrySet()) {
+                if (player.hasPermission("skyprisoncore.chat." + entry.getKey())) {
+                    resolver.resolver(entry.getValue());
+                }
+            }
+
+            for (TextDecoration decoration : TextDecoration.values()) {
+                if (player.hasPermission("skyprisoncore.chat." + decoration.name())) {
+                    resolver.resolver(StandardTags.decorations(decoration));
+                }
+            }
+
+        } else {
+            resolver.resolvers(StandardTags.defaults());
+        }
+        final MiniMessage miniMessage = MiniMessage.builder().tags(resolver.build()).build();
+        return miniMessage.deserialize(message);
     }
 
     @Override
@@ -445,7 +491,7 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("donoradd")).setExecutor(new DonorAdd(getDatabase()));
         Objects.requireNonNull(getCommand("purchases")).setExecutor(new Purchases(getDatabase(), this));
         Objects.requireNonNull(getCommand("econcheck")).setExecutor(new EconomyCheck(this));
-        Objects.requireNonNull(getCommand("permshop")).setExecutor(new PermShop(this));
+        Objects.requireNonNull(getCommand("permshop")).setExecutor(new PermShop());
         Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, getDatabase()));
         Objects.requireNonNull(getCommand("dropchest")).setExecutor(new DropChest(this));
         Objects.requireNonNull(getCommand("dontsell")).setExecutor(new DontSell(this, getDatabase()));
@@ -464,7 +510,7 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("safezone")).setExecutor(new Safezone(this));
         Objects.requireNonNull(getCommand("buyback")).setExecutor(new BuyBack(this, getDatabase()));
         Objects.requireNonNull(getCommand("daily")).setExecutor(new Daily(this, getDatabase()));
-        Objects.requireNonNull(getCommand("shopban")).setExecutor(new ShopBan(getDatabase(), this));
+        Objects.requireNonNull(getCommand("shopban")).setExecutor(new ShopBan(getDatabase()));
         Objects.requireNonNull(getCommand("enchtable")).setExecutor(new EnchTable(this));
         Objects.requireNonNull(getCommand("removeitalics")).setExecutor(new RemoveItalics(this));
         Objects.requireNonNull(getCommand("bottledexp")).setExecutor(new BottledExp(this));
@@ -537,6 +583,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new CrateObtainReward(this, getDatabase()), this);
         pm.registerEvents(new EntityToggleGlide(), this);
         pm.registerEvents(new PlayerBucketEmpty(), this);
+        pm.registerEvents(new AsyncChatDecorate(this, getDatabase()), this);
 
         pm.registerEvents(new AsyncChat(this, discApi, getDatabase(), new Tags(this, getDatabase())), this);
         pm.registerEvents(new PlayerQuit(this, getDatabase(), discApi, dailyMissions), this);

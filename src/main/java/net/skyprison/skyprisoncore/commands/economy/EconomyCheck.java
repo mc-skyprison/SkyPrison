@@ -1,9 +1,11 @@
 package net.skyprison.skyprisoncore.commands.economy;
 
 import com.Zrips.CMI.CMI;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
@@ -14,6 +16,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -21,10 +24,7 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.*;
 
 public class EconomyCheck implements CommandExecutor {
 	private final SkyPrisonCore plugin;
@@ -152,23 +152,29 @@ public class EconomyCheck implements CommandExecutor {
 		DecimalFormat df = new DecimalFormat("###,###,###");
 		NumberFormat defaultFormat = NumberFormat.getCurrencyInstance();
 		ArrayList<Integer> totalPages = new ArrayList<>();
-		Inventory shopLogInv = Bukkit.createInventory(null, 54, ChatColor.RED + "Shop Log | Page " + page);
+		Inventory shopLogInv = Bukkit.createInventory(null, 54, Component.text("Shop Log | Page " + page, NamedTextColor.RED));
 		int i = 0;
 		for (HashMap.Entry<String, Integer> entry : shopLogPage.entrySet()) {
 			if(entry.getValue() == page) {
-				ArrayList<String> lore = new ArrayList<>();
+				ArrayList<Component> lore = new ArrayList<>();
 				String mat = entry.getKey().replaceAll(" ", "_").toUpperCase();
 				ItemStack item = new ItemStack(Material.valueOf(mat));
 				ItemMeta meta = item.getItemMeta();
-				meta.setDisplayName(ChatColor.YELLOW + entry.getKey());
-				lore.add(ChatColor.GRAY + "Amount Sold: " + ChatColor.YELLOW + df.format(shopLogAmount.get(entry.getKey())));
+				meta.displayName(Component.text(entry.getKey(), NamedTextColor.YELLOW)
+						.decoration(TextDecoration.ITALIC, false));
+				lore.add(Component.text("Amount Sold: ", NamedTextColor.GRAY).append(Component.text(df.format(shopLogAmount.get(entry.getKey())), NamedTextColor.YELLOW))
+						.decoration(TextDecoration.ITALIC, false));
 				int amountPos = new ArrayList<>(shopLogAmountSortedTop.keySet()).indexOf(entry.getKey()) + 1;
-				lore.add(ChatColor.GRAY + "Position: " + ChatColor.GREEN + amountPos);
-				lore.add(ChatColor.DARK_GRAY + "-----");
-				lore.add(ChatColor.GRAY + "Money Made: " + ChatColor.YELLOW + defaultFormat.format(shopLogPrice.get(entry.getKey())));
+				lore.add(Component.text("Position: ", NamedTextColor.GRAY).append(Component.text(amountPos, NamedTextColor.GREEN))
+						.decoration(TextDecoration.ITALIC, false));
+				lore.add(Component.text( "-----", NamedTextColor.DARK_GRAY)
+						.decoration(TextDecoration.ITALIC, false));
+				lore.add(Component.text("Money Made: ", NamedTextColor.GRAY).append(Component.text(defaultFormat.format(shopLogPrice.get(entry.getKey())), NamedTextColor.YELLOW))
+						.decoration(TextDecoration.ITALIC, false));
 				int moneyPos = new ArrayList<>(shopLogPriceSortedTop.keySet()).indexOf(entry.getKey()) + 1;
-				lore.add(ChatColor.GRAY + "Position: " + ChatColor.GREEN + moneyPos);
-				meta.setLore(lore);
+				lore.add(Component.text("Position: ", NamedTextColor.GRAY).append(Component.text(moneyPos, NamedTextColor.GREEN))
+						.decoration(TextDecoration.ITALIC, false));
+				meta.lore(lore);
 				if(i == 0) {
 					NamespacedKey key = new NamespacedKey(plugin, "stop-click");
 					meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
@@ -185,206 +191,77 @@ public class EconomyCheck implements CommandExecutor {
 		}
 
 		ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-		ItemStack pageChange = new ItemStack(Material.PAPER);
+		ItemStack nextPage = new ItemStack(Material.PAPER);
+		ItemStack prevPage = new ItemStack(Material.PAPER);
 		ItemStack itemSort = new ItemStack(Material.BOOK);
-		ArrayList<String> lore = new ArrayList<>();
+		ArrayList<Component> lore = new ArrayList<>();
 		ItemStack itemStats = new ItemStack(Material.NETHER_STAR);
 		ItemMeta metaStats = itemStats.getItemMeta();
 		ItemMeta metaSort = itemSort.getItemMeta();
-		ItemMeta itemMeta = pageChange.getItemMeta();
-		itemMeta.setDisplayName(ChatColor.GREEN + "Next Page");
-		pageChange.setItemMeta(itemMeta);
+		ItemMeta nextMeta = nextPage.getItemMeta();
+		nextMeta.displayName(Component.text("Next Page", NamedTextColor.GREEN)
+				.decoration(TextDecoration.ITALIC, false));
+		nextPage.setItemMeta(nextMeta);
+		ItemMeta prevMeta = nextPage.getItemMeta();
+		prevMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN)
+				.decoration(TextDecoration.ITALIC, false));
+		prevPage.setItemMeta(prevMeta);
 		for (int b = 45; b < 54; b++) {
-			if (page == 0) {
-				if(totalPages.size() < 1) {
-					if (b == 47) {
-						metaSort.setDisplayName(ChatColor.GREEN + "Top Sold");
-						itemSort.setItemMeta(metaSort);
-						shopLogInv.setItem(b, itemSort);
-					} else if (b == 48) {
-						metaSort.setDisplayName(ChatColor.GREEN + "Least Sold");
-						itemSort.setItemMeta(metaSort);
-						shopLogInv.setItem(b, itemSort);
-					} else if (b == 49) {
-						metaSort.setDisplayName(ChatColor.GREEN + "Player Search");
-						itemSort.setItemMeta(metaSort);
-						shopLogInv.setItem(b, itemSort);
-					} else if (b == 50) {
-						metaSort.setDisplayName(ChatColor.GREEN + "least Money Made");
-						itemSort.setItemMeta(metaSort);
-						shopLogInv.setItem(b, itemSort);
-					} else if (b == 51) {
-						metaSort.setDisplayName(ChatColor.GREEN + "Top Money Made");
-						itemSort.setItemMeta(metaSort);
-						shopLogInv.setItem(b, itemSort);
-					} else if(b == 53) {
-						metaStats.setDisplayName(ChatColor.YELLOW + "Stats");
-						lore.add(ChatColor.GRAY + "Total Amount Sold: " + ChatColor.YELLOW + df.format(totalItemSold));
-						lore.add(ChatColor.GRAY + "Total Money Made: " + ChatColor.YELLOW + defaultFormat.format(totalMoneyMade));
-						metaStats.setLore(lore);
-						itemStats.setItemMeta(metaStats);
-						shopLogInv.setItem(b, itemStats);
-					} else {
-						shopLogInv.setItem(b, pane);
-					}
-				} else {
-					if (Collections.max(totalPages).equals(page)) {
-						if (b == 47) {
-							metaSort.setDisplayName(ChatColor.GREEN + "Top Sold");
-							itemSort.setItemMeta(metaSort);
-							shopLogInv.setItem(b, itemSort);
-						} else if (b == 48) {
-							metaSort.setDisplayName(ChatColor.GREEN + "Least Sold");
-							itemSort.setItemMeta(metaSort);
-							shopLogInv.setItem(b, itemSort);
-						} else if (b == 49) {
-							metaSort.setDisplayName(ChatColor.GREEN + "Player Search");
-							itemSort.setItemMeta(metaSort);
-							shopLogInv.setItem(b, itemSort);
-						} else if (b == 50) {
-							metaSort.setDisplayName(ChatColor.GREEN + "least Money Made");
-							itemSort.setItemMeta(metaSort);
-							shopLogInv.setItem(b, itemSort);
-						} else if (b == 51) {
-							metaSort.setDisplayName(ChatColor.GREEN + "Top Money Made");
-							itemSort.setItemMeta(metaSort);
-							shopLogInv.setItem(b, itemSort);
-						} else if(b == 53) {
-							metaStats.setDisplayName(ChatColor.YELLOW + "Stats");
-							lore.add(ChatColor.GRAY + "Total Amount Sold: " + ChatColor.YELLOW + df.format(totalItemSold));
-							lore.add(ChatColor.GRAY + "Total Money Made: " + ChatColor.YELLOW + defaultFormat.format(totalMoneyMade));
-							metaStats.setLore(lore);
-							itemStats.setItemMeta(metaStats);
-							shopLogInv.setItem(b, itemStats);
-						} else {
-							shopLogInv.setItem(b, pane);
-						}
-					} else {
-						if(b != 52) {
-							if (b == 47) {
-								metaSort.setDisplayName(ChatColor.GREEN + "Top Sold");
-								itemSort.setItemMeta(metaSort);
-								shopLogInv.setItem(b, itemSort);
-							} else if (b == 48) {
-								metaSort.setDisplayName(ChatColor.GREEN + "Least Sold");
-								itemSort.setItemMeta(metaSort);
-								shopLogInv.setItem(b, itemSort);
-							} else if (b == 49) {
-								metaSort.setDisplayName(ChatColor.GREEN + "Player Search");
-								itemSort.setItemMeta(metaSort);
-								shopLogInv.setItem(b, itemSort);
-							} else if (b == 50) {
-								metaSort.setDisplayName(ChatColor.GREEN + "least Money Made");
-								itemSort.setItemMeta(metaSort);
-								shopLogInv.setItem(b, itemSort);
-							} else if (b == 51) {
-								metaSort.setDisplayName(ChatColor.GREEN + "Top Money Made");
-								itemSort.setItemMeta(metaSort);
-								shopLogInv.setItem(b, itemSort);
-							} else if(b == 53) {
-								metaStats.setDisplayName(ChatColor.YELLOW + "Stats");
-								lore.add(ChatColor.GRAY + "Total Amount Sold: " + ChatColor.YELLOW + df.format(totalItemSold));
-								lore.add(ChatColor.GRAY + "Total Money Made: " + ChatColor.YELLOW + defaultFormat.format(totalMoneyMade));
-								metaStats.setLore(lore);
-								itemStats.setItemMeta(metaStats);
-								shopLogInv.setItem(b, itemStats);
-							} else {
-								shopLogInv.setItem(b, pane);
-							}
-						} else {
-							shopLogInv.setItem(b, pageChange);
-						}
-					}
-				}
-			} else if (Collections.max(totalPages).equals(page)) {
-				if(b != 46) {
-					if (b == 47) {
-						metaSort.setDisplayName(ChatColor.GREEN + "Top Sold");
-						itemSort.setItemMeta(metaSort);
-						shopLogInv.setItem(b, itemSort);
-					} else if (b == 48) {
-						metaSort.setDisplayName(ChatColor.GREEN + "Least Sold");
-						itemSort.setItemMeta(metaSort);
-						shopLogInv.setItem(b, itemSort);
-					} else if (b == 49) {
-						metaSort.setDisplayName(ChatColor.GREEN + "Player Search");
-						itemSort.setItemMeta(metaSort);
-						shopLogInv.setItem(b, itemSort);
-					} else if (b == 50) {
-						metaSort.setDisplayName(ChatColor.GREEN + "least Money Made");
-						itemSort.setItemMeta(metaSort);
-						shopLogInv.setItem(b, itemSort);
-					} else if (b == 51) {
-						metaSort.setDisplayName(ChatColor.GREEN + "Top Money Made");
-						itemSort.setItemMeta(metaSort);
-						shopLogInv.setItem(b, itemSort);
-					} else if(b == 53) {
-						metaStats.setDisplayName(ChatColor.YELLOW + "Stats");
-						lore.add(ChatColor.GRAY + "Total Amount Sold: " + ChatColor.YELLOW + df.format(totalItemSold));
-						lore.add(ChatColor.GRAY + "Total Money Made: " + ChatColor.YELLOW + defaultFormat.format(totalMoneyMade));
-						metaStats.setLore(lore);
-						itemStats.setItemMeta(metaStats);
-						shopLogInv.setItem(b, itemStats);
-					} else {
-						shopLogInv.setItem(b, pane);
-					}
-				} else {
-					itemMeta.setDisplayName(ChatColor.GREEN + "Previous Page");
-					pageChange.setItemMeta(itemMeta);
-					shopLogInv.setItem(b, pageChange);
-				}
+			// 46 & 52
+
+			if(b == 46 && totalPages.size() > 1 && page < totalPages.size()) {
+				shopLogInv.setItem(b, nextPage);
+			} else if(b == 52 && totalPages.size() > 1 && page > 1) {
+				shopLogInv.setItem(b, prevPage);
+			} else if (b == 47) {
+				metaSort.displayName(Component.text("Top Sold", NamedTextColor.GREEN)
+						.decoration(TextDecoration.ITALIC, false));
+				itemSort.setItemMeta(metaSort);
+				shopLogInv.setItem(b, itemSort);
+			} else if (b == 48) {
+				metaSort.displayName(Component.text("Least Sold", NamedTextColor.GREEN)
+						.decoration(TextDecoration.ITALIC, false));
+				itemSort.setItemMeta(metaSort);
+				shopLogInv.setItem(b, itemSort);
+			} else if (b == 49) {
+				metaSort.displayName(Component.text("Player Search", NamedTextColor.GREEN)
+						.decoration(TextDecoration.ITALIC, false));
+				itemSort.setItemMeta(metaSort);
+				shopLogInv.setItem(b, itemSort);
+			} else if (b == 50) {
+				metaSort.displayName(Component.text("Least Money Made", NamedTextColor.GREEN)
+						.decoration(TextDecoration.ITALIC, false));
+				itemSort.setItemMeta(metaSort);
+				shopLogInv.setItem(b, itemSort);
+			} else if (b == 51) {
+				metaSort.displayName(Component.text("Top Money Made", NamedTextColor.GREEN)
+						.decoration(TextDecoration.ITALIC, false));
+				itemSort.setItemMeta(metaSort);
+				shopLogInv.setItem(b, itemSort);
+			} else if(b == 53) {
+				metaStats.displayName(Component.text("Stats", NamedTextColor.YELLOW)
+						.decoration(TextDecoration.ITALIC, false));
+				lore.add(Component.text("Total Amount Sold: ", NamedTextColor.GRAY).append(Component.text(df.format(totalItemSold), NamedTextColor.YELLOW))
+						.decoration(TextDecoration.ITALIC, false));
+				lore.add(Component.text("Total Money Made: ", NamedTextColor.GRAY).append(Component.text(defaultFormat.format(totalMoneyMade), NamedTextColor.YELLOW))
+						.decoration(TextDecoration.ITALIC, false));
+				metaStats.lore(lore);
+				itemStats.setItemMeta(metaStats);
+				shopLogInv.setItem(b, itemStats);
 			} else {
-				if(b != 46 && b != 52) {
-					if (b == 47) {
-						metaSort.setDisplayName(ChatColor.GREEN + "Top Sold");
-						itemSort.setItemMeta(metaSort);
-						shopLogInv.setItem(b, itemSort);
-					} else if (b == 48) {
-						metaSort.setDisplayName(ChatColor.GREEN + "Least Sold");
-						itemSort.setItemMeta(metaSort);
-						shopLogInv.setItem(b, itemSort);
-					} else if (b == 49) {
-						metaSort.setDisplayName(ChatColor.GREEN + "Player Search");
-						itemSort.setItemMeta(metaSort);
-						shopLogInv.setItem(b, itemSort);
-					} else if (b == 50) {
-						metaSort.setDisplayName(ChatColor.GREEN + "least Money Made");
-						itemSort.setItemMeta(metaSort);
-						shopLogInv.setItem(b, itemSort);
-					} else if (b == 51) {
-						metaSort.setDisplayName(ChatColor.GREEN + "Top Money Made");
-						itemSort.setItemMeta(metaSort);
-						shopLogInv.setItem(b, itemSort);
-					} else if(b == 53) {
-						metaStats.setDisplayName(ChatColor.YELLOW + "Stats");
-						lore.add(ChatColor.GRAY + "Total Amount Sold: " + ChatColor.YELLOW + df.format(totalItemSold));
-						lore.add(ChatColor.GRAY + "Total Money Made: " + ChatColor.YELLOW + defaultFormat.format(totalMoneyMade));
-						metaStats.setLore(lore);
-						itemStats.setItemMeta(metaStats);
-						shopLogInv.setItem(b, itemStats);
-					} else {
-						shopLogInv.setItem(b, pane);
-					}
-				} else if(b == 46) {
-					itemMeta.setDisplayName(ChatColor.GREEN + "Previous Page");
-					pageChange.setItemMeta(itemMeta);
-					shopLogInv.setItem(b, pageChange);
-				} else {
-					shopLogInv.setItem(b, pageChange);
-				}
+				shopLogInv.setItem(b, pane);
 			}
 		}
 		player.openInventory(shopLogInv);
 	}
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
 		LinkedHashMap<String, Integer> shopLogAmount = new LinkedHashMap<>();
 		LinkedHashMap<String, Double> shopLogPrice = new LinkedHashMap<>();
 		LinkedHashMap<String, Integer> shopLogPage = new LinkedHashMap<>();
 
-		if(sender instanceof Player) {
-			Player player = (Player) sender;
+		if(sender instanceof Player player) {
 			String sortMethod = "default";
 			if(args.length == 1) {
 				sortMethod = args[0];
@@ -393,8 +270,8 @@ public class EconomyCheck implements CommandExecutor {
 				if (args[0].equalsIgnoreCase("player")) {
 					if(CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
 						try {
-							FileInputStream fstream = new FileInputStream(Bukkit.getPluginManager()
-									.getPlugin("ShopGUIPlus").getDataFolder()
+							FileInputStream fstream = new FileInputStream(Objects.requireNonNull(Bukkit.getPluginManager()
+									.getPlugin("ShopGUIPlus")).getDataFolder()
 									+ File.separator + "shop.log");
 							BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
 							String strLine;
@@ -441,8 +318,8 @@ public class EconomyCheck implements CommandExecutor {
 				}
 			} else {
 				try {
-					FileInputStream fstream = new FileInputStream(Bukkit.getPluginManager()
-							.getPlugin("ShopGUIPlus").getDataFolder()
+					FileInputStream fstream = new FileInputStream(Objects.requireNonNull(Bukkit.getPluginManager()
+							.getPlugin("ShopGUIPlus")).getDataFolder()
 							+ File.separator + "shop.log");
 					BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
 					String strLine;

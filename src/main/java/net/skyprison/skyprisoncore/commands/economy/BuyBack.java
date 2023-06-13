@@ -1,10 +1,12 @@
 package net.skyprison.skyprisoncore.commands.economy;
 
 import me.clip.placeholderapi.PlaceholderAPI;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
@@ -15,15 +17,13 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class BuyBack implements CommandExecutor {
 	private final SkyPrisonCore plugin;
@@ -47,14 +47,14 @@ public class BuyBack implements CommandExecutor {
 			e.printStackTrace();
 		}
 
-		Inventory buyBackGUI = Bukkit.createInventory(null, 27, ChatColor.GOLD + "Buyback Shop");
+		Inventory buyBackGUI = Bukkit.createInventory(null, 27, Component.text("Buyback Shop", NamedTextColor.GOLD));
 		ItemStack whitePane = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
 		ItemStack grayPane = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
 		ItemMeta whiteMeta = whitePane.getItemMeta();
 		ItemMeta grayMeta = grayPane.getItemMeta();
-		whiteMeta.setDisplayName(" ");
+		whiteMeta.displayName(Component.empty());
 		whitePane.setItemMeta(whiteMeta);
-		grayMeta.setDisplayName(" ");
+		grayMeta.displayName(Component.empty());
 		grayPane.setItemMeta(grayMeta);
 		for (int i = 0; i < 27; i++) {
 			if(i == 0) {
@@ -71,8 +71,8 @@ public class BuyBack implements CommandExecutor {
 			} else if(i == 22) {
 				ItemStack balance = new ItemStack(Material.NETHER_STAR);
 				ItemMeta bMeta = balance.getItemMeta();
-				bMeta.setDisplayName(plugin.colourMessage("&6&lYour Balance"));
-				bMeta.setLore(Collections.singletonList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
+				bMeta.displayName(Component.text("Your Balance", NamedTextColor.GOLD, TextDecoration.BOLD));
+				bMeta.lore(Collections.singletonList(Component.text(PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%"), NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)));
 				balance.setItemMeta(bMeta);
 				buyBackGUI.setItem(i, balance);
 			}
@@ -83,16 +83,16 @@ public class BuyBack implements CommandExecutor {
 			String[] soldSplit = soldItem.split("/");
 			String itemType = soldSplit[0];
 			if (Material.getMaterial(itemType) == null) break;
-			ItemStack iSold = new ItemStack(Material.getMaterial(itemType), 1);
+			ItemStack iSold = new ItemStack(Objects.requireNonNull(Material.getMaterial(itemType)), 1);
 			ItemMeta iSoldMeta = iSold.getItemMeta();
-			List<String> lore = new ArrayList<>();
+			List<Component> lore = new ArrayList<>();
 			double orgPrice = Double.parseDouble(soldSplit[2]);
 			double newPrice = orgPrice * 3;
 			String price = plugin.formatNumber(newPrice);
 			int amount = Integer.parseInt(soldSplit[1]);
-			lore.add(plugin.colourMessage("&eAmount: &7" + amount));
-			lore.add(plugin.colourMessage("&eCost: &7$" + price));
-			iSoldMeta.setLore(lore);
+			lore.add(Component.text("Amount: ", NamedTextColor.YELLOW).append(Component.text(amount, NamedTextColor.GRAY)));
+			lore.add(Component.text("Cost: ", NamedTextColor.YELLOW).append(Component.text(price, NamedTextColor.GRAY)));
+			iSoldMeta.lore(lore);
 			NamespacedKey key = new NamespacedKey(plugin, "sold-type");
 			iSoldMeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, itemType);
 			NamespacedKey key1 = new NamespacedKey(plugin, "sold-amount");
@@ -111,9 +111,8 @@ public class BuyBack implements CommandExecutor {
 
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if(sender instanceof Player) {
-			Player player = (Player) sender;
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+		if(sender instanceof Player player) {
 			openGUI(player);
 		}
 		return true;

@@ -11,10 +11,11 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import dev.esophose.playerparticles.api.PlayerParticlesAPI;
 import net.coreprotect.CoreProtect;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.RandomReward;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -80,137 +81,132 @@ public class BlockBreak implements Listener {
                     Random rand = new Random();
                     int tReward = rand.nextInt(25 - 10 + 1) + 10;
                     plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tReward, "2000 Blocks Broken", "");
-                    player.sendMessage(ChatColor.GRAY + "You've mined 2,000 blocks and have received some tokens!");
+                    player.sendMessage(Component.text("You've mined 2,000 blocks and have received some tokens!", NamedTextColor.GRAY));
                 } else {
                     plugin.blockBreaks.put(player.getUniqueId(), brokeBlocks + 1);
                 }
             }
         } else {
             if(loc.getWorld().getName().equalsIgnoreCase("world_prison")) {
-                if (bType.equals(Material.SUGAR_CANE)) {
-                    final RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-                    final RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(player.getWorld()));
-                    final ApplicableRegionSet regionList = regionManager.getApplicableRegions(BlockVector3.at(b.getLocation().getX(),
+                RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
+                RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(player.getWorld()));
+                if (regionManager != null) {
+                    ApplicableRegionSet regionList = regionManager.getApplicableRegions(BlockVector3.at(b.getLocation().getX(),
                             b.getLocation().getY(), b.getLocation().getZ()));
-                    for(ProtectedRegion region : regionList.getRegions()) {
-                        if(region.getId().equalsIgnoreCase("snow-island1")) {
-                            if(loc.subtract(0,1,0).getBlock().getType().equals(Material.SUGAR_CANE))
-                                event.setCancelled(false);
-                            break;
-                        }
-                    }
-                } else if (bType.equals(Material.TALL_GRASS) || bType.equals(Material.GRASS) || bType.equals(Material.LARGE_FERN) || bType.equals(Material.FERN)) {
-                    List<Location> shinyLocs = plugin.shinyGrass;
-                    if(!shinyLocs.isEmpty()) {
-                        for(Location shinyLoc : shinyLocs) {
-                            if (shinyLoc.equals(loc) || shinyLoc.offset(0, 1, 0).equals(loc) || shinyLoc.offset(0, -1, 0).equals(loc)) {
-                                plugin.shinyGrass.remove(loc);
-                                particles.removeFixedEffectsInRange(shinyLoc, 1);
-                                player.sendMessage(plugin.colourMessage("&7&oBuried amidst the leafy foliage, you discover an unexpected treasure!"));
-                                ItemStack item = RandomReward.getRandomReward();
-                                CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-                                if (user.getInventory().canFit(item)) {
-                                    player.getInventory().addItem(item);
-                                } else {
-                                    player.getLocation().getWorld().dropItem(player.getLocation(), item);
-                                }
+                    if (bType.equals(Material.SUGAR_CANE)) {
+                        for (ProtectedRegion region : regionList.getRegions()) {
+                            if (region.getId().equalsIgnoreCase("snow-island1")) {
+                                if (loc.subtract(0, 1, 0).getBlock().getType().equals(Material.SUGAR_CANE))
+                                    event.setCancelled(false);
                                 break;
                             }
                         }
-                    }
-                } else if (bType.equals(Material.CACTUS)) {
-                    RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-                    RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(player.getWorld()));
-                    ApplicableRegionSet regionList = regionManager.getApplicableRegions(BlockVector3.at(b.getLocation().getX(),
-                            b.getLocation().getY(), b.getLocation().getZ()));
-                    for(ProtectedRegion region : regionList.getRegions()) {
-                        if(region.getId().equalsIgnoreCase("desert-nofly")) {
-                            if(loc.subtract(0,1,0).getBlock().getType().equals(Material.CACTUS))
-                                event.setCancelled(false);
-                            break;
+                    } else if (bType.equals(Material.TALL_GRASS) || bType.equals(Material.GRASS) || bType.equals(Material.LARGE_FERN) || bType.equals(Material.FERN)) {
+                        List<Location> shinyLocs = plugin.shinyGrass;
+                        if (!shinyLocs.isEmpty()) {
+                            for (Location shinyLoc : shinyLocs) {
+                                if (shinyLoc.equals(loc) || shinyLoc.offset(0, 1, 0).equals(loc) || shinyLoc.offset(0, -1, 0).equals(loc)) {
+                                    plugin.shinyGrass.remove(loc);
+                                    particles.removeFixedEffectsInRange(shinyLoc, 1);
+                                    player.sendMessage(plugin.colourMessage("&7&oBuried amidst the leafy foliage, you discover an unexpected treasure!"));
+                                    ItemStack item = RandomReward.getRandomReward();
+                                    CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
+                                    if (user.getInventory().canFit(item)) {
+                                        player.getInventory().addItem(item);
+                                    } else {
+                                        player.getLocation().getWorld().dropItem(player.getLocation(), item);
+                                    }
+                                    break;
+                                }
+                            }
                         }
-                    }
-                } else if (bType.equals(Material.BAMBOO)) {
-                    RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-                    RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(player.getWorld()));
-                    ApplicableRegionSet regionList = regionManager.getApplicableRegions(BlockVector3.at(b.getLocation().getX(),
-                            b.getLocation().getY(), b.getLocation().getZ()));
-                    for(ProtectedRegion region : regionList.getRegions()) {
-                        if(region.getId().equalsIgnoreCase("desert-nofly")) {
-                            if(loc.subtract(0,1,0).getBlock().getType().equals(Material.BAMBOO))
-                                event.setCancelled(false);
-                            break;
+                    } else if (bType.equals(Material.CACTUS)) {
+                        for (ProtectedRegion region : regionList.getRegions()) {
+                            if (region.getId().equalsIgnoreCase("desert-nofly")) {
+                                if (loc.subtract(0, 1, 0).getBlock().getType().equals(Material.CACTUS))
+                                    event.setCancelled(false);
+                                break;
+                            }
                         }
-                    }
-                } else if (bType.equals(Material.BIRCH_LOG)) {
-                    RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-                    RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(player.getWorld()));
-                    ApplicableRegionSet regionList = regionManager.getApplicableRegions(BlockVector3.at(b.getLocation().getX(),
-                            b.getLocation().getY(), b.getLocation().getZ()));
-                    for(ProtectedRegion region : regionList.getRegions()) {
-                        if(region.getId().equalsIgnoreCase("grass-nofly")) {
-                            ArrayList<Material> axes = new ArrayList<>();
-                            axes.add(Material.DIAMOND_AXE);
-                            axes.add(Material.GOLDEN_AXE);
-                            axes.add(Material.IRON_AXE);
-                            axes.add(Material.STONE_AXE);
-                            axes.add(Material.WOODEN_AXE);
-                            axes.add(Material.NETHERITE_AXE);
+                    } else if (bType.equals(Material.BAMBOO)) {
+                        for (ProtectedRegion region : regionList.getRegions()) {
+                            if (region.getId().equalsIgnoreCase("desert-nofly")) {
+                                if (loc.subtract(0, 1, 0).getBlock().getType().equals(Material.BAMBOO))
+                                    event.setCancelled(false);
+                                break;
+                            }
+                        }
+                    } else if (bType.equals(Material.BIRCH_LOG)) {
+                        for (ProtectedRegion region : regionList.getRegions()) {
+                            if (region.getId().equalsIgnoreCase("grass-nofly")) {
+                                ArrayList<Material> axes = new ArrayList<>();
+                                axes.add(Material.DIAMOND_AXE);
+                                axes.add(Material.GOLDEN_AXE);
+                                axes.add(Material.IRON_AXE);
+                                axes.add(Material.STONE_AXE);
+                                axes.add(Material.WOODEN_AXE);
+                                axes.add(Material.NETHERITE_AXE);
 
-                            event.setCancelled(false);
-                            if (axes.contains(player.getInventory().getItemInMainHand().getType())) {
-                                if (!player.isSneaking()) {
-                                    boolean birchDown = true;
-                                    int birchDrops = 0;
-                                    Location birchLoc;
-                                    Location saplingLoc;
-                                    int i = 0;
-                                    while (birchDown) {
-                                        birchLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - i, loc.getBlockZ());
-                                        if (birchLoc.getBlock().getType() == Material.BIRCH_LOG) {
-                                            birchLoc.getBlock().breakNaturally();
-                                            birchDrops++;
-                                            i++;
-                                        } else {
-                                            saplingLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - i + 1, loc.getBlockZ());
-                                            Location finalSaplingLoc = saplingLoc;
-                                            if (birchLoc.getBlock().getType() == Material.GRASS_BLOCK || birchLoc.getBlock().getType() == Material.DIRT) {
-                                                plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> finalSaplingLoc.getBlock().setType(Material.BIRCH_SAPLING), 2L);
+                                event.setCancelled(false);
+                                if (axes.contains(player.getInventory().getItemInMainHand().getType())) {
+                                    if (!player.isSneaking()) {
+                                        boolean birchDown = true;
+                                        int birchDrops = 0;
+                                        Location birchLoc;
+                                        Location saplingLoc;
+                                        int i = 0;
+                                        while (birchDown) {
+                                            birchLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - i, loc.getBlockZ());
+                                            if (birchLoc.getBlock().getType() == Material.BIRCH_LOG) {
+                                                birchLoc.getBlock().breakNaturally();
+                                                birchDrops++;
+                                                i++;
+                                            } else {
+                                                saplingLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - i + 1, loc.getBlockZ());
+                                                Location finalSaplingLoc = saplingLoc;
+                                                if (birchLoc.getBlock().getType() == Material.GRASS_BLOCK || birchLoc.getBlock().getType() == Material.DIRT) {
+                                                    plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> finalSaplingLoc.getBlock().setType(Material.BIRCH_SAPLING), 2L);
+                                                }
+                                                birchDown = false;
                                             }
-                                            birchDown = false;
                                         }
-                                    }
-                                    boolean birchUp = true;
-                                    int x = 1;
-                                    while (birchUp) {
-                                        birchLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() + x, loc.getBlockZ());
-                                        if (birchLoc.getBlock().getType() == Material.BIRCH_LOG) {
-                                            birchLoc.getBlock().breakNaturally();
-                                            birchDrops++;
-                                            x++;
-                                        } else {
-                                            birchUp = false;
+                                        boolean birchUp = true;
+                                        int x = 1;
+                                        while (birchUp) {
+                                            birchLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() + x, loc.getBlockZ());
+                                            if (birchLoc.getBlock().getType() == Material.BIRCH_LOG) {
+                                                birchLoc.getBlock().breakNaturally();
+                                                birchDrops++;
+                                                x++;
+                                            } else {
+                                                birchUp = false;
+                                            }
                                         }
-                                    }
 
-                                    ItemStack item = player.getInventory().getItemInMainHand();
-                                    Damageable im = (Damageable) item.getItemMeta();
-                                    Material axe = item.getType();
-                                    int dmg = im.getDamage();
-                                    if (item.containsEnchantment(Enchantment.DURABILITY)) {
-                                        int enchantLevel = item.getEnchantmentLevel(Enchantment.DURABILITY);
-                                        if (birchDrops / enchantLevel + dmg > axe.getMaxDurability()) {
-                                            player.getInventory().remove(item);
+                                        ItemStack item = player.getInventory().getItemInMainHand();
+                                        Damageable im = (Damageable) item.getItemMeta();
+                                        Material axe = item.getType();
+                                        int dmg = im.getDamage();
+                                        if (item.containsEnchantment(Enchantment.DURABILITY)) {
+                                            int enchantLevel = item.getEnchantmentLevel(Enchantment.DURABILITY);
+                                            if (birchDrops / enchantLevel + dmg > axe.getMaxDurability()) {
+                                                player.getInventory().remove(item);
+                                            } else {
+                                                im.setDamage(birchDrops / enchantLevel + dmg);
+                                                item.setItemMeta(im);
+                                            }
                                         } else {
-                                            im.setDamage(birchDrops / enchantLevel + dmg);
-                                            item.setItemMeta(im);
+                                            if (birchDrops + dmg > axe.getMaxDurability()) {
+                                                player.getInventory().remove(item);
+                                            } else {
+                                                im.setDamage(birchDrops + dmg);
+                                                item.setItemMeta(im);
+                                            }
                                         }
                                     } else {
-                                        if (birchDrops + dmg > axe.getMaxDurability()) {
-                                            player.getInventory().remove(item);
-                                        } else {
-                                            im.setDamage(birchDrops + dmg);
-                                            item.setItemMeta(im);
+                                        Location newLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - 1, loc.getBlockZ());
+                                        if (newLoc.getBlock().getType() == Material.GRASS_BLOCK || newLoc.getBlock().getType() == Material.DIRT) {
+                                            plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> loc.getBlock().setType(Material.BIRCH_SAPLING), 2L);
                                         }
                                     }
                                 } else {
@@ -219,13 +215,8 @@ public class BlockBreak implements Listener {
                                         plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> loc.getBlock().setType(Material.BIRCH_SAPLING), 2L);
                                     }
                                 }
-                            } else {
-                                Location newLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - 1, loc.getBlockZ());
-                                if (newLoc.getBlock().getType() == Material.GRASS_BLOCK || newLoc.getBlock().getType() == Material.DIRT) {
-                                    plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> loc.getBlock().setType(Material.BIRCH_SAPLING), 2L);
-                                }
+                                break;
                             }
-                            break;
                         }
                     }
                 }

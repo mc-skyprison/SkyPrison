@@ -2,7 +2,8 @@ package net.skyprison.skyprisoncore.commands.economy;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
-import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -16,16 +17,17 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.UUID;
 
 public class ShopBan implements CommandExecutor {
 	private final DatabaseHook db;
-	private final SkyPrisonCore plugin;
 
-	public ShopBan(DatabaseHook db, SkyPrisonCore plugin) {
+	public ShopBan(DatabaseHook db) {
 		this.db = db;
-		this.plugin = plugin;
 	}
+
+	private final Component prefix = Component.text("[", NamedTextColor.WHITE).append(Component.text("Market", NamedTextColor.GREEN).append(Component.text("] ", NamedTextColor.WHITE)));
 
 	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
 		if(sender instanceof Player player) {
@@ -45,12 +47,12 @@ public class ShopBan implements CommandExecutor {
 				switch (args[0]) {
 					case "list" -> {
 						if (!bannedUsers.isEmpty()) {
-							player.sendMessage(plugin.colourMessage("&e---=== &6ShopBan &e===---"));
+							player.sendMessage(Component.text("---=== ", NamedTextColor.YELLOW).append(Component.text("ShopBan", NamedTextColor.GOLD).append(Component.text(" ===---", NamedTextColor.YELLOW))));
 							for (String bannedPlayer : bannedUsers) {
-								player.sendMessage(plugin.colourMessage("&e" + Bukkit.getOfflinePlayer(UUID.fromString(bannedPlayer)).getName()));
+								player.sendMessage(Component.text(Objects.requireNonNull(Bukkit.getOfflinePlayer(UUID.fromString(bannedPlayer)).getName()), NamedTextColor.YELLOW));
 							}
 						} else {
-							player.sendMessage(plugin.colourMessage("&cYou havn't banned anyone from your shops!"));
+							player.sendMessage(Component.text("You havn't banned anyone from your shops!", NamedTextColor.RED));
 						}
 					}
 					case "add" -> {
@@ -63,21 +65,21 @@ public class ShopBan implements CommandExecutor {
 											ps.setString(1, player.getUniqueId().toString());
 											ps.setString(2, banUser.getUniqueId().toString());
 											ps.executeUpdate();
-											player.sendMessage(plugin.colourMessage("&f[&2Market&f] &7" + banUser.getName() + " &acan no longer buy/sell from your shops!"));
+											player.sendMessage(prefix.append(Component.text(banUser.getName(), NamedTextColor.GRAY).append(Component.text(" can no longer buy/sell from your shops!", NamedTextColor.GREEN))));
 										} catch (SQLException e) {
 											e.printStackTrace();
 										}
 									} else {
-										player.sendMessage(plugin.colourMessage("&cThat player is already banned from your shops!"));
+										player.sendMessage(Component.text("That player is already banned from your shops!", NamedTextColor.RED));
 									}
 								} else {
-									player.sendMessage(plugin.colourMessage("&cYou can't ban yourself!"));
+									player.sendMessage(Component.text("You can't ban yourself!", NamedTextColor.RED));
 								}
 							} else {
-								player.sendMessage(plugin.colourMessage("&c" + args[1] + " has never joined the server before!"));
+								player.sendMessage(Component.text(args[1] + " has never joined the server before!", NamedTextColor.RED));
 							}
 						} else {
-							player.sendMessage(plugin.colourMessage("&cCorrect Usage: /shopban add <player>"));
+							player.sendMessage(Component.text("Inorrect Usage! /shopban add <player>", NamedTextColor.RED));
 						}
 					}
 					case "remove" -> {
@@ -89,25 +91,25 @@ public class ShopBan implements CommandExecutor {
 										ps.setString(1, player.getUniqueId().toString());
 										ps.setString(2, banUser.getUniqueId().toString());
 										ps.executeUpdate();
-										player.sendMessage(plugin.colourMessage("&f[&2Market&f] &7" + banUser.getName() + " &acan now buy/sell from your shops!"));
+										player.sendMessage(prefix.append(Component.text(banUser.getName(), NamedTextColor.GRAY).append(Component.text(" can now buy/sell from your shops!", NamedTextColor.GREEN))));
 									} catch (SQLException e) {
 										e.printStackTrace();
 									}
 								} else {
-									player.sendMessage(plugin.colourMessage("&cThat player isnt banned from your shops!"));
+									player.sendMessage(Component.text("That player isnt banned from your shops!", NamedTextColor.RED));
 								}
 							} else {
-								player.sendMessage(plugin.colourMessage("&c" + args[1] + " has never joined the server before!"));
+								player.sendMessage(Component.text("&c" + args[1] + " has never joined the server before!", NamedTextColor.RED));
 							}
 						} else {
-							player.sendMessage(plugin.colourMessage("&cCorrect Usage: /shopban remove <player>"));
+							player.sendMessage(Component.text("Inorrect Usage! /shopban remove <player>", NamedTextColor.RED));
 						}
 					}
 					default ->
-							player.sendMessage(plugin.colourMessage("&a/shopban list\n/shopban remove <player>\n/shopban add <player>"));
+							player.sendMessage(Component.text("/shopban list\n/shopban remove <player>\n/shopban add <player>", NamedTextColor.GREEN));
 				}
 			} else {
-				player.sendMessage(plugin.colourMessage("&a/shopban list\n/shopban remove <player>\n/shopban add <player>"));
+				player.sendMessage(Component.text("/shopban list\n/shopban remove <player>\n/shopban add <player>", NamedTextColor.GREEN));
 			}
 
 		}

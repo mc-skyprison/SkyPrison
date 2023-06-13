@@ -1,25 +1,23 @@
 package net.skyprison.skyprisoncore.commands.economy;
 
 import net.brcdev.shopgui.ShopGuiPlugin;
-import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.brcdev.shopgui.ShopGuiPlusApi;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 public class PermShop implements CommandExecutor {
-	private final SkyPrisonCore plugin;
 
-	public PermShop(SkyPrisonCore plugin) {
-		this.plugin = plugin;
+	public PermShop() {
 	}
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if(sender instanceof Player) {
-			Player player = (Player) sender;
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+		if(sender instanceof Player player) {
 			if (args.length == 1) {
 				String shop = args[0];
 				ShopGuiPlugin shopGUI = ShopGuiPlusApi.getPlugin();
@@ -28,20 +26,20 @@ public class PermShop implements CommandExecutor {
 						shopGUI.getShopManager().openShopMenu(player, shop, 1, true);
 					} else {
 						if (player.hasPermission("group.free")) {
-							player.sendMessage(ChatColor.RED + "You can't use prison shops!");
+							player.sendMessage(Component.text("You can't use prison shops!", NamedTextColor.RED));
 						} else {
 							if (shop.equalsIgnoreCase("center")) {
-								player.sendMessage(ChatColor.RED + "You must be Desert+ to use this shop!");
+								player.sendMessage(Component.text("You must be Desert+ to use this shop!", NamedTextColor.RED));
 							} else {
-								player.sendMessage(ChatColor.RED + "You must be Free+ to use this shop!");
+								player.sendMessage(Component.text("You must be Free+ to use this shop!", NamedTextColor.RED));
 							}
 						}
 					}
 				} else {
-					player.sendMessage(ChatColor.RED + "Not a valid shop!");
+					player.sendMessage(Component.text("Not a valid shop!", NamedTextColor.RED));
 				}
 			} else {
-				player.sendMessage(ChatColor.RED + "Wrong Usage!");
+				player.sendMessage(Component.text("Wrong Usage!", NamedTextColor.RED));
 			}
 		}
 		return true;

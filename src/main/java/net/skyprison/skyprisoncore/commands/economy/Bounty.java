@@ -2,11 +2,13 @@ package net.skyprison.skyprisoncore.commands.economy;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.CooldownManager;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
@@ -75,17 +77,18 @@ public class Bounty implements CommandExecutor {
 			sortedMap.remove(beGone);
 		}
 
-		Inventory bounties = Bukkit.createInventory(null, 54, ChatColor.RED + "Bounties | Page " + page);
+		Inventory bounties = Bukkit.createInventory(null, 54, Component.text("Bounties | Page " + page, NamedTextColor.RED));
 		int j = 0;
 		for (UUID bountyPlayer : sortedMap.keySet()) {
 			if(j == 45) break;
-			ArrayList<String> lore = new ArrayList<>();
+			ArrayList<Component> lore = new ArrayList<>();
 			ItemStack head = new ItemStack(Material.PLAYER_HEAD);
 			SkullMeta meta = (SkullMeta) head.getItemMeta();
 			meta.setOwningPlayer(Bukkit.getOfflinePlayer(bountyPlayer));
-			meta.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + Bukkit.getOfflinePlayer(bountyPlayer).getName());
-			lore.add(ChatColor.YELLOW + "Prize: $" + sortedMap.get(bountyPlayer));
-			meta.setLore(lore);
+			meta.displayName(Component.text(Objects.requireNonNull(Bukkit.getOfflinePlayer(bountyPlayer).getName()), NamedTextColor.YELLOW, TextDecoration.BOLD));
+			lore.add(0, Component.text("Price: ", NamedTextColor.YELLOW).append(Component.text("$" + sortedMap.get(bountyPlayer), NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
+
+			meta.lore(lore);
 
 			if(j == 0) {
 				NamespacedKey key = new NamespacedKey(plugin, "stop-click");
@@ -106,11 +109,11 @@ public class Bounty implements CommandExecutor {
 		ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
 		ItemStack nextPage = new ItemStack(Material.PAPER);
 		ItemMeta nextMeta = nextPage.getItemMeta();
-		nextMeta.setDisplayName(ChatColor.GREEN + "Next Page");
+		nextMeta.displayName(Component.text("Next Page", NamedTextColor.GREEN));
 		nextPage.setItemMeta(nextMeta);
 		ItemStack prevPage = new ItemStack(Material.PAPER);
 		ItemMeta prevMeta = prevPage.getItemMeta();
-		prevMeta.setDisplayName(ChatColor.GREEN + "Previous Page");
+		prevMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN));
 		prevPage.setItemMeta(prevMeta);
 		for(int i = 45; i < 54; i++) {
 			bounties.setItem(i, pane);
@@ -136,6 +139,8 @@ public class Bounty implements CommandExecutor {
 		return bd.doubleValue();
 	}
 
+	private final Component prefix = Component.text( "[", NamedTextColor.WHITE).append(Component.text("Bounties", NamedTextColor.RED).append(Component.text("] ", NamedTextColor.WHITE)));
+
 	private final CooldownManager cooldownManager = new CooldownManager();
 
 	@Override
@@ -144,9 +149,20 @@ public class Bounty implements CommandExecutor {
 			CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
 
 			//  /bounty set <player> <prize>
-			String bountyHelp = ChatColor.WHITE + "----====" + ChatColor.RED + " Bounties " + ChatColor.WHITE + "====----" + ChatColor.YELLOW + "\n/bounty set <player> <amount> " + ChatColor.WHITE + "- Set a bounty on a player" + ChatColor.YELLOW + "\n/bounty help " + ChatColor.WHITE + "- Shows this" + ChatColor.YELLOW + "\n/bounty list " + ChatColor.WHITE + "- Shows all players with bounties" + ChatColor.YELLOW + "\n/bounty mute " + ChatColor.WHITE + "- Mutes/Unmutes bounty messages except for bounties towards yourself";
+			Component helpMsg = Component.textOfChildren(Component.text("----==== ", NamedTextColor.WHITE)
+					.append(Component.text("Bounties", NamedTextColor.RED))
+					.append(Component.text("====----", NamedTextColor.WHITE)))
+					.append(Component.text("\n/bounty set <player> <amount>", NamedTextColor.YELLOW)
+							.append(Component.text(" - Set a bounty on a player", NamedTextColor.WHITE)))
+					.append(Component.text("\n/bounty help", NamedTextColor.YELLOW)
+							.append(Component.text(" - Shows this", NamedTextColor.WHITE)))
+					.append(Component.text("\n/bounty list", NamedTextColor.YELLOW)
+							.append(Component.text(" - Shows all players with bountiesr", NamedTextColor.WHITE)))
+					.append(Component.text("\n/bounty mute", NamedTextColor.YELLOW)
+							.append(Component.text(" - Mutes/Unmutes bounty messages except for bounties towards yourself", NamedTextColor.WHITE)));
+
 			if(args.length < 1) {
-				player.sendMessage(bountyHelp);
+				player.sendMessage(helpMsg);
 			}else if(args[0].equalsIgnoreCase("set")) {
 				long timeLeft = System.currentTimeMillis() - cooldownManager.getCooldown(player.getUniqueId());
 				if(TimeUnit.MILLISECONDS.toSeconds(timeLeft) >= CooldownManager.DEFAULT_COOLDOWN) {
@@ -154,7 +170,7 @@ public class Bounty implements CommandExecutor {
 						if (Bukkit.getPlayer(args[1]) != null) {
 							if (Double.parseDouble(args[2]) >= 100) {
 								Player bountiedPlayer = Bukkit.getPlayer(args[1]);
-								String bountyTarget = bountiedPlayer.getUniqueId().toString();
+								String bountyTarget = Objects.requireNonNull(bountiedPlayer).getUniqueId().toString();
 								if (!player.equals(Bukkit.getPlayer(args[1]))) {
 									if (!bountiedPlayer.hasPermission("skyprisoncore.command.bounty.bypass")) {
 										String bountiedBy = "";
@@ -179,11 +195,12 @@ public class Bounty implements CommandExecutor {
 											if (hasBounty) {
 												for (Player online : Bukkit.getServer().getOnlinePlayers()) {
 													if (!online.hasPermission("skyprisoncore.command.bounty.silent")) {
-														online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + player.getName() + " has increased the bounty on " + bountiedPlayer.getName() + " by " + ChatColor.GREEN + "$" + bountyPrize + "!");
+														online.sendMessage(prefix.append(Component.text(player.getName() + " has increased the bounty on " + bountiedPlayer.getName() + " by ", NamedTextColor.YELLOW)
+																.append(Component.text("$" + plugin.formatNumber(bountyPrize) + "!", NamedTextColor.GREEN))));
 													}
 												}
-												bountiedPlayer.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + player.getName() + " has increased the bounty on you!!");
-												Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money take " + player.getName() + " " + bountyPrize);
+												bountiedPlayer.sendMessage(prefix.append(Component.text(player.getName() + " has increased the bounty on you!", NamedTextColor.YELLOW)));
+												Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money take " + player.getName() + " " + plugin.formatNumber(bountyPrize));
 												cooldownManager.setCooldown(player.getUniqueId(), System.currentTimeMillis());
 
 												try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE bounties SET prize = prize + ?, bountied_by = ? WHERE user_id = ?")) {
@@ -197,10 +214,12 @@ public class Bounty implements CommandExecutor {
 											} else {
 												for (Player online : Bukkit.getServer().getOnlinePlayers()) {
 													if (!online.hasPermission("skyprisoncore.command.bounty.silent")) {
-														online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "]" + ChatColor.YELLOW + " " + player.getName() + " has put a " + ChatColor.GREEN + "$" + bountyPrize + ChatColor.YELLOW + " bounty on " + bountiedPlayer.getName() + "!");
+														online.sendMessage(prefix.append(Component.text(player.getName() + " has put a ", NamedTextColor.YELLOW)
+																.append(Component.text("$" + plugin.formatNumber(bountyPrize), NamedTextColor.GREEN))
+																.append(Component.text(" bounty on " + bountiedPlayer.getName() + "!", NamedTextColor.YELLOW))));
 													}
 												}
-												bountiedPlayer.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + player.getName() + " has put a bounty on you!");
+												bountiedPlayer.sendMessage(prefix.append(Component.text(player.getName() + " has put a bounty on you!", NamedTextColor.YELLOW)));
 												Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money take " + player.getName() + " " + bountyPrize);
 												cooldownManager.setCooldown(player.getUniqueId(), System.currentTimeMillis());
 
@@ -214,38 +233,38 @@ public class Bounty implements CommandExecutor {
 												}
 											}
 										} else {
-											player.sendMessage(ChatColor.RED + "You do not have enough money..");
+											player.sendMessage(prefix.append(Component.text("You do not have enough money..", NamedTextColor.RED)));
 										}
 									} else {
-										player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.RED + "You can't put a bounty on this player!");
+										player.sendMessage(prefix.append(Component.text("You can't put a bounty on this player!", NamedTextColor.RED)));
 									}
 								} else {
-									player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.RED + "You can't put a bounty on yourself!");
+									player.sendMessage(prefix.append(Component.text("You can't put a bounty on yourself!", NamedTextColor.RED)));
 								}
 							} else {
-								player.sendMessage(ChatColor.RED + "Bounty must be equal or higher than $100!");
+								player.sendMessage(prefix.append(Component.text("Bounty must be equal or higher than $100!", NamedTextColor.RED)));
 							}
 						} else {
-							player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.RED + "Player is not online or doesn't exist..");
+							player.sendMessage(prefix.append(Component.text("Player is not online or doesn't exist..", NamedTextColor.RED)));
 						}
 					} else {
-						player.sendMessage(ChatColor.RED + "/bounty set <player> <amount>");
+						player.sendMessage(Component.text("Incorrect Usage! /bounty set <player> <amount>", NamedTextColor.RED));
 					}
 				} else {
 					Long timeRem = CooldownManager.DEFAULT_COOLDOWN - TimeUnit.MILLISECONDS.toSeconds(timeLeft);
-					player.sendMessage(ChatColor.RED+ "" + timeRem + " seconds before you can use this again.");
+					player.sendMessage(prefix.append(Component.text(timeRem + " seconds before you can use this again.", NamedTextColor.RED)));
 				}
 			} else if(args[0].equalsIgnoreCase("list")) {
 				openGUI(player, 1);
 			} else if(args[0].equalsIgnoreCase("help")) {
-				player.sendMessage(bountyHelp);
+				player.sendMessage(helpMsg);
 			} else if(args[0].equalsIgnoreCase("mute")) {
 				if(!player.hasPermission("skyprisoncore.command.bounty.silent")) {
 					Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.command.bounty.silent true");
-					player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + "Bounty messages muted!");
+					player.sendMessage(prefix.append(Component.text("Bounty messages muted!", NamedTextColor.YELLOW)));
 				} else {
 					Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.command.bounty.silent false");
-					player.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "] " + ChatColor.YELLOW + "Bounty messages unmuted!");
+					player.sendMessage(prefix.append(Component.text("Bounty messages unmuted!", NamedTextColor.YELLOW)));
 				}
 			}
 		}

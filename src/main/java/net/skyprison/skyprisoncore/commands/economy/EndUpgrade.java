@@ -3,9 +3,11 @@ package net.skyprison.skyprisoncore.commands.economy;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import me.clip.placeholderapi.PlaceholderAPI;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
@@ -16,6 +18,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,31 +33,14 @@ public class EndUpgrade implements CommandExecutor {
 
 	public int itemCost(Material itemType) {
 		int cost = 0;
-		switch(itemType.toString()) {
-			case "DIAMOND_AXE":
-				cost += 300000;
-				break;
-			case "DIAMOND_PICKAXE":
-				cost += 300000;
-				break;
-			case "DIAMOND_SHOVEL":
-				cost += 100000;
-				break;
-			case "DIAMOND_HOE":
-				cost += 200000;
-				break;
-			case "DIAMOND_HELMET":
-				cost += 500000;
-				break;
-			case "DIAMOND_CHESTPLATE":
-				cost += 800000;
-				break;
-			case "DIAMOND_LEGGINGS":
-				cost += 700000;
-				break;
-			case "DIAMOND_BOOTS":
-				cost += 400000;
-				break;
+		switch (itemType.toString()) {
+			case "DIAMOND_AXE", "DIAMOND_PICKAXE" -> cost += 300000;
+			case "DIAMOND_SHOVEL" -> cost += 100000;
+			case "DIAMOND_HOE" -> cost += 200000;
+			case "DIAMOND_HELMET" -> cost += 500000;
+			case "DIAMOND_CHESTPLATE" -> cost += 800000;
+			case "DIAMOND_LEGGINGS" -> cost += 700000;
+			case "DIAMOND_BOOTS" -> cost += 400000;
 		}
 		return cost;
 	}
@@ -74,19 +60,22 @@ public class EndUpgrade implements CommandExecutor {
 
 
 	public void confirmGUI(Player player, Boolean enchTransfer, Boolean repairReset) {
-		Inventory confirmGUI = Bukkit.createInventory(null, 27, ChatColor.RED + "Confirm Upgrade");
+		Inventory confirmGUI = Bukkit.createInventory(null, 27, Component.text("Confirm Upgrade", NamedTextColor.RED));
 
 		int totalCost = upgradeCost(player, enchTransfer, repairReset);
 
 		ItemStack confirmButton = new ItemStack(Material.GREEN_CONCRETE);
 		ItemMeta confirmMeta = confirmButton.getItemMeta();
-		confirmMeta.setDisplayName(plugin.colourMessage("&a&LConfirm Upgrade"));
+		confirmMeta.displayName(Component.text("Confirm Upgrade", NamedTextColor.GREEN, TextDecoration.BOLD)
+				.decoration(TextDecoration.ITALIC, false));
 
-		ArrayList<String> lore = new ArrayList<>();
+		ArrayList<Component> lore = new ArrayList<>();
 		if (!player.hasPermission("skyprisoncore.command.endupgrade.first-time")) {
-			lore.add(plugin.colourMessage("&7Total Cost: &a$" + plugin.formatNumber(totalCost)));
+			lore.add(Component.text("Total Cost: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(totalCost), NamedTextColor.GREEN))
+					.decoration(TextDecoration.ITALIC, false));
 		} else {
-			lore.add(plugin.colourMessage("&7Total Cost: &aFREE"));
+			lore.add(Component.text("&7Total Cost: ", NamedTextColor.GRAY).append(Component.text("FREE", NamedTextColor.GREEN))
+					.decoration(TextDecoration.ITALIC, false));
 		}
 
 		NamespacedKey enchKey = new NamespacedKey(plugin, "ench-state");
@@ -94,32 +83,37 @@ public class EndUpgrade implements CommandExecutor {
 
 		if(enchTransfer) {
 			confirmMeta.getPersistentDataContainer().set(enchKey, PersistentDataType.INTEGER, 1);
-			lore.add(plugin.colourMessage("&7Transferring enchants is &2&lENABLED"));
+			lore.add(Component.text("keeping enchants is ", NamedTextColor.GRAY).append(Component.text("ENABLED", NamedTextColor.DARK_GREEN, TextDecoration.BOLD))
+					.decoration(TextDecoration.ITALIC, false));
 		} else {
 			confirmMeta.getPersistentDataContainer().set(enchKey, PersistentDataType.INTEGER, 0);
-			lore.add(plugin.colourMessage("&7Keeping enchants is &c&lNOT ENABLED"));
+			lore.add(Component.text("Keeping enchants is ", NamedTextColor.GRAY).append(Component.text("NOT ENABLED", NamedTextColor.RED, TextDecoration.BOLD))
+					.decoration(TextDecoration.ITALIC, false));
 		}
 
 		if(repairReset) {
 			confirmMeta.getPersistentDataContainer().set(repKey, PersistentDataType.INTEGER, 1);
-			lore.add(plugin.colourMessage("&7Resetting Repair Cost is &2&lENABLED"));
+			lore.add(Component.text("Resetting Repair Cost is ", NamedTextColor.GRAY).append(Component.text("ENABLED", NamedTextColor.DARK_GREEN, TextDecoration.BOLD))
+					.decoration(TextDecoration.ITALIC, false));
 		} else {
 			confirmMeta.getPersistentDataContainer().set(repKey, PersistentDataType.INTEGER, 0);
-			lore.add(plugin.colourMessage("&7Resetting Repair Cost is &c&lNOT ENABLED"));
+			lore.add(Component.text("Resetting Repair Cost is ", NamedTextColor.GRAY).append(Component.text("NOT ENABLED", NamedTextColor.RED, TextDecoration.BOLD))
+					.decoration(TextDecoration.ITALIC, false));
 		}
 
-		confirmMeta.setLore(lore);
+		confirmMeta.lore(lore);
 
 		confirmButton.setItemMeta(confirmMeta);
 
 		ItemStack cancelButton = new ItemStack(Material.RED_CONCRETE);
 		ItemMeta cancelMeta = cancelButton.getItemMeta();
-		cancelMeta.setDisplayName(plugin.colourMessage("&c&lCancel Upgrade"));
+		cancelMeta.displayName(Component.text("Cancel Upgrade", NamedTextColor.RED, TextDecoration.BOLD)
+				.decoration(TextDecoration.ITALIC, false));
 		cancelButton.setItemMeta(cancelMeta);
 
 		ItemStack whitePane = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
 		ItemMeta whiteMeta = whitePane.getItemMeta();
-		whiteMeta.setDisplayName(" ");
+		whiteMeta.displayName(Component.empty());
 		whitePane.setItemMeta(whiteMeta);
 
 
@@ -147,14 +141,14 @@ public class EndUpgrade implements CommandExecutor {
 
 	public void netheriteGUI(Player player) {
 		CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-		Inventory netheriteGUI = Bukkit.createInventory(null, 27, ChatColor.RED + "End Upgrade Shop");
+		Inventory netheriteGUI = Bukkit.createInventory(null, 27, Component.text("End Upgrade Shop", NamedTextColor.RED));
 		ItemStack whitePane = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
 		ItemMeta whiteMeta = whitePane.getItemMeta();
-		whiteMeta.setDisplayName(" ");
+		whiteMeta.displayName(Component.empty());
 		whitePane.setItemMeta(whiteMeta);
 		ItemStack grayPane = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
 		ItemMeta grayMeta = grayPane.getItemMeta();
-		grayMeta.setDisplayName(" ");
+		grayMeta.displayName(Component.empty());
 		grayPane.setItemMeta(grayMeta);
 
 		for (int i = 0; i < 27; i++) {
@@ -170,22 +164,28 @@ public class EndUpgrade implements CommandExecutor {
 			} else if(i == 11) {
 				if(user.getBalance() >= 500000) {
 					ItemStack confirmUpgrade = new ItemStack(Material.GREEN_CONCRETE);
-					ArrayList<String> lore = new ArrayList<>();
+					ArrayList<Component> lore = new ArrayList<>();
 					ItemMeta confirmMeta = confirmUpgrade.getItemMeta();
-					confirmMeta.setDisplayName(plugin.colourMessage("&3&lReset Repair Cost"));
-					lore.add(plugin.colourMessage("&7Total Cost: &a$500,000"));
-					confirmMeta.setLore(lore);
+					confirmMeta.displayName(Component.text("Reset Repair Cost", NamedTextColor.DARK_AQUA, TextDecoration.BOLD)
+							.decoration(TextDecoration.ITALIC, false));
+					lore.add(Component.text("Total Cost: ", NamedTextColor.GRAY).append(Component.text("$500,000", NamedTextColor.GREEN))
+							.decoration(TextDecoration.ITALIC, false));
+					confirmMeta.lore(lore);
 					confirmUpgrade.setItemMeta(confirmMeta);
 					netheriteGUI.setItem(i, confirmUpgrade);
 				} else {
 					ItemStack confirmUpgrade = new ItemStack(Material.RED_CONCRETE);
-					ArrayList<String> lore = new ArrayList<>();
+					ArrayList<Component> lore = new ArrayList<>();
 					ItemMeta confirmMeta = confirmUpgrade.getItemMeta();
-					confirmMeta.setDisplayName(plugin.colourMessage("&3&lReset Repair Cost"));
-					lore.add(plugin.colourMessage("&7Total Cost: &a$500,000"));
-					lore.add(plugin.colourMessage("&8-------"));
-					lore.add(plugin.colourMessage("&cYou can't afford this!"));
-					confirmMeta.setLore(lore);
+					confirmMeta.displayName(Component.text("Reset Repair Cost", NamedTextColor.DARK_AQUA, TextDecoration.BOLD)
+							.decoration(TextDecoration.ITALIC, false));
+					lore.add(Component.text("Total Cost: ", NamedTextColor.GRAY).append(Component.text("$500,000", NamedTextColor.GREEN))
+							.decoration(TextDecoration.ITALIC, false));
+					lore.add(Component.text("-------", NamedTextColor.DARK_GRAY)
+							.decoration(TextDecoration.ITALIC, false));
+					lore.add(Component.text("You can't afford this!", NamedTextColor.RED)
+							.decoration(TextDecoration.ITALIC, false));
+					confirmMeta.lore(lore);
 					confirmUpgrade.setItemMeta(confirmMeta);
 					netheriteGUI.setItem(i, confirmUpgrade);
 				}
@@ -195,7 +195,8 @@ public class EndUpgrade implements CommandExecutor {
 			} else if(i == 15) {
 				ItemStack cancelUpgrade = new ItemStack(Material.RED_CONCRETE);
 				ItemMeta cancelMeta = cancelUpgrade.getItemMeta();
-				cancelMeta.setDisplayName(plugin.colourMessage("&3&lCancel Repair Reset"));
+				cancelMeta.displayName(Component.text("Cancel Repair Reset", NamedTextColor.DARK_AQUA, TextDecoration.BOLD)
+						.decoration(TextDecoration.ITALIC, false));
 				cancelUpgrade.setItemMeta(cancelMeta);
 				netheriteGUI.setItem(i, cancelUpgrade);
 			} else {
@@ -208,10 +209,10 @@ public class EndUpgrade implements CommandExecutor {
 	public void openGUI(Player player, Boolean enchTransfer, Boolean repairReset) {
 
 		CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-		Inventory endUpgradeGUI = Bukkit.createInventory(null, 54, ChatColor.RED + "End Upgrade Shop");
+		Inventory endUpgradeGUI = Bukkit.createInventory(null, 54, Component.text("End Upgrade Shop", NamedTextColor.RED));
 		ItemStack whitePane = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
 		ItemMeta whiteMeta = whitePane.getItemMeta();
-		whiteMeta.setDisplayName(" ");
+		whiteMeta.displayName(Component.empty());
 		whitePane.setItemMeta(whiteMeta);
 
 		int totalCost = upgradeCost(player, enchTransfer, repairReset);
@@ -227,92 +228,125 @@ public class EndUpgrade implements CommandExecutor {
 			} else if (i == 13) {
 				ItemStack upgradeItem = new ItemStack(player.getInventory().getItemInMainHand().getType(), 1);
 				ItemMeta upgradeMeta = upgradeItem.getItemMeta();
-				upgradeMeta.setLore(Arrays.asList(plugin.colourMessage("&7Upgrade Cost: &a" + plugin.formatNumber(itemCost(upgradeItem.getType()))), plugin.colourMessage("&8-------")));
+				upgradeMeta.lore(Arrays.asList(Component.text("Upgrade Cost: ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(itemCost(upgradeItem.getType())), NamedTextColor.GREEN))
+						.decoration(TextDecoration.ITALIC, false)
+						, Component.text("-------", NamedTextColor.DARK_GRAY)
+								.decoration(TextDecoration.ITALIC, false)));
 				upgradeItem.setItemMeta(upgradeMeta);
 				endUpgradeGUI.setItem(i, upgradeItem);
 			} else if (i == 20) {
 				ItemStack transferEnch = new ItemStack(Material.ENCHANTED_BOOK);
 				ItemMeta enchMeta = transferEnch.getItemMeta();
-				ArrayList<String> lore = new ArrayList<>();
+				ArrayList<Component> lore = new ArrayList<>();
 				NamespacedKey enchKey = new NamespacedKey(plugin, "ench-state");
-				lore.add(plugin.colourMessage("&7Cost: &a$100,000"));
-				lore.add(plugin.colourMessage("&8-------"));
+				lore.add(Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text("$100,000", NamedTextColor.GREEN))
+						.decoration(TextDecoration.ITALIC, false));
+				lore.add(Component.text("-------", NamedTextColor.DARK_GRAY)
+						.decoration(TextDecoration.ITALIC, false));
 				if(enchTransfer) {
 					enchMeta.getPersistentDataContainer().set(enchKey, PersistentDataType.INTEGER, 1);
-					lore.add(plugin.colourMessage("&a&lEnabled"));
+					lore.add(Component.text("Enabled", NamedTextColor.GREEN, TextDecoration.BOLD)
+							.decoration(TextDecoration.ITALIC, false));
 				} else {
 					enchMeta.getPersistentDataContainer().set(enchKey, PersistentDataType.INTEGER, 0);
-					lore.add(plugin.colourMessage("&c&lDisabled"));
+					lore.add(Component.text("Disabled", NamedTextColor.RED, TextDecoration.BOLD)
+							.decoration(TextDecoration.ITALIC, false));
 				}
-				enchMeta.setDisplayName(plugin.colourMessage("&e&lTransfer Enchants"));
-				enchMeta.setLore(lore);
+				enchMeta.displayName(Component.text("Transfer Enchants", NamedTextColor.YELLOW, TextDecoration.BOLD)
+						.decoration(TextDecoration.ITALIC, false));
+				enchMeta.lore(lore);
 				transferEnch.setItemMeta(enchMeta);
 				endUpgradeGUI.setItem(i, transferEnch);
 			} else if (i == 24) {
 				ItemStack repairCost = new ItemStack(Material.ENCHANTED_BOOK);
 				ItemMeta repMeta = repairCost.getItemMeta();
-				ArrayList<String> lore = new ArrayList<String>();
+				ArrayList<Component> lore = new ArrayList<>();
 				NamespacedKey repKey = new NamespacedKey(plugin, "repair-state");
-				lore.add(plugin.colourMessage("&7Cost: &a$350,000"));
-				lore.add(plugin.colourMessage("&8-------"));
+				lore.add(Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text("$350,000", NamedTextColor.GREEN))
+						.decoration(TextDecoration.ITALIC, false));
+				lore.add(Component.text("-------", NamedTextColor.DARK_GRAY)
+						.decoration(TextDecoration.ITALIC, false));
 				if(repairReset) {
 					repMeta.getPersistentDataContainer().set(repKey, PersistentDataType.INTEGER, 1);
-					lore.add(plugin.colourMessage("&a&lEnabled"));
+					lore.add(Component.text("Enabled", NamedTextColor.GREEN, TextDecoration.BOLD)
+							.decoration(TextDecoration.ITALIC, false));
 				} else {
 					repMeta.getPersistentDataContainer().set(repKey, PersistentDataType.INTEGER, 0);
-					lore.add(plugin.colourMessage("&c&lDisabled"));
+					lore.add(Component.text("Disabled", NamedTextColor.RED, TextDecoration.BOLD)
+							.decoration(TextDecoration.ITALIC, false));
 				}
-				repMeta.setDisplayName(plugin.colourMessage("&e&lReset Repair Cost"));
-				repMeta.setLore(lore);
+				repMeta.displayName(Component.text("Reset Repair Cost", NamedTextColor.YELLOW, TextDecoration.BOLD)
+						.decoration(TextDecoration.ITALIC, false));
+				repMeta.lore(lore);
 				repairCost.setItemMeta(repMeta);
 				endUpgradeGUI.setItem(i, repairCost);
 			} else if (i == 31) {
 				if(user.getBalance() >= totalCost) {
 					ItemStack confirmUpgrade = new ItemStack(Material.GREEN_CONCRETE);
-					ArrayList<String> lore = new ArrayList<>();
+					ArrayList<Component> lore = new ArrayList<>();
 					ItemMeta confirmMeta = confirmUpgrade.getItemMeta();
-					confirmMeta.setDisplayName(plugin.colourMessage("&3&lUpgrade Item"));
-					lore.add(plugin.colourMessage("&7Total Cost: &a$" + plugin.formatNumber(totalCost)));
-					confirmMeta.setLore(lore);
+					confirmMeta.displayName(Component.text("Upgrade Item", NamedTextColor.DARK_AQUA, TextDecoration.BOLD)
+							.decoration(TextDecoration.ITALIC, false));
+					lore.add(Component.text("7Total Cost: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(totalCost), NamedTextColor.GREEN))
+							.decoration(TextDecoration.ITALIC, false));
+					confirmMeta.lore(lore);
 					confirmUpgrade.setItemMeta(confirmMeta);
 					endUpgradeGUI.setItem(i, confirmUpgrade);
 				} else {
 					ItemStack confirmUpgrade = new ItemStack(Material.RED_CONCRETE);
-					ArrayList<String> lore = new ArrayList<>();
+					ArrayList<Component> lore = new ArrayList<>();
 					ItemMeta confirmMeta = confirmUpgrade.getItemMeta();
-					confirmMeta.setDisplayName(plugin.colourMessage("&3&lUpgrade Item"));
-					lore.add(plugin.colourMessage("&7Total Cost: &a$" + plugin.formatNumber(totalCost)));
-					lore.add(plugin.colourMessage("&8-------"));
-					lore.add(plugin.colourMessage("&cYou can't afford this!"));
-					confirmMeta.setLore(lore);
+					confirmMeta.displayName(Component.text("Upgrade Item", NamedTextColor.DARK_AQUA, TextDecoration.BOLD)
+							.decoration(TextDecoration.ITALIC, false));
+					lore.add(Component.text("7Total Cost: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(totalCost), NamedTextColor.GREEN))
+							.decoration(TextDecoration.ITALIC, false));
+					lore.add(Component.text("-------", NamedTextColor.DARK_GRAY)
+							.decoration(TextDecoration.ITALIC, false));
+					lore.add(Component.text("You can't afford this!", NamedTextColor.RED)
+							.decoration(TextDecoration.ITALIC, false));
+					confirmMeta.lore(lore);
 					confirmUpgrade.setItemMeta(confirmMeta);
 					endUpgradeGUI.setItem(i, confirmUpgrade);
 				}
 			} else if(i == 45) {
 				ItemStack info = new ItemStack(Material.BOOK);
 				ItemMeta iMeta = info.getItemMeta();
-				iMeta.setDisplayName(plugin.colourMessage("&a&lUsage Information"));
-				ArrayList<String> lore = new ArrayList<>();
-				lore.add(plugin.colourMessage("&7&lTransfer Enchants"));
-				lore.add(plugin.colourMessage("&7Enabling this option will transfer"));
-				lore.add(plugin.colourMessage("&7the current enchants of the item"));
-				lore.add(plugin.colourMessage("&7when upgrading it to netherite."));
-				lore.add(plugin.colourMessage("&8---"));
-				lore.add(plugin.colourMessage(""));
-				lore.add(plugin.colourMessage("&7&lReset Repair Cost"));
-				lore.add(plugin.colourMessage("&7Enabling this option will reset the"));
-				lore.add(plugin.colourMessage("&7repair cost of the item, meaning you"));
-				lore.add(plugin.colourMessage("&7can add more enchants or repair it in"));
-				lore.add(plugin.colourMessage("&7an anvil if it previously said"));
-				lore.add(plugin.colourMessage("&7Too Expensive."));
-				iMeta.setLore(lore);
+				iMeta.displayName(Component.text("Usage Information", NamedTextColor.GREEN, TextDecoration.BOLD)
+						.decoration(TextDecoration.ITALIC, false));
+				ArrayList<Component> lore = new ArrayList<>();
+				lore.add(Component.text("Transfer Enchants", NamedTextColor.GRAY, TextDecoration.BOLD)
+						.decoration(TextDecoration.ITALIC, false));
+				lore.add(Component.text("Enabling this option will transfer", NamedTextColor.GRAY)
+						.decoration(TextDecoration.ITALIC, false));
+				lore.add(Component.text("the current enchants of the item", NamedTextColor.GRAY)
+						.decoration(TextDecoration.ITALIC, false));
+				lore.add(Component.text("when upgrading it to netherite.", NamedTextColor.GRAY)
+						.decoration(TextDecoration.ITALIC, false));
+				lore.add(Component.text("---", NamedTextColor.DARK_GRAY)
+						.decoration(TextDecoration.ITALIC, false));
+				lore.add(Component.empty());
+				lore.add(Component.text("Reset Repair Cost", NamedTextColor.GRAY, TextDecoration.BOLD)
+						.decoration(TextDecoration.ITALIC, false));
+				lore.add(Component.text("Enabling this option will reset the", NamedTextColor.GRAY)
+						.decoration(TextDecoration.ITALIC, false));
+				lore.add(Component.text("repair cost of the item, meaning you", NamedTextColor.GRAY)
+						.decoration(TextDecoration.ITALIC, false));
+				lore.add(Component.text("can add more enchants or repair it in", NamedTextColor.GRAY)
+						.decoration(TextDecoration.ITALIC, false));
+				lore.add(Component.text("an anvil if it previously said", NamedTextColor.GRAY)
+						.decoration(TextDecoration.ITALIC, false));
+				lore.add(Component.text("Too Expensive.", NamedTextColor.GRAY)
+						.decoration(TextDecoration.ITALIC, false));
+				iMeta.lore(lore);
 				info.setItemMeta(iMeta);
 				endUpgradeGUI.setItem(i, info);
 			}  else if(i == 49) {
 				ItemStack balance = new ItemStack(Material.NETHER_STAR);
 				ItemMeta bMeta = balance.getItemMeta();
-				bMeta.setDisplayName(plugin.colourMessage("&6&lYour Balance"));
-				bMeta.setLore(Arrays.asList(ChatColor.GRAY + "" + PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%")));
+				bMeta.displayName(Component.text("Your Balance", NamedTextColor.GOLD, TextDecoration.BOLD)
+						.decoration(TextDecoration.ITALIC, false));
+				bMeta.lore(List.of(Component.text(PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%"), NamedTextColor.GRAY)
+						.decoration(TextDecoration.ITALIC, false)));
 				balance.setItemMeta(bMeta);
 				endUpgradeGUI.setItem(i, balance);
 			} else {
@@ -322,9 +356,8 @@ public class EndUpgrade implements CommandExecutor {
 		player.openInventory(endUpgradeGUI);
 	}
 
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if(sender instanceof Player) {
-			Player player = (Player) sender;
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+		if(sender instanceof Player player) {
 			if(player.hasPermission("skyprisoncore.command.endupgrade.quest-complete")) {
 				List<Material> upItems = Arrays.asList(Material.DIAMOND_HELMET, Material.DIAMOND_CHESTPLATE, Material.DIAMOND_LEGGINGS, Material.DIAMOND_BOOTS,
 						Material.DIAMOND_PICKAXE, Material.DIAMOND_AXE, Material.DIAMOND_HOE, Material.DIAMOND_SHOVEL);

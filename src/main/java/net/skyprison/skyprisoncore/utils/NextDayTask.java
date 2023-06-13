@@ -55,36 +55,37 @@ public class NextDayTask extends TimerTask {
                 e.printStackTrace();
             }
         }
-
-        LocalDate yesterday = LocalDate.now().minusDays(1);
-        String yesterDate = yesterday.format(formatter);
+        LocalDate yesterday = LocalDate.now();
+        String currDate = yesterday.format(formatter);
         ArrayList<Integer> oldMissions = new ArrayList<>();
         ArrayList<UUID> players = new ArrayList<>();
         ArrayList<UUID> oPlayers = new ArrayList<>();
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT mission_id, user_id FROM daily_missions WHERE date = ?")) {
-            ps.setString(1, yesterDate);
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT mission_id, user_id FROM daily_missions WHERE date != ?")) {
+            ps.setString(1, currDate);
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
                 oldMissions.add(rs.getInt(1));
                 UUID pUUID = UUID.fromString(rs.getString(2));
-                players.add(pUUID);
-                if(Bukkit.getOfflinePlayer(pUUID).isOnline() && !oPlayers.contains(pUUID)) {
-                    oPlayers.add(pUUID);
+                if(!players.contains(pUUID)) {
+                    players.add(pUUID);
+                    if (Bukkit.getOfflinePlayer(pUUID).isOnline()) {
+                        oPlayers.add(pUUID);
+                    }
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         if(!oldMissions.isEmpty()) {
-            players.forEach(plugin.missions.keySet()::remove);
+            players.forEach(player -> plugin.missions.remove(player));
 
             for (UUID pUUID : oPlayers) {
                 OfflinePlayer offline = Bukkit.getOfflinePlayer(pUUID);
                 if (offline.isOnline()) {
                     Player player = offline.getPlayer();
                     assert player != null;
-                    plugin.dailyMissions.setPlayerMissions(player);
                     player.sendMessage(Component.text("Your Daily Missions have refreshed!", NamedTextColor.GREEN));
+                    plugin.dailyMissions.setPlayerMissions(player);
                 }
             }
 

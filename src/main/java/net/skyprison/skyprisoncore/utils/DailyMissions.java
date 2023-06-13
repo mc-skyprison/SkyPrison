@@ -179,15 +179,21 @@ public class DailyMissions {
     }
 
     public void setPlayerMissions(Player player) {
+        Date date = new Date();
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+        String currDate = formatter.format(date);
+
         ArrayList<String> missions = new ArrayList<>();
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT type, amount, needed, completed FROM daily_missions WHERE user_id = ?")) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT type, amount, needed, completed, date FROM daily_missions WHERE user_id = ?")) {
             ps.setString(1, player.getUniqueId().toString());
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                if (rs.getInt(4) == 0) {
-                    missions.add(rs.getString(1) + ":" + rs.getInt(3) + "_" + rs.getInt(2));
-                } else {
-                    missions.add(rs.getString(1) + ":" + rs.getInt(3) + "_" + rs.getInt(2) + ":completed");
+                if(rs.getString(5).equalsIgnoreCase(currDate)) {
+                    if (rs.getInt(4) == 0) {
+                        missions.add(rs.getString(1) + ":" + rs.getInt(3) + "_" + rs.getInt(2));
+                    } else {
+                        missions.add(rs.getString(1) + ":" + rs.getInt(3) + "_" + rs.getInt(2) + ":completed");
+                    }
                 }
             }
         } catch (SQLException e) {
@@ -199,10 +205,6 @@ public class DailyMissions {
             CMI.getInstance().getPlayerManager().getUser(player).getRank().getPreviousRanks().forEach(i -> ranks.add(i.getName()));
 
             missions = getMissions(ranks);
-
-            Date date = new Date();
-            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-            String currDate = formatter.format(date);
 
             for (String mission : missions) {
                 String[] mSplit = mission.split(":");

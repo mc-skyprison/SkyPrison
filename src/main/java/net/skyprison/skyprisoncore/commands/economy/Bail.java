@@ -2,15 +2,16 @@ package net.skyprison.skyprisoncore.commands.economy;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import net.kyori.adventure.text.Component;
-
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.UUID;
@@ -22,13 +23,12 @@ public class Bail implements CommandExecutor {
         this.plugin = plugin;
     }
 
-    private HashMap<UUID, Double> bailOut = new HashMap<>();
+    private final HashMap<UUID, Double> bailOut = new HashMap<>();
 
-    private HashMap<UUID, Long> coolDown = new HashMap<>();
+    private final HashMap<UUID, Long> coolDown = new HashMap<>();
 
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if(sender instanceof Player) {
-            Player player = (Player) sender;
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+        if(sender instanceof Player player) {
             CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
             if(user.isJailed()) {
                 if(coolDown.containsKey(user.getUniqueId())) {
@@ -39,9 +39,9 @@ public class Bail implements CommandExecutor {
                         int minutes = (int) Math.floor((timeTill % (1000.0 * 60.0 * 60.0)) / (1000.0 * 60.0));
                         int seconds = (int) Math.floor((timeTill % (1000.0 * 60.0)) / 1000.0);
                         if(minutes != 0.0) {
-                            user.sendMessage(plugin.colourMessage("&cYou've recently bailed yourself out! Wait " + minutes + " min " + seconds + " sec"));
+                            player.sendMessage(Component.text("You've recently bailed yourself out! Wait " + minutes + " min " + seconds + " sec", NamedTextColor.RED));
                         } else {
-                            user.sendMessage(plugin.colourMessage("&cYou've recently bailed yourself out! Wait " + seconds + " sec"));
+                            player.sendMessage(Component.text("You've recently bailed yourself out! Wait " + seconds + " sec", NamedTextColor.RED));
                         }
                         return true;
                     }

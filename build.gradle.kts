@@ -34,6 +34,8 @@ dependencies {
     implementation("org.mariadb.jdbc:mariadb-java-client:3.1.4")
     compileOnly("org.jetbrains:annotations:24.0.0")
     compileOnly("org.purpurmc.purpur:purpur-api:1.19.4-R0.1-SNAPSHOT")
+    compileOnly("net.luckperms:api:5.4")
+    compileOnly("io.github.miniplaceholders:miniplaceholders-api:2.1.0")
     compileOnly("me.neznamy:tab-api:3.2.4")
     compileOnly("com.github.DieReicheErethons:Brewery:3.1.1")
     compileOnly("com.arcaniax:HeadDatabase-API:1.3.1")
