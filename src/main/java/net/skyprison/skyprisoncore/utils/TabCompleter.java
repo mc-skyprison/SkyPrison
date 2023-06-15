@@ -1,27 +1,22 @@
 package net.skyprison.skyprisoncore.utils;
 
-import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class TabCompleter implements org.bukkit.command.TabCompleter {
-    private final SkyPrisonCore plugin;
-
-    public TabCompleter(SkyPrisonCore plugin) {
-        this.plugin = plugin;
-    }
+    public TabCompleter() {}
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if(sender instanceof Player) {
-            Player player = (Player) sender;
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args) {
+        if(sender instanceof Player player) {
             ArrayList<String> options = new ArrayList<>();
             ArrayList<String> commands = new ArrayList<>();
             if (command.getName().equalsIgnoreCase("tokens") || command.getName().equalsIgnoreCase("token")) {
@@ -39,14 +34,11 @@ public class TabCompleter implements org.bukkit.command.TabCompleter {
                     StringUtil.copyPartialMatches(args[0], commands, options);
                 } else if (args.length == 2) {
                     switch (args[0].toLowerCase()) {
-                        case "balance":
-                        case "add":
-                        case "remove":
-                        case "set":
-                            for(Player oPlayer : Bukkit.getOnlinePlayers()) {
+                        case "balance", "add", "remove", "set" -> {
+                            for (Player oPlayer : Bukkit.getOnlinePlayers()) {
                                 commands.add(oPlayer.getName());
                             }
-                            break;
+                        }
                     }
                     StringUtil.copyPartialMatches(args[1], commands, options);
                 }

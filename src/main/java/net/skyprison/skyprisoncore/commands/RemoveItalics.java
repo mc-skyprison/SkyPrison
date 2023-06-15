@@ -14,8 +14,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.UUID;
 
 public class RemoveItalics implements CommandExecutor {
@@ -25,7 +27,7 @@ public class RemoveItalics implements CommandExecutor {
 		this.plugin = plugin;
 	}
 
-	private HashMap<UUID, ItemStack> confirmItalics = new HashMap<>();
+	private final HashMap<UUID, ItemStack> confirmItalics = new HashMap<>();
 
 	public void doTheThing(Player player, ItemStack item) {
 		if(player.getInventory().contains(item)) {
@@ -34,51 +36,49 @@ public class RemoveItalics implements CommandExecutor {
 			iMeta.displayName(newName);
 			item.setItemMeta(iMeta);
 			plugin.asConsole("money take " + player.getName() + " " + 50000);
-			player.sendMessage(plugin.colourMessage("&aSuccessfully removed italics from item name!"));
+			player.sendMessage(Component.text("Successfully removed italics from item name!", NamedTextColor.GREEN));
 		} else {
-			player.sendMessage(plugin.colourMessage("&cItem no longer in your inventory! Cancelling..."));
+			player.sendMessage(Component.text("Item no longer in your inventory! Cancelling...", NamedTextColor.RED));
 		}
 		confirmItalics.remove(player.getUniqueId());
 	}
 
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if(sender instanceof Player) {
-			Player player = (Player) sender;
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+		if(sender instanceof Player player) {
 			if(args.length == 0) {
 				if(confirmItalics.containsKey(player.getUniqueId())) {
-					player.sendMessage(plugin.colourMessage("&cYou're already removing italics from an item!"));
+					player.sendMessage(Component.text("You're already removing italics from an item!", NamedTextColor.RED));
 				} else {
 					CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
 					ItemStack item = player.getInventory().getItemInMainHand();
-					if (item.hasDisplayName()) {
-						if (user.getBalance() >= 50000) {
-							ItemMeta iMeta = item.getItemMeta();
-							if (!iMeta.displayName().hasDecoration(TextDecoration.ITALIC)) {
+					ItemMeta iMeta = item.getItemMeta();
+					if (user.getBalance() >= 50000) {
+						if (iMeta.hasDisplayName()) {
+							if (!Objects.requireNonNull(iMeta.displayName()).hasDecoration(TextDecoration.ITALIC)) {
 								confirmItalics.put(player.getUniqueId(), item);
 								Component confirm = Component.text("Click here to confirm italics removal")
 										.color(NamedTextColor.YELLOW)
 										.decorate(TextDecoration.BOLD)
-										.clickEvent(ClickEvent.runCommand("/removeitalics confirm"))
-										.hoverEvent(Component.text(plugin.colourMessage("&eClick me!")));
+										.clickEvent(ClickEvent.runCommand("/removeitalics confirm"));
 								player.sendMessage(confirm);
 							} else {
-								player.sendMessage(plugin.colourMessage("&cItalics has already been removed from this item!"));
+								player.sendMessage(Component.text("Italics has already been removed from this item!", NamedTextColor.RED));
 							}
 						} else {
-							player.sendMessage(plugin.colourMessage("&cYou need $50,000 to use this!"));
+							player.sendMessage(Component.text("This item doesnt have a custom name!", NamedTextColor.RED));
 						}
 					} else {
-						player.sendMessage(plugin.colourMessage("&cThis item doesnt have a custom name!"));
+						player.sendMessage(Component.text("You need $50,000 to use this!", NamedTextColor.RED));
 					}
 				}
 			} else if(args[0].equalsIgnoreCase("confirm")) {
 				if(confirmItalics.containsKey(player.getUniqueId())) {
 					doTheThing(player, confirmItalics.get(player.getUniqueId()));
 				} else {
-					player.sendMessage(plugin.colourMessage("&cYou don't have a pending italics removal!"));
+					player.sendMessage(Component.text("You don't have a pending italics removal!", NamedTextColor.RED));
 				}
 			} else {
-				player.sendMessage(plugin.colourMessage("&cCorrect Usage: /removeitalics"));
+				player.sendMessage(Component.text("Correct Usage: /removeitalics", NamedTextColor.RED));
 			}
 		}
 		return true;

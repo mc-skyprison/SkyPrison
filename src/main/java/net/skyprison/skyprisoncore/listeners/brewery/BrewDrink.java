@@ -1,7 +1,6 @@
 package net.skyprison.skyprisoncore.listeners.brewery;
 
 import com.dre.brewery.api.events.brew.BrewDrinkEvent;
-import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -12,11 +11,9 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class BrewDrink implements Listener {
-    private final SkyPrisonCore plugin;
     private final DatabaseHook db;
 
-    public BrewDrink(SkyPrisonCore plugin, DatabaseHook db) {
-        this.plugin = plugin;
+    public BrewDrink(DatabaseHook db) {
         this.db = db;
     }
 

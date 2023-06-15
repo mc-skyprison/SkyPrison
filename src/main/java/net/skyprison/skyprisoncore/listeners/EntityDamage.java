@@ -23,8 +23,7 @@ public class EntityDamage implements Listener {
 
     @EventHandler
     public void onEntityDamage(EntityDamageEvent event) {
-        if(event.getEntity() instanceof Player) {
-            Player player = (Player) event.getEntity();
+        if(event.getEntity() instanceof Player player) {
             if(player.getWorld().getName().equalsIgnoreCase("world_skyplots") && event.getCause().equals(EntityDamageEvent.DamageCause.VOID)) {
                 event.setCancelled(true);
                 File f = new File(plugin.getDataFolder() + File.separator + "skyplots.yml");

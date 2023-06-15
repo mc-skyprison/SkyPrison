@@ -45,6 +45,11 @@ public class Purchases implements CommandExecutor {
 				} else if(player.hasPermission("skyprisoncore.command.purchases.others")) {
 					if(CMI.getInstance().getPlayerManager().getUser(args[0]) != null) {
 						user = CMI.getInstance().getPlayerManager().getUser(args[0]);
+						if(args.length > 1) {
+							if(plugin.isInt(args[1])) {
+								page = Integer.parseInt(args[1]);
+							}
+						}
 					}
 				}
 			}
@@ -87,7 +92,7 @@ public class Purchases implements CommandExecutor {
 						.append(Component.text(donation.get("name") + " ", TextColor.fromHexString("#ea6c6c"))
 						.append(Component.text(" - ", NamedTextColor.WHITE, TextDecoration.BOLD)
 						.append(Component.text(donation.get("currency") + " ", TextColor.fromHexString("#565bf0"))
-						.append(Component.text(donation.get("price") + " ", TextColor.fromHexString("#565bf0"))))))
+						.append(Component.text(donation.get("price") + " ", TextColor.fromHexString("#565bf0")))).decoration(TextDecoration.BOLD, false)))
 						.hoverEvent(HoverEvent.showText(Component.text("Purchased " + donation.get("date"), TextColor.fromHexString("#b83d3d")))));
 				i++;
 			}

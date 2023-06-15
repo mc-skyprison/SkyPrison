@@ -54,7 +54,8 @@ public class BlockDamage implements Listener {
             if(sLoc != null) {
                 b.setType(Material.AIR);
                 plugin.getServer().broadcast(Component.text(player.getName(), TextColor.fromHexString("#E97C07"), TextDecoration.BOLD)
-                        .append(Component.text(" has found the ", TextColor.fromHexString("#FFFF00"))).append(Component.text("SPONGE!", TextColor.fromHexString("#FFFF00"), TextDecoration.BOLD)).append(Component.text(" A new one will be hidden somewhere in prison.", TextColor.fromHexString("#FFFF00"))));
+                        .append(Component.text(" has found the ", TextColor.fromHexString("#FFFF00"))).append(Component.text("SPONGE!", TextColor.fromHexString("#FFFF00"), TextDecoration.BOLD))
+                        .append(Component.text(" A new one will be hidden somewhere in prison.", TextColor.fromHexString("#FFFF00"))));
 
                 try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET sponges_found = sponges_found + 1 WHERE user_id = ?")) {
                     ps.setString(1, player.getUniqueId().toString());

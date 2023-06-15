@@ -1,11 +1,15 @@
 package net.skyprison.skyprisoncore.commands.guard;
 
+import net.kyori.adventure.platform.bukkit.BukkitAudiences;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 public class GuardDuty implements CommandExecutor {
 	private final SkyPrisonCore plugin;
@@ -14,9 +18,8 @@ public class GuardDuty implements CommandExecutor {
 		this.plugin = plugin;
 	}
 
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if (sender instanceof Player) {
-			Player player = (Player) sender;
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+		if (sender instanceof Player player) {
 			if(!player.isOp()) {
 				if(!player.hasPermission("skyprisoncore.guard.onduty")) {
 					if(player.hasPermission("skyprisoncore.guard.srguard")) {
@@ -26,8 +29,10 @@ public class GuardDuty implements CommandExecutor {
 					} else if(player.hasPermission("skyprisoncore.guard.trguard")) {
 						plugin.asConsole("lp user " + player.getName() + " parent add trguard");
 					}
-					player.sendMessage(ChatColor.RED + "You are now ON duty!");
-					plugin.asConsole(plugin.colourMessage("ctellraw all <T>&f[&3Guard&f] &9" + player.getDisplayName() + " &bis now &lON &bduty!</T>"));
+					player.sendMessage(Component.text("You are now ON duty!", NamedTextColor.RED));
+					BukkitAudiences.create(plugin).players().sendMessage(Component.text("[", NamedTextColor.WHITE).append(Component.text("Guard", NamedTextColor.DARK_AQUA))
+							.append(player.displayName().colorIfAbsent(NamedTextColor.BLUE)).append(Component.text(" is now ", NamedTextColor.AQUA))
+							.append(Component.text("ON", NamedTextColor.AQUA, TextDecoration.BOLD)).append(Component.text(" duty!", NamedTextColor.AQUA)));
 				} else {
 					if(player.hasPermission("skyprisoncore.guard.srguard")) {
 						plugin.asConsole("lp user " + player.getName() + " parent remove srguard");
@@ -37,8 +42,10 @@ public class GuardDuty implements CommandExecutor {
 						plugin.asConsole("lp user " + player.getName() + " parent remove trguard");
 					}
 					plugin.InvGuardGearDelPlyr(player);
-					player.sendMessage(ChatColor.RED + "You are now OFF duty!");
-					plugin.asConsole(plugin.colourMessage("ctellraw all <T>&f[&3Guard&f] &9" + player.getDisplayName() + " &bis now &lOFF &bduty!</T>"));
+					player.sendMessage(Component.text("You are now OFF duty!", NamedTextColor.RED));
+					BukkitAudiences.create(plugin).players().sendMessage(Component.text("[", NamedTextColor.WHITE).append(Component.text("Guard", NamedTextColor.DARK_AQUA))
+							.append(player.displayName().colorIfAbsent(NamedTextColor.BLUE)).append(Component.text(" is now ", NamedTextColor.AQUA))
+							.append(Component.text("OFF", NamedTextColor.AQUA, TextDecoration.BOLD)).append(Component.text(" duty!", NamedTextColor.AQUA)));
 				}
 			}
 		}

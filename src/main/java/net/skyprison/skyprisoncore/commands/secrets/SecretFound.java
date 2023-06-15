@@ -1,5 +1,8 @@
 package net.skyprison.skyprisoncore.commands.secrets;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
@@ -8,6 +11,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.sql.Connection;
@@ -29,7 +33,7 @@ public class SecretFound implements CommandExecutor {
 	}
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
 		Player player = (Player) sender;
 		File f = new File(plugin.getDataFolder() + File.separator + "secrets.yml");
 		YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
@@ -97,7 +101,7 @@ public class SecretFound implements CommandExecutor {
 					e.printStackTrace();
 				}
 
-				player.sendMessage("You have found all secrets in this category! Check out the Rewards GUI in /secrets to collect your reward!");
+				player.sendMessage(Component.text("You have found all secrets in this category! Check out the Rewards GUI in /secrets to collect your reward!", NamedTextColor.GREEN, TextDecoration.BOLD));
 			}
 		}
 		for(String mission : dailyMissions.getMissions(player)) {

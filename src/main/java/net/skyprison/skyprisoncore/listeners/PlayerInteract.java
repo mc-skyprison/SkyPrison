@@ -13,6 +13,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.Objects;
+
 public class PlayerInteract implements Listener {
     private final SkyPrisonCore plugin;
 
@@ -22,7 +24,7 @@ public class PlayerInteract implements Listener {
 
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
-        if(event.getItem() != null && event.getItem().getType().equals(Material.EXPERIENCE_BOTTLE) && event.getHand().equals(EquipmentSlot.HAND)) {
+        if(event.getItem() != null && event.getItem().getType().equals(Material.EXPERIENCE_BOTTLE) && Objects.equals(event.getHand(), EquipmentSlot.HAND)) {
             if(event.getAction().equals(Action.RIGHT_CLICK_AIR) || event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
                 ItemStack expBottle = event.getItem();
                 ItemMeta expMeta = expBottle.getItemMeta();

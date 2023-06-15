@@ -10,8 +10,14 @@ import com.sk89q.worldguard.protection.regions.RegionContainer;
 import me.NoChance.PvPManager.Managers.PlayerHandler;
 import me.NoChance.PvPManager.PvPManager;
 import me.NoChance.PvPManager.PvPlayer;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -40,7 +46,7 @@ public class PlayerMove implements Listener {
             if(toLoc.getBlockX() != fromLoc.getBlockX() || toLoc.getBlockZ() != fromLoc.getBlockZ()) {
                 plugin.getServer().getScheduler().cancelTask(plugin.teleportMove.get(player.getUniqueId()));
                 plugin.teleportMove.remove(player.getUniqueId());
-                player.sendMessage(plugin.colourMessage("&cTeleport Cancelled!"));
+                player.sendMessage(Component.text("Teleport Cancelled!", NamedTextColor.RED));
             }
         }
         if(player.getWorld().getName().equalsIgnoreCase("world_prison")) {
@@ -89,14 +95,14 @@ public class PlayerMove implements Listener {
                     if (toFly && !fromFly) {
                         if (!pvpPlayer.isInCombat()) {
                             player.setAllowFlight(true);
-                            player.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "You can fly now!");
+                            player.sendMessage(Component.text("You can fly now!", NamedTextColor.AQUA, TextDecoration.BOLD));
                         }
                     } else if (!toFly && fromFly) {
                         player.setAllowFlight(false);
                         if(player.isGliding()) {
                             player.setGliding(false);
                         }
-                        player.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "You can no longer fly!");
+                        player.sendMessage(Component.text("You can no longer fly!", NamedTextColor.AQUA, TextDecoration.BOLD));
                     }
                 }
                 if (pvpPlayer.isInCombat()) {
@@ -118,7 +124,7 @@ public class PlayerMove implements Listener {
             if(!inWorld) {
                 if((event.getFrom().getBlockX() != event.getTo().getBlockX()) || (event.getFrom().getBlockZ() != event.getTo().getBlockZ())) {
                     event.setCancelled(true);
-                    player.sendMessage(ChatColor.RED + "Please go off duty!");
+                    player.sendMessage(Component.text("Please go off duty!", NamedTextColor.RED));
                 }
             }
         }

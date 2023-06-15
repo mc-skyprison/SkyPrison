@@ -13,12 +13,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 public class PlayerUntag implements Listener {
-
-    private final SkyPrisonCore plugin;
-
-    public PlayerUntag(SkyPrisonCore plugin) {
-        this.plugin = plugin;
-    }
+    public PlayerUntag() {}
 
     @EventHandler
     public void onPlayerUntag(PlayerUntagEvent event) {

@@ -1,6 +1,7 @@
 package net.skyprison.skyprisoncore.listeners.quickshop;
 
-import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
@@ -11,13 +12,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Objects;
 
 public class ShopPurchase implements Listener {
-    private final SkyPrisonCore plugin;
     private final DatabaseHook db;
 
-    public ShopPurchase(SkyPrisonCore plugin, DatabaseHook db) {
-        this.plugin = plugin;
+    public ShopPurchase(DatabaseHook db) {
         this.db = db;
     }
 
@@ -39,7 +39,7 @@ public class ShopPurchase implements Listener {
         }
 
         if(isBanned) {
-            Bukkit.getPlayer(event.getPurchaser()).sendMessage(plugin.colourMessage("&cThis player has banned you from their shops!"));
+            Objects.requireNonNull(Bukkit.getPlayer(event.getPurchaser())).sendMessage(Component.text("This player has banned you from their shops!", NamedTextColor.RED));
             event.setCancelled(true);
         }
     }

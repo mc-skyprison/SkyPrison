@@ -265,11 +265,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.bomb
     permission-message: §4Error:§c You do not have permission to execute this command...
-  donorreset:
-    description: command relating to donor mine reset
-    usage: /<command>
-    permission: skyprisoncore.command.donorreset
-    permission-message: §4Error:§c You do not have permission to execute this command...
   tags:
     description: Tags command
     usage: /<command>
@@ -305,11 +300,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.claim
     permission-message: §4Error:§c You do not have permission to execute this command...
-  dbimport:
-    description: DB commands
-    usage: /<command>
-    permission: skyprisoncore.command.dbimport
-    permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
   skyprisoncore.command.build:
     description: Gives access to buildchat
@@ -321,8 +311,6 @@ permissions:
     description: Gives access to staffchat
 
   skyprisoncore.command.discord:
-    description: Gives access to discord
-  skyprisoncore.command.donorreset:
     description: Gives access to discord
   skyprisoncore.command.furnace:
     description: Gives access to discord
@@ -471,6 +459,4 @@ permissions:
   skyprisoncore.command.customrecipes:
     description: Gives access to tags stuff
   skyprisoncore.command.claim:
-    description: Gives access to tags stuff
-  skyprisoncore.command.dbimport:
     description: Gives access to tags stuff

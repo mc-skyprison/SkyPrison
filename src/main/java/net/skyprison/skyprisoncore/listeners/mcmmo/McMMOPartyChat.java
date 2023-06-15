@@ -11,7 +11,7 @@ import java.util.Objects;
 
 public class McMMOPartyChat implements Listener {
 
-    private DiscordApi discApi;
+    private final DiscordApi discApi;
 
     public McMMOPartyChat (DiscordApi discApi) {
         this.discApi = discApi;

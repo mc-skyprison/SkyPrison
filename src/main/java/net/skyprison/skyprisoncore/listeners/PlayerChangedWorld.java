@@ -7,6 +7,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 
+import java.util.Objects;
+
 public class PlayerChangedWorld implements Listener {
     @EventHandler
     public void worldChange(PlayerChangedWorldEvent event) {
@@ -14,9 +16,9 @@ public class PlayerChangedWorld implements Listener {
         World fWorld = event.getFrom();
         World tWorld = player.getWorld();
         if(tWorld.getName().equalsIgnoreCase("world_prison") || tWorld.getName().equalsIgnoreCase("world_event") || player.getWorld().getName().equalsIgnoreCase("world_war")) {
-            player.getAttribute(Attribute.GENERIC_ATTACK_SPEED).setBaseValue(16);
+            Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_ATTACK_SPEED)).setBaseValue(16);
         } else if(fWorld.getName().equalsIgnoreCase("world_prison")) {
-            player.getAttribute(Attribute.GENERIC_ATTACK_SPEED).setBaseValue(player.getAttribute(Attribute.GENERIC_ATTACK_SPEED).getDefaultValue());
+            Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_ATTACK_SPEED)).setBaseValue(Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_ATTACK_SPEED)).getDefaultValue());
         }
     }
 }

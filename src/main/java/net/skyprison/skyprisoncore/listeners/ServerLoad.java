@@ -30,22 +30,22 @@ public class ServerLoad implements Listener {
 
     @EventHandler
     public void onServerLoad(ServerLoadEvent event) {
-        plugin.spongeTimer.schedule(new SpongeTask(plugin, db), TimeUnit.MINUTES.toMillis(10));
-
-        int radius = 300;
         World prisonWorld = Bukkit.getWorld("world_prison");
-        for(int x = -radius; x <= radius; x++) {
-            for(int z = -radius; z <= radius; z++) {
-                for(int y = 130; y <= 174; y++) {
-                    Block block = prisonWorld.getBlockAt(x, y, z);
-                    Material bType = block.getType();
-                    if (bType.equals(Material.TALL_GRASS) || bType.equals(Material.GRASS) || bType.equals(Material.LARGE_FERN) || bType.equals(Material.FERN)) {
-                        plugin.grassLocations.add(block);
+        if(prisonWorld != null) {
+            plugin.spongeTimer.schedule(new SpongeTask(plugin, db), TimeUnit.MINUTES.toMillis(10));
+            plugin.shinyTimer.schedule(new ShinyGrassTask(plugin, particles), TimeUnit.MINUTES.toMillis(15));
+            int radius = 300;
+            for (int x = -radius; x <= radius; x++) {
+                for (int z = -radius; z <= radius; z++) {
+                    for (int y = 130; y <= 174; y++) {
+                        Block block = prisonWorld.getBlockAt(x, y, z);
+                        Material bType = block.getType();
+                        if (bType.equals(Material.TALL_GRASS) || bType.equals(Material.GRASS) || bType.equals(Material.LARGE_FERN) || bType.equals(Material.FERN)) {
+                            plugin.grassLocations.add(block);
+                        }
                     }
                 }
             }
         }
-
-        plugin.shinyTimer.schedule(new ShinyGrassTask(plugin, particles), TimeUnit.MINUTES.toMillis(15));
     }
 }

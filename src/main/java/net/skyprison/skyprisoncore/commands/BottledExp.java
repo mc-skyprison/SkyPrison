@@ -2,6 +2,9 @@ package net.skyprison.skyprisoncore.commands;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -12,6 +15,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 
@@ -25,10 +29,10 @@ public class BottledExp implements CommandExecutor {
 	public void createBottle(Player player, Integer amount) {
 		ItemStack expBottle = new ItemStack(Material.EXPERIENCE_BOTTLE, 1);
 		ItemMeta expMeta = expBottle.getItemMeta();
-		expMeta.setDisplayName(plugin.colourMessage("&5Experience Bottle &7(Throw)"));
-		ArrayList<String> lore = new ArrayList<>();
-		lore.add(plugin.colourMessage("&7Experience: &e" + plugin.formatNumber(amount)));
-		expMeta.setLore(lore);
+		expMeta.displayName(Component.text("Experience Bottle ", NamedTextColor.DARK_PURPLE).append(Component.text("(Throw)", NamedTextColor.GRAY)));
+		ArrayList<Component> lore = new ArrayList<>();
+		lore.add(Component.text("Experience: ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(amount), NamedTextColor.YELLOW)));
+		expMeta.lore(lore);
 		NamespacedKey key = new NamespacedKey(plugin, "exp-amount");
 		expMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, amount);
 		expBottle.setItemMeta(expMeta);
@@ -37,9 +41,9 @@ public class BottledExp implements CommandExecutor {
 			user.takeExp(amount);
 			user.getInventory().addItem(expBottle);
 			plugin.asConsole("money take " + player.getName() + " " + amount * 0.25);
-			player.sendMessage(plugin.colourMessage("&4&l-" + plugin.formatNumber(amount)) + " XP");
+			player.sendMessage(Component.text("-" + plugin.formatNumber(amount) + " XP", NamedTextColor.DARK_RED, TextDecoration.BOLD));
 		} else {
-			player.sendMessage(plugin.colourMessage("&cYou do not have space in your inventory!"));
+			player.sendMessage(Component.text("You do not have space in your inventory!", NamedTextColor.RED));
 		}
 	}
 
@@ -47,10 +51,10 @@ public class BottledExp implements CommandExecutor {
 	public void createMultipleBottles(Player player, Integer amount, Integer bAmount, Integer tAmount) {
 		ItemStack expBottle = new ItemStack(Material.EXPERIENCE_BOTTLE, bAmount);
 		ItemMeta expMeta = expBottle.getItemMeta();
-		expMeta.setDisplayName(plugin.colourMessage("&5Experience Bottle &7(Throw)"));
-		ArrayList<String> lore = new ArrayList<>();
-		lore.add(plugin.colourMessage("&7Experience: &e" + plugin.formatNumber(amount)));
-		expMeta.setLore(lore);
+		expMeta.displayName(Component.text("Experience Bottle ", NamedTextColor.DARK_PURPLE).append(Component.text("(Throw)", NamedTextColor.GRAY)));
+		ArrayList<Component> lore = new ArrayList<>();
+		lore.add(Component.text("Experience: ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(amount), NamedTextColor.YELLOW)));
+		expMeta.lore(lore);
 		NamespacedKey key = new NamespacedKey(plugin, "exp-amount");
 		expMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, amount);
 		expBottle.setItemMeta(expMeta);
@@ -59,15 +63,14 @@ public class BottledExp implements CommandExecutor {
 			user.takeExp(tAmount);
 			user.getInventory().addItem(expBottle);
 			plugin.asConsole("money take " + player.getName() + " " + tAmount * 0.25);
-			player.sendMessage(plugin.colourMessage("&4&l-" + plugin.formatNumber(tAmount)) + " XP");
+			player.sendMessage(Component.text("-" + plugin.formatNumber(tAmount) + " XP", NamedTextColor.DARK_RED, TextDecoration.BOLD));
 		} else {
-			player.sendMessage(plugin.colourMessage("&cYou do not have space in your inventory!"));
+			player.sendMessage(Component.text("You do not have space in your inventory!", NamedTextColor.RED));
 		}
 	}
 
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if(sender instanceof Player) {
-			Player player = (Player) sender;
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+		if(sender instanceof Player player) {
 			if (args.length == 1) {
 				CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
 				if (plugin.isInt(args[0])) {
@@ -86,16 +89,16 @@ public class BottledExp implements CommandExecutor {
 								if (expToWithdraw <= allowedExpWithdraw) {
 									createBottle(player, expToWithdraw);
 								} else {
-									player.sendMessage(plugin.colourMessage("&cYou can't drain that much experience at once! (Limit: " + plugin.formatNumber(allowedExpWithdraw) + ")"));
+									player.sendMessage(Component.text("You can't drain that much experience at once! (Limit: " + plugin.formatNumber(allowedExpWithdraw) + ")", NamedTextColor.RED));
 								}
 							} else {
-								player.sendMessage(plugin.colourMessage("&cYou need $" + plugin.formatNumber(expToWithdraw * 0.25) + " to bottle that amount of experience!"));
+								player.sendMessage(Component.text("You need $" + plugin.formatNumber(expToWithdraw * 0.25) + " to bottle that amount of experience!", NamedTextColor.RED));
 							}
 						} else {
-							player.sendMessage(plugin.colourMessage("&cYou do not have that amount of experience!"));
+							player.sendMessage(Component.text("You do not have that amount of experience!", NamedTextColor.RED));
 						}
 					} else {
-						player.sendMessage(plugin.colourMessage("&cYou can't withdraw 0 or less experience!"));
+						player.sendMessage(Component.text("You can't withdraw 0 or less experience!", NamedTextColor.RED));
 					}
 				} else if (args[0].equalsIgnoreCase("all")) {
 					if (player.hasPermission("skyprisoncore.command.bottledexp.tier2")) {
@@ -103,16 +106,16 @@ public class BottledExp implements CommandExecutor {
 							if (user.getBalance() >= player.getTotalExperience() * 0.25) {
 								createBottle(player, player.getTotalExperience());
 							} else {
-								player.sendMessage(plugin.colourMessage("&cYou need $" + plugin.formatNumber(player.getTotalExperience() * 0.25) + " to bottle that amount of experience!"));
+								player.sendMessage(Component.text("You need $" + plugin.formatNumber(player.getTotalExperience() * 0.25) + " to bottle that amount of experience!", NamedTextColor.RED));
 							}
 						} else {
-							player.sendMessage(plugin.colourMessage("&cYou can't withdraw 0 or less experience!"));
+							player.sendMessage(Component.text("You can't withdraw 0 or less experience!", NamedTextColor.RED));
 						}
 					} else {
-						player.sendMessage(plugin.colourMessage("&cYou do not have permission to /xpb all"));
+						player.sendMessage(Component.text("You do not have permission to /xpb all", NamedTextColor.RED));
 					}
 				} else {
-					player.sendMessage(plugin.colourMessage("&cCorrect usage: /xpb <experience/all>"));
+					player.sendMessage(Component.text("Incorrect usage: /xpb <experience/all>", NamedTextColor.RED));
 				}
 			} else if(args.length == 2) {
 				CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
@@ -128,22 +131,23 @@ public class BottledExp implements CommandExecutor {
 										createMultipleBottles(player, expToWithdraw, bottlesToMake, actualExpWithdraw);
 									}
 								} else {
-									player.sendMessage(plugin.colourMessage("&cYou do not have that amount of experience!"));
+									player.sendMessage(Component.text("You do not have that amount of experience!", NamedTextColor.RED));
 								}
 							} else {
-								player.sendMessage(plugin.colourMessage("&cYou can only withdraw a max of 64 bottles at a time!"));
+								player.sendMessage(Component.text("You can only withdraw a max of 64 bottles at a time!", NamedTextColor.RED));
 							}
 						} else {
-							player.sendMessage(plugin.colourMessage("&cYou can't withdraw 0 or less experience!"));
+							player.sendMessage(Component.text("You can't withdraw 0 or less experience!", NamedTextColor.RED));
 						}
 					} else {
-						player.sendMessage(plugin.colourMessage("&cYou do not have permission to /xpb <experience (bottle amount)"));
+						player.sendMessage(Component.text("You do not have permission to /xpb <experience (bottle amount)", NamedTextColor.RED));
 					}
 				} else {
-					player.sendMessage(plugin.colourMessage("&cCorrect usage: /xpb <experience> (how many bottles to make)"));
+					player.sendMessage(Component.text("Incorrect usage: /xpb <experience> (how many bottles to make)", NamedTextColor.RED));
 				}
 			} else {
-				player.sendMessage(plugin.colourMessage("&7Current Experience: &e" + plugin.formatNumber(player.getTotalExperience()) + "\n&c/xpb <amount>"));
+				player.sendMessage(Component.text("Current Experience: ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(player.getTotalExperience()), NamedTextColor.YELLOW))
+						.append(Component.text("\n/xpb <amount>", NamedTextColor.RED)));
 			}
 		}
 		return true;

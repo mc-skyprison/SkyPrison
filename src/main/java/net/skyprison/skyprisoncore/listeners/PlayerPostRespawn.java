@@ -8,7 +8,6 @@ import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
-import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -18,12 +17,7 @@ import org.bukkit.event.Listener;
 import java.util.Objects;
 
 public class PlayerPostRespawn implements Listener {
-
-    private final SkyPrisonCore plugin;
-
-    public PlayerPostRespawn(SkyPrisonCore plugin) {
-        this.plugin = plugin;
-    }
+    public PlayerPostRespawn() {}
 
     @EventHandler
     public void onPlayerPostRespawn(PlayerPostRespawnEvent event) {

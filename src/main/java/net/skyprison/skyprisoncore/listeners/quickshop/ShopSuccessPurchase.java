@@ -36,23 +36,25 @@ public class ShopSuccessPurchase implements Listener {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            PrintWriter pData = new PrintWriter(fData);
-            PrintWriter pData2 = new PrintWriter(fData2);
+            if(fData != null && fData2 != null) {
+                PrintWriter pData = new PrintWriter(fData);
+                PrintWriter pData2 = new PrintWriter(fData2);
 
-            Long date = System.currentTimeMillis();
+                Long date = System.currentTimeMillis();
 
-            if (event.getShop().isBuying()) {
-                pData.println(date + ";" + shopOwner + ";deposit;" + event.getBalance() + ";true;" + event.getShop().getItem() + ";" + event.getAmount());
-                pData2.println(date + ";" + purchaser + ";withdraw;" + event.getBalance() + ";true;" + event.getShop().getItem() + ";" + event.getAmount());
-            } else {
-                pData.println(date + ";" + shopOwner + ";withdraw;" + event.getBalance() + ";true;" + event.getShop().getItem() + ";" + event.getAmount());
-                pData2.println(date + ";" + purchaser + ";deposit;" + event.getBalance() + ";true;" + event.getShop().getItem() + ";" + event.getAmount());
+                if (event.getShop().isBuying()) {
+                    pData.println(date + ";" + shopOwner + ";deposit;" + event.getBalance() + ";true;" + event.getShop().getItem() + ";" + event.getAmount());
+                    pData2.println(date + ";" + purchaser + ";withdraw;" + event.getBalance() + ";true;" + event.getShop().getItem() + ";" + event.getAmount());
+                } else {
+                    pData.println(date + ";" + shopOwner + ";withdraw;" + event.getBalance() + ";true;" + event.getShop().getItem() + ";" + event.getAmount());
+                    pData2.println(date + ";" + purchaser + ";deposit;" + event.getBalance() + ";true;" + event.getShop().getItem() + ";" + event.getAmount());
+                }
+
+                pData.flush();
+                pData.close();
+                pData2.flush();
+                pData2.close();
             }
-
-            pData.flush();
-            pData.close();
-            pData2.flush();
-            pData2.close();
         });
     }
 }

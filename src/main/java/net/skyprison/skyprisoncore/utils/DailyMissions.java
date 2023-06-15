@@ -79,99 +79,51 @@ public class DailyMissions {
         for(String mission : twoMissions) {
             Random randInt = new Random();
             String[] missionSplit = mission.split("-");
-            switch(missionSplit[0].toLowerCase()) {
-                case "secrets": // SecretFound IMPLEMENTED
-                    missionsToGive.add(mission  + ":" + (randInt.nextInt(3) + 2));
-                    break;
-                case "fish": // PlayerFish IMPLEMENTED
-                    switch(missionSplit[1].toLowerCase()) {
-                        case "any":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(16) + 16));
-                            break;
-                        case "pufferfish":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(5) + 5));
-                            break;
-                        case "cod":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(10) + 5));
-                            break;
-                        case "salmon":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(10) + 5));
-                            break;
-                        case "tropical_fish":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(5) + 5));
-                            break;
+            switch (missionSplit[0].toLowerCase()) {
+                case "secrets" -> missionsToGive.add(mission + ":" + (randInt.nextInt(3) + 2));
+                case "fish" -> {
+                    switch (missionSplit[1].toLowerCase()) {
+                        case "any" -> missionsToGive.add(mission + ":" + (randInt.nextInt(16) + 16));
+                        case "pufferfish" -> missionsToGive.add(mission + ":" + (randInt.nextInt(5) + 5));
+                        case "cod" -> missionsToGive.add(mission + ":" + (randInt.nextInt(10) + 5));
+                        case "salmon" -> missionsToGive.add(mission + ":" + (randInt.nextInt(10) + 5));
+                        case "tropical_fish" -> missionsToGive.add(mission + ":" + (randInt.nextInt(5) + 5));
                     }
-                    break;
-                case "kill": // Entity Death IMPLEMENTED
-                    switch(missionSplit[1].toLowerCase()) {
-                        case "any":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(15) + 15));
-                            break;
-                        case "zombie":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(15) + 15));
-                            break;
-                        case "skeleton":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(15) + 15));
-                            break;
+                }
+                case "kill" -> {
+                    switch (missionSplit[1].toLowerCase()) {
+                        case "any" -> missionsToGive.add(mission + ":" + (randInt.nextInt(15) + 15));
+                        case "zombie" -> missionsToGive.add(mission + ":" + (randInt.nextInt(15) + 15));
+                        case "skeleton" -> missionsToGive.add(mission + ":" + (randInt.nextInt(15) + 15));
                     }
-                    break;
-                case "break": // Block Break IMPLEMENTED
-                    switch(missionSplit[1].toLowerCase()) {
-                        case "any":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(50) + 75));
-                            break;
-                        case "birch_log":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(50) + 25));
-                            break;
+                }
+                case "break" -> {
+                    switch (missionSplit[1].toLowerCase()) {
+                        case "any" -> missionsToGive.add(mission + ":" + (randInt.nextInt(50) + 75));
+                        case "birch_log" -> missionsToGive.add(mission + ":" + (randInt.nextInt(50) + 25));
                     }
-                    break;
-                case "harvest": // Block Break IMPLEMENTED
-                    switch(missionSplit[1].toLowerCase()) {
-                        case "any":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(80) + 80));
-                            break;
-                        case "cactus":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(64) + 64));
-                            break;
-                        case "pumpkin":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(64) + 64));
-                            break;
-                        case "nether_wart":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(64) + 64));
-                            break;
-                        case "sugar_cane":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(64) + 64));
-                            break;
-                        case "bamboo":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(64) + 64));
-                            break;
+                }
+                case "harvest" -> {
+                    switch (missionSplit[1].toLowerCase()) {
+                        case "any" -> missionsToGive.add(mission + ":" + (randInt.nextInt(80) + 80));
+                        case "cactus" -> missionsToGive.add(mission + ":" + (randInt.nextInt(64) + 64));
+                        case "pumpkin" -> missionsToGive.add(mission + ":" + (randInt.nextInt(64) + 64));
+                        case "nether_wart" -> missionsToGive.add(mission + ":" + (randInt.nextInt(64) + 64));
+                        case "sugar_cane" -> missionsToGive.add(mission + ":" + (randInt.nextInt(64) + 64));
+                        case "bamboo" -> missionsToGive.add(mission + ":" + (randInt.nextInt(64) + 64));
                     }
-                    break;
-                case "slaughter": // EntityDeath IMPLEMENTED
-                    switch(missionSplit[1].toLowerCase()) {
-                        case "any":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(15) + 15));
-                            break;
-                        case "pig":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(15) + 15));
-                            break;
-                        case "cow":
-                            missionsToGive.add(mission  + ":" + (randInt.nextInt(15) + 15));
-                            break;
+                }
+                case "slaughter" -> {
+                    switch (missionSplit[1].toLowerCase()) {
+                        case "any" -> missionsToGive.add(mission + ":" + (randInt.nextInt(15) + 15));
+                        case "pig" -> missionsToGive.add(mission + ":" + (randInt.nextInt(15) + 15));
+                        case "cow" -> missionsToGive.add(mission + ":" + (randInt.nextInt(15) + 15));
                     }
-                    break;
-                case "money": // ShopPostTransaction IMPLEMENTED
-                    missionsToGive.add(mission  + ":" + (randInt.nextInt(1500) + 500));
-                    break;
-                case "sponge": // SpongeFound IMPLEMENTED
-                    missionsToGive.add(mission  + ":" + (randInt.nextInt(1) + 2));
-                    break;
-                case "bomb": // BlockPlace IMPLEMENTED
-                    missionsToGive.add(mission  + ":" + (randInt.nextInt(5) + 5));
-                    break;
-                case "parkour": // parkourFinish IMPLEMENTED
-                    missionsToGive.add(mission  + ":" + (randInt.nextInt(5) + 3));
-
+                }
+                case "money" -> missionsToGive.add(mission + ":" + (randInt.nextInt(1500) + 500));
+                case "sponge" -> missionsToGive.add(mission + ":" + (randInt.nextInt(1) + 2));
+                case "bomb" -> missionsToGive.add(mission + ":" + (randInt.nextInt(5) + 5));
+                case "parkour" -> missionsToGive.add(mission + ":" + (randInt.nextInt(5) + 3));
             }
         }
 

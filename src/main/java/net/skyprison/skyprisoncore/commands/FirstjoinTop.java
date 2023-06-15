@@ -1,9 +1,11 @@
 package net.skyprison.skyprisoncore.commands;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -46,6 +48,10 @@ public class FirstjoinTop implements CommandExecutor {
 	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
 		if (sender instanceof Player player) {
 
+			if (args.length > 0 && !isInteger(args[0])) {
+				player.sendMessage(Component.text("Incorrect Usage! /firstjointop (page)", NamedTextColor.RED));
+				return true;
+			}
 			LinkedHashMap<String, Long> firstJoins = new LinkedHashMap<>();
 			try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id, first_join FROM users")) {
 				ResultSet rs = ps.executeQuery();
@@ -77,85 +83,38 @@ public class FirstjoinTop implements CommandExecutor {
 			int minNum = 1;
 			int pageNum = 1;
 
-			if(args.length == 1) {
-				if(isInteger(args[0])) {
-					pageNum = Integer.parseInt(args[0]);
-					minNum = (maxNum * pageNum) - 9;
-					maxNum = maxNum * pageNum;
-				}
+			if(args.length > 0 && isInteger(args[0])) {
+				pageNum = Integer.parseInt(args[0]);
+				minNum = (maxNum * pageNum) - 9;
+				maxNum = maxNum * pageNum;
 			}
 
-			player.sendMessage(plugin.colourMessage("&6&l------- &eFirstjoin top (Page " + pageNum + ") &6&l-------"));
+			Component firstMsg = Component.empty();
+			firstMsg = firstMsg.append(Component.text("-------", NamedTextColor.GOLD, TextDecoration.BOLD))
+							.append(Component.text("Firstjoin Top (Page " + pageNum + ")", NamedTextColor.YELLOW))
+									.append(Component.text("-------", NamedTextColor.GOLD, TextDecoration.BOLD));
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 			for(int i = minNum; i <= maxNum; i++) {
-				if ((i >= 0) && (i < playerFirstJoin.size())) {
-					String playerUUID = playerFirstJoin.get(i - 1);
-					SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-					Date firstJoinDate = new Date(timeFirstJoin.get(playerFirstJoin.indexOf(playerUUID)));
-					OfflinePlayer fPlayer = Bukkit.getOfflinePlayer(UUID.fromString(playerUUID));
-					String firstJoinFormat = sdf.format(firstJoinDate);
-					if (args.length == 1) {
-						if (isInteger(args[0])) {
-							if (i == maxNum) {
-								if (!playerUUID.equalsIgnoreCase(player.getUniqueId().toString())) {
-									player.sendMessage(ChatColor.GOLD + "" + i + ". " + ChatColor.YELLOW + fPlayer.getName()
-											+ ": " + ChatColor.GOLD + firstJoinFormat);
-								} else {
-									playerDone = true;
-									player.sendMessage(ChatColor.GREEN + "" + i + ". " + fPlayer.getName() + ": " + firstJoinFormat);
-								}
-								if (!playerDone) {
-									firstJoinDate = new Date(timeFirstJoin.get(playerFirstJoin.indexOf(player.getUniqueId().toString())));
-									firstJoinFormat = sdf.format(firstJoinDate);
-									int playerPos = playerFirstJoin.indexOf(player.getUniqueId().toString()) + 1;
-									player.sendMessage(ChatColor.GREEN + "" + playerPos + ". " + player.getName() + ": " + firstJoinFormat);
-								}
-								break;
-							} else {
-								if (!playerUUID.equalsIgnoreCase(player.getUniqueId().toString())) {
-									player.sendMessage(ChatColor.GOLD + "" + i + ". " + ChatColor.YELLOW + fPlayer.getName()
-											+ ": " + ChatColor.GOLD + firstJoinFormat);
-								} else {
-									playerDone = true;
-									player.sendMessage(ChatColor.GREEN + "" + i + ". " + fPlayer.getName() + ": " + firstJoinFormat);
-								}
-							}
-						} else {
-							player.sendMessage(ChatColor.RED + "/firstjointop (page)");
-							break;
-						}
-					} else {
-						if (i == 10) {
-							if (!playerUUID.equalsIgnoreCase(player.getUniqueId().toString())) {
-								player.sendMessage(ChatColor.GOLD + "" + i + ". " + ChatColor.YELLOW + fPlayer.getName()
-										+ ": " + ChatColor.GOLD + firstJoinFormat);
-							} else {
-								playerDone = true;
-								player.sendMessage(ChatColor.GREEN + "" + i + ". " + fPlayer.getName() + ": " + firstJoinFormat);
-							}
-							if (!playerDone) {
-								int playerPos = playerFirstJoin.indexOf(player.getUniqueId().toString()) + 1;
-								player.sendMessage(ChatColor.GREEN + "" + playerPos + ". " + player.getName() + ": " + firstJoinFormat);
-							}
-							break;
-						} else {
-							if (!playerUUID.equalsIgnoreCase(player.getUniqueId().toString())) {
-								player.sendMessage(ChatColor.GOLD + "" + i + ". " + ChatColor.YELLOW + fPlayer.getName()
-										+ ": " + ChatColor.GOLD + firstJoinFormat);
-							} else {
-								playerDone = true;
-								player.sendMessage(ChatColor.GREEN + "" + i + ". " + fPlayer.getName() + ": " + firstJoinFormat);
-							}
-						}
-					}
-				} else {
-					SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-					Date firstJoinDate = new Date(timeFirstJoin.get(playerFirstJoin.indexOf(player.getUniqueId().toString())));
-					String firstJoinFormat = sdf.format(firstJoinDate);
-					int playerPos = playerFirstJoin.indexOf(player.getUniqueId().toString()) + 1;
-					player.sendMessage(ChatColor.GREEN + "" + playerPos + ". " + player.getName() + ": " + firstJoinFormat);
-					break;
-				}
+				if(i == playerFirstJoin.size()) break;
+				String playerUUID = playerFirstJoin.get(i - 1);
+				Date firstJoinDate = new Date(timeFirstJoin.get(playerFirstJoin.indexOf(playerUUID)));
+				OfflinePlayer fPlayer = Bukkit.getOfflinePlayer(UUID.fromString(playerUUID));
+				String firstJoinFormat = sdf.format(firstJoinDate);
+				boolean isPlayer = playerUUID.equalsIgnoreCase(player.getUniqueId().toString());
+					if (isPlayer) playerDone = true;
+					firstMsg = firstMsg.append(Component.text(i + ". ", isPlayer ? NamedTextColor.GREEN : NamedTextColor.GOLD))
+							.append(Component.text(Objects.requireNonNull(fPlayer.getName()) + ": ", isPlayer ? NamedTextColor.GREEN : NamedTextColor.YELLOW))
+							.append(Component.text(firstJoinFormat, isPlayer ? NamedTextColor.GREEN : NamedTextColor.GOLD));
 			}
+
+			if (!playerDone) {
+				Date firstJoinDate = new Date(timeFirstJoin.get(playerFirstJoin.indexOf(player.getUniqueId().toString())));
+				String firstJoinFormat = sdf.format(firstJoinDate);
+				int playerPos = playerFirstJoin.indexOf(player.getUniqueId().toString()) + 1;
+				firstMsg = firstMsg.append(Component.text(playerPos + ". " + player.getName() + ": " + firstJoinFormat , NamedTextColor.GREEN));
+			}
+
+			player.sendMessage(firstMsg);
 		}
 		return true;
 	}

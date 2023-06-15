@@ -28,29 +28,31 @@ public class EntityToggleGlide implements Listener {
 
             RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
             RegionManager regions = container.get(BukkitAdapter.adapt(player.getWorld()));
-            final ApplicableRegionSet regionListFrom = regions.getApplicableRegions(BlockVector3.at(pLoc.getBlockX(),
-                    pLoc.getBlockY(), pLoc.getBlockZ()));
+            if(regions != null) {
+                final ApplicableRegionSet regionListFrom = regions.getApplicableRegions(BlockVector3.at(pLoc.getBlockX(),
+                        pLoc.getBlockY(), pLoc.getBlockZ()));
 
 
-            for (int i = 0; i <= pLoc.getBlockY(); i++) {
-                Location blockCheck = new Location(pLoc.getWorld(), pLoc.getBlockX(), pLoc.getBlockY() - i, pLoc.getBlockZ());
-                Block block = blockCheck.getBlock();
-                if (block.isSolid() && !block.getType().equals(Material.BARRIER) && !block.isLiquid() && !block.isPassable()) {
-                    canFly = false;
-                    break;
+                for (int i = 0; i <= pLoc.getBlockY(); i++) {
+                    Location blockCheck = new Location(pLoc.getWorld(), pLoc.getBlockX(), pLoc.getBlockY() - i, pLoc.getBlockZ());
+                    Block block = blockCheck.getBlock();
+                    if (block.isSolid() && !block.getType().equals(Material.BARRIER) && !block.isLiquid() && !block.isPassable()) {
+                        canFly = false;
+                        break;
+                    }
                 }
-            }
 
-            for (ProtectedRegion region : regionListFrom) {
-                if (region.getId().contains("fly") && !region.getId().contains("nofly") && !region.getId().contains("no-fly")) {
-                    canFly = true;
-                    break;
+                for (ProtectedRegion region : regionListFrom) {
+                    if (region.getId().contains("fly") && !region.getId().contains("nofly") && !region.getId().contains("no-fly")) {
+                        canFly = true;
+                        break;
+                    }
                 }
-            }
 
-            if (!canFly) {
-                player.setGliding(false);
-                player.setVelocity(player.getVelocity().multiply(-1));
+                if (!canFly) {
+                    player.setGliding(false);
+                    player.setVelocity(player.getVelocity().multiply(-1));
+                }
             }
         }
     }

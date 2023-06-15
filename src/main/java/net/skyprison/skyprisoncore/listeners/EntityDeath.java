@@ -2,12 +2,13 @@ package net.skyprison.skyprisoncore.listeners;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.guard.Safezone;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Animals;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Monster;
@@ -112,7 +113,8 @@ public class EntityDeath implements Listener {
                         Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + killer.getName() + " increment bounties_collected +1 -s");
                         for (Player online : Bukkit.getServer().getOnlinePlayers()) {
                             if (!online.hasPermission("skyprisoncore.bounty.silent")) {
-                                online.sendMessage(ChatColor.WHITE + "[" + ChatColor.RED + "Bounties" + ChatColor.WHITE + "]" + ChatColor.YELLOW + " " + killer.getName() + " has claimed the bounty on " + killed.getName() + "!");
+                                online.sendMessage(Component.text("[", NamedTextColor.WHITE).append(Component.text("Bounties", NamedTextColor.RED))
+                                        .append(Component.text("] ", NamedTextColor.WHITE)).append(Component.text(killer.getName() + " has claimed the bounty on " + killed.getName() + "!", NamedTextColor.YELLOW)));
                             }
                         }
                         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM bounties WHERE user_id = ?")) {
@@ -174,7 +176,7 @@ public class EntityDeath implements Listener {
                         if (hasKilled) {
                             long timeLeft = System.currentTimeMillis() - killedOn;
                             if (TimeUnit.MILLISECONDS.toSeconds(timeLeft) >= 300) {
-                                pvpSet(killed, killer, true);
+                                pvpSet(killed, killer);
                             } else {
                                 if (killer.getWorld().getName().equalsIgnoreCase("world_prison")
                                         || killer.getWorld().getName().equalsIgnoreCase("world_free")
@@ -183,11 +185,12 @@ public class EntityDeath implements Listener {
 
 
                                     long timeRem = 300 - TimeUnit.MILLISECONDS.toSeconds(timeLeft);
-                                    killer.sendMessage(ChatColor.GRAY + "You have to wait " + ChatColor.RED + timeRem + ChatColor.GRAY + " seconds before receiving tokens from this player!");
+                                    killer.sendMessage(Component.text("You have to wait ", NamedTextColor.GRAY).append(Component.text(timeRem, NamedTextColor.RED))
+                                            .append(Component.text(" seconds before receiving tokens from this player!", NamedTextColor.GRAY)));
                                 }
                             }
                         } else {
-                            pvpSet(killed, killer, false);
+                            pvpSet(killed, killer);
                         }
                         updateKills(killer, killed, kills, deaths, killstreak);
                     }
@@ -237,12 +240,14 @@ public class EntityDeath implements Listener {
         }
     }
 
-    public void pvpSet(Player killed, Player killer, boolean hasKilled) {
+    public void pvpSet(Player killed, Player killer) {
         if(killed.hasPermission("skyprisoncore.guard.onduty")) {
-            killer.sendMessage(ChatColor.GRAY + "You killed " + ChatColor.RED + killed.getName() + ChatColor.GRAY + " and received " + ChatColor.RED + "15" + ChatColor.GRAY + " token!");
+            killer.sendMessage(Component.text("You killed ", NamedTextColor.GRAY).append(Component.text(killed.getName(), NamedTextColor.RED))
+                    .append(Component.text(" and received ", NamedTextColor.GRAY)).append(Component.text("15", NamedTextColor.RED)).append(Component.text(" tokens!", NamedTextColor.GRAY)));
             plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 15, "Guard Kill", killed.getName());
         } else {
-            killer.sendMessage(ChatColor.GRAY + "You killed " + ChatColor.RED + killed.getName() + ChatColor.GRAY + " and received " + ChatColor.RED + "1" + ChatColor.GRAY + " token!");
+            killer.sendMessage(Component.text("You killed ", NamedTextColor.GRAY).append(Component.text(killed.getName(), NamedTextColor.RED))
+                    .append(Component.text(" and received ", NamedTextColor.GRAY)).append(Component.text("1", NamedTextColor.RED)).append(Component.text(" token!", NamedTextColor.GRAY)));
             plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 1, "Player Kill", killed.getName());
         }
 

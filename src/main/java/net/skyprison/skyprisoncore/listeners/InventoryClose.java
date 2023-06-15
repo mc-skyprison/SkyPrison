@@ -34,11 +34,13 @@ public class InventoryClose implements Listener {
                 String guiType = checkData.get(key1, PersistentDataType.STRING);
                 if ("blacksmith-gui".equalsIgnoreCase(guiType) && event.getInventory().getItem(13) != null) {
                     ItemStack item = event.getInventory().getItem(13);
-                    Player player = (Player) event.getPlayer();
-                    HashMap<Integer, ItemStack> inv = player.getInventory().addItem(item);
-                    if (!inv.isEmpty()) {
-                        for (ItemStack dItem : inv.values()) {
-                            player.getWorld().dropItemNaturally(player.getLocation(), dItem);
+                    if(item != null) {
+                        Player player = (Player) event.getPlayer();
+                        HashMap<Integer, ItemStack> inv = player.getInventory().addItem(item);
+                        if (!inv.isEmpty()) {
+                            for (ItemStack dItem : inv.values()) {
+                                player.getWorld().dropItemNaturally(player.getLocation(), dItem);
+                            }
                         }
                     }
                 }

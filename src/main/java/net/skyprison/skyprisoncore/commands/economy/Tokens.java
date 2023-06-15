@@ -9,7 +9,6 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
@@ -20,6 +19,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.sql.Connection;
@@ -215,23 +215,29 @@ public class Tokens implements CommandExecutor {
         }
 
         ArrayList<Integer> totalPages = new ArrayList<>();
-        Inventory shopLogInv = Bukkit.createInventory(null, 54, ChatColor.RED + "Tokens Log | Page " + page);
+        Inventory shopLogInv = Bukkit.createInventory(null, 54, Component.text("Tokens Log | Page " + page));
         int i = 0;
         for (HashMap.Entry<String, Integer> entry : shopLogPage.entrySet()) {
             if(entry.getValue() == page) {
-                ArrayList<String> lore = new ArrayList<>();
+                ArrayList<Component> lore = new ArrayList<>();
                 ItemStack item = new ItemStack(Material.OAK_SIGN);
                 ItemMeta meta = item.getItemMeta();
                 String[] name = entry.getKey().split(";");
-                meta.setDisplayName(WordUtils.capitalize(ChatColor.YELLOW + name[1] + " - (" + name[0] + ")"));
-                lore.add(ChatColor.GRAY + "Times Used: " + ChatColor.YELLOW + plugin.formatNumber(tokenLogUsage.get(entry.getKey())));
+                meta.displayName(Component.text(WordUtils.capitalize(name[1] + " - (" + name[0] + ")"), NamedTextColor.YELLOW)
+                        .decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("Times Used: ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(tokenLogUsage.get(entry.getKey())), NamedTextColor.YELLOW))
+                        .decoration(TextDecoration.ITALIC, false));
                 int usagePos = new ArrayList<>(tokenLogUsageSortedTop.keySet()).indexOf(entry.getKey()) + 1;
-                lore.add(ChatColor.GRAY + "Position: " + ChatColor.GREEN + usagePos);
-                lore.add(ChatColor.DARK_GRAY + "-----");
-                lore.add(ChatColor.GRAY + "Tokens Made: " + ChatColor.YELLOW + plugin.formatNumber(tokenLogAmount.get(entry.getKey())));
+                lore.add(Component.text("Position: ", NamedTextColor.GRAY).append(Component.text(usagePos, NamedTextColor.GREEN))
+                        .decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("-----", NamedTextColor.DARK_GRAY)
+                        .decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("Tokens Made: ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(tokenLogAmount.get(entry.getKey())), NamedTextColor.YELLOW))
+                        .decoration(TextDecoration.ITALIC, false));
                 int tokensPos = new ArrayList<>(tokenLogAmountSortedTop.keySet()).indexOf(entry.getKey()) + 1;
-                lore.add(ChatColor.GRAY + "Position: " + ChatColor.GREEN + tokensPos);
-                meta.setLore(lore);
+                lore.add(Component.text("Position: ", NamedTextColor.GRAY).append(Component.text(tokensPos, NamedTextColor.GREEN))
+                        .decoration(TextDecoration.ITALIC, false));
+                meta.lore(lore);
                 if(i == 0) {
                     NamespacedKey key = new NamespacedKey(plugin, "stop-click");
                     meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
@@ -250,39 +256,48 @@ public class Tokens implements CommandExecutor {
         ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         ItemStack pageChange = new ItemStack(Material.PAPER);
         ItemStack itemSort = new ItemStack(Material.BOOK);
-        ArrayList<String> lore = new ArrayList<>();
+        ArrayList<Component> lore = new ArrayList<>();
         ItemStack itemStats = new ItemStack(Material.NETHER_STAR);
         ItemMeta metaStats = itemStats.getItemMeta();
         ItemMeta metaSort = itemSort.getItemMeta();
         ItemMeta itemMeta = pageChange.getItemMeta();
-        itemMeta.setDisplayName(ChatColor.GREEN + "Next Page");
+        itemMeta.displayName(Component.text("Next Page", NamedTextColor.GREEN)
+                .decoration(TextDecoration.ITALIC, false));
         pageChange.setItemMeta(itemMeta);
         for (int b = 45; b < 54; b++) {
             if (b == 47) {
-                metaSort.setDisplayName(ChatColor.GREEN + "Top Sources Used");
+                metaSort.displayName(Component.text("Top Sources Used", NamedTextColor.GREEN)
+                        .decoration(TextDecoration.ITALIC, false));
                 itemSort.setItemMeta(metaSort);
                 shopLogInv.setItem(b, itemSort);
             } else if (b == 48) {
-                metaSort.setDisplayName(ChatColor.GREEN + "Least Sources Used");
+                metaSort.displayName(Component.text("Least Sources Used", NamedTextColor.GREEN)
+                        .decoration(TextDecoration.ITALIC, false));
                 itemSort.setItemMeta(metaSort);
                 shopLogInv.setItem(b, itemSort);
             } else if (b == 49) {
-                metaSort.setDisplayName(ChatColor.GREEN + "Player Search");
+                metaSort.displayName(Component.text("Player Search", NamedTextColor.GREEN)
+                        .decoration(TextDecoration.ITALIC, false));
                 itemSort.setItemMeta(metaSort);
                 shopLogInv.setItem(b, itemSort);
             } else if (b == 50) {
-                metaSort.setDisplayName(ChatColor.GREEN + "least Tokens Made");
+                metaSort.displayName(Component.text("least Tokens Made", NamedTextColor.GREEN)
+                        .decoration(TextDecoration.ITALIC, false));
                 itemSort.setItemMeta(metaSort);
                 shopLogInv.setItem(b, itemSort);
             } else if (b == 51) {
-                metaSort.setDisplayName(ChatColor.GREEN + "Top Tokens Made");
+                metaSort.displayName(Component.text("Top Tokens Made", NamedTextColor.GREEN)
+                        .decoration(TextDecoration.ITALIC, false));
                 itemSort.setItemMeta(metaSort);
                 shopLogInv.setItem(b, itemSort);
             } else if(b == 53) {
-                metaStats.setDisplayName(ChatColor.YELLOW + "Stats");
-                lore.add(ChatColor.GRAY + "Total Sources Used: " + ChatColor.YELLOW + plugin.formatNumber(totalTokensUsage));
-                lore.add(ChatColor.GRAY + "Total Tokens Made: " + ChatColor.YELLOW + plugin.formatNumber(totalTokensMade));
-                metaStats.setLore(lore);
+                metaStats.displayName(Component.text("Stats", NamedTextColor.YELLOW)
+                        .decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("Total Sources Used: ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(totalTokensUsage), NamedTextColor.YELLOW))
+                        .decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("Total Tokens Made: ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(totalTokensMade), NamedTextColor.YELLOW))
+                        .decoration(TextDecoration.ITALIC, false));
+                metaStats.lore(lore);
                 itemStats.setItemMeta(metaStats);
                 shopLogInv.setItem(b, itemStats);
             } else {
@@ -294,13 +309,15 @@ public class Tokens implements CommandExecutor {
                 }
             } else if (Collections.max(totalPages).equals(page)) {
                 if(b == 46) {
-                    itemMeta.setDisplayName(ChatColor.GREEN + "Previous Page");
+                    itemMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN)
+                            .decoration(TextDecoration.ITALIC, false));
                     pageChange.setItemMeta(itemMeta);
                     shopLogInv.setItem(b, pageChange);
                 }
             } else {
                 if(b == 46) {
-                    itemMeta.setDisplayName(ChatColor.GREEN + "Previous Page");
+                    itemMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN)
+                            .decoration(TextDecoration.ITALIC, false));
                     pageChange.setItemMeta(itemMeta);
                     shopLogInv.setItem(b, pageChange);
                 } else if(b == 52) {
@@ -360,113 +377,89 @@ public class Tokens implements CommandExecutor {
         int totalPages = (int) Math.ceil(trans.size() / 45.0);
 
         if((totalPages >= page && page > 0) || page == 1) {
-            Inventory transGUI = Bukkit.createInventory(null, 54, ChatColor.RED + "Tokens History (Page " + page + "/" + totalPages + ")");
+            Inventory transGUI = Bukkit.createInventory(null, 54, Component.text("Tokens History (Page " + page + "/" + totalPages + ")", NamedTextColor.RED));
 
 
             ItemStack grayPane = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
             ItemMeta grayMeta = grayPane.getItemMeta();
-            grayMeta.setDisplayName(" ");
+            grayMeta.displayName(Component.empty());
             grayPane.setItemMeta(grayMeta);
 
             for (int i = 45; i < 54; i++) {
                 switch (i) {
-                    case 45:
+                    case 45 -> {
                         if (page == 1) {
                             transGUI.setItem(i, grayPane);
                         } else {
                             ItemStack prevPage = new ItemStack(Material.PAPER);
                             ItemMeta prevMeta = prevPage.getItemMeta();
-                            prevMeta.setDisplayName(plugin.colourMessage("&aPrevious Page"));
+                            prevMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN)
+                                    .decoration(TextDecoration.ITALIC, false));
                             prevPage.setItemMeta(prevMeta);
                             transGUI.setItem(i, prevPage);
                         }
-                        break;
-                    case 53:
+                    }
+                    case 53 -> {
                         if (totalPages < 2 || page == totalPages) {
                             transGUI.setItem(i, grayPane);
                         } else {
                             ItemStack nextPage = new ItemStack(Material.PAPER);
                             ItemMeta nextMeta = nextPage.getItemMeta();
-                            nextMeta.setDisplayName(plugin.colourMessage("&aNext Page"));
+                            nextMeta.displayName(Component.text("Next Page", NamedTextColor.GREEN)
+                                    .decoration(TextDecoration.ITALIC, false));
                             nextPage.setItemMeta(nextMeta);
                             transGUI.setItem(i, nextPage);
                         }
-                        break;
-                    case 48:
+                    }
+                    case 48 -> {
                         ItemStack sortItem = new ItemStack(Material.CLOCK);
                         ItemMeta sortMeta = sortItem.getItemMeta();
-                        sortMeta.setDisplayName(plugin.colourMessage("&6Sort Transactions"));
-                        ArrayList<String> lore = new ArrayList<>();
-                        if(sort) {
-                            lore.add(plugin.colourMessage("&6Current Sort: &e&lOldest -> Newest"));
+                        sortMeta.displayName(Component.text("Sort Transactions", NamedTextColor.GOLD)
+                                .decoration(TextDecoration.ITALIC, false));
+                        ArrayList<Component> lore = new ArrayList<>();
+                        if (sort) {
+                            lore.add(Component.text("Current Sort: ", NamedTextColor.GOLD).append(Component.text("Oldest -> Newest", NamedTextColor.YELLOW, TextDecoration.BOLD))
+                                    .decoration(TextDecoration.ITALIC, false));
                         } else {
-                            lore.add(plugin.colourMessage("&6Current Sort: &e&lNewest -> Oldest"));
+                            lore.add(Component.text("Current Sort: ", NamedTextColor.GOLD).append(Component.text("Newest -> Oldest", NamedTextColor.YELLOW, TextDecoration.BOLD))
+                                    .decoration(TextDecoration.ITALIC, false));
                         }
-                        sortMeta.setLore(lore);
-
+                        sortMeta.lore(lore);
                         NamespacedKey key = new NamespacedKey(plugin, "stop-click");
                         sortMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
                         NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
                         sortMeta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "token-history");
-
                         NamespacedKey key2 = new NamespacedKey(plugin, "sort");
                         sortMeta.getPersistentDataContainer().set(key2, PersistentDataType.STRING, sort.toString());
-
                         NamespacedKey key3 = new NamespacedKey(plugin, "toggle");
                         sortMeta.getPersistentDataContainer().set(key3, PersistentDataType.INTEGER, toggle);
-
                         NamespacedKey key4 = new NamespacedKey(plugin, "page");
                         sortMeta.getPersistentDataContainer().set(key4, PersistentDataType.INTEGER, page);
-
                         NamespacedKey key5 = new NamespacedKey(plugin, "lookup-user");
                         sortMeta.getPersistentDataContainer().set(key5, PersistentDataType.STRING, playerId);
-
                         sortItem.setItemMeta(sortMeta);
                         transGUI.setItem(i, sortItem);
-                        break;
-                    case 50:
+                    }
+                    case 50 -> {
                         ItemStack toggleItem = new ItemStack(Material.COMPASS);
                         ItemMeta toggleMeta = toggleItem.getItemMeta();
-                        toggleMeta.setDisplayName(plugin.colourMessage("&6Toggle Transactions"));
-                        lore = new ArrayList<>();
-                        String col1 = "&7";
-                        String col2 = "&7";
-                        String col3 = "&7";
-                        String col4 = "&7";
-                        String col5 = "&7";
-                        String col6 = "&7";
+                        toggleMeta.displayName(Component.text("Toggle Transactions", NamedTextColor.GOLD)
+                                .decoration(TextDecoration.ITALIC, false));
+                        ArrayList<Component> lore = new ArrayList<>();
+                        NamedTextColor notSel = NamedTextColor.GRAY;
+                        NamedTextColor isSel = NamedTextColor.GREEN;
 
-                        if(toggle == 1) {
-                            col1 = "&a&l";
-                        } else if(toggle == 2) {
-                            col2 = "&a&l";
-                        } else if(toggle == 3) {
-                            col3 = "&a&l";
-                        } else if(toggle == 4) {
-                            col4 = "&a&l";
-                        } else if(toggle == 5) {
-                            col5 = "&a&l";
-                        } else if(toggle == 6) {
-                            col6 = "&a&l";
-                        }
-                        lore.add(plugin.colourMessage(col1 + "All History"));
-                        lore.add(plugin.colourMessage(col2 + "TokenShop Purchases"));
-                        lore.add(plugin.colourMessage(col3 + "Other Removals"));
-                        lore.add(plugin.colourMessage(col4 + "Tokens from Secrets"));
-                        lore.add(plugin.colourMessage(col5 + "Tokens from Voting"));
-                        lore.add(plugin.colourMessage(col6 + "Tokens from Other"));
-                        toggleMeta.setLore(lore);
+                        lore.add(Component.text("All History", toggle == 1 ? isSel : notSel).decoration(TextDecoration.BOLD, toggle == 1).decoration(TextDecoration.ITALIC, false));
+                        lore.add(Component.text("TokenShop Purchases", toggle == 2 ? isSel : notSel).decoration(TextDecoration.BOLD, toggle == 2).decoration(TextDecoration.ITALIC, false));
+                        lore.add(Component.text("Other Removals", toggle == 3 ? isSel : notSel).decoration(TextDecoration.BOLD, toggle == 3).decoration(TextDecoration.ITALIC, false));
+                        lore.add(Component.text("Tokens from Secrets", toggle == 4 ? isSel : notSel).decoration(TextDecoration.BOLD, toggle == 4).decoration(TextDecoration.ITALIC, false));
+                        lore.add(Component.text("Tokens from Voting", toggle == 5 ? isSel : notSel).decoration(TextDecoration.BOLD, toggle == 5).decoration(TextDecoration.ITALIC, false));
+                        lore.add(Component.text("Tokens from Other", toggle == 6 ? isSel : notSel).decoration(TextDecoration.BOLD, toggle == 6).decoration(TextDecoration.ITALIC, false));
+                        toggleMeta.lore(lore);
                         toggleItem.setItemMeta(toggleMeta);
                         transGUI.setItem(i, toggleItem);
-                        break;
-                    case 46:
-                    case 47:
-                    case 49:
-                    case 51:
-                    case 52:
-                        transGUI.setItem(i, grayPane);
-                        break;
-
+                    }
+                    case 46, 47, 49, 51, 52 -> transGUI.setItem(i, grayPane);
                 }
             }
 
@@ -488,27 +481,33 @@ public class Tokens implements CommandExecutor {
                 Date date = new Date(Long.parseLong(val[0]));
                 String name = DateFor.format(date);
 
-                moneyMeta.setDisplayName(plugin.colourMessage("&6&l" + name));
-                ArrayList<String> lore = new ArrayList<>();
+                moneyMeta.displayName(Component.text(name, NamedTextColor.GOLD, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                ArrayList<Component> lore = new ArrayList<>();
                 if (val[1].equalsIgnoreCase("remove")) {
-                    lore.add(plugin.colourMessage("&7Type: &fRemoved Tokens"));
+                    lore.add(Component.text("Type: ", NamedTextColor.GRAY).append(Component.text("Removed Tokens", NamedTextColor.WHITE))
+                            .decoration(TextDecoration.ITALIC, false));
                 } else {
-                    lore.add(plugin.colourMessage("&7Type: &fReceived Tokens"));
+                    lore.add(Component.text("Type: ", NamedTextColor.GRAY).append(Component.text("Received Tokens", NamedTextColor.WHITE))
+                            .decoration(TextDecoration.ITALIC, false));
                 }
                 String type = WordUtils.capitalize(val[3]);
-                lore.add(plugin.colourMessage("&7From: &f" + type));
-                lore.add(plugin.colourMessage("&7Amount: &f" + plugin.formatNumber(Integer.parseInt(val[2])) + " tokens"));
+                lore.add(Component.text("From: ", NamedTextColor.GRAY).append(Component.text(type, NamedTextColor.WHITE))
+                        .decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("Amount: ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(Integer.parseInt(val[2])) + " tokens", NamedTextColor.WHITE))
+                        .decoration(TextDecoration.ITALIC, false));
                 if(val.length == 5) {
                     if (val[3].equalsIgnoreCase("tokenshop")) {
-                        lore.add(plugin.colourMessage("&7Item Bought: &f" + val[4]));
+                        lore.add(Component.text("Item Bought: ", NamedTextColor.GRAY).append(Component.text(val[4], NamedTextColor.WHITE))
+                                .decoration(TextDecoration.ITALIC, false));
                     } else {
                         String source = WordUtils.capitalize(val[4]);
                         if(player.hasPermission("skyprisoncore.command.tokens.admin")) {
-                            lore.add(plugin.colourMessage("&7Source: &f" + source));
+                            lore.add(Component.text("Source: ", NamedTextColor.GRAY).append(Component.text(source, NamedTextColor.WHITE))
+                                    .decoration(TextDecoration.ITALIC, false));
                         }
                     }
                 }
-                moneyMeta.setLore(lore);
+                moneyMeta.lore(lore);
 
                 moneyHist.setItemMeta(moneyMeta);
                 transGUI.setItem(b, moneyHist);
@@ -521,346 +520,30 @@ public class Tokens implements CommandExecutor {
             player.sendMessage(plugin.colourMessage("&cPage doesn't exist! Total pages: " + totalPages));
         }
     }
-    public void openShopEditSpecificGUI(Player player, String id) {
-        List<Object> item = new ArrayList<>();
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT display_item, name, description, commands, permission, price, price_voucher, position, page, max_purchases FROM tokenshop WHERE id = ?")) {
-            ps.setString(1, id);
-            ResultSet rs = ps.executeQuery();
-            if(rs.next()) {
-                item.add(rs.getBlob(1)); // display_item
-                item.add(rs.getString(2)); // name
-                item.add(rs.getString(3)); // description
-                item.add(rs.getString(4)); // commands
-                item.add(rs.getString(5)); // permission
-                item.add(rs.getInt(6)); // price
-                item.add(rs.getInt(7)); // price_voucher
-                item.add(rs.getInt(8)); // page
-                item.add(rs.getInt(9)); // max_purchases
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-        ItemMeta redMeta = redPane.getItemMeta();
-        redMeta.displayName(Component.text(" "));
-        redPane.setItemMeta(redMeta);
-
-        ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta blackMeta = blackPane.getItemMeta();
-        blackMeta.displayName(Component.text(" "));
-        blackPane.setItemMeta(blackMeta);
-
-
-        Inventory tokenShopGUI = Bukkit.createInventory(null, 36, Component.text("Tokenshop Edit"));
-        for(int i = 0; i < tokenShopGUI.getSize(); i++) {
-            if(i == 0) {
-                NamespacedKey key = new NamespacedKey(plugin, "stop-click");
-                redMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
-                NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
-                redMeta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "recipes-specific");
-                redPane.setItemMeta(redMeta);
-                tokenShopGUI.setItem(i, redPane);
-            } else if(i == 8 || i == 9 || i == 17 || i == 18 || i == 26 || i == 35) {
-                tokenShopGUI.setItem(i, redPane);
-            } else if(i < 8 || i > 27 && i < 35) {
-                tokenShopGUI.setItem(i, blackPane);
-            } else if(i == 13) {
-                ItemStack back = (ItemStack) item.get(0);
-                ItemMeta backMeta = back.getItemMeta();
-                backMeta.displayName(Component.text("Item Displayed").color(NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Drag a new item onto this one to set a new display item").color(NamedTextColor.RED));
-                backMeta.lore(lore);
-                back.setItemMeta(backMeta);
-                tokenShopGUI.setItem(i, back);
-            } else if(i == 19) {
-                ItemStack back = new ItemStack(Material.NAME_TAG, 1);
-                ItemMeta backMeta = back.getItemMeta();
-                backMeta.displayName(Component.text("Edit ID").color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Current ID: " + id).color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                backMeta.lore(lore);
-                back.setItemMeta(backMeta);
-                tokenShopGUI.setItem(i, back);
-            } else if(i == 20) {
-                ItemStack back = new ItemStack(Material.BOOK, 1);
-                ItemMeta backMeta = back.getItemMeta();
-                backMeta.displayName(Component.text("Edit Display Name").color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Current Display Name: " + item.get(1)).color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                backMeta.lore(lore);
-                back.setItemMeta(backMeta);
-                tokenShopGUI.setItem(i, back);
-            } else if(i == 21) {
-                ItemStack back = new ItemStack(Material.NAME_TAG, 1);
-                ItemMeta backMeta = back.getItemMeta();
-                backMeta.displayName(Component.text("Edit Description").color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Left click to add new line").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Right click to reset description").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text(" "));
-                lore.add(Component.text("Current Description:").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                String description = (String) item.get(2);
-                for(String desc : description.split("<br>")) {
-                    lore.add(plugin.miniSerial.deserialize(desc));
-                }
-
-                backMeta.lore(lore);
-                back.setItemMeta(backMeta);
-                tokenShopGUI.setItem(i, back);
-            } else if(i == 22) {
-                ItemStack back = new ItemStack(Material.NAME_TAG, 1);
-                ItemMeta backMeta = back.getItemMeta();
-                backMeta.displayName(Component.text("Edit Commands").color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Left click to add new command").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Right click to reset commands").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text(" "));
-                lore.add(Component.text("Current Commands:").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                String description = (String) item.get(2);
-                for(String desc : description.split("<br>")) {
-                    lore.add(plugin.miniSerial.deserialize(desc));
-                }
-
-                backMeta.lore(lore);
-                back.setItemMeta(backMeta);
-                tokenShopGUI.setItem(i, back);
-            } else if(i == 23) {
-                ItemStack back = new ItemStack(Material.DAYLIGHT_DETECTOR, 1);
-                ItemMeta backMeta = back.getItemMeta();
-                backMeta.displayName(Component.text("Edit Permission").color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Current Permission: " + item.get(4)).color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                backMeta.lore(lore);
-                back.setItemMeta(backMeta);
-                tokenShopGUI.setItem(i, back);
-            } else if(i == 24) {
-                ItemStack back = new ItemStack(Material.GOLD_NUGGET, 1);
-                ItemMeta backMeta = back.getItemMeta();
-                backMeta.displayName(Component.text("Edit Price").color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Current Price: " + item.get(5)).color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                backMeta.lore(lore);
-                back.setItemMeta(backMeta);
-                tokenShopGUI.setItem(i, back);
-            } else if(i == 25) {
-                ItemStack back = new ItemStack(Material.NAME_TAG, 1);
-                ItemMeta backMeta = back.getItemMeta();
-                backMeta.displayName(Component.text("Edit Voucher Price").color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Current Voucher Price: " + item.get(6)).color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                backMeta.lore(lore);
-                back.setItemMeta(backMeta);
-                tokenShopGUI.setItem(i, back);
-            }
-        }
-
-        player.openInventory(tokenShopGUI);
-    }
-    public void openShopEditGUI(Player player, Integer page) {
-        List<List<Object>> items = new ArrayList<>();
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id, display_item, name, position FROM tokenshop WHERE page = ?")) {
-            ps.setInt(1, page);
-            ResultSet rs = ps.executeQuery();
-            while(rs.next()) {
-                List<Object> item = new ArrayList<>();
-                item.add(rs.getString(1)); // id
-                item.add(rs.getBlob(2)); // display_item
-                item.add(rs.getString(3)); // name
-                item.add(rs.getInt(4)); // position
-                items.add(item);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        Inventory tokenShopGUI = null;
-        if(page == 1) {
-            tokenShopGUI = Bukkit.createInventory(null, 54, Component.text("Tokenshop Edit"));
-        } else if(page == 2) {
-            tokenShopGUI = Bukkit.createInventory(null, 45, Component.text("Tokenshop Edit"));
-        }
-
-        for(List<Object> itemData : items) {
-            String id = (String) itemData.get(0);
-            Component name = plugin.miniSerial.deserialize((String) itemData.get(2));
-            int pos = (int) itemData.get(3);
-            ItemStack item = (ItemStack) itemData.get(1);
-            ItemMeta itemMeta = item.getItemMeta();
-            itemMeta.displayName(name);
-            List<Component> lore = new ArrayList<>();
-            lore.add(Component.text(" "));
-            lore.add(Component.text("Left click to move").color(NamedTextColor.GRAY));
-            lore.add(Component.text("Right click to edit").color(NamedTextColor.GRAY));
-            itemMeta.lore(lore);
-
-            NamespacedKey idKey = new NamespacedKey(plugin, "id");
-            itemMeta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, id);
-
-            item.setItemMeta(itemMeta);
-            tokenShopGUI.setItem(pos, item);
-        }
-        for (ItemStack item : tokenShopGUI.getContents()) {
-            if (item != null && !item.getType().isAir()) {
-                ItemMeta itemMeta = item.getItemMeta();
-                NamespacedKey clickKey = new NamespacedKey(plugin, "stop-click");
-                itemMeta.getPersistentDataContainer().set(clickKey, PersistentDataType.INTEGER, 0);
-                NamespacedKey typeKey = new NamespacedKey(plugin, "gui-type");
-                itemMeta.getPersistentDataContainer().set(typeKey, PersistentDataType.STRING, "tokenshop-edit");
-                NamespacedKey pageKey = new NamespacedKey(plugin, "page");
-                itemMeta.getPersistentDataContainer().set(pageKey, PersistentDataType.INTEGER, page);
-                item.setItemMeta(itemMeta);
-                tokenShopGUI.setItem(tokenShopGUI.first(item), item);
-                break;
-            }
-        }
-
-        player.openInventory(tokenShopGUI);
-    }
-
-    public void openShopGUI(Player player, Integer page) {
-        List<List<Object>> items = new ArrayList<>();
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id, display_item, name, description, command, permission, price, price_voucher, position, max_purchases FROM tokenshop WHERE page = ?")) {
-            ps.setInt(1, page);
-            ResultSet rs = ps.executeQuery();
-            while(rs.next()) { // id, display_item BLOB, name STR, description STR, command STR, permission STR, price INT, price_voucher INT, position INT, max_purchases INT
-                List<Object> item = new ArrayList<>();
-                item.add(rs.getString(1)); // id
-                item.add(rs.getBlob(2)); // display_item
-                item.add(rs.getString(3)); // name
-                item.add(rs.getString(4)); // description
-                item.add(rs.getString(5)); // commands
-                item.add(rs.getString(6)); // permission
-                item.add(rs.getInt(7)); // price
-                item.add(rs.getInt(8)); // price_voucher
-                item.add(rs.getInt(9)); // position
-                item.add(rs.getInt(10)); // max_purchases
-                items.add(item);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        HashMap<String, Integer> purchases = new HashMap<>();
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT item_id, item_bought FROM tokenshop_userdata WHERE user_id = ?")) {
-            ps.setString(1, player.getUniqueId().toString());
-            ResultSet rs = ps.executeQuery();
-            while(rs.next()) {
-                purchases.put(rs.getString(1), rs.getInt(2));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-
-        Inventory tokenShopGUI = null;
-        if(page == 1) {
-            tokenShopGUI = Bukkit.createInventory(null, 54, Component.text("Tokenshop"));
-        } else if(page == 2) {
-            tokenShopGUI = Bukkit.createInventory(null, 45, Component.text("Tokenshop"));
-        }
-
-        for(List<Object> itemData : items) {
-            String id = (String) itemData.get(0);
-            int max_purchases = (int) itemData.get(9);
-            if(max_purchases < 0 || (purchases.containsKey(id) && purchases.get(id) < max_purchases)) {
-                String perm = (String) itemData.get(5);
-                if (perm == null || player.hasPermission(perm)) {
-                    Component name = plugin.miniSerial.deserialize((String) itemData.get(2));
-                    String description = (String) itemData.get(3);
-                    String commands = (String) itemData.get(4);
-
-                    int price = (int) itemData.get(6);
-                    int vouchPrice = (int) itemData.get(7);
-                    int pos = (int) itemData.get(8);
-                    int bought = 0;
-
-                    if(purchases.containsKey(id)) {
-                        bought = purchases.get(id);
-                    }
-
-
-                    ItemStack item = (ItemStack) itemData.get(1);
-                    ItemMeta itemMeta = item.getItemMeta();
-                    itemMeta.displayName(name);
-                    List<Component> lore = new ArrayList<>();
-                    if (price > 0) {
-                        if (player.getInventory().containsAtLeast(Voucher.getVoucher("token-shop", 1), 1)) {
-                            lore.add(Component.text("Vouchers Needed: " + plugin.formatNumber(vouchPrice)).color(NamedTextColor.GRAY).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
-                        } else {
-                            lore.add(Component.text("Price: " + plugin.formatNumber(price) + " tokens").color(NamedTextColor.GRAY).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
-                        }
-                        lore.add(Component.text("You've bought this " + bought + " time(s)").decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
-                    }
-                    if (description != null) {
-                        for (String loreLine : description.split("<br>")) {
-                            lore.add(plugin.miniSerial.deserialize(loreLine));
-                        }
-                    }
-                    itemMeta.lore(lore);
-
-                    if(commands != null) {
-                        NamespacedKey commandKey = new NamespacedKey(plugin, "command");
-                        itemMeta.getPersistentDataContainer().set(commandKey, PersistentDataType.STRING, commands);
-                    }
-
-                    if(price > 0) {
-                        NamespacedKey priceKey = new NamespacedKey(plugin, "price");
-                        itemMeta.getPersistentDataContainer().set(priceKey, PersistentDataType.INTEGER, price);
-                        NamespacedKey vouchPriceKey = new NamespacedKey(plugin, "vouch-price");
-                        itemMeta.getPersistentDataContainer().set(vouchPriceKey, PersistentDataType.INTEGER, vouchPrice);
-                    }
-
-                    item.setItemMeta(itemMeta);
-                    tokenShopGUI.setItem(pos, item);
-                }
-            }
-        }
-        for(ItemStack item : tokenShopGUI.getContents()) {
-            if(item != null && !item.getType().isAir()) {
-                ItemMeta itemMeta = item.getItemMeta();
-                NamespacedKey clickKey = new NamespacedKey(plugin, "stop-click");
-                itemMeta.getPersistentDataContainer().set(clickKey, PersistentDataType.INTEGER, 1);
-                NamespacedKey typeKey = new NamespacedKey(plugin, "gui-type");
-                itemMeta.getPersistentDataContainer().set(typeKey, PersistentDataType.STRING, "tokenshop");
-                NamespacedKey pageKey = new NamespacedKey(plugin, "page");
-                itemMeta.getPersistentDataContainer().set(pageKey, PersistentDataType.INTEGER, page);
-                item.setItemMeta(itemMeta);
-                tokenShopGUI.setItem(tokenShopGUI.first(item), item);
-                break;
-            }
-        }
-
-        player.openInventory(tokenShopGUI);
-    }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if(sender instanceof Player) {
-            Player player = (Player) sender;
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+        if(sender instanceof Player player) {
             if(args.length > 0) {
                 switch (args[0].toLowerCase()) {
-                    case "help":
-                        sendHelpMessage(player);
-                        break;
-                    case "giveall":
-                        if(player.hasPermission("skyprisoncore.command.tokens.admin")) {
-                            if(args.length > 1) {
+                    case "help" -> sendHelpMessage(player);
+                    case "giveall" -> {
+                        if (player.hasPermission("skyprisoncore.command.tokens.admin")) {
+                            if (args.length > 1) {
                                 if (plugin.isInt(args[1])) {
-                                    if(Integer.parseInt(args[1]) >= 0) {
+                                    if (Integer.parseInt(args[1]) >= 0) {
                                         String type = "";
                                         String source = "";
 
-                                        if(args.length > 2) {
+                                        if (args.length > 2) {
                                             type = args[2].replace("_", " ");
                                         }
 
-                                        if(args.length > 3) {
+                                        if (args.length > 3) {
                                             source = args[3].replace("_", " ");
                                         }
 
-                                        for(Player oPlayer : Bukkit.getOnlinePlayers()) {
+                                        for (Player oPlayer : Bukkit.getOnlinePlayers()) {
                                             CMIUser user = CMI.getInstance().getPlayerManager().getUser(oPlayer);
                                             addTokens(user, Integer.parseInt(args[1]), type, source);
                                         }
@@ -877,10 +560,10 @@ public class Tokens implements CommandExecutor {
                         } else {
                             player.sendMessage(plugin.colourMessage("&4Error:&c You do not have permission to execute this command..."));
                         }
-                        break;
-                    case "add":
-                        if(player.hasPermission("skyprisoncore.command.tokens.admin")) {
-                            if(args.length > 2) {
+                    }
+                    case "add" -> {
+                        if (player.hasPermission("skyprisoncore.command.tokens.admin")) {
+                            if (args.length > 2) {
                                 if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
                                     CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
                                     if (plugin.isInt(args[2])) {
@@ -888,11 +571,11 @@ public class Tokens implements CommandExecutor {
                                             String type = "";
                                             String source = "";
 
-                                            if(args.length > 3) {
+                                            if (args.length > 3) {
                                                 type = args[3].replace("_", " ");
                                             }
 
-                                            if(args.length > 4) {
+                                            if (args.length > 4) {
                                                 source = args[4].replace("_", " ");
                                             }
 
@@ -911,16 +594,16 @@ public class Tokens implements CommandExecutor {
                         } else {
                             player.sendMessage(plugin.colourMessage("&4Error:&c You do not have permission to execute this command..."));
                         }
-                        break;
-                    case "remove":
-                        if(player.hasPermission("skyprisoncore.command.tokens.admin")) {
-                            if(args.length > 2) {
-                                if(CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
+                    }
+                    case "remove" -> {
+                        if (player.hasPermission("skyprisoncore.command.tokens.admin")) {
+                            if (args.length > 2) {
+                                if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
                                     CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
-                                    if(oPlayer.isOnline()) {
+                                    if (oPlayer.isOnline()) {
                                         int tokens = plugin.tokensData.get(oPlayer.getUniqueId());
-                                        if(tokens != 0) {
-                                            if(plugin.isInt(args[2])) {
+                                        if (tokens != 0) {
+                                            if (plugin.isInt(args[2])) {
                                                 tokens -= Integer.parseInt(args[2]);
                                                 plugin.tokensData.put(oPlayer.getUniqueId(), Math.max(tokens, 0));
                                                 player.sendMessage(plugin.colourMessage("&bTokens &8» &7Removed &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens &7from " + oPlayer.getName()));
@@ -933,25 +616,27 @@ public class Tokens implements CommandExecutor {
                                                 } catch (IOException e) {
                                                     e.printStackTrace();
                                                 }
-                                                PrintWriter pData = new PrintWriter(fData);
+                                                if(fData != null) {
+                                                    PrintWriter pData = new PrintWriter(fData);
 
-                                                Long date = System.currentTimeMillis();
-                                                // Date ; remove/receive ; amount ; type ; what bought if tokenshop
-                                                if(args.length == 3) {
-                                                    pData.println(date + ";remove;" + args[2] + ";Other Removals;null");
-                                                } else {
-                                                    String type = args[3].replace("_", " ");
-
-                                                    if(args.length == 4) {
-                                                        pData.println(date + ";remove;" + args[2] + ";" + type + ";null");
+                                                    Long date = System.currentTimeMillis();
+                                                    // Date ; remove/receive ; amount ; type ; what bought if tokenshop
+                                                    if (args.length == 3) {
+                                                        pData.println(date + ";remove;" + args[2] + ";Other Removals;null");
                                                     } else {
-                                                        String source = args[4].replace("_", " ");
-                                                        pData.println(date + ";remove;" + args[2] + ";" + type + ";" + source);
-                                                    }
-                                                }
+                                                        String type = args[3].replace("_", " ");
 
-                                                pData.flush();
-                                                pData.close();
+                                                        if (args.length == 4) {
+                                                            pData.println(date + ";remove;" + args[2] + ";" + type + ";null");
+                                                        } else {
+                                                            String source = args[4].replace("_", " ");
+                                                            pData.println(date + ";remove;" + args[2] + ";" + type + ";" + source);
+                                                        }
+                                                    }
+
+                                                    pData.flush();
+                                                    pData.close();
+                                                }
                                             } else {
                                                 player.sendMessage(plugin.colourMessage("&cThe amount must be a number!"));
                                             }
@@ -961,10 +646,10 @@ public class Tokens implements CommandExecutor {
                                     } else {
                                         if (plugin.isInt(args[2])) {
                                             int tokens = 0;
-                                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = ?")){
+                                            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = ?")) {
                                                 ps.setString(1, oPlayer.getUniqueId().toString());
                                                 ResultSet rs = ps.executeQuery();
-                                                if(rs.next()) {
+                                                if (rs.next()) {
                                                     tokens = rs.getInt(1);
                                                     tokens -= Integer.parseInt(args[2]);
                                                     tokens = Math.max(tokens, 0);
@@ -973,7 +658,7 @@ public class Tokens implements CommandExecutor {
                                                 e.printStackTrace();
                                             }
 
-                                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET tokens = ? WHERE user_id = ?")) {
+                                            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET tokens = ? WHERE user_id = ?")) {
                                                 ps.setInt(1, tokens);
                                                 ps.setString(2, oPlayer.getUniqueId().toString());
                                                 ps.executeUpdate();
@@ -987,7 +672,7 @@ public class Tokens implements CommandExecutor {
                                                 } catch (IOException e) {
                                                     e.printStackTrace();
                                                 }
-                                                if(fData != null) {
+                                                if (fData != null) {
                                                     PrintWriter pData = new PrintWriter(fData);
                                                     Long date = System.currentTimeMillis();
                                                     // Date ; remove/receive ; amount ; type ; what bought if tokenshop
@@ -1020,13 +705,13 @@ public class Tokens implements CommandExecutor {
                         } else {
                             player.sendMessage(plugin.colourMessage("&4Error:&c You do not have permission to execute this command..."));
                         }
-                        break;
-                    case "history": // /token history (player)
-                        if(args.length == 1) {
+                    }
+                    case "history" -> { // /token history (player)
+                        if (args.length == 1) {
                             openHistoryGUI(player, false, 1, 1, player.getUniqueId().toString());
-                        } else if(args.length == 2) {
-                            if(player.hasPermission("skyprisoncore.command.tokens.admin")) {
-                                if(CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
+                        } else if (args.length == 2) {
+                            if (player.hasPermission("skyprisoncore.command.tokens.admin")) {
+                                if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
                                     CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
                                     openHistoryGUI(player, false, 1, 1, oPlayer.getUniqueId().toString());
                                 } else {
@@ -1038,103 +723,103 @@ public class Tokens implements CommandExecutor {
                         } else {
                             player.sendMessage(plugin.colourMessage("&cCorrect Usage: /tokens history"));
                         }
-                        break;
-                    case "check": // /token check (player)
-                        if(player.hasPermission("skyprisoncore.command.tokens.admin")) {
+                    }
+                    case "check" -> { // /token check (player)
+                        if (player.hasPermission("skyprisoncore.command.tokens.admin")) {
                             LinkedHashMap<String, Integer> tokenLogAmount = new LinkedHashMap<>();
                             LinkedHashMap<String, Integer> tokenLogUsage = new LinkedHashMap<>();
                             LinkedHashMap<String, Integer> tokenLogPage = new LinkedHashMap<>();
 
                             ArrayList<String> tokenLogs = new ArrayList<>();
-                                if(args.length > 1) {
-                                    if(CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
-                                        CMIUser user = CMI.getInstance().getPlayerManager().getUser(args[1]);
-                                        try {
-                                            FileInputStream fstream = new FileInputStream(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions" + File.separator + user.getUniqueId() + ".log");
-                                            BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
-                                            String strLine;
-                                            // Date ; remove/receive ; amount ; type ; source
-                                            while ((strLine = br.readLine()) != null) {
-                                                if(strLine.split(";")[1].equalsIgnoreCase("receive")) {
-                                                    tokenLogs.add(strLine);
-                                                }
+                            if (args.length > 1) {
+                                if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
+                                    CMIUser user = CMI.getInstance().getPlayerManager().getUser(args[1]);
+                                    try {
+                                        FileInputStream fstream = new FileInputStream(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions" + File.separator + user.getUniqueId() + ".log");
+                                        BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
+                                        String strLine;
+                                        // Date ; remove/receive ; amount ; type ; source
+                                        while ((strLine = br.readLine()) != null) {
+                                            if (strLine.split(";")[1].equalsIgnoreCase("receive")) {
+                                                tokenLogs.add(strLine);
                                             }
-                                            fstream.close();
-                                        } catch (Exception e) {
-                                            System.err.println("Error: " + e.getMessage());
                                         }
+                                        fstream.close();
+                                    } catch (Exception e) {
+                                        System.err.println("Error: " + e.getMessage());
                                     }
+                                }
+                            } else {
+                                File folder = new File(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions");
+                                for (File f : Objects.requireNonNull(folder.listFiles())) {
+                                    try {
+                                        FileInputStream fstream = new FileInputStream(f);
+                                        BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
+                                        String strLine;
+                                        // Date ; remove/receive ; amount ; type ; source
+                                        while ((strLine = br.readLine()) != null) {
+                                            if (strLine.split(";")[1].equalsIgnoreCase("receive")) {
+                                                tokenLogs.add(strLine);
+                                            }
+                                        }
+                                        fstream.close();
+                                    } catch (Exception e) {
+                                        System.err.println("Error: " + e.getMessage());
+                                    }
+                                }
+                            }
+
+                            int page = 0;
+                            int i = 0;
+                            for (String strLine : tokenLogs) {
+                                String[] str = strLine.split(";");
+                                // Date ; remove/receive ; amount ; type ; source
+                                int tokenAmount = Integer.parseInt(str[2]);
+
+                                String source = str[3].toLowerCase() + ";" + str[4].toLowerCase();
+
+                                if (tokenLogAmount.containsKey(source)) {
+                                    int newNum = tokenAmount + tokenLogAmount.get(source);
+                                    tokenLogAmount.put(source, newNum);
                                 } else {
-                                    File folder = new File(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions");
-                                    for(File f : Objects.requireNonNull(folder.listFiles())) {
-                                        try {
-                                            FileInputStream fstream = new FileInputStream(f);
-                                            BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
-                                            String strLine;
-                                            // Date ; remove/receive ; amount ; type ; source
-                                            while ((strLine = br.readLine()) != null) {
-                                                if (strLine.split(";")[1].equalsIgnoreCase("receive")) {
-                                                    tokenLogs.add(strLine);
-                                                }
-                                            }
-                                            fstream.close();
-                                        } catch (Exception e) {
-                                            System.err.println("Error: " + e.getMessage());
-                                        }
+                                    tokenLogAmount.put(source, tokenAmount);
+                                    if (i == 45) {
+                                        page = 1 + page;
+                                        i = 0;
                                     }
+                                    tokenLogPage.put(source, page);
+                                    i++;
                                 }
 
-                                int page = 0;
-                                int i = 0;
-                                for(String strLine : tokenLogs) {
-                                    String[] str = strLine.split(";");
-                                    // Date ; remove/receive ; amount ; type ; source
-                                    int tokenAmount = Integer.parseInt(str[2]);
-
-                                    String source = str[3].toLowerCase() + ";" + str[4].toLowerCase();
-
-                                    if (tokenLogAmount.containsKey(source)) {
-                                        int newNum = tokenAmount + tokenLogAmount.get(source);
-                                        tokenLogAmount.put(source, newNum);
-                                    } else {
-                                        tokenLogAmount.put(source, tokenAmount);
-                                        if (i == 45) {
-                                            page = 1 + page;
-                                            i = 0;
-                                        }
-                                        tokenLogPage.put(source, page);
-                                        i++;
-                                    }
-
-                                    if (tokenLogUsage.containsKey(source)) {
-                                        int newNum = 1 + tokenLogUsage.get(source);
-                                        tokenLogUsage.put(source, newNum);
-                                    } else {
-                                        tokenLogUsage.put(source, 1);
-                                    }
+                                if (tokenLogUsage.containsKey(source)) {
+                                    int newNum = 1 + tokenLogUsage.get(source);
+                                    tokenLogUsage.put(source, newNum);
+                                } else {
+                                    tokenLogUsage.put(source, 1);
                                 }
+                            }
 
-                                plugin.tokenLogAmountPlayer.put(player.getUniqueId(), tokenLogAmount);
-                                plugin.tokenLogUsagePlayer.put(player.getUniqueId(), tokenLogUsage);
-                                plugin.tokenLogPagePlayer.put(player.getUniqueId(), tokenLogPage);
-                                openCheckGUI(player, 0, "default");
+                            plugin.tokenLogAmountPlayer.put(player.getUniqueId(), tokenLogAmount);
+                            plugin.tokenLogUsagePlayer.put(player.getUniqueId(), tokenLogUsage);
+                            plugin.tokenLogPagePlayer.put(player.getUniqueId(), tokenLogPage);
+                            openCheckGUI(player, 0, "default");
                         } else {
                             player.sendMessage(plugin.colourMessage("&4Error:&c You do not have permission to execute this command..."));
                         }
-                        break;
-                    case "set":
-                        if(player.hasPermission("skyprisoncore.command.tokens.admin")) {
-                            if(args.length > 2) {
-                                if(CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
+                    }
+                    case "set" -> {
+                        if (player.hasPermission("skyprisoncore.command.tokens.admin")) {
+                            if (args.length > 2) {
+                                if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
                                     CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
                                     if (plugin.isInt(args[2])) {
-                                        if(Integer.parseInt(args[2]) >= 0) {
-                                            if(oPlayer.isOnline()) {
+                                        if (Integer.parseInt(args[2]) >= 0) {
+                                            if (oPlayer.isOnline()) {
                                                 plugin.tokensData.put(oPlayer.getUniqueId(), Integer.parseInt(args[2]));
                                                 player.sendMessage(plugin.colourMessage("&bTokens &8» &7Set " + oPlayer.getName() + "'s tokens to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
                                                 oPlayer.sendMessage(plugin.colourMessage("&bTokens &8» &7Your token balance was set to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
                                             } else {
-                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET tokens = ? WHERE user_id = ?")) {
+                                                try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET tokens = ? WHERE user_id = ?")) {
                                                     ps.setInt(1, Integer.parseInt(args[2]));
                                                     ps.setString(2, oPlayer.getUniqueId().toString());
                                                     ps.setString(3, "owner");
@@ -1154,7 +839,7 @@ public class Tokens implements CommandExecutor {
                                             } catch (IOException e) {
                                                 e.printStackTrace();
                                             }
-                                            if(fData != null) {
+                                            if (fData != null) {
                                                 PrintWriter pData = new PrintWriter(fData);
 
                                                 Long date = System.currentTimeMillis();
@@ -1176,19 +861,18 @@ public class Tokens implements CommandExecutor {
                         } else {
                             player.sendMessage(plugin.colourMessage("&4Error:&c You do not have permission to execute this command..."));
                         }
-                        break;
-                    case "balance":
-                    case "bal":
-                        if(args.length > 1) {
-                            if(CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
+                    }
+                    case "balance", "bal" -> {
+                        if (args.length > 1) {
+                            if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
                                 CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
-                                if(oPlayer.isOnline()) {
+                                if (oPlayer.isOnline()) {
                                     player.sendMessage(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'s token balance is &b" + plugin.formatNumber(plugin.tokensData.get(oPlayer.getUniqueId())) + " &7tokens"));
                                 } else {
-                                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = ?")) {
+                                    try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = ?")) {
                                         ps.setString(1, oPlayer.getUniqueId().toString());
                                         ResultSet rs = ps.executeQuery();
-                                        if(rs.next()) {
+                                        if (rs.next()) {
                                             player.sendMessage(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'s token balance is &b" + plugin.formatNumber(rs.getInt(1)) + " &7tokens"));
                                         } else {
                                             player.sendMessage(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'s token balance is &b0 &7tokens"));
@@ -1203,28 +887,25 @@ public class Tokens implements CommandExecutor {
                         } else {
                             player.sendMessage(plugin.colourMessage("&bTokens &8» &7Your token balance is &b" + plugin.formatNumber(plugin.tokensData.get(player.getUniqueId())) + " &7tokens"));
                         }
-                        break;
-                    case "shop": // /token shop (page/edit)
-                        if(args.length > 1) {
-                            if(plugin.isInt(args[1])) {
+                    }
+                    case "shop" -> { // /token shop (page/edit)
+                        if (args.length > 1) {
+                            if (plugin.isInt(args[1])) {
                                 int page = Integer.parseInt(args[1]);
-                                if(page > 3) page = 1;
-                                openShopGUI(player, page);
-                            } else if(args[1].equalsIgnoreCase("edit")) {
-                                if(player.hasPermission("skyprisoncore.command.tokens.admin")) {
-                                    if(args.length > 2) {
-                                        if(plugin.isInt(args[2])) {
+                                if (page > 3) page = 1;
+                                //openShopGUI(player, page);
+                            } else if (args[1].equalsIgnoreCase("edit")) {
+                                if (player.hasPermission("skyprisoncore.command.tokens.admin")) {
+                                    if (args.length > 2) {
+                                        if (plugin.isInt(args[2])) {
                                             int page = Integer.parseInt(args[2]);
-                                            if(page > 3) page = 1;
-                                            openShopEditGUI(player, page);
+                                            if (page > 3) page = 1;
+                                            //openShopEditGUI(player, page);
                                         } else {
-                                            if(args[2].equalsIgnoreCase("wham")) {
-                                                openShopEditSpecificGUI(player, "wham");
-                                            }
                                             player.sendMessage(Component.text("Correct usage: /token shop edit (page)").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
                                         }
                                     } else {
-                                        openShopEditGUI(player, 1);
+                                        //openShopEditGUI(player, 1);
                                     }
                                 } else {
                                     player.sendMessage(Component.text("Correct usage: /token shop (page)").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
@@ -1233,12 +914,10 @@ public class Tokens implements CommandExecutor {
                                 player.sendMessage(Component.text("Correct usage: /token shop (page)").color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
                             }
                         } else {
-                            openShopGUI(player, 1);
+                            //openShopGUI(player, 1);
                         }
-                        break;
-                    case "top":
-                        player.chat("/lb tokens");
-                        break;
+                    }
+                    case "top" -> player.chat("/lb tokens");
                 }
             } else {
                 sendHelpMessage(player);
@@ -1246,19 +925,19 @@ public class Tokens implements CommandExecutor {
         } else {
             if(args.length > 0) {
                 switch (args[0].toLowerCase()) {
-                    case "giveall":
-                        if(args.length > 1) {
-                            if(plugin.isInt(args[1])) {
-                                if(Integer.parseInt(args[1]) >= 0) {
-                                    for(Player oPlayer : Bukkit.getOnlinePlayers()) {
+                    case "giveall" -> {
+                        if (args.length > 1) {
+                            if (plugin.isInt(args[1])) {
+                                if (Integer.parseInt(args[1]) >= 0) {
+                                    for (Player oPlayer : Bukkit.getOnlinePlayers()) {
                                         String type = "";
                                         String source = "";
 
-                                        if(args.length > 2) {
+                                        if (args.length > 2) {
                                             type = args[2].replace("_", " ");
                                         }
 
-                                        if(args.length > 3) {
+                                        if (args.length > 3) {
                                             source = args[3].replace("_", " ");
                                         }
 
@@ -1275,21 +954,21 @@ public class Tokens implements CommandExecutor {
                         } else {
                             plugin.tellConsole(plugin.colourMessage("&cCorrect Usage: /tokens giveall <amount>"));
                         }
-                        break;
-                    case "add":
-                        if(args.length > 2) {
-                            if(CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
+                    }
+                    case "add" -> {
+                        if (args.length > 2) {
+                            if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
                                 CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
                                 if (plugin.isInt(args[2])) {
-                                    if(Integer.parseInt(args[2]) >= 0) {
+                                    if (Integer.parseInt(args[2]) >= 0) {
                                         String type = "";
                                         String source = "";
 
-                                        if(args.length > 3) {
+                                        if (args.length > 3) {
                                             type = args[3].replace("_", " ");
                                         }
 
-                                        if(args.length > 4) {
+                                        if (args.length > 4) {
                                             source = args[4].replace("_", " ");
                                         }
 
@@ -1305,15 +984,15 @@ public class Tokens implements CommandExecutor {
                         } else {
                             plugin.tellConsole(plugin.colourMessage("&cCorrect Usage: /tokens add <player> <amount>"));
                         }
-                        break;
-                    case "remove":
-                        if(args.length > 2) {
-                            if(CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
+                    }
+                    case "remove" -> {
+                        if (args.length > 2) {
+                            if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
                                 CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
-                                if(oPlayer.isOnline()) {
+                                if (oPlayer.isOnline()) {
                                     int tokens = plugin.tokensData.get(oPlayer.getUniqueId());
-                                    if(tokens != 0) {
-                                        if(plugin.isInt(args[2])) {
+                                    if (tokens != 0) {
+                                        if (plugin.isInt(args[2])) {
                                             tokens -= Integer.parseInt((args[2]));
                                             plugin.tokensData.put(oPlayer.getUniqueId(), Math.max(tokens, 0));
                                             plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7Removed &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens &7from " + oPlayer.getName()));
@@ -1326,25 +1005,27 @@ public class Tokens implements CommandExecutor {
                                             } catch (IOException e) {
                                                 e.printStackTrace();
                                             }
-                                            PrintWriter pData = new PrintWriter(fData);
+                                            if(fData != null) {
+                                                PrintWriter pData = new PrintWriter(fData);
 
-                                            Long date = System.currentTimeMillis();
-                                            // Date ; remove/receive ; amount ; type ; what bought if tokenshop
-                                            if(args.length == 3) {
-                                                pData.println(date + ";remove;" + args[2] + ";Other Removals;null");
-                                            } else {
-                                                String type = args[3].replace("_", " ");
-
-                                                if(args.length == 4) {
-                                                    pData.println(date + ";remove;" + args[2] + ";" + type + ";null");
+                                                Long date = System.currentTimeMillis();
+                                                // Date ; remove/receive ; amount ; type ; what bought if tokenshop
+                                                if (args.length == 3) {
+                                                    pData.println(date + ";remove;" + args[2] + ";Other Removals;null");
                                                 } else {
-                                                    String source = args[4].replace("_", " ");
-                                                    pData.println(date + ";remove;" + args[2] + ";" + type + ";" + source);
-                                                }
-                                            }
+                                                    String type = args[3].replace("_", " ");
 
-                                            pData.flush();
-                                            pData.close();
+                                                    if (args.length == 4) {
+                                                        pData.println(date + ";remove;" + args[2] + ";" + type + ";null");
+                                                    } else {
+                                                        String source = args[4].replace("_", " ");
+                                                        pData.println(date + ";remove;" + args[2] + ";" + type + ";" + source);
+                                                    }
+                                                }
+
+                                                pData.flush();
+                                                pData.close();
+                                            }
                                         } else {
                                             plugin.tellConsole(plugin.colourMessage("&cThe amount must be a number!"));
                                         }
@@ -1354,10 +1035,10 @@ public class Tokens implements CommandExecutor {
                                 } else {
                                     if (plugin.isInt(args[2])) {
                                         int tokens = 0;
-                                        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = ?")) {
+                                        try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = ?")) {
                                             ps.setString(1, oPlayer.getUniqueId().toString());
                                             ResultSet rs = ps.executeQuery();
-                                            if(rs.next()) {
+                                            if (rs.next()) {
                                                 tokens = rs.getInt(1);
                                                 tokens -= Integer.parseInt(args[2]);
                                                 tokens = Math.max(tokens, 0);
@@ -1367,7 +1048,7 @@ public class Tokens implements CommandExecutor {
                                         }
 
 
-                                        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET tokens = ? WHERE user_id = ?")) {
+                                        try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET tokens = ? WHERE user_id = ?")) {
                                             ps.setInt(1, tokens);
                                             ps.setString(2, oPlayer.getUniqueId().toString());
                                             ps.executeUpdate();
@@ -1380,7 +1061,7 @@ public class Tokens implements CommandExecutor {
                                             } catch (IOException e) {
                                                 e.printStackTrace();
                                             }
-                                            if(fData != null) {
+                                            if (fData != null) {
                                                 PrintWriter pData = new PrintWriter(fData);
 
                                                 Long date = System.currentTimeMillis();
@@ -1414,19 +1095,19 @@ public class Tokens implements CommandExecutor {
                         } else {
                             plugin.tellConsole(plugin.colourMessage("&cCorrect Usage: /tokens remove <player> <amount>"));
                         }
-                        break;
-                    case "set":
-                        if(args.length > 2) {
-                            if(CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
+                    }
+                    case "set" -> {
+                        if (args.length > 2) {
+                            if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
                                 CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
                                 if (plugin.isInt(args[2])) {
-                                    if(Integer.parseInt(args[2]) >= 0) {
-                                        if(oPlayer.isOnline()) {
+                                    if (Integer.parseInt(args[2]) >= 0) {
+                                        if (oPlayer.isOnline()) {
                                             plugin.tokensData.put(oPlayer.getUniqueId(), Integer.parseInt(args[2]));
                                             plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7Set " + oPlayer.getName() + "'s tokens to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
                                             oPlayer.sendMessage(plugin.colourMessage("&bTokens &8» &7Your token balance was set to &b" + plugin.formatNumber(Integer.parseInt(args[2])) + " tokens"));
                                         } else {
-                                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET tokens = ? WHERE user_id = ?")) {
+                                            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET tokens = ? WHERE user_id = ?")) {
                                                 ps.setInt(1, Integer.parseInt(args[2]));
                                                 ps.setString(2, oPlayer.getUniqueId().toString());
                                                 ps.executeUpdate();
@@ -1444,7 +1125,7 @@ public class Tokens implements CommandExecutor {
                                         } catch (IOException e) {
                                             e.printStackTrace();
                                         }
-                                        if(fData != null) {
+                                        if (fData != null) {
                                             PrintWriter pData = new PrintWriter(fData);
 
                                             Long date = System.currentTimeMillis();
@@ -1463,19 +1144,18 @@ public class Tokens implements CommandExecutor {
                         } else {
                             plugin.tellConsole(plugin.colourMessage("&cCorrect Usage: /tokens set <player> <amount>"));
                         }
-                        break;
-                    case "balance":
-                    case "bal":
-                        if(args.length > 1) {
-                            if(CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
+                    }
+                    case "balance", "bal" -> {
+                        if (args.length > 1) {
+                            if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
                                 CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
-                                if(oPlayer.isOnline()) {
+                                if (oPlayer.isOnline()) {
                                     plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'S token balance is &b" + plugin.formatNumber(plugin.tokensData.get(oPlayer.getUniqueId())) + "tokens"));
                                 } else {
-                                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = ?")) {
+                                    try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = ?")) {
                                         ps.setString(1, oPlayer.getUniqueId().toString());
                                         ResultSet rs = ps.executeQuery();
-                                        if(rs.next()) {
+                                        if (rs.next()) {
                                             plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'s token balance is &b" + plugin.formatNumber(rs.getInt(1)) + " &7tokens"));
                                         } else {
                                             plugin.tellConsole(plugin.colourMessage("&bTokens &8» &7" + oPlayer.getName() + "'s token balance is &b0 &7tokens"));
@@ -1490,7 +1170,7 @@ public class Tokens implements CommandExecutor {
                         } else {
                             plugin.tellConsole(plugin.colourMessage("&cYou must specify a player!!"));
                         }
-                        break;
+                    }
                 }
             }
         }

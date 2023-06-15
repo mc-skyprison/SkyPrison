@@ -13,7 +13,11 @@ import com.sk89q.worldguard.protection.regions.RegionContainer;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.model.user.User;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.Claim;
 import net.skyprison.skyprisoncore.commands.Tags;
@@ -52,7 +56,6 @@ public class AsyncChat implements Listener {
         this.db = db;
         this.tag = tag;
     }
-
 
     @EventHandler (priority = EventPriority.LOWEST)
     public void onAsyncChat(AsyncChatEvent event) {
@@ -202,13 +205,26 @@ public class AsyncChat implements Listener {
                         channel.sendMessage(dMessage);
                     }
                 }
-            } else if(discApi != null) {
-                String dFormat = Objects.requireNonNull(langConf.getString("chat.discordSRV.format")).replaceAll("\\[name]", Matcher.quoteReplacement(player.getName()));
-                String dMessage = dFormat.replaceAll("\\[message]", Matcher.quoteReplacement(msg));
-                if(discApi.getTextChannelById("788108242797854751").isPresent()) {
-                    TextChannel channel = discApi.getTextChannelById("788108242797854751").get();
-                    channel.sendMessage(dMessage);
+            } else {
+                if(discApi != null) {
+                    String dFormat = Objects.requireNonNull(langConf.getString("chat.discordSRV.format")).replaceAll("\\[name]", Matcher.quoteReplacement(player.getName()));
+                    String dMessage = dFormat.replaceAll("\\[message]", Matcher.quoteReplacement(msg));
+                    if (discApi.getTextChannelById("788108242797854751").isPresent()) {
+                        TextChannel channel = discApi.getTextChannelById("788108242797854751").get();
+                        channel.sendMessage(dMessage);
+                    }
                 }
+                event.renderer((source, sourceDisplayName, message, viewer) -> {
+                    LuckPerms luckAPI = LuckPermsProvider.get();
+                    User user = luckAPI.getPlayerAdapter(Player.class).getUser(source);
+                    Component prefix = Component.empty();
+                    if(user.getCachedData().getMetaData().getPrefix() != null) {
+                        prefix = MiniMessage.miniMessage().deserialize(Objects.requireNonNull(user.getCachedData().getMetaData().getPrefix())).appendSpace();
+                    }
+                    Component separator = Component.text(" » ", NamedTextColor.DARK_GRAY);
+
+                    return Component.empty().append(prefix).append(sourceDisplayName).append(separator).append(message);
+                });
             }
         }
     }

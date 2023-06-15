@@ -1,7 +1,8 @@
 package net.skyprison.skyprisoncore.commands;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -47,19 +48,22 @@ public class KillInfo implements CommandExecutor {
 				e.printStackTrace();
 			}
 
-			double KSRatio;
+			double KDRatio;
 			if(deaths == 0 && pKills == 0) {
-				KSRatio = 0.0;
+				KDRatio = 0.0;
 			} else if(deaths == 0) {
-				KSRatio = round(pKills, 2);
+				KDRatio = round(pKills, 2);
 			} else {
-				KSRatio = round((double) pKills/deaths, 2);
+				KDRatio = round((double) pKills/deaths, 2);
 			}
-			player.sendMessage(ChatColor.RED + "--= PvP Stats =--" +
-					ChatColor.GRAY + "\nPvP Kills: " + ChatColor.RED + pKills +
-					ChatColor.GRAY + "\nPvP Deaths: " + ChatColor.RED + deaths +
-					ChatColor.GRAY + "\nKill Streak: " + ChatColor.RED + streak +
-					ChatColor.GRAY + "\nK/D Ratio: " + ChatColor.RED + KSRatio);
+
+			Component killMsg = Component.text("--= PvP Stats =--", NamedTextColor.RED);
+
+			killMsg = killMsg.append(Component.text("\nPvP Kills: ", NamedTextColor.GRAY).append(Component.text(pKills, NamedTextColor.RED)))
+					.append(Component.text("\nPvP Deaths: ", NamedTextColor.GRAY).append(Component.text(deaths, NamedTextColor.RED)))
+					.append(Component.text("\nKill Streak: ", NamedTextColor.GRAY).append(Component.text(streak, NamedTextColor.RED)))
+					.append(Component.text("\nK/D Ratio: ", NamedTextColor.GRAY).append(Component.text(KDRatio, NamedTextColor.RED)));
+			player.sendMessage(killMsg);
 		}
 		return true;
 	}

@@ -19,6 +19,8 @@ import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import me.arcaniax.hdb.api.HeadDatabaseAPI;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
@@ -29,13 +31,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -64,20 +65,22 @@ public class SkyPlot implements CommandExecutor {
 		FileConfiguration fData = YamlConfiguration.loadConfiguration(f);
 
 		ClipboardFormat format = ClipboardFormats.findByFile(file);
-		try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
+		try (ClipboardReader reader = Objects.requireNonNull(format).getReader(new FileInputStream(file))) {
 			clipboard = reader.read();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
 		RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
 		assert w != null;
 		RegionManager regions = container.get(BukkitAdapter.adapt(w));
+
 		outerloop:
 		for (int i = -300; i < 300; i += 100) {
 			for (int j = -300; j < 300; j += 100) {
-				if (regions.getApplicableRegions(BlockVector3.at(i, 64, j)).getRegions().isEmpty() || regions.getApplicableRegions(BlockVector3.at(i, 64, j)).getRegions() == null) {
+				if (Objects.requireNonNull(regions).getApplicableRegions(BlockVector3.at(i, 64, j)).getRegions().isEmpty() || regions.getApplicableRegions(BlockVector3.at(i, 64, j)).getRegions() == null) {
 					try (EditSession editSession = WorldEdit.getInstance().newEditSession(BukkitAdapter.adapt(w))) {
-						Operation operation = new ClipboardHolder(clipboard)
+						Operation operation = new ClipboardHolder(Objects.requireNonNull(clipboard))
 								.createPaste(editSession)
 								.to(BlockVector3.at(i, 64, j))
 								.build();
@@ -120,34 +123,34 @@ public class SkyPlot implements CommandExecutor {
 		HeadDatabaseAPI hAPI = new HeadDatabaseAPI();
 		Inventory skyplotInv = null;
 
-		switch(page.toLowerCase()) {
-			case "main":
+		switch (page.toLowerCase()) {
+			case "main" -> {
 				skyplotInv = Bukkit.createInventory(null, 45, Component.text(plugin.colourMessage("&bSky Plots")));
-				for(int i = 0; i < skyplotInv.getSize(); i++) {
-					if(i <= 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35) {
+				for (int i = 0; i < skyplotInv.getSize(); i++) {
+					if (i <= 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35) {
 						skyplotInv.setItem(i, whitePane);
 					} else if (i > 35) {
 						skyplotInv.setItem(i, grayPane);
-					} else if(i == 24) {
+					} else if (i == 24) {
 						ItemStack visit = hAPI.getItemHead("38200");
 						ItemMeta visitMeta = visit.getItemMeta();
 						visitMeta.displayName(Component.text(plugin.colourMessage("&eVisit Public SkyPlots")));
 						visit.setItemMeta(visitMeta);
 						skyplotInv.setItem(i, visit);
-					} else if(i == 20) {
+					} else if (i == 20) {
 						ItemStack expand = hAPI.getItemHead("18243");
 						ItemMeta expMeta = expand.getItemMeta();
 						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
-					} else if(i == 13) {
+					} else if (i == 13) {
 						ItemStack plotStats = new ItemStack(Material.PLAYER_HEAD);
 						SkullMeta plotMeta = (SkullMeta) plotStats.getItemMeta();
 						plotMeta.setOwningPlayer(player);
 						plotMeta.displayName(Component.text(plugin.colourMessage("&eYour SkyPlot")));
 						plotStats.setItemMeta(plotMeta);
 						skyplotInv.setItem(i, plotStats);
-					} else if(i == 31) {
+					} else if (i == 31) {
 						ItemStack settings = new ItemStack(Material.REPEATER);
 						ItemMeta setMeta = settings.getItemMeta();
 						setMeta.displayName(Component.text(plugin.colourMessage("&eSkyPlot Settings")));
@@ -155,53 +158,53 @@ public class SkyPlot implements CommandExecutor {
 						skyplotInv.setItem(i, settings);
 					}
 				}
-				break;
-			case "expand":
+			}
+			case "expand" -> {
 				skyplotInv = Bukkit.createInventory(null, 27, Component.text(plugin.colourMessage("&bYour SkyPlot")));
-				for(int i = 0; i < skyplotInv.getSize(); i++) {
-					if(i <= 9) {
+				for (int i = 0; i < skyplotInv.getSize(); i++) {
+					if (i <= 9) {
 						skyplotInv.setItem(i, whitePane);
 					} else if (i == 17) {
 						skyplotInv.setItem(i, whitePane);
 					} else if (i > 17 && i != 22) {
 						skyplotInv.setItem(i, grayPane);
-					} else if(i == 10) {
+					} else if (i == 10) {
 						ItemStack expand = hAPI.getItemHead("18243");
 						ItemMeta expMeta = expand.getItemMeta();
 						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
-					} else if(i == 11) {
+					} else if (i == 11) {
 						ItemStack expand = hAPI.getItemHead("18243");
 						ItemMeta expMeta = expand.getItemMeta();
 						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
-					} else if(i == 12) {
+					} else if (i == 12) {
 						ItemStack expand = hAPI.getItemHead("18243");
 						ItemMeta expMeta = expand.getItemMeta();
 						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
-					} else if(i == 13) {
+					} else if (i == 13) {
 						ItemStack expand = hAPI.getItemHead("18243");
 						ItemMeta expMeta = expand.getItemMeta();
 						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
-					} else if(i == 14) {
+					} else if (i == 14) {
 						ItemStack expand = hAPI.getItemHead("18243");
 						ItemMeta expMeta = expand.getItemMeta();
 						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
-					} else if(i == 15) {
+					} else if (i == 15) {
 						ItemStack expand = hAPI.getItemHead("18243");
 						ItemMeta expMeta = expand.getItemMeta();
 						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
-					} else if(i == 16) {
+					} else if (i == 16) {
 						ItemStack expand = hAPI.getItemHead("18243");
 						ItemMeta expMeta = expand.getItemMeta();
 						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
@@ -213,69 +216,70 @@ public class SkyPlot implements CommandExecutor {
 						backMeta.displayName(Component.text(plugin.colourMessage("&cPrevious Page")));
 					}
 				}
-				break;
-			case "settings":
+			}
+			case "settings" -> {
 				skyplotInv = Bukkit.createInventory(null, 27, Component.text(plugin.colourMessage("&bSkyPlot Settings")));
-				for(int i = 0; i < skyplotInv.getSize(); i++) {
-					if(i <= 9) {
+				for (int i = 0; i < skyplotInv.getSize(); i++) {
+					if (i <= 9) {
 						skyplotInv.setItem(i, whitePane);
 					} else if (i == 17) {
 						skyplotInv.setItem(i, whitePane);
 					} else if (i > 17 && i != 22) {
 						skyplotInv.setItem(i, grayPane);
-					} else if(i == 11) {
+					} else if (i == 11) {
 						ItemStack expand = new ItemStack(Material.BARRIER);
 						ItemMeta expMeta = expand.getItemMeta();
 						expMeta.displayName(Component.text(plugin.colourMessage("&eBanned Players")));
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
-					} else if(i == 15) {
+					} else if (i == 15) {
 						ItemStack expand = hAPI.getItemHead("38200");
 						ItemMeta expMeta = expand.getItemMeta();
 						expMeta.displayName(Component.text(plugin.colourMessage("&ePlot Visit Status")));
 						ArrayList<Component> lore = new ArrayList<>();
-						if(canVisit(player)) {
+						if (canVisit(player)) {
 							lore.add(Component.text(plugin.colourMessage("&7Visitng is &2ENABLED")));
 						} else {
 							lore.add(Component.text(plugin.colourMessage("&7Visitng is &4DISABLED")));
 						}
+						expMeta.lore(lore);
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
-					} else if(i == 22) {
+					} else if (i == 22) {
 						ItemStack backButton = new ItemStack(Material.NETHER_STAR);
 						ItemMeta backMeta = backButton.getItemMeta();
 						backMeta.displayName(Component.text(plugin.colourMessage("&cPrevious Page")));
 					}
 				}
-				break;
-			case "other":
+			}
+			case "other" -> {
 				skyplotInv = Bukkit.createInventory(null, 54, Component.text(plugin.colourMessage("&bOther SkyPlots")));
-				for(int i = 0; i < skyplotInv.getSize(); i++) {
-					if(i <= 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35 || i == 36 || i == 44) {
+				for (int i = 0; i < skyplotInv.getSize(); i++) {
+					if (i <= 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35 || i == 36 || i == 44) {
 						skyplotInv.setItem(i, whitePane);
 					} else if (i > 44 && i != 49) {
 						skyplotInv.setItem(i, grayPane);
-					}else if(i == 49) {
+					} else if (i == 49) {
 						ItemStack backButton = new ItemStack(Material.NETHER_STAR);
 						ItemMeta backMeta = backButton.getItemMeta();
 						backMeta.displayName(Component.text(plugin.colourMessage("&cPrevious Page")));
 					}
 				}
-				break;
-			case "banned":
+			}
+			case "banned" -> {
 				skyplotInv = Bukkit.createInventory(null, 54, Component.text(plugin.colourMessage("&bBanned Players")));
-				for(int i = 0; i < skyplotInv.getSize(); i++) {
-					if(i <= 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35 || i == 36 || i == 44) {
+				for (int i = 0; i < skyplotInv.getSize(); i++) {
+					if (i <= 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35 || i == 36 || i == 44) {
 						skyplotInv.setItem(i, whitePane);
 					} else if (i > 44 && i != 49) {
 						skyplotInv.setItem(i, grayPane);
-					}else if(i == 49) {
+					} else if (i == 49) {
 						ItemStack backButton = new ItemStack(Material.NETHER_STAR);
 						ItemMeta backMeta = backButton.getItemMeta();
 						backMeta.displayName(Component.text(plugin.colourMessage("&cPrevious Page")));
 					}
 				}
-				break;
+			}
 		}
 		assert skyplotInv != null;
 
@@ -299,8 +303,7 @@ public class SkyPlot implements CommandExecutor {
 	public Location getIsleLoc(String player) {
 		File f = new File(plugin.getDataFolder() + File.separator + "skyplots.yml");
 		FileConfiguration fData = YamlConfiguration.loadConfiguration(f);
-		Location loc = new Location(Bukkit.getWorld("world_skplots"), fData.getDouble(player + ".x"), fData.getDouble(player + ".y"), fData.getDouble(player + ".z"));
-		return loc;
+		return new Location(Bukkit.getWorld("world_skplots"), fData.getDouble(player + ".x"), fData.getDouble(player + ".y"), fData.getDouble(player + ".z"));
 	}
 
 	public void setVisit(Player player) {
@@ -324,10 +327,8 @@ public class SkyPlot implements CommandExecutor {
 
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if(sender instanceof Player) {
-			Player player = (Player) sender;
-
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+		if(sender instanceof Player player) {
 			File f = new File(plugin.getDataFolder() + File.separator + "skyplots.yml");
 			FileConfiguration fData = YamlConfiguration.loadConfiguration(f);
 

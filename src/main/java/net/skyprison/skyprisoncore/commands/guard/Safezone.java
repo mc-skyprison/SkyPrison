@@ -1,14 +1,17 @@
 package net.skyprison.skyprisoncore.commands.guard;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.UUID;
 
 public class Safezone implements CommandExecutor {
 	private final SkyPrisonCore plugin;
@@ -19,37 +22,36 @@ public class Safezone implements CommandExecutor {
 
 	public HashMap<UUID, Integer> safezoneViolators = new HashMap<>();
 
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if (sender instanceof Player) {
-			Player guard = (Player) sender;
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+		if (sender instanceof Player guard) {
 			if (args.length == 1) {
-				if (Bukkit.getPlayer(args[0]) != null) {
-					Player target = Bukkit.getPlayer(args[0]);
+				Player target = Bukkit.getPlayer(args[0]);
+				if (target != null) {
 					if (!guard.equals(target)) {
 						if (safezoneViolators.containsKey(target.getUniqueId())) {
 							int viols = safezoneViolators.get(target.getUniqueId()) + 1;
 							int violsLeft = 3 - viols;
 							if (viols < 3) {
-								target.sendMessage(ChatColor.RED + "You have received 1 safezone warn(s)! (" + violsLeft + " warn(s) left until jail!)");
-								guard.sendMessage(ChatColor.RED + "Target has received 1 safezone warn(s)! (" + violsLeft + " warn(s) left until jail!");
+								target.sendMessage(Component.text("You have received 1 safezone warn(s)! (" + violsLeft + " warn(s) left until jail!)", NamedTextColor.RED));
+								guard.sendMessage(Component.text("Target has received 1 safezone warn(s)! (" + violsLeft + " warn(s) left until jail!", NamedTextColor.RED));
 								safezoneViolators.put(target.getUniqueId(), viols);
 							} else {
-								target.sendMessage(ChatColor.RED + "You have been jailed for safezoning!");
-								guard.sendMessage(ChatColor.RED + "Target has been jailed!");
+								target.sendMessage(Component.text("You have been jailed for safezoning!", NamedTextColor.RED));
+								guard.sendMessage(Component.text("Target has been jailed!", NamedTextColor.RED));
 								safezoneViolators.remove(target.getUniqueId());
 								plugin.asConsole("jail " + target.getName());
 							}
 						} else {
 						safezoneViolators.put(target.getUniqueId(), 1);
-						target.sendMessage(ChatColor.RED + "You have received a safezone warn! (2 warn(s) left until jail!)");
-						guard.sendMessage(ChatColor.RED + "Target has received a safezone warn! (2 warn(s) left until jail!)");
+						target.sendMessage(Component.text("You have received a safezone warn! (2 warn(s) left until jail!)", NamedTextColor.RED));
+						guard.sendMessage(Component.text("Target has received a safezone warn! (2 warn(s) left until jail!)", NamedTextColor.RED));
 						}
 					} else
-						guard.sendMessage(ChatColor.RED + "You can't /safezone yourself!");
+						guard.sendMessage(Component.text("You can't /safezone yourself!", NamedTextColor.RED));
 				} else
-					guard.sendMessage(ChatColor.RED + "No such player is online!");
+					guard.sendMessage(Component.text("No such player is online!", NamedTextColor.RED));
 			} else
-				guard.sendMessage(ChatColor.RED + "/safezone <player>");
+				guard.sendMessage(Component.text("/safezone <player>", NamedTextColor.RED));
 		}
 		return true;
 	}

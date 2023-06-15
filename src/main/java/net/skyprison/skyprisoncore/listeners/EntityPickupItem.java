@@ -15,8 +15,7 @@ public class EntityPickupItem implements Listener {
 
     @EventHandler
     public void onEntityPickupItem(EntityPickupItemEvent event) {
-        if (event.getEntity() instanceof Player) {
-            Player player = (Player) event.getEntity();
+        if (event.getEntity() instanceof Player player) {
             if (!player.hasPermission("skyprisoncore.contraband.itembypass")) {
                 if (plugin.isGuardGear(event.getItem().getItemStack())) {
                     event.setCancelled(true);

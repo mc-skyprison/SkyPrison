@@ -3,6 +3,7 @@ package net.skyprison.skyprisoncore.commands.economy;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Material;
@@ -17,14 +18,13 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 
 public class Voucher implements CommandExecutor { // /voucher give <player> <voucher> <amount>
-    private final SkyPrisonCore plugin;
 
-    public Voucher(SkyPrisonCore plugin) {
-        this.plugin = plugin;
+    public Voucher() {
     }
 
 
@@ -56,7 +56,7 @@ public class Voucher implements CommandExecutor { // /voucher give <player> <vou
     }
 
 
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
          if(args.length == 4) {
             if(CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
                 CMIUser user = CMI.getInstance().getPlayerManager().getUser(args[1]);
@@ -70,7 +70,7 @@ public class Voucher implements CommandExecutor { // /voucher give <player> <vou
                 }
             }
          } else {
-             sender.sendMessage(plugin.colourMessage("&cCorrect Usage: /voucher give <player> <voucher> <amount>"));
+             sender.sendMessage(Component.text("Incorrect Usage! /voucher give <player> <voucher> <amount>", NamedTextColor.RED));
          }
         return true;
     }

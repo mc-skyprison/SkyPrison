@@ -1,5 +1,6 @@
 package net.skyprison.skyprisoncore.utils;
 
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -10,6 +11,7 @@ import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.channel.TextChannel;
 
 import java.io.File;
+import java.util.Objects;
 import java.util.regex.Matcher;
 
 public class ChatUtils {
@@ -31,19 +33,20 @@ public class ChatUtils {
 			for (String arg : args) {
 				cMessage.append(arg).append(" ");
 			}
-			String format = langConf.getString("chat." + chatId + ".format").replaceAll("\\[name\\]", Matcher.quoteReplacement(player.getName()));
-			String message = format.replaceAll("\\[message\\]", Matcher.quoteReplacement(cMessage.toString()));
+			String format = Objects.requireNonNull(langConf.getString("chat." + chatId + ".format")).replaceAll("\\[name]", Matcher.quoteReplacement(player.getName()));
+			String message = format.replaceAll("\\[message]", Matcher.quoteReplacement(cMessage.toString()));
 			for (Player online : Bukkit.getServer().getOnlinePlayers()) {
 				if (online.hasPermission("skyprisoncore.command." + chatId)) {
-					online.sendMessage(plugin.colourMessage(message));
+					online.sendMessage(MiniMessage.miniMessage().deserialize(message));
 				}
 			}
-			plugin.tellConsole(plugin.colourMessage(message));
-
-			String dFormat = langConf.getString("chat.discordSRV.format").replaceAll("\\[name\\]", Matcher.quoteReplacement(player.getName()));
-			String dMessage = dFormat.replaceAll("\\[message\\]", Matcher.quoteReplacement(cMessage.toString()));
-			TextChannel channel = discApi.getTextChannelById(discordId).get();
-			channel.sendMessage(dMessage);
+			plugin.tellConsole(MiniMessage.miniMessage().deserialize(message));
+			if(discApi != null && discApi.getTextChannelById(discordId).isPresent()) {
+				String dFormat = Objects.requireNonNull(langConf.getString("chat.discordSRV.format")).replaceAll("\\[name]", Matcher.quoteReplacement(player.getName()));
+				String dMessage = dFormat.replaceAll("\\[message]", Matcher.quoteReplacement(cMessage.toString()));
+				TextChannel channel = discApi.getTextChannelById(discordId).get();
+				channel.sendMessage(dMessage);
+			}
 		} else {
 			stickyChatCheck(player, discordId, chatId);
 		}
@@ -53,18 +56,20 @@ public class ChatUtils {
 		File lang = new File(plugin.getDataFolder() + File.separator
 				+ "lang" + File.separator + plugin.getConfig().getString("lang-file"));
 		FileConfiguration langConf = YamlConfiguration.loadConfiguration(lang);
-		String format = langConf.getString("chat." + chatId + ".format").replaceAll("\\[name\\]", user);
-		String message = format.replaceAll("\\[message\\]", Matcher.quoteReplacement(msg));
+		String format = Objects.requireNonNull(langConf.getString("chat." + chatId + ".format")).replaceAll("\\[name]", user);
+		String message = format.replaceAll("\\[message]", Matcher.quoteReplacement(msg));
 		for (Player online : Bukkit.getServer().getOnlinePlayers()) {
 			if (online.hasPermission("skyprisoncore.command." + chatId)) {
-				online.sendMessage(plugin.colourMessage(message));
+				online.sendMessage(MiniMessage.miniMessage().deserialize(message));
 			}
 		}
-		plugin.tellConsole(plugin.colourMessage(message));
-		String dFormat = langConf.getString("chat.discordSRV.format").replaceAll("\\[name\\]", user);
-		String dMessage = dFormat.replaceAll("\\[message\\]", Matcher.quoteReplacement(msg));
-		TextChannel channel = discApi.getTextChannelById(discordId).get();
-		channel.sendMessage(dMessage);
+		plugin.tellConsole(MiniMessage.miniMessage().deserialize(message));
+		if(discApi != null && discApi.getTextChannelById(discordId).isPresent()) {
+			String dFormat = Objects.requireNonNull(langConf.getString("chat.discordSRV.format")).replaceAll("\\[name]", user);
+			String dMessage = dFormat.replaceAll("\\[message]", Matcher.quoteReplacement(msg));
+			TextChannel channel = discApi.getTextChannelById(discordId).get();
+			channel.sendMessage(dMessage);
+		}
 	}
 
 
@@ -78,22 +83,22 @@ public class ChatUtils {
 			for (String arg : args) {
 				cMessage.append(arg).append(" ");
 			}
-			String format = langConf.getString("chat." + chatId + ".format").replaceAll("\\[name\\]", "Console");
-			String message = format.replaceAll("\\[message\\]", Matcher.quoteReplacement(cMessage.toString()));
+			String format = Objects.requireNonNull(langConf.getString("chat." + chatId + ".format")).replaceAll("\\[name]", "Console");
+			String message = format.replaceAll("\\[message]", Matcher.quoteReplacement(cMessage.toString()));
 			for (Player online : Bukkit.getServer().getOnlinePlayers()) {
 				if (online.hasPermission("skyprisoncore.command." + chatId)) {
-					online.sendMessage(plugin.colourMessage(message));
+					online.sendMessage(MiniMessage.miniMessage().deserialize(message));
 				}
 			}
-			plugin.tellConsole(plugin.colourMessage(message));
-
-			String dFormat = langConf.getString("chat.discordSRV.format").replaceAll("\\[name\\]", "Console");
-			String dMessage = dFormat.replaceAll("\\[message\\]", Matcher.quoteReplacement(cMessage.toString()));
-
-			TextChannel channel = discApi.getTextChannelById(discordId).get();
-			channel.sendMessage(dMessage);
+			plugin.tellConsole(MiniMessage.miniMessage().deserialize(message));
+			if(discApi != null && discApi.getTextChannelById(discordId).isPresent()) {
+				String dFormat = Objects.requireNonNull(langConf.getString("chat.discordSRV.format")).replaceAll("\\[name]", "Console");
+				String dMessage = dFormat.replaceAll("\\[message]", Matcher.quoteReplacement(cMessage.toString()));
+				TextChannel channel = discApi.getTextChannelById(discordId).get();
+				channel.sendMessage(dMessage);
+			}
 		} else {
-			plugin.tellConsole(plugin.colourMessage(prefix + langConf.getString("chat." + chatId + ".wrong-usage")));
+			plugin.tellConsole(MiniMessage.miniMessage().deserialize(prefix + langConf.getString("chat." + chatId + ".wrong-usage")));
 		}
 	}
 
@@ -104,19 +109,19 @@ public class ChatUtils {
 		String prefix = langConf.getString("global.plugin-prefix");
 		if(plugin.stickyChat.containsKey(player.getUniqueId())) {
 			if (plugin.stickyChat.get(player.getUniqueId()).equals(chatId + "-" + discordId)) {
-				String stickEnabled = langConf.getString("chat.stickied.disabled").replaceAll("\\[chat\\]", chatId);
-				player.sendMessage(plugin.colourMessage(prefix + stickEnabled));
+				String stickEnabled = Objects.requireNonNull(langConf.getString("chat.stickied.disabled")).replaceAll("\\[chat]", chatId);
+				player.sendMessage(MiniMessage.miniMessage().deserialize(prefix + stickEnabled));
 				plugin.stickyChat.remove(player.getUniqueId());
 			} else {
 				String[] oldSticky = plugin.stickyChat.get(player.getUniqueId()).split("-");
-				String stickSwapped = langConf.getString("chat.stickied.swapped").replaceAll("\\[oldchat\\]", oldSticky[0]);
-				stickSwapped = stickSwapped.replaceAll("\\[newchat\\]", chatId);
-				player.sendMessage(plugin.colourMessage(prefix + stickSwapped));
+				String stickSwapped = Objects.requireNonNull(langConf.getString("chat.stickied.swapped")).replaceAll("\\[oldchat]", oldSticky[0]);
+				stickSwapped = stickSwapped.replaceAll("\\[newchat]", chatId);
+				player.sendMessage(MiniMessage.miniMessage().deserialize(prefix + stickSwapped));
 				plugin.stickyChat.put(player.getUniqueId(), chatId + "-" + discordId);
 			}
 		} else {
-			String stickEnabled = langConf.getString("chat.stickied.enabled").replaceAll("\\[chat\\]", chatId);
-			player.sendMessage(plugin.colourMessage(prefix + stickEnabled));
+			String stickEnabled = Objects.requireNonNull(langConf.getString("chat.stickied.enabled")).replaceAll("\\[chat]", chatId);
+			player.sendMessage(MiniMessage.miniMessage().deserialize(prefix + stickEnabled));
 			plugin.stickyChat.put(player.getUniqueId(), chatId + "-" + discordId);
 		}
 	}

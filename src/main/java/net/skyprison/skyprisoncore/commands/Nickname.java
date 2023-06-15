@@ -4,6 +4,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.jetbrains.annotations.NotNull;
 
 public class Nickname implements CommandExecutor {
 	private final SkyPrisonCore plugin;
@@ -12,7 +13,7 @@ public class Nickname implements CommandExecutor {
 		this.plugin = plugin;
 	}
 
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
 		return true;
 	}
 }

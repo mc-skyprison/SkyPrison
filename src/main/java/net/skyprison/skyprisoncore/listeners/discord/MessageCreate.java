@@ -2,9 +2,11 @@ package net.skyprison.skyprisoncore.listeners.discord;
 
 import com.gmail.nossr50.datatypes.party.Party;
 import com.gmail.nossr50.party.PartyManager;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.ChatUtils;
-import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.javacord.api.DiscordApi;
@@ -21,13 +23,10 @@ public class MessageCreate implements MessageCreateListener {
     private final SkyPrisonCore plugin;
     private final ChatUtils chatUtils;
     private final DiscordApi discApi;
-    private final DatabaseHook db;
-
-    public MessageCreate(SkyPrisonCore plugin, ChatUtils chatUtils, DiscordApi discApi, DatabaseHook db) {
+    public MessageCreate(SkyPrisonCore plugin, ChatUtils chatUtils, DiscordApi discApi) {
         this.plugin = plugin;
         this.chatUtils = chatUtils;
         this.discApi = discApi;
-        this.db = db;
     }
 
     @Override
@@ -46,56 +45,58 @@ public class MessageCreate implements MessageCreateListener {
                     String message = event.getMessageContent();
 
                     switch (channelId) {
-                        case "788108242797854751": // global
-                            int r = server.getHighestRole(user).get().getColor().get().getRed();
-                            int g = server.getHighestRole(user).get().getColor().get().getGreen();
-                            int b = server.getHighestRole(user).get().getColor().get().getBlue();
-
-                            String hexColor = String.format("#%02x%02x%02x", r, g, b);
-
-                            String newMessage = "&f[&bDiscord &f| {" + hexColor + "}" + server.getHighestRole(user).get().getName() + "&f] &r" + userName + " &7» &6" + message;
-                            for (Player player : Bukkit.getOnlinePlayers()) {
-                                player.sendMessage(plugin.colourMessage(newMessage));
+                        case "788108242797854751" -> { // global
+                            if(server.getHighestRole(user).isPresent() && server.getHighestRole(user).get().getColor().isPresent()) {
+                                int r = server.getHighestRole(user).get().getColor().get().getRed();
+                                int g = server.getHighestRole(user).get().getColor().get().getGreen();
+                                int b = server.getHighestRole(user).get().getColor().get().getBlue();
+                                String hexColor = String.format("#%02x%02x%02x", r, g, b);
+                                Component newMessage = Component.text("[", NamedTextColor.WHITE).append(Component.text("Discord", NamedTextColor.AQUA))
+                                        .append(Component.text(" |", NamedTextColor.WHITE)).append(Component.text(server.getHighestRole(user).get().getName(), TextColor.fromHexString(hexColor)))
+                                                .append(Component.text("] ", NamedTextColor.WHITE)).append(Component.text(userName, NamedTextColor.GRAY))
+                                                        .append(Component.text(" » ", NamedTextColor.GRAY)).append(Component.text(message, NamedTextColor.GOLD));
+                                for (Player player : Bukkit.getOnlinePlayers()) {
+                                    player.sendMessage(newMessage);
+                                }
                             }
-                            break;
-                        case "791054229136605194": // admin
+                        }
+                        case "791054229136605194" -> { // admin
                             chatUtils.discordChatSend(message, userName, "admin", "791054229136605194");
                             event.getMessage().delete();
-                            break;
-                        case "791054021338464266": // guard
+                        }
+                        case "791054021338464266" -> { // guard
                             chatUtils.discordChatSend(message, userName, "guard", "791054021338464266");
                             event.getMessage().delete();
-                            break;
-                        case "791054076787163166": // staff
+                        }
+                        case "791054076787163166" -> { // staff
                             chatUtils.discordChatSend(message, userName, "staff", "791054076787163166");
                             event.getMessage().delete();
-                            break;
-                        case "800885673732997121": // build
+                        }
+                        case "800885673732997121" -> { // build
                             chatUtils.discordChatSend(message, userName, "build", "800885673732997121");
                             event.getMessage().delete();
-                            break;
-                        case "811643634562367498": // party
+                        }
+                        case "811643634562367498" -> { // party
                             String[] splitMsg = message.split(" ", 2);
-                            String nMessage = "&a(P) &f" + userName + " &a→ &f" + splitMsg[1];
+                            Component nMessage = Component.text("(P) ", NamedTextColor.GREEN).append(Component.text(userName, NamedTextColor.WHITE))
+                                    .append(Component.text(" → ", NamedTextColor.GREEN)).append(Component.text(splitMsg[1], NamedTextColor.WHITE));
                             Party p;
                             if (Bukkit.getPlayer(splitMsg[0]) != null) {
                                 p = PartyManager.getParty(Bukkit.getPlayer(splitMsg[0]));
                             } else {
                                 p = PartyManager.getParty(splitMsg[0]);
                             }
-
                             if (p != null) {
-                                List pMembers = p.getOnlineMembers();
-                                for (Object online : pMembers) {
-                                    Player oPlayer = (Player) online;
-                                    oPlayer.sendMessage(plugin.colourMessage(nMessage));
+                                List<Player> pMembers = p.getOnlineMembers();
+                                for (Player online : pMembers) {
+                                    online.sendMessage(nMessage);
                                 }
-                                plugin.tellConsole(plugin.colourMessage(nMessage));
+                                plugin.tellConsole(nMessage);
                                 String dMessage = "(**" + p.getName() + "**) " + userName + " » " + splitMsg[1];
                                 channel.sendMessage(dMessage);
                             }
                             event.getMessage().delete();
-                            break;
+                        }
                     }
                 }
             }

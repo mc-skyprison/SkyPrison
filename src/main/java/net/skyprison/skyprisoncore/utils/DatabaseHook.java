@@ -8,11 +8,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 public class DatabaseHook {
-    private final SkyPrisonCore plugin;
     private final DataSource dataSource;
 
     public DatabaseHook(SkyPrisonCore plugin) throws SQLException {
-        this.plugin = plugin;
         String ip = plugin.getConfig().getString("database.ip");
         String port = plugin.getConfig().getString("database.port");
         String name = plugin.getConfig().getString("database.name");

@@ -1,9 +1,11 @@
 package net.skyprison.skyprisoncore.commands;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
@@ -51,11 +53,11 @@ public class Daily implements CommandExecutor {
 			e.printStackTrace();
 		}
 
-		Inventory dailyGUI = Bukkit.createInventory(null, 27, ChatColor.RED + "Daily Reward");
+		Inventory dailyGUI = Bukkit.createInventory(null, 27, Component.text("Daily Reward"));
 
 		ItemStack pane = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
 		ItemMeta paneMeta = pane.getItemMeta();
-		paneMeta.setDisplayName(" ");
+		paneMeta.displayName(Component.empty());
 		pane.setItemMeta(paneMeta);
 		boolean hasCollected = false;
 		if(!lastCollected.isEmpty()) {
@@ -72,7 +74,7 @@ public class Daily implements CommandExecutor {
 				case 0 -> {
 					ItemStack startPane = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
 					ItemMeta startMeta = startPane.getItemMeta();
-					startMeta.setDisplayName(" ");
+					startMeta.displayName(Component.empty());
 					NamespacedKey key = new NamespacedKey(plugin, "stop-click");
 					startMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
 					NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
@@ -88,17 +90,17 @@ public class Daily implements CommandExecutor {
 						dReward = new ItemStack(Material.MINECART);
 					}
 					ItemMeta dMeta = dReward.getItemMeta();
-					dMeta.setDisplayName(plugin.colourMessage("&e&lDaily Reward"));
-					ArrayList<String> lore = new ArrayList<>();
+					dMeta.displayName(Component.text("&e&lDaily Reward", NamedTextColor.YELLOW, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+					ArrayList<Component> lore = new ArrayList<>();
 					if (!hasCollected) {
-						lore.add(plugin.colourMessage("&aClick here to collect your reward!"));
+						lore.add(Component.text("Click here to collect your reward!", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
 					} else {
-						lore.add(plugin.colourMessage("&cYou've already collected today!"));
+						lore.add(Component.text("You've already collected today!", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
 					}
-					lore.add("");
-					lore.add(plugin.colourMessage("&7Current Streak: &f&l" + currStreak));
-					lore.add(plugin.colourMessage("&7Highest Streak: &f&l" + highestStreak));
-					dMeta.setLore(lore);
+					lore.add(Component.empty());
+					lore.add(Component.text("Current Streak: ", NamedTextColor.GRAY).append(Component.text(currStreak, NamedTextColor.WHITE, TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
+					lore.add(Component.text("Highest Streak: ", NamedTextColor.GRAY).append(Component.text(highestStreak, NamedTextColor.WHITE, TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
+					dMeta.lore(lore);
 					dReward.setItemMeta(dMeta);
 					dailyGUI.setItem(i, dReward);
 				}

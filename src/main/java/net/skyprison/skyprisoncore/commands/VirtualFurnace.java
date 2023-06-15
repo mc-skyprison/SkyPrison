@@ -10,6 +10,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.FurnaceInventory;
+import org.jetbrains.annotations.NotNull;
 
 public class VirtualFurnace implements CommandExecutor {
     private final SkyPrisonCore plugin;
@@ -18,9 +19,8 @@ public class VirtualFurnace implements CommandExecutor {
         this.plugin = plugin;
     }
 
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if(sender instanceof Player) {
-            Player player = (Player) sender;
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+        if(sender instanceof Player player) {
             FurnaceInventory inv = (FurnaceInventory) Bukkit.createInventory(null, InventoryType.FURNACE, Component.text(ChatColor.RED + "Furnace Test"));
             player.openInventory(inv);
         }

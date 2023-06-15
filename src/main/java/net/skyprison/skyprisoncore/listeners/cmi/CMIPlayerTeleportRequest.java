@@ -1,7 +1,8 @@
 package net.skyprison.skyprisoncore.listeners.cmi;
 
 import com.Zrips.CMI.events.CMIPlayerTeleportRequestEvent;
-import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,11 +15,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class CMIPlayerTeleportRequest implements Listener {
-    private final SkyPrisonCore plugin;
     private final DatabaseHook db;
 
-    public CMIPlayerTeleportRequest(SkyPrisonCore plugin, DatabaseHook db) {
-        this.plugin = plugin;
+    public CMIPlayerTeleportRequest(DatabaseHook db) {
         this.db = db;
     }
 
@@ -39,7 +38,7 @@ public class CMIPlayerTeleportRequest implements Listener {
         }
 
         if(ignoredPlayers.contains(askingPlayer.getUniqueId().toString())) {
-            askingPlayer.sendMessage(plugin.colourMessage(askedPlayer.getDisplayName() + "&eis ignoring your teleport requests!"));
+            askingPlayer.sendMessage(askedPlayer.displayName().colorIfAbsent(NamedTextColor.GOLD).append(Component.text(" is ignoring your teleport requests!", NamedTextColor.YELLOW)));
             event.setCancelled(true);
         }
     }

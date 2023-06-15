@@ -6,10 +6,16 @@ import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
-import me.clip.placeholderapi.PlaceholderAPI;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -41,14 +47,14 @@ public class SecretsGUI implements CommandExecutor {
 	private ItemStack decorativeItemStack(Material material, int amount, String name, Player player) {
 		ItemStack item = new ItemStack(material, amount);
 		if(material.equals(Material.PLAYER_HEAD)) {
-			SkullMeta itemmeta = (SkullMeta) item.getItemMeta();
-			itemmeta.setDisplayName(name);
-			itemmeta.setOwningPlayer(player);
-			item.setItemMeta(itemmeta);
+			SkullMeta itemMeta = (SkullMeta) item.getItemMeta();
+			itemMeta.displayName(Component.text(name));
+			itemMeta.setOwningPlayer(player);
+			item.setItemMeta(itemMeta);
 		} else {
-			ItemMeta itemmeta = item.getItemMeta();
-			itemmeta.setDisplayName(name);
-			item.setItemMeta(itemmeta);
+			ItemMeta itemMeta = item.getItemMeta();
+			itemMeta.displayName(Component.text(name));
+			item.setItemMeta(itemMeta);
 		}
 		return item;
 	}
@@ -58,7 +64,7 @@ public class SecretsGUI implements CommandExecutor {
 		YamlConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
 
 		if(!category.equalsIgnoreCase("all")) {
-			Set<String> secrets = yamlf.getConfigurationSection("inventory." + category).getKeys(false);
+			Set<String> secrets = Objects.requireNonNull(yamlf.getConfigurationSection("inventory." + category)).getKeys(false);
 			int totalSecrets = 0;
 
 			for(String secretKey : secrets) {
@@ -68,8 +74,8 @@ public class SecretsGUI implements CommandExecutor {
 			}
 
 			ItemStack item = new ItemStack(material, amount);
-			ItemMeta itemmeta = item.getItemMeta();
-			itemmeta.setDisplayName(name);
+			ItemMeta itemMeta = item.getItemMeta();
+			itemMeta.displayName(Component.text(name));
 			int secretsFound = 0;
 
 			try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT secret_name FROM secrets_data WHERE user_id = ?")) {
@@ -84,50 +90,47 @@ public class SecretsGUI implements CommandExecutor {
 				e.printStackTrace();
 			}
 
-			String lore1 = ChatColor.GRAY +  "Secrets Found: " + secretsFound + "/" + totalSecrets;
-			itemmeta.setLore(Collections.singletonList(lore1));
-			item.setItemMeta(itemmeta);
+			itemMeta.lore(Collections.singletonList(Component.text("Secrets Found: " + secretsFound + "/" + totalSecrets, NamedTextColor.GRAY)));
+			item.setItemMeta(itemMeta);
 
 			return item;
 		} else {
 			ItemStack item = new ItemStack(material, amount);
-			ItemMeta itemmeta = item.getItemMeta();
-			itemmeta.setDisplayName(name);
-			item.setItemMeta(itemmeta);
+			ItemMeta itemMeta = item.getItemMeta();
+			itemMeta.displayName(Component.text(name));
+			item.setItemMeta(itemMeta);
 			return item;
 		}
 	}
 
 	private ItemStack unknownItemStack() {
-		String name = ChatColor.RED + "" + ChatColor.BOLD + "???";
+		Component name = Component.text("???", NamedTextColor.RED, TextDecoration.BOLD);
 		ItemStack item = new ItemStack(Material.BOOK, 1);
-		ItemMeta itemmeta = item.getItemMeta();
-		itemmeta.setDisplayName(name);
-		itemmeta.setLore(Collections.singletonList(ChatColor.GRAY + "" + ChatColor.ITALIC + "Find this secret to unlock it!"));
-		item.setItemMeta(itemmeta);
+		ItemMeta itemMeta = item.getItemMeta();
+		itemMeta.displayName(name);
+		itemMeta.lore(Collections.singletonList(Component.text("Find this secret to unlock it..", NamedTextColor.GRAY)));
+		item.setItemMeta(itemMeta);
 		return item;
 	}
 
-	private ItemStack rewardItemStack(List<String> lore, String name, String reward) {
+	private ItemStack rewardItemStack(List<Component> lore, String name, String reward) {
 		ItemStack item = new ItemStack(Material.CHEST_MINECART, 1);
 		NamespacedKey key = new NamespacedKey(plugin, "reward");
-		ItemMeta itemmeta = item.getItemMeta();
-		itemmeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, reward);
-		itemmeta.setDisplayName(name);
-		itemmeta.setLore(lore);
-		item.setItemMeta(itemmeta);
+		ItemMeta itemMeta = item.getItemMeta();
+		itemMeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, reward);
+		itemMeta.displayName(Component.text(name));
+		itemMeta.lore(lore);
+		item.setItemMeta(itemMeta);
 		return item;
 	}
 
 
-	private ItemStack secretItemStack(Material material, int amount, String name, String line3, Player player, String secretId, String category, String tokenAmount) {
+	private ItemStack secretItemStack(Material material, int amount, String name, Component cooldown, Player player, String secretId, int tokenAmount) {
 		ItemStack item = new ItemStack(material, amount);
-		ItemMeta itemmeta = item.getItemMeta();
+		ItemMeta itemMeta = item.getItemMeta();
 
-		itemmeta.setDisplayName(name);
-		String line2 = ChatColor.DARK_PURPLE + "Cooldown:";
+		itemMeta.displayName(Component.text(name));
 		String plsName = name.replaceAll("\\s", "");
-		String line1;
 
 
 		int amountFound = 0;
@@ -142,88 +145,74 @@ public class SecretsGUI implements CommandExecutor {
 			e.printStackTrace();
 		}
 
+		boolean isParkour = plsName.toLowerCase().contains("parkour");
+		boolean isPuzzle = plsName.toLowerCase().contains("puzzle");
 
-		if (amountFound > 0) {
-			if (plsName.toLowerCase().contains("parkour")) {
-				if (amountFound == 1) {
-					line1 = ChatColor.GRAY + "You've done this parkour " + ChatColor.AQUA + amountFound + ChatColor.GRAY + " time";
-				} else {
-					line1 = ChatColor.GRAY + "You've done this parkour " + ChatColor.AQUA + amountFound + ChatColor.GRAY + " times";
-				}
-			} else if (plsName.toLowerCase().contains("puzzle")) {
-				if (amountFound == 1) {
-					line1 = ChatColor.GRAY + "You've completed this puzzle " + ChatColor.AQUA + amountFound + ChatColor.GRAY + " time";
-				} else {
-					line1 = ChatColor.GRAY + "You've completed this puzzle " + ChatColor.AQUA + amountFound + ChatColor.GRAY + " times";
-				}
 
-			} else if (amountFound == 1) {
-				line1 = ChatColor.GRAY + "You've found this secret " + ChatColor.AQUA + amountFound + ChatColor.GRAY + " time";
-			} else {
-				line1 = ChatColor.GRAY + "You've found this secret " + ChatColor.AQUA + amountFound + ChatColor.GRAY + " times";
-			}
-		} else {
-			line1 = ChatColor.GRAY + "You've found this secret " + ChatColor.AQUA + "0" + ChatColor.GRAY + " times";
-		}
-		line1 = PlaceholderAPI.setPlaceholders(player, line1);
-		itemmeta.setLore(Arrays.asList(line1, line2, line3, "", plugin.colourMessage("&bTokens: &7" + tokenAmount)));
-		item.setItemMeta(itemmeta);
+		ArrayList<Component> lore = new ArrayList<>();
+		lore.add(Component.text("You've " + (isParkour ? "done this parkour " : isPuzzle ? "completed this puzzle " : "found this secret "), NamedTextColor.GRAY)
+				.append(Component.text(amountFound, NamedTextColor.AQUA)).append(Component.text(" time(s)", NamedTextColor.GRAY)));
+		lore.add(Component.text("Cooldown: ", NamedTextColor.DARK_PURPLE).append(cooldown));
+		lore.add(Component.empty());
+		lore.add(Component.text("Tokens: ", NamedTextColor.AQUA).append(Component.text(tokenAmount, NamedTextColor.GRAY)));
+
+
+		itemMeta.lore(lore);
+		item.setItemMeta(itemMeta);
 		return item;
 	}
 
-	private String getTokenAmount(String SVSSignID) {
+	private int getTokenAmount(String SVSSignID) {
 		File SVSFile = new File("plugins/ServerSigns/signs/" + SVSSignID);
-		String output = "";
-		if (!SVSFile.exists()) {
-			output = ChatColor.DARK_RED + "ERROR! Notify Admin!";
-		} else {
+		int tokenAmount = 0;
+		if (SVSFile.exists()) {
 			YamlConfiguration f = YamlConfiguration.loadConfiguration(SVSFile);
-			Set<String> cmds = f.getConfigurationSection("commands").getKeys(false);
+			Set<String> cmds = Objects.requireNonNull(f.getConfigurationSection("commands")).getKeys(false);
 			for(String cmd : cmds) {
 				String tokenCmd = f.getString("commands." + cmd + ".command");
-				if(tokenCmd.startsWith("tokensadd") || tokenCmd.startsWith("/tokensadd")) {
-					String[] tokenVal = tokenCmd.split(" ");
-					output = tokenVal[2];
-				} else if(tokenCmd.startsWith("token add") || tokenCmd.startsWith("/token add")
-						|| tokenCmd.startsWith("tokens add") || tokenCmd.startsWith("/tokens add")) {
-					String[] tokenVal = tokenCmd.split(" ");
-					output = tokenVal[3];
+				if(tokenCmd != null) {
+					if (tokenCmd.startsWith("tokensadd") || tokenCmd.startsWith("/tokensadd")) {
+						String[] tokenVal = tokenCmd.split(" ");
+						tokenAmount = Integer.parseInt(tokenVal[2]);
+					} else if (tokenCmd.startsWith("token add") || tokenCmd.startsWith("/token add")
+							|| tokenCmd.startsWith("tokens add") || tokenCmd.startsWith("/tokens add")) {
+						String[] tokenVal = tokenCmd.split(" ");
+						tokenAmount = Integer.parseInt(tokenVal[3]);
+					}
 				}
 			}
 		}
-		return output;
+		return tokenAmount;
 	}
 
 
-	private String getCooldown(String SVSSignID, UUID pUUID) {
+	private Component getCooldown(String SVSSignID, UUID pUUID) {
 		File SVSFile = new File("plugins/ServerSigns/signs/" + SVSSignID);
-		String output;
-		if (!SVSFile.exists()) {
-			output = ChatColor.DARK_RED + "ERROR! Notify Admin!";
-		} else {
+		Component cooldown = Component.empty();
+		if (SVSFile.exists()) {
 			YamlConfiguration f = YamlConfiguration.loadConfiguration(SVSFile);
 			if (f.getLong("lastUse." + pUUID) > 0L) {
-				Long useTime = f.getLong("lastUse." + pUUID);
-				Long cooldownLong = useTime / 1000L + f.getLong("cooldown") - System.currentTimeMillis() / 1000L;
-				int cooldown = cooldownLong.intValue();
-				if (cooldown > 86400) {
-					int days = cooldown / 86400;
-					int hours = cooldown % 86400 / 3600;
-					output = ChatColor.RED + "" + days + " days " + hours + " hrs";
+				long useTime = f.getLong("lastUse." + pUUID);
+				long cooldownLong = useTime / 1000L + f.getLong("cooldown") - System.currentTimeMillis() / 1000L;
+				int cooldownInt = (int) cooldownLong;
+				if (cooldownInt > 86400) {
+					int days = cooldownInt / 86400;
+					int hours = cooldownInt % 86400 / 3600;
+					cooldown = Component.text(days + " days " + hours + " hrs", NamedTextColor.RED);
 				} else {
-					int hours = cooldown / 3600;
-					int minutes = cooldown % 3600 / 60;
+					int hours = cooldownInt / 3600;
+					int minutes = cooldownInt % 3600 / 60;
 					if(minutes >= 0) {
-						output = ChatColor.RED + "" + hours + " hrs " + minutes + " mins";
+						cooldown = Component.text( hours + " hrs " + minutes + " mins", NamedTextColor.RED);
 					} else {
-						output = ChatColor.GREEN + "Available Now!";
+						cooldown = Component.text("Available Now!", NamedTextColor.GREEN);
 					}
 				}
 			} else {
-				output = ChatColor.GREEN + "Available Now!";
+				cooldown = Component.text("Available Now!", NamedTextColor.GREEN);
 			}
 		}
-		return output;
+		return cooldown;
 	}
 
 	public void openGUI(Player player, String guiType) {
@@ -251,7 +240,7 @@ public class SecretsGUI implements CommandExecutor {
 		} else if(guiType.equalsIgnoreCase("secrets")) {
 			slots = yamlf.getInt("secrets-slots");
 		}
-		Inventory rewardInv = Bukkit.createInventory(null, slots, ChatColor.RED + "Secrets - " + guiTitle);
+		Inventory rewardInv = Bukkit.createInventory(null, slots, Component.text("Secrets - " + guiTitle, NamedTextColor.RED));
 		if(yamlf.contains("inventory." + guiType)) {
 			for (int i = 0; i < slots; i++) {
 				if (yamlf.isSet("inventory." + guiType + "." + i)) {
@@ -280,7 +269,7 @@ public class SecretsGUI implements CommandExecutor {
 							int secretZ = yamlf.getInt("inventory." + guiType + "." + i + ".Z");
 							String secretWorld = yamlf.getString("inventory." + guiType + "." + i + ".world");
 							String file = secretWorld + "_" + secretX + "_" + secretY + "_" + secretZ + ".yml";
-							item = secretItemStack(material, amount, name, getCooldown(file, player.getUniqueId()), player, secretId, guiType, getTokenAmount(file));
+							item = secretItemStack(material, amount, name, getCooldown(file, player.getUniqueId()), player, secretId, getTokenAmount(file));
 						} else {
 							item = unknownItemStack();
 						}
@@ -289,6 +278,7 @@ public class SecretsGUI implements CommandExecutor {
 						String name = yamlf.getString("inventory." + guiType + "." + i + ".name");
 						if(yamlf.isSet("inventory." + guiType + "." + i + ".category-main")) {
 							String category = yamlf.getString("inventory." + guiType + "." + i + ".category-main");
+							assert category != null;
 							item = categoryMainItemStack(player, material, amount, name, category);
 						} else {
 							item = decorativeItemStack(material, amount, name, player);
@@ -316,7 +306,9 @@ public class SecretsGUI implements CommandExecutor {
 										+ "rewardsdata.yml");
 								YamlConfiguration rData = YamlConfiguration.loadConfiguration(rewardsDataFile);
 								String name = rData.getString(reward + ".name");
-								List<String> lore = rData.getStringList(reward + ".lore");
+								List<String> stringLore = rData.getStringList(reward + ".lore");
+								List<Component> lore = new ArrayList<>();
+								stringLore.forEach(sLore -> lore.add(MiniMessage.miniMessage().deserialize(sLore)));
 								ItemStack item = rewardItemStack(lore, name, reward);
 								rewardInv.setItem(i, item);
 							}
@@ -326,7 +318,7 @@ public class SecretsGUI implements CommandExecutor {
 			}
 			player.openInventory(rewardInv);
 		} else {
-			player.sendMessage(ChatColor.RED + "Invalid secret category! /secret (category)");
+			player.sendMessage(Component.text("Invalid secret category! /secret (category)", NamedTextColor.RED));
 		}
 	}
 
@@ -337,32 +329,34 @@ public class SecretsGUI implements CommandExecutor {
 				String guiType = "main-menu";
 				RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
 				RegionManager regions = container.get(BukkitAdapter.adapt(pWorld));
-				ApplicableRegionSet regionList = regions.getApplicableRegions(BlockVector3.at(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ()));
-				if (!regionList.getRegions().isEmpty()) {
-					if (pWorld.getName().equalsIgnoreCase("world_prison")) {
-						if(regionList.getRegions().contains(regions.getRegion("grass-welcome"))) {
-							guiType = "grass";
-						} else if (regionList.getRegions().contains(regions.getRegion("desert-welcome"))) {
-							guiType = "desert";
-						} else if (regionList.getRegions().contains(regions.getRegion("nether-welcome"))) {
-							guiType = "nether";
-						} else if (regionList.getRegions().contains(regions.getRegion("snow-welcome"))) {
-							guiType = "snow";
-						} else {
-							guiType = "prison-other";
+				if(regions != null) {
+					ApplicableRegionSet regionList = regions.getApplicableRegions(BlockVector3.at(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ()));
+					if (!regionList.getRegions().isEmpty()) {
+						if (pWorld.getName().equalsIgnoreCase("world_prison")) {
+							if (regionList.getRegions().contains(regions.getRegion("grass-welcome"))) {
+								guiType = "grass";
+							} else if (regionList.getRegions().contains(regions.getRegion("desert-welcome"))) {
+								guiType = "desert";
+							} else if (regionList.getRegions().contains(regions.getRegion("nether-welcome"))) {
+								guiType = "nether";
+							} else if (regionList.getRegions().contains(regions.getRegion("snow-welcome"))) {
+								guiType = "snow";
+							} else {
+								guiType = "prison-other";
+							}
+						} else if (pWorld.getName().equalsIgnoreCase("world_skycity")) {
+							guiType = "skycity";
 						}
-					} else if (pWorld.getName().equalsIgnoreCase("world_skycity")) {
-						guiType = "skycity";
 					}
+					openGUI(player, guiType);
 				}
-				openGUI(player, guiType);
 			} else if (args.length == 1) {
 				openGUI(player, args[0]);
 			} else {
-				player.sendMessage(ChatColor.RED + "Invalid Usage! /secret (category)");
+				player.sendMessage(Component.text("Incorrect Usage! /secret (category)", NamedTextColor.RED));
 			}
 		} else {
-			plugin.tellConsole("This command is only supported in-game!");
+			plugin.tellConsole(Component.text("This command is only supported in-game!", NamedTextColor.RED));
 		}
 		return true;
 	}

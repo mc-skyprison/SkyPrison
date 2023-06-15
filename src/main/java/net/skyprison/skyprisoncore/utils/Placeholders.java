@@ -9,6 +9,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -37,17 +38,17 @@ public class Placeholders extends PlaceholderExpansion {
 	}
 
 	@Override
-	public String getAuthor(){
+	public @NotNull String getAuthor() {
 		return plugin.getDescription().getAuthors().toString();
 	}
 
 	@Override
-	public String getIdentifier(){
+	public @NotNull String getIdentifier(){
 		return "SkyPrisonCore";
 	}
 
 	@Override
-	public String getVersion(){
+	public @NotNull String getVersion(){
 		return plugin.getDescription().getVersion();
 	}
 
@@ -121,7 +122,7 @@ public class Placeholders extends PlaceholderExpansion {
 
 
 	@Override
-	public String onPlaceholderRequest(Player player, String identifier){
+	public String onPlaceholderRequest(Player player, @NotNull String identifier){
 
 		if(player == null) {
 			return "";
@@ -248,30 +249,16 @@ public class Placeholders extends PlaceholderExpansion {
 		if(identifier.equalsIgnoreCase("mod_tag")) {
 			if (player.hasPermission("group.trmod")) {
 				CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-				String tag = "";
-				switch(user.getRank().getName().toLowerCase()) {
-					case "grass":
-						tag = "&f[{#2ee600}G&f]";
-						break;
-					case "desert":
-						tag = "&f[{#e6b22e}D&f]";
-						break;
-					case "nether":
-						tag = "&f[{#ff2400}N&f]";
-						break;
-					case "snow":
-						tag = "&f[{#3dc3cc}S&f]";
-						break;
-					case "free":
-						tag = "&f[{#f75394}F&f]";
-						break;
-					case "hell":
-						tag = "&f[{#cc141f}H&f]";
-						break;
-					case "end":
-						tag = "&f[{#0085e6}E&f]";
-						break;
-				}
+				String tag = switch (user.getRank().getName().toLowerCase()) {
+					case "grass" -> "&f[{#2ee600}G&f]";
+					case "desert" -> "&f[{#e6b22e}D&f]";
+					case "nether" -> "&f[{#ff2400}N&f]";
+					case "snow" -> "&f[{#3dc3cc}S&f]";
+					case "free" -> "&f[{#f75394}F&f]";
+					case "hell" -> "&f[{#cc141f}H&f]";
+					case "end" -> "&f[{#0085e6}E&f]";
+					default -> "";
+				};
 
 				return plugin.colourMessage(tag);
 			} else {
@@ -283,11 +270,9 @@ public class Placeholders extends PlaceholderExpansion {
 		if(identifier.equalsIgnoreCase("silence")) {
 			CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
 			if (user.isSilenceMode()) {
-				String availableMessage = ChatColor.GRAY + "Global Chat is " + ChatColor.DARK_RED + "DISABLED";
-				return availableMessage;
+				return ChatColor.GRAY + "Global Chat is " + ChatColor.DARK_RED + "DISABLED";
 			} else {
-				String availableMessage = ChatColor.GRAY + "Global Chat is " + ChatColor.GREEN + "ENABLED";
-				return availableMessage;
+				return ChatColor.GRAY + "Global Chat is " + ChatColor.GREEN + "ENABLED";
 			}
 		}
 

@@ -1,9 +1,12 @@
 package net.skyprison.skyprisoncore.commands;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
@@ -33,10 +36,14 @@ public class Tags implements CommandExecutor {
         this.db = db;
     }
 
+    private Component formatMsg(String msg) {
+         return MiniMessage.miniMessage().deserialize(msg);
+    }
+
     public void openGUI(Player player, Integer page) {
         ArrayList<List<Object>> tags = new ArrayList<>();
 
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tags_id, tags_display, tags_lore, tags_effect, tags_permission FROM tags");) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tags_id, tags_display, tags_lore, tags_effect, tags_permission FROM tags")) {
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
                 if(!player.hasPermission("skyprisoncore.command.tags.admin")) {
@@ -60,29 +67,33 @@ public class Tags implements CommandExecutor {
             tags = (ArrayList<List<Object>>) tags.subList(toRemove, tags.size()-1);
         }
 
-        Inventory bounties = Bukkit.createInventory(null, 54, ChatColor.RED + "Tags | Page " + page);
+        Inventory bounties = Bukkit.createInventory(null, 54, Component.text("Tags | Page " + page, NamedTextColor.RED));
         int j = 0;
         for (List<Object> tag : tags) {  // id, display, lore, effect
             if(j == 45) break;
-            ArrayList<String> lore = new ArrayList<>();
+            ArrayList<Component> lore = new ArrayList<>();
             ItemStack head = new ItemStack(Material.NAME_TAG);
             ItemMeta meta = head.getItemMeta();
-            meta.setDisplayName(plugin.colourMessage((String) tag.get(1)));
+            meta.displayName(MiniMessage.miniMessage().deserialize((String) tag.get(1)));
             if(tag.get(2) != null && !String.valueOf(tag.get(2)).isEmpty()) {
                 String loreTexts = String.valueOf(tag.get(2));
                 if (loreTexts.contains("\n")) {
                     for (String loreText : loreTexts.split("\n")) {
-                        lore.add(plugin.colourMessage(loreText));
+                        lore.add(MiniMessage.miniMessage().deserialize(loreText)
+                                .decoration(TextDecoration.ITALIC, false));
                     }
                 } else {
-                    lore.add(plugin.colourMessage(loreTexts));
+                    lore.add(MiniMessage.miniMessage().deserialize(loreTexts)
+                            .decoration(TextDecoration.ITALIC, false));
                 }
             }
             if(tag.get(3) != null && !String.valueOf(tag.get(3)).isEmpty()) {
-                lore.add(plugin.colourMessage("&7--\n"));
-                lore.add(plugin.colourMessage("&eTag Effect: &b" + tag.get(3)));
+                lore.add(Component.text("--\n", NamedTextColor.GRAY)
+                        .decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("Tag Effect: ", NamedTextColor.YELLOW).append(Component.text((String) tag.get(3), NamedTextColor.AQUA))
+                        .decoration(TextDecoration.ITALIC, false));
             }
-            meta.setLore(lore);
+            meta.lore(lore);
 
             NamespacedKey key3 = new NamespacedKey(plugin, "tag-id");
             meta.getPersistentDataContainer().set(key3, PersistentDataType.INTEGER, (Integer) tag.get(0));
@@ -95,14 +106,16 @@ public class Tags implements CommandExecutor {
         ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         ItemMeta paneMeta = pane.getItemMeta();
         pane.setItemMeta(paneMeta);
-        paneMeta.setDisplayName(plugin.colourMessage("&f"));
+        paneMeta.displayName(Component.empty());
         ItemStack nextPage = new ItemStack(Material.PAPER);
         ItemMeta nextMeta = nextPage.getItemMeta();
-        nextMeta.setDisplayName(ChatColor.GREEN + "Next Page");
+        nextMeta.displayName(Component.text("Next Page", NamedTextColor.GREEN)
+                .decoration(TextDecoration.ITALIC, false));
         nextPage.setItemMeta(nextMeta);
         ItemStack prevPage = new ItemStack(Material.PAPER);
         ItemMeta prevMeta = prevPage.getItemMeta();
-        prevMeta.setDisplayName(ChatColor.GREEN + "Previous Page");
+        nextMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN)
+                .decoration(TextDecoration.ITALIC, false));
         prevPage.setItemMeta(prevMeta);
         for(int i = 45; i < 54; i++) {
             if(i == 45) {
@@ -129,11 +142,13 @@ public class Tags implements CommandExecutor {
 
         ItemStack remTag = new ItemStack(Material.BARRIER);
         ItemMeta remMeta = remTag.getItemMeta();
-        remMeta.setDisplayName(ChatColor.RED + "Remove tag");
+        remMeta.displayName(Component.text("Remove tag", NamedTextColor.RED)
+                .decoration(TextDecoration.ITALIC, false));
         if(plugin.userTags.get(player.getUniqueId()) != null) {
-            ArrayList<String> lore = new ArrayList<>();
-            lore.add(plugin.colourMessage("&eCurrent Tag: " + plugin.userTags.get(player.getUniqueId())));
-            remMeta.setLore(lore);
+            ArrayList<Component> lore = new ArrayList<>();
+            lore.add(Component.text("Current Tag: ", NamedTextColor.YELLOW).append(formatMsg(plugin.userTags.get(player.getUniqueId())))
+                    .decoration(TextDecoration.ITALIC, false));
+            remMeta.lore(lore);
         }
         remTag.setItemMeta(remMeta);
         bounties.setItem(49, remTag);
@@ -142,74 +157,76 @@ public class Tags implements CommandExecutor {
     }
 
     public void openNewGUI(Player player, String display, String lore, String effect) {
-        Inventory bounties = Bukkit.createInventory(null, 27, ChatColor.RED + "Tags | Create New");
+        Inventory bounties = Bukkit.createInventory(null, 27, Component.text("Tags | Create New", NamedTextColor.RED));
         for (int i = 0; i < 27; i++) {
             if(i == 9) {
                 ItemStack head = new ItemStack(Material.NAME_TAG);
                 ItemMeta meta = head.getItemMeta();
-                meta.setDisplayName(plugin.colourMessage("&ePreview: &r" + display));
-                ArrayList<String> loreList = new ArrayList<>();
+                meta.displayName(Component.text("Preview: ", NamedTextColor.YELLOW).append(formatMsg(display))
+                        .decoration(TextDecoration.ITALIC, false));
+                ArrayList<Component> loreList = new ArrayList<>();
                 if (lore.contains("\n")) {
                     for (String loreText : lore.split("\n")) {
-                        loreList.add(plugin.colourMessage(loreText));
+                        loreList.add(formatMsg(loreText).decoration(TextDecoration.ITALIC, false));
                     }
                 } else {
-                    loreList.add(plugin.colourMessage(lore));
+                    loreList.add(formatMsg(lore).decoration(TextDecoration.ITALIC, false));
                 }
-                loreList.add(plugin.colourMessage("&7--"));
+                loreList.add(Component.text("--", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
                 if (!effect.isEmpty())
-                    loreList.add(plugin.colourMessage("&6Effect: " + effect));
+                    loreList.add(Component.text("Effect: " + effect, NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
                 else
-                    loreList.add(plugin.colourMessage("&6Effect: &lNONE"));
-                meta.setLore(loreList);
+                    loreList.add(Component.text("Effect: ", NamedTextColor.GOLD).append(Component.text("NONE").decorate(TextDecoration.BOLD))
+                            .decoration(TextDecoration.ITALIC, false));
+                meta.lore(loreList);
                 head.setItemMeta(meta);
                 bounties.setItem(i, head);
             } else if(i == 11) {
                 ItemStack head = new ItemStack(Material.OAK_SIGN);
                 ItemMeta meta = head.getItemMeta();
-                meta.setDisplayName(plugin.colourMessage("&7Edit Tag Display"));
-                ArrayList<String> loreList = new ArrayList<>();
-                loreList.add(plugin.colourMessage("&7Current name: " + display));
-                loreList.add(plugin.colourMessage("&7"));
-                loreList.add(plugin.colourMessage("&7--"));
-                loreList.add(plugin.colourMessage("&c&lREQUIRED"));
-                meta.setLore(loreList);
+                meta.displayName(Component.text("Edit Tag Display", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                ArrayList<Component> loreList = new ArrayList<>();
+                loreList.add(Component.text("&7Current name: ").append(formatMsg(display)).decoration(TextDecoration.ITALIC, false));
+                loreList.add(Component.empty());
+                loreList.add(Component.text("--", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                loreList.add(Component.text("REQUIRED", NamedTextColor.RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                meta.lore(loreList);
                 head.setItemMeta(meta);
                 bounties.setItem(i, head);
             } else if(i == 13) {
                 ItemStack head = new ItemStack(Material.SPRUCE_SIGN);
                 ItemMeta meta = head.getItemMeta();
-                meta.setDisplayName(plugin.colourMessage("&7Edit Tag Lore"));
-                ArrayList<String> loreList = new ArrayList<>();
-                loreList.add(plugin.colourMessage("&7Current lore: " + lore));
-                loreList.add(plugin.colourMessage("&7"));
-                loreList.add(plugin.colourMessage("&7--"));
-                loreList.add(plugin.colourMessage("&7&lOPTIONAL"));
-                meta.setLore(loreList);
+                meta.displayName(Component.text("Edit Tag Lore", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                ArrayList<Component> loreList = new ArrayList<>();
+                loreList.add(Component.text("Current lore: ", NamedTextColor.GRAY).append(formatMsg(lore)).decoration(TextDecoration.ITALIC, false));
+                loreList.add(Component.empty());
+                loreList.add(Component.text("--", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                loreList.add(Component.text("OPTIONAL", NamedTextColor.GRAY, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                meta.lore(loreList);
                 head.setItemMeta(meta);
                 bounties.setItem(i, head);
             } else if(i == 15) {
                 ItemStack head = new ItemStack(Material.ENCHANTED_BOOK);
                 ItemMeta meta = head.getItemMeta();
-                meta.setDisplayName(plugin.colourMessage("&7Edit Tag Effect"));
-                ArrayList<String> loreList = new ArrayList<>();
-                loreList.add(plugin.colourMessage("&6Current Effect: " + effect));
-                loreList.add(plugin.colourMessage("&7"));
-                loreList.add(plugin.colourMessage("&7--"));
-                loreList.add(plugin.colourMessage("&7&lOPTIONAL"));
-                meta.setLore(loreList);
+                meta.displayName(Component.text("Edit Tag Effect", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                ArrayList<Component> loreList = new ArrayList<>();
+                loreList.add(Component.text("Current Effect: " + effect, NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
+                loreList.add(Component.empty());
+                loreList.add(Component.text("--", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                loreList.add(Component.text("OPTIONAL", NamedTextColor.GRAY, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                meta.lore(loreList);
                 head.setItemMeta(meta);
                 bounties.setItem(i, head);
             } else if(i == 22) {
                 ItemStack pane = new ItemStack(Material.GREEN_CONCRETE);
                 ItemMeta paneMeta = pane.getItemMeta();
-                paneMeta.setDisplayName(plugin.colourMessage("&cCreate Tag"));
+                paneMeta.displayName(Component.text("Create Tag", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
                 pane.setItemMeta(paneMeta);
                 bounties.setItem(i, pane);
             } else {
                 ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
                 ItemMeta paneMeta = pane.getItemMeta();
-                paneMeta.setDisplayName(plugin.colourMessage("&f"));
+                paneMeta.displayName(Component.empty());
                 if(i == 0) {
                     NamespacedKey key = new NamespacedKey(plugin, "stop-click");
                     paneMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
@@ -248,86 +265,87 @@ public class Tags implements CommandExecutor {
             e.printStackTrace();
         }
 
-        Inventory bounties = Bukkit.createInventory(null, 27, ChatColor.RED + "Tags | " + name);
+        Inventory bounties = Bukkit.createInventory(null, 27, Component.text("Tags | " + name, NamedTextColor.RED));
         for (int i = 0; i < 27; i++) {
             if(i == 9) {
                 ItemStack head = new ItemStack(Material.NAME_TAG);
                 ItemMeta meta = head.getItemMeta();
-                meta.setDisplayName(plugin.colourMessage("&ePreview: &r" + name));
-                ArrayList<String> loreList = new ArrayList<>();
+                meta.displayName(Component.text("Preview: ", NamedTextColor.YELLOW).append(formatMsg(name))
+                        .decoration(TextDecoration.ITALIC, false));
+                ArrayList<Component> loreList = new ArrayList<>();
                 if(lore != null && !lore.isEmpty()) {
-                    if (ChatColor.stripColor(lore).contains("\n")) {
+                    if (lore.contains("\n")) {
                         for (String loreText : lore.split("\n")) {
-                            loreList.add(plugin.colourMessage(loreText));
+                            loreList.add(formatMsg(loreText).decoration(TextDecoration.ITALIC, false));
                         }
                     } else {
-                        loreList.add(plugin.colourMessage(lore));
+                        loreList.add(formatMsg(lore).decoration(TextDecoration.ITALIC, false));
                     }
                 }
                 if(effect != null && !effect.isEmpty()) {
-                    loreList.add(plugin.colourMessage("&7--"));
-                    loreList.add(plugin.colourMessage("&eEffect: &6" + effect));
+                    loreList.add(Component.text("--", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                    loreList.add(Component.text("Effect: " + effect, NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
                 }
-                loreList.add(plugin.colourMessage("&7--"));
-                loreList.add(plugin.colourMessage("&eTag ID: &6" + tag_id));
-                meta.setLore(loreList);
+                loreList.add(Component.text("--", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                loreList.add(Component.text("Tag ID: " + tag_id, NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+                meta.lore(loreList);
                 head.setItemMeta(meta);
                 bounties.setItem(i, head);
             } else if(i == 11) {
                 ItemStack head = new ItemStack(Material.OAK_SIGN);
                 ItemMeta meta = head.getItemMeta();
-                meta.setDisplayName(plugin.colourMessage("&7Edit Tag Display"));
-                ArrayList<String> loreList = new ArrayList<>();
-                loreList.add(plugin.colourMessage("&7Current name: " + name));
-                meta.setLore(loreList);
+                meta.displayName(Component.text("Edit Tag Display", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                ArrayList<Component> loreList = new ArrayList<>();
+                loreList.add(Component.text("Current name: ", NamedTextColor.GRAY).append(formatMsg(name)).decoration(TextDecoration.ITALIC, false));
+                meta.lore(loreList);
                 head.setItemMeta(meta);
                 bounties.setItem(i, head);
             } else if(i == 13) {
                 ItemStack head = new ItemStack(Material.SPRUCE_SIGN);
                 ItemMeta meta = head.getItemMeta();
-                meta.setDisplayName(plugin.colourMessage("&7Edit Tag Lore"));
-                ArrayList<String> loreList = new ArrayList<>();
-                loreList.add(plugin.colourMessage("&7Current lore:"));
+                meta.displayName(Component.text("Edit Tag Lore", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                ArrayList<Component> loreList = new ArrayList<>();
+                loreList.add(Component.text("Current lore:", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
                 if(lore != null && !lore.isEmpty()) {
-                    if (ChatColor.stripColor(lore).contains("\n")) {
+                    if (lore.contains("\n")) {
                         for (String loreText : lore.split("\n")) {
-                            loreList.add(plugin.colourMessage(loreText));
+                            loreList.add(formatMsg(loreText).decoration(TextDecoration.ITALIC, false));
                         }
                     } else {
-                        loreList.add(plugin.colourMessage(lore));
+                        loreList.add(formatMsg(lore).decoration(TextDecoration.ITALIC, false));
                     }
-                };
-                meta.setLore(loreList);
+                }
+                meta.lore(loreList);
                 head.setItemMeta(meta);
                 bounties.setItem(i, head);
             } else if(i == 15) {
                 ItemStack head = new ItemStack(Material.ENCHANTED_BOOK);
                 ItemMeta meta = head.getItemMeta();
-                meta.setDisplayName(plugin.colourMessage("&7Edit Tag Effect"));
-                ArrayList<String> loreList = new ArrayList<>();
+                meta.displayName(Component.text("Edit Tag Effect", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                ArrayList<Component> loreList = new ArrayList<>();
                 if (effect != null && !effect.isEmpty())
-                    loreList.add(plugin.colourMessage("&6Current Effect: " + effect));
+                    loreList.add(Component.text("Current Effect: " + effect, NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
                 else
-                    loreList.add(plugin.colourMessage("&6Current Effect: &lNONE"));
-                meta.setLore(loreList);
+                    loreList.add(Component.text("Current Effect: NONE", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
+                meta.lore(loreList);
                 head.setItemMeta(meta);
                 bounties.setItem(i, head);
             } else if(i == 17) {
                 ItemStack pane = new ItemStack(Material.BARRIER);
                 ItemMeta paneMeta = pane.getItemMeta();
-                paneMeta.setDisplayName(plugin.colourMessage("&cDelete tag"));
+                paneMeta.displayName(Component.text("Delete tag", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
                 pane.setItemMeta(paneMeta);
                 bounties.setItem(i, pane);
             } else if(i == 22) {
                 ItemStack pane = new ItemStack(Material.NETHER_STAR);
                 ItemMeta paneMeta = pane.getItemMeta();
-                paneMeta.setDisplayName(plugin.colourMessage("&cBack to all tags"));
+                paneMeta.displayName(Component.text("Back to all tags", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
                 pane.setItemMeta(paneMeta);
                 bounties.setItem(i, pane);
             } else {
                 ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
                 ItemMeta paneMeta = pane.getItemMeta();
-                paneMeta.setDisplayName(plugin.colourMessage("&f"));
+                paneMeta.displayName(Component.empty());
                 if(i == 0) {
                     NamespacedKey key = new NamespacedKey(plugin, "stop-click");
                     paneMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
@@ -361,33 +379,32 @@ public class Tags implements CommandExecutor {
             tags = (ArrayList<List<Object>>) tags.subList(toRemove, tags.size()-1);
         }
 
-        Inventory bounties = Bukkit.createInventory(null, 54, ChatColor.RED + "Tags | Page " + page);
+        Inventory bounties = Bukkit.createInventory(null, 54, Component.text("Tags | Page " + page));
         int j = 0;
         for (List<Object> tag : tags) {  // id, display, lore, effect
             if(j == 45) break;
-            ArrayList<String> lore = new ArrayList<>();
+            ArrayList<Component> lore = new ArrayList<>();
             ItemStack head = new ItemStack(Material.NAME_TAG);
             ItemMeta meta = head.getItemMeta();
-            meta.setDisplayName(plugin.colourMessage((String) tag.get(1)));
+            meta.displayName(formatMsg((String) tag.get(1)).decoration(TextDecoration.ITALIC, false));
             if(tag.get(2) != null && !String.valueOf(tag.get(2)).isEmpty()) {
                 String loreTexts = String.valueOf(tag.get(2));
-                if (ChatColor.stripColor(loreTexts).contains("\n")) {
+                if (loreTexts.contains("\n")) {
                     for (String loreText : loreTexts.split("\n")) {
-                        lore.add(plugin.colourMessage(loreText));
+                        lore.add(formatMsg(loreText).decoration(TextDecoration.ITALIC, false));
                     }
                 } else {
-                    lore.add(plugin.colourMessage(loreTexts));
+                    lore.add(formatMsg(loreTexts).decoration(TextDecoration.ITALIC, false));
                 }
             }
             if(tag.get(3) != null && !String.valueOf(tag.get(3)).isEmpty()) {
-                lore.add(plugin.colourMessage("&7--"));
-                lore.add(plugin.colourMessage("&eEffect: &6" + tag.get(3)));
+                lore.add(Component.text("--", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("Effect: " + tag.get(3), NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
             }
-            lore.add(plugin.colourMessage(("&7--")));
-            lore.add(plugin.colourMessage("&eTag ID: &6" + tag.get(0)));
+            lore.add(Component.text("--", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+            lore.add(Component.text("Tag ID: " + tag.get(0), NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
 
-
-            meta.setLore(lore);
+            meta.lore(lore);
 
             NamespacedKey key3 = new NamespacedKey(plugin, "tag-id");
             meta.getPersistentDataContainer().set(key3, PersistentDataType.INTEGER, (Integer) tag.get(0));
@@ -409,11 +426,13 @@ public class Tags implements CommandExecutor {
         ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         ItemStack nextPage = new ItemStack(Material.PAPER);
         ItemMeta nextMeta = nextPage.getItemMeta();
-        nextMeta.setDisplayName(ChatColor.GREEN + "Next Page");
+        nextMeta.displayName(Component.text("Next Page", NamedTextColor.GREEN)
+                .decoration(TextDecoration.ITALIC, false));
         nextPage.setItemMeta(nextMeta);
         ItemStack prevPage = new ItemStack(Material.PAPER);
         ItemMeta prevMeta = prevPage.getItemMeta();
-        prevMeta.setDisplayName(ChatColor.GREEN + "Previous Page");
+        prevMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN)
+                .decoration(TextDecoration.ITALIC, false));
         prevPage.setItemMeta(prevMeta);
         for(int i = 45; i < 54; i++) {
             bounties.setItem(i, pane);

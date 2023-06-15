@@ -4,6 +4,7 @@ import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import me.arcaniax.hdb.api.HeadDatabaseAPI;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.NamespacedKey;
@@ -15,6 +16,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 
@@ -59,7 +61,7 @@ public class Bomb implements CommandExecutor {
 
 
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         // /bomb give <player> <type> <amount>
         if(args.length == 4) {
             String bomb = args[2];
@@ -76,23 +78,20 @@ public class Bomb implements CommandExecutor {
                                 user.getLocation().getWorld().dropItem(user.getLocation(), item);
                             }
                         } else {
-                            sender.sendMessage(plugin.colourMessage("&cAmount specified isnt a number!"));
+                            sender.sendMessage(Component.text("Amount specified isnt a number!", NamedTextColor.RED));
                         }
                     } else {
-                        sender.sendMessage(plugin.colourMessage("&cWrong Type! Available types are: Small, Medium, Large, Massive & Nuke"));
+                        sender.sendMessage(Component.text("Wrong Type! Available types are: Small, Medium, Large, Massive & Nuke", NamedTextColor.RED));
                     }
                 } else {
-                    sender.sendMessage(plugin.colourMessage("&c" + args[1] + " is not a valid player name!"));
+                    sender.sendMessage(Component.text(args[1] + " is not a valid player name!", NamedTextColor.RED));
                 }
-            } else {
-                // NOT GIVE
             }
         } else {
-            if(sender instanceof Player) {
-                Player player = (Player) sender;
-                player.sendMessage(plugin.colourMessage("&cWrong usage! /bomb give <player> <type> <amount>"));
+            if(sender instanceof Player player) {
+                player.sendMessage(Component.text("Incorrect usage! /bomb give <player> <type> <amount>", NamedTextColor.RED));
             } else {
-                plugin.tellConsole(plugin.colourMessage("&cWrong usage! /bomb give <player> <type> <amount>"));
+                plugin.tellConsole(Component.text("Incorrect usage! /bomb give <player> <type> <amount>", NamedTextColor.RED));
             }
         }
         return true;

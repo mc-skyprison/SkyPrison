@@ -247,7 +247,6 @@ public class SkyPrisonCore extends JavaPlugin {
         date.set(Calendar.MINUTE, 1);
         date.set(Calendar.SECOND, 0);
         date.set(Calendar.MILLISECOND, 0);
-        tellConsole(date.getTime().toString());
 
         timer.schedule(new NextDayTask(this, getDatabase()), date.getTime());
 
@@ -386,7 +385,7 @@ public class SkyPrisonCore extends JavaPlugin {
                     )).createGlobal(discApi)
                     .join();
             discApi.addListener(new SlashCommandCreate(this, getDatabase()));
-            discApi.addListener(new MessageCreate(this, new ChatUtils(this, discApi), discApi, getDatabase()));
+            discApi.addListener(new MessageCreate(this, new ChatUtils(this, discApi), discApi));
             discApi.addListener(new UserRoleAdd(this, getDatabase()));
             discApi.addListener(new UserRoleRemove(this, getDatabase()));
         }
@@ -486,8 +485,8 @@ public class SkyPrisonCore extends JavaPlugin {
     public void registerCommands() {
         Objects.requireNonNull(getCommand("tokens")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
-        Objects.requireNonNull(getCommand("tokens")).setTabCompleter(new TabCompleter(this));
-        Objects.requireNonNull(getCommand("token")).setTabCompleter(new TabCompleter(this));
+        Objects.requireNonNull(getCommand("tokens")).setTabCompleter(new TabCompleter());
+        Objects.requireNonNull(getCommand("token")).setTabCompleter(new TabCompleter());
         Objects.requireNonNull(getCommand("donoradd")).setExecutor(new DonorAdd(getDatabase()));
         Objects.requireNonNull(getCommand("purchases")).setExecutor(new Purchases(getDatabase(), this));
         Objects.requireNonNull(getCommand("econcheck")).setExecutor(new EconomyCheck(this));
@@ -502,16 +501,16 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("killinfo")).setExecutor(new KillInfo(getDatabase()));
         Objects.requireNonNull(getCommand("firstjointop")).setExecutor(new FirstjoinTop(this, getDatabase()));
         Objects.requireNonNull(getCommand("bartender")).setExecutor(new Bartender(this));
-        Objects.requireNonNull(getCommand("sword")).setExecutor(new Sword(this));
-        Objects.requireNonNull(getCommand("bow")).setExecutor(new Bow(this));
-        Objects.requireNonNull(getCommand("contraband")).setExecutor(new Contraband(this));
+        Objects.requireNonNull(getCommand("sword")).setExecutor(new Sword());
+        Objects.requireNonNull(getCommand("bow")).setExecutor(new Bow());
+        Objects.requireNonNull(getCommand("contraband")).setExecutor(new Contraband());
         Objects.requireNonNull(getCommand("ignoretp")).setExecutor(new IgnoreTeleport(this, getDatabase()));
         Objects.requireNonNull(getCommand("guardduty")).setExecutor(new GuardDuty(this));
         Objects.requireNonNull(getCommand("safezone")).setExecutor(new Safezone(this));
         Objects.requireNonNull(getCommand("buyback")).setExecutor(new BuyBack(this, getDatabase()));
         Objects.requireNonNull(getCommand("daily")).setExecutor(new Daily(this, getDatabase()));
         Objects.requireNonNull(getCommand("shopban")).setExecutor(new ShopBan(getDatabase()));
-        Objects.requireNonNull(getCommand("enchtable")).setExecutor(new EnchTable(this));
+        Objects.requireNonNull(getCommand("enchtable")).setExecutor(new EnchTable());
         Objects.requireNonNull(getCommand("removeitalics")).setExecutor(new RemoveItalics(this));
         Objects.requireNonNull(getCommand("bottledexp")).setExecutor(new BottledExp(this));
         Objects.requireNonNull(getCommand("transportpass")).setExecutor(new TransportPass(this));
@@ -520,16 +519,14 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("skyplot")).setExecutor(new SkyPlot(this));
         Objects.requireNonNull(getCommand("plot")).setExecutor(new PlotTeleport(this));
         Objects.requireNonNull(getCommand("moneyhistory")).setExecutor(new MoneyHistory(this));
-        Objects.requireNonNull(getCommand("donorreset")).setExecutor(new DonorReset(this));
         Objects.requireNonNull(getCommand("tags")).setExecutor(new Tags(this, getDatabase()));
         Objects.requireNonNull(getCommand("bomb")).setExecutor(new Bomb(this));
         Objects.requireNonNull(getCommand("furnace")).setExecutor(new VirtualFurnace(this));
         Objects.requireNonNull(getCommand("minereset")).setExecutor(new MineReset(this));
-        Objects.requireNonNull(getCommand("voucher")).setExecutor(new Voucher(this));
+        Objects.requireNonNull(getCommand("voucher")).setExecutor(new Voucher());
         Objects.requireNonNull(getCommand("randomgive")).setExecutor(new RandomGive(this));
         Objects.requireNonNull(getCommand("customrecipes")).setExecutor(new CustomRecipes(this));
         Objects.requireNonNull(getCommand("claim")).setExecutor(new Claim(this, getDatabase()));
-        Objects.requireNonNull(getCommand("dbimport")).setExecutor(new DatabaseImport(this, getDatabase()));
 
         Objects.requireNonNull(getCommand("referral")).setExecutor(new Referral(this, getDatabase()));
         Objects.requireNonNull(getCommand("discord")).setExecutor(new Discord(this, getDatabase(), discApi));
@@ -545,8 +542,8 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new BlockBreak(this, dailyMissions, particles), this);
         pm.registerEvents(new BlockDamage(this, getDatabase(), dailyMissions), this);
         pm.registerEvents(new BlockPlace(this, dailyMissions), this);
-        pm.registerEvents(new BrewDrink(this, getDatabase()), this);
-        pm.registerEvents(new CMIPlayerTeleportRequest(this, getDatabase()), this);
+        pm.registerEvents(new BrewDrink(getDatabase()), this);
+        pm.registerEvents(new CMIPlayerTeleportRequest(getDatabase()), this);
         pm.registerEvents(new CMIUserBalanceChange(this), this);
         pm.registerEvents(new EntityDamageByEntity(this), this);
         pm.registerEvents(new EntityDeath(this, new Safezone(this), getDatabase(), dailyMissions), this);
@@ -561,26 +558,26 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PlayerChangedWorld(), this);
         pm.registerEvents(new PlayerInteract(this), this);
         pm.registerEvents(new PlayerMove(this), this);
-        pm.registerEvents(new PlayerPostRespawn(this), this);
+        pm.registerEvents(new PlayerPostRespawn(), this);
         pm.registerEvents(new PlayerRiptide(), this);
         pm.registerEvents(new PlayerTag(this), this);
         pm.registerEvents(new PlayerTeleport(this), this);
         pm.registerEvents(new PlayerUnJail(), this);
-        pm.registerEvents(new PlayerUntag(this), this);
+        pm.registerEvents(new PlayerUntag(), this);
         pm.registerEvents(new ShopCreate(this), this);
         pm.registerEvents(new ShopPostTransaction(getDatabase(), dailyMissions), this);
         pm.registerEvents(new ShopPreTransaction(getDatabase()), this);
-        pm.registerEvents(new ShopPurchase(this, getDatabase()), this);
+        pm.registerEvents(new ShopPurchase(getDatabase()), this);
         pm.registerEvents(new ShopSuccessPurchase(this), this);
         pm.registerEvents(new UnsellRegion(), this);
-        pm.registerEvents(new PlayerFish(this, dailyMissions), this);
+        pm.registerEvents(new PlayerFish(dailyMissions), this);
         pm.registerEvents(new InventoryClose(this), this);
         pm.registerEvents(new EntityDamage(this), this);
         pm.registerEvents(new PlayerCommandPreprocess(this), this);
         pm.registerEvents(new ParkourFinish(this, dailyMissions), this);
-        pm.registerEvents(new PlayerTogglePvP(this), this);
+        pm.registerEvents(new PlayerTogglePvP(), this);
         pm.registerEvents(new ServerLoad(this, particles, getDatabase()), this);
-        pm.registerEvents(new CrateObtainReward(this, getDatabase()), this);
+        pm.registerEvents(new CrateObtainReward(getDatabase()), this);
         pm.registerEvents(new EntityToggleGlide(), this);
         pm.registerEvents(new PlayerBucketEmpty(), this);
         pm.registerEvents(new AsyncChatDecorate(this, getDatabase()), this);
@@ -976,6 +973,7 @@ public class SkyPrisonCore extends JavaPlugin {
         }
     }
 
+
     public String colourMessage(String message) {
         message = translateHexColorCodes(ChatColor.translateAlternateColorCodes('&', message));
         return message;
@@ -1027,7 +1025,7 @@ public class SkyPrisonCore extends JavaPlugin {
         }
     }
 
-    public void tellConsole(String message){
+    public void tellConsole(Component message){
         Bukkit.getConsoleSender().sendMessage(message);
     }
     public void asConsole(String command){

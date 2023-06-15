@@ -248,11 +248,6 @@ public class InventoryClick implements Listener {
 
                                 }
                             }
-/*                            case 50 -> {
-                                if (clickedMat.equals(Material.WRITABLE_BOOK)) {
-                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getIsAllowed(), inv.getNextCategory(inv.getCategory()), 1).getInventory());
-                                }
-                            }*/
                             case 51 -> {
                                 if (clickedMat.equals(Material.PAPER)) {
                                     player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getIsAllowed(), inv.getCategory(), inv.getPage() + 1).getInventory());

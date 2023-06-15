@@ -42,6 +42,7 @@ public class SpongeTask extends TimerTask {
             new BukkitRunnable() {
                 @Override
                 public void run() {
+                    locs.forEach(loc -> loc.getBlock().setType(Material.AIR));
                     locs.get(0).getBlock().setType(Material.SPONGE);
                 }
             }.runTask(plugin);

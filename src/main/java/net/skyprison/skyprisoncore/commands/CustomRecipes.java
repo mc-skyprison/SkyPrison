@@ -179,36 +179,38 @@ public class CustomRecipes implements CommandExecutor {
         CraftingRecipe<?, AdvancedRecipeSettings> recipe = (CraftingRecipe<?, AdvancedRecipeSettings>) CustomCrafting.inst().getRegistries().getRecipes().get(recipeKey);
 
         List<Integer> ingPos = new ArrayList<>(Arrays.asList(11, 12, 13, 20, 21, 22, 29, 30, 31));
-        if(recipe.getRecipeType().getType().equals(RecipeType.Type.CRAFTING_SHAPED)) {
-            AbstractRecipeShaped<?,?> shapedRecipe = (AbstractRecipeShaped<?, ?>) recipe;
-            String[] shape = shapedRecipe.getShape();
-            ingPos = new ArrayList<>();
-            for(String shapeRow : shape) {
-                String[] shapeSlots = shapeRow.split("");
-                for(String shapeSlot : shapeSlots) {
-                    switch (shapeSlot.toLowerCase()) {
-                        case "a" -> ingPos.add(11);
-                        case "b" -> ingPos.add(12);
-                        case "c" -> ingPos.add(13);
-                        case "d" -> ingPos.add(20);
-                        case "e" -> ingPos.add(21);
-                        case "f" -> ingPos.add(22);
-                        case "g" -> ingPos.add(29);
-                        case "h" -> ingPos.add(30);
-                        case "i" -> ingPos.add(31);
+        if(recipe != null) {
+            if (recipe.getRecipeType().getType().equals(RecipeType.Type.CRAFTING_SHAPED)) {
+                AbstractRecipeShaped<?, ?> shapedRecipe = (AbstractRecipeShaped<?, ?>) recipe;
+                String[] shape = shapedRecipe.getShape();
+                ingPos = new ArrayList<>();
+                for (String shapeRow : shape) {
+                    String[] shapeSlots = shapeRow.split("");
+                    for (String shapeSlot : shapeSlots) {
+                        switch (shapeSlot.toLowerCase()) {
+                            case "a" -> ingPos.add(11);
+                            case "b" -> ingPos.add(12);
+                            case "c" -> ingPos.add(13);
+                            case "d" -> ingPos.add(20);
+                            case "e" -> ingPos.add(21);
+                            case "f" -> ingPos.add(22);
+                            case "g" -> ingPos.add(29);
+                            case "h" -> ingPos.add(30);
+                            case "i" -> ingPos.add(31);
+                        }
                     }
                 }
             }
-        }
-        int i = 0;
-        for (Ingredient ing : recipe.getIngredients()) {
-            if(!ing.getItemStack().getType().isAir()) {
-                recipeGUI.setItem(ingPos.get(i), ing.getItemStack());
-                i++;
+            int i = 0;
+            for (Ingredient ing : recipe.getIngredients()) {
+                if (!ing.getItemStack().getType().isAir()) {
+                    recipeGUI.setItem(ingPos.get(i), ing.getItemStack());
+                    i++;
+                }
             }
-        }
 
-        recipeGUI.setItem(24, recipe.getResult().getItemStack());
+            recipeGUI.setItem(24, recipe.getResult().getItemStack());
+        }
         player.openInventory(recipeGUI);
     }
 

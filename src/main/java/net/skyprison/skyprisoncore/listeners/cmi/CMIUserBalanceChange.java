@@ -34,19 +34,21 @@ public class CMIUserBalanceChange implements Listener {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                PrintWriter pData = new PrintWriter(fData);
+                if(fData != null) {
+                    PrintWriter pData = new PrintWriter(fData);
 
-                Date date = new Date();
-                SimpleDateFormat DateFor = new SimpleDateFormat("yyyy/MM/dd hh:mm:ss");
-                String stringDate = DateFor.format(date);
-                double amount = event.getTo() - event.getFrom();
-                if (event.getActionType().equalsIgnoreCase("withdraw")) {
-                    amount = event.getFrom() - event.getTo();
+                    Date date = new Date();
+                    SimpleDateFormat DateFor = new SimpleDateFormat("yyyy/MM/dd hh:mm:ss");
+                    String stringDate = DateFor.format(date);
+                    double amount = event.getTo() - event.getFrom();
+                    if (event.getActionType().equalsIgnoreCase("withdraw")) {
+                        amount = event.getFrom() - event.getTo();
+                    }
+                    pData.println(stringDate + ";" + fromUser.getUniqueId() + ";" + event.getActionType().toLowerCase() + ";" + amount + ";false;null;null");
+
+                    pData.flush();
+                    pData.close();
                 }
-                pData.println(stringDate + ";" + fromUser.getUniqueId() + ";" + event.getActionType().toLowerCase() + ";" + amount + ";false;null;null");
-
-                pData.flush();
-                pData.close();
             }
         });
     }

@@ -1,6 +1,5 @@
 package net.skyprison.skyprisoncore.listeners.excellentcrates;
 
-import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -12,11 +11,9 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class CrateObtainReward implements Listener {
-    private final SkyPrisonCore plugin;
     private final DatabaseHook db;
 
-    public CrateObtainReward(SkyPrisonCore plugin, DatabaseHook db) {
-        this.plugin = plugin;
+    public CrateObtainReward(DatabaseHook db) {
         this.db = db;
     }
 

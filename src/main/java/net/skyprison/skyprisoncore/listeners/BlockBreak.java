@@ -13,6 +13,7 @@ import dev.esophose.playerparticles.api.PlayerParticlesAPI;
 import net.coreprotect.CoreProtect;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.RandomReward;
@@ -108,7 +109,7 @@ public class BlockBreak implements Listener {
                                 if (shinyLoc.equals(loc) || shinyLoc.offset(0, 1, 0).equals(loc) || shinyLoc.offset(0, -1, 0).equals(loc)) {
                                     plugin.shinyGrass.remove(loc);
                                     particles.removeFixedEffectsInRange(shinyLoc, 1);
-                                    player.sendMessage(plugin.colourMessage("&7&oBuried amidst the leafy foliage, you discover an unexpected treasure!"));
+                                    player.sendMessage(Component.text("Buried amidst the leafy foliage, you discover an unexpected treasure!", NamedTextColor.GRAY, TextDecoration.ITALIC));
                                     ItemStack item = RandomReward.getRandomReward();
                                     CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
                                     if (user.getInventory().canFit(item)) {
