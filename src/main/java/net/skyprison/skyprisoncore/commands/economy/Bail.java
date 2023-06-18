@@ -3,7 +3,6 @@ package net.skyprison.skyprisoncore.commands.economy;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
@@ -79,12 +78,12 @@ public class Bail implements CommandExecutor {
                     }
                     if(hasCash) {
                         bailOut.put(player.getUniqueId(), bailCash);
-                        TextComponent msg = Component.text(plugin.colourMessage("&eClick here to bail yourself out for &a$" + plugin.formatNumber(bailCash)))
+                        Component msg = Component.text("Click here to bail yourself out for ", NamedTextColor.YELLOW).append(Component.text("$" + plugin.formatNumber(bailCash), NamedTextColor.GREEN))
                                 .clickEvent(ClickEvent.runCommand("/bail confirm"))
-                                .hoverEvent(Component.text(plugin.colourMessage("&eClick me!")));
+                                .hoverEvent(Component.text("Click Here", NamedTextColor.GRAY));
                         player.sendMessage(msg);
                     } else {
-                        player.sendMessage(plugin.colourMessage("&cYou can't afford to bail yourself out!"));
+                        player.sendMessage(Component.text("You can't afford to bail yourself out!", NamedTextColor.RED));
                     }
                 } else {
                     if(bailOut.containsKey(player.getUniqueId())) {
@@ -93,11 +92,11 @@ public class Bail implements CommandExecutor {
                             coolDown.put(player.getUniqueId(), System.currentTimeMillis() + 3600000);
                             user.unjail();
                         } else {
-                            player.sendMessage(plugin.colourMessage("&cYou no longer have enough money! Cancelling bailout.."));
+                            player.sendMessage(Component.text("You no longer have enough money! Cancelling bailout..", NamedTextColor.RED));
                         }
                         bailOut.remove(player.getUniqueId());
                     } else {
-                        player.sendMessage(plugin.colourMessage("&CYou have no pending bail.."));
+                        player.sendMessage(Component.text("You have no pending bail..", NamedTextColor.RED));
                     }
                 }
             }

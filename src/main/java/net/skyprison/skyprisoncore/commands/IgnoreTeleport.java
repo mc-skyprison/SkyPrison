@@ -91,7 +91,7 @@ public class IgnoreTeleport implements CommandExecutor {
 								}
 							} else {
 								ignoredPlayers.add(ignorePlayer.getUniqueId().toString());
-								player.sendMessage(Component.text("&aSuccessfully added " + ignorePlayer.getName() + " to your ignore list!", NamedTextColor.GREEN));
+								player.sendMessage(Component.text("Successfully added " + ignorePlayer.getName() + " to your ignore list!", NamedTextColor.GREEN));
 
 								try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO teleport_ignore (user_id, ignore_id) VALUES (?, ?)")) {
 									ps.setString(1, player.getUniqueId().toString());

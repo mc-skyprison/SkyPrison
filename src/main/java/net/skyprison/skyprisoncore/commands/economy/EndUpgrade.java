@@ -74,7 +74,7 @@ public class EndUpgrade implements CommandExecutor {
 			lore.add(Component.text("Total Cost: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(totalCost), NamedTextColor.GREEN))
 					.decoration(TextDecoration.ITALIC, false));
 		} else {
-			lore.add(Component.text("&7Total Cost: ", NamedTextColor.GRAY).append(Component.text("FREE", NamedTextColor.GREEN))
+			lore.add(Component.text("Total Cost: ", NamedTextColor.GRAY).append(Component.text("FREE", NamedTextColor.GREEN))
 					.decoration(TextDecoration.ITALIC, false));
 		}
 
@@ -375,11 +375,11 @@ public class EndUpgrade implements CommandExecutor {
 					if (nethItems.contains(iMat)) {
 						netheriteGUI(player);
 					} else {
-						player.sendMessage(plugin.colourMessage("&cYou can't upgrade this item!"));
+						player.sendMessage(Component.text("You can't upgrade this item!", NamedTextColor.RED));
 					}
 				}
 			} else {
-				player.sendMessage(plugin.colourMessage("&cYou need to finish the Blacksmith quest before you can use this shop!"));
+				player.sendMessage(Component.text("You need to finish the Blacksmith quest before you can use this shop!", NamedTextColor.RED));
 			}
 		}
 		return true;

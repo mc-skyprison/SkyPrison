@@ -1,9 +1,9 @@
 package net.skyprison.skyprisoncore.commands;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -21,7 +21,7 @@ public class VirtualFurnace implements CommandExecutor {
 
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if(sender instanceof Player player) {
-            FurnaceInventory inv = (FurnaceInventory) Bukkit.createInventory(null, InventoryType.FURNACE, Component.text(ChatColor.RED + "Furnace Test"));
+            FurnaceInventory inv = (FurnaceInventory) Bukkit.createInventory(null, InventoryType.FURNACE, Component.text("Furnace Test", NamedTextColor.RED));
             player.openInventory(inv);
         }
         return true;

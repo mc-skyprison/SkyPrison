@@ -1,0 +1,156 @@
+package net.skyprison.skyprisoncore.commands;
+
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.skyprison.skyprisoncore.SkyPrisonCore;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+public class ItemLore implements CommandExecutor { // /itemlore
+    private final SkyPrisonCore plugin;
+    public ItemLore(SkyPrisonCore plugin) {
+        this.plugin = plugin;
+    }
+
+
+    private void deleteLoreLine(Player player, ItemStack heldItem, int line) {
+        ItemStack currHeldItem = player.getInventory().getItemInMainHand();
+        if(currHeldItem.equals(heldItem)) {
+            ItemMeta heldMeta = currHeldItem.getItemMeta();
+            List<Component> lore = heldMeta.lore();
+
+            assert lore != null;
+            lore.remove(line - 1);
+            heldMeta.lore(lore);
+            if(currHeldItem.equals(heldItem)) {
+                player.getInventory().getItemInMainHand().setItemMeta(heldMeta);
+                displayLore(player);
+            } else {
+                player.sendMessage(Component.text("Item in hand has changed! Cancelling..", NamedTextColor.RED));
+            }
+        } else {
+            player.sendMessage(Component.text("Item in hand has changed! Cancelling..", NamedTextColor.RED));
+        }
+    }
+
+    private void moveLoreLine(Player player, ItemStack heldItem, int position, boolean moveUp) {
+        ItemStack currHeldItem = player.getInventory().getItemInMainHand();
+        if(currHeldItem.equals(heldItem)) {
+            position = position - 1;
+            int newPos = moveUp ? position - 1 : position + 1;
+            ItemMeta heldMeta = currHeldItem.getItemMeta();
+            List<Component> lore = heldMeta.lore();
+            if(lore != null) {
+                if(newPos >= 0 && newPos < lore.size()) {
+                    Component lore1 = lore.get(newPos);
+                    Component lore2 = lore.get(position);
+
+                    lore.set(position, lore1);
+                    lore.set(newPos, lore2);
+
+                    heldMeta.lore(lore);
+
+                    if(currHeldItem.equals(heldItem)) {
+                        player.getInventory().getItemInMainHand().setItemMeta(heldMeta);
+                        displayLore(player);
+                    } else {
+                        player.sendMessage(Component.text("Item in hand has changed! Cancelling..", NamedTextColor.RED));
+                    }
+                }
+            }
+        } else {
+            player.sendMessage(Component.text("Item in hand has changed! Cancelling..", NamedTextColor.RED));
+        }
+    }
+
+    private void editLoreLine(Player player, ItemStack heldItem, int line) {
+        ItemStack currHeldItem = player.getInventory().getItemInMainHand();
+        if(currHeldItem.equals(heldItem)) {
+            List<Object> loreInfo = new ArrayList<>();
+            loreInfo.add("edit-lore");
+            loreInfo.add(heldItem);
+            loreInfo.add(line);
+            plugin.chatLock.put(player.getUniqueId(), loreInfo);
+            player.sendMessage(Component.text("Type new lore line in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                    .hoverEvent(HoverEvent.showText(Component.text("Click to paste current line to chat", NamedTextColor.GRAY)))
+                    .clickEvent(ClickEvent.suggestCommand(MiniMessage.miniMessage().serialize(Objects.requireNonNull(currHeldItem.lore()).get(line - 1)))));
+        } else {
+            player.sendMessage(Component.text("Item in hand has changed! Cancelling..", NamedTextColor.RED));
+        }
+    }
+
+    private void newLoreLine(Player player, ItemStack heldItem) {
+        ItemStack currHeldItem = player.getInventory().getItemInMainHand();
+        if(currHeldItem.equals(heldItem)) {
+            List<Object> loreInfo = new ArrayList<>();
+            loreInfo.add("new-lore");
+            loreInfo.add(heldItem);
+            plugin.chatLock.put(player.getUniqueId(), loreInfo);
+            player.sendMessage(Component.text("Type new lore line in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW));
+        } else {
+            player.sendMessage(Component.text("Item in hand has changed! Cancelling..", NamedTextColor.RED));
+        }
+    }
+
+
+    public void displayLore(Player player) {
+        ItemStack heldItem = player.getInventory().getItemInMainHand();
+        ItemMeta heldMeta = heldItem.getItemMeta();
+        Component msg = Component.text("");
+        msg = msg.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
+                .append(Component.text(" Item Lore ", TextColor.fromHexString("#0fc3ff"), TextDecoration.BOLD))
+                .append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
+
+        if (heldMeta.hasLore()) {
+            List<Component> lore = heldMeta.lore();
+            int i = 1;
+            for (Component loreLine : Objects.requireNonNull(lore)) {
+                int pos = i;
+                msg = msg.appendNewline().append(Component.text("[X]", NamedTextColor.RED).hoverEvent(HoverEvent.showText(Component.text("Delete line ", NamedTextColor.RED)
+                                        .append(Component.text( pos + ".", NamedTextColor.RED, TextDecoration.BOLD))))
+                                .clickEvent(ClickEvent.callback(audience -> deleteLoreLine(player, heldItem, pos))))
+
+                        .appendSpace().append(Component.text(pos + ". ", NamedTextColor.GRAY))
+
+                        .append(Component.text("↑", NamedTextColor.GOLD).hoverEvent(HoverEvent.showText(Component.text("Move Up", NamedTextColor.YELLOW)))
+                        .clickEvent(ClickEvent.callback(audience -> moveLoreLine(player, heldItem, pos, true)))).appendSpace()
+
+                        .append(Component.text("↓", NamedTextColor.GOLD).hoverEvent(HoverEvent.showText(Component.text("Move Down", NamedTextColor.YELLOW)))
+                                .clickEvent(ClickEvent.callback(audience -> moveLoreLine(player, heldItem, pos, false)))).appendSpace()
+
+                        .appendSpace().append(loreLine.hoverEvent(HoverEvent.showText(Component.text("Edit line ", NamedTextColor.RED)
+                                        .append(Component.text( pos + ".", NamedTextColor.RED, TextDecoration.BOLD))))
+                                .clickEvent(ClickEvent.callback(audience -> editLoreLine(player, heldItem, pos))));
+                i++;
+            }
+        }
+
+        msg = msg.appendNewline().append(Component.text("[+]", NamedTextColor.DARK_GREEN).hoverEvent(HoverEvent.showText(Component.text("Add a new line", NamedTextColor.RED)))
+                .clickEvent(ClickEvent.callback(audience -> newLoreLine(player, heldItem))));
+
+        player.sendMessage(msg);
+    }
+
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
+        if(sender instanceof Player player) {
+            displayLore(player);
+        } else {
+            sender.sendMessage(Component.text("This command can only be used in game!", NamedTextColor.RED));
+        }
+        return true;
+    }
+}

@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import org.bukkit.Material;
 import org.bukkit.event.EventHandler;

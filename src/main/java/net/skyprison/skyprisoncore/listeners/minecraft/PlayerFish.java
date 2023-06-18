@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import org.bukkit.Material;

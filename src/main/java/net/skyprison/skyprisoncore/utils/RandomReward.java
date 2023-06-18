@@ -2,15 +2,13 @@ package net.skyprison.skyprisoncore.utils;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
-import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.commands.Bomb;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,32 +17,32 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 public enum RandomReward {
-    SMALL_BOMB(3, "", "&8&oCould come in handy.."),
-    MEDIUM_BOMB(2.5, "", "&8&oCould come in handy.."),
-    LARGE_BOMB(2, "", "&8&oCould come in handy.."),
-    MASSIVE_BOMB(1, "", "&8&oCould come in handy.."),
-    NUKE_BOMB(0.1, "", "&8&oWhat maniac left this in the bushes!?"),
+    SMALL_BOMB(3, "", "<dark_gray><italic>Could come in handy.."),
+    MEDIUM_BOMB(2.5, "", "<dark_gray><italic>Could come in handy.."),
+    LARGE_BOMB(2, "", "<dark_gray><italic>Could come in handy.."),
+    MASSIVE_BOMB(1, "", "<dark_gray><italic>Could come in handy.."),
+    NUKE_BOMB(0.1, "", "<dark_gray><italic>What maniac left this in the bushes!?"),
 
-    DIAMOND(1, "", "&8&oOooo, shiny!"),
-    IRON_INGOT(5, "", "&8&oLooks rusty.."),
-    GOLD_INGOT(2.5, "", "&8&oWe're rich!"),
-    LAPIS_LAZULI(3, "Allay Dust", "&8&oShould keep this hidden from the guards.."),
-    GOLD_NUGGET(2.5, "Lost Tooth", "&8&o"),
+    DIAMOND(1, "", "<dark_gray><italic>Oooo, shiny!"),
+    IRON_INGOT(5, "", "<dark_gray><italic>Looks rusty.."),
+    GOLD_INGOT(2.5, "", "<dark_gray><italic>We're rich!"),
+    LAPIS_LAZULI(3, "<#2DD4DC>Allay Dust", "<dark_gray><italic>Should keep this hidden from the guards.."),
+    GOLD_NUGGET(2.5, "<#FFD700>Lost Tooth", "<dark_gray><italic>Should probably wash this first.."),
 
-    MAGGOTY_BREAD(3, "Maggoty Bread", "&8&oWe ain't had nothing but maggoty bread for three stinking days!"),
-    SUSPICIOUS_MEAT(2.5, "Suspicous Meat", "&8&oLooks like meat's back on the menu, boys!"),
-    GOLDEN_APPLE(1, "Golden Delight", "&8&oLooks delicious."),
+    MAGGOTY_BREAD(3, "<#7E6A45>Maggoty Bread", "<dark_gray><italic>We ain't had nothing but maggoty bread for three stinking days!"),
+    SUSPICIOUS_MEAT(2.5, "<#C38A8A>Suspicous Meat", "<dark_gray><italic>Looks like meat's back on the menu, boys!"),
+    GOLDEN_APPLE(1, "<#f2ff00>Golden Delight", "<dark_gray><italic>Looks delicious."),
 
-    BROKEN_TOOL(1, "Broken", "&8&oDoesn't seem repairable.."),
-    DAMAGED_TOOL(2, "Damaged", "&8&oStill got a few uses left.."),
-    WORN_TOOL(5, "Worn", "&8&oStarted to rust.."),
-    USED_TOOL(1.5, "Used", "&8&oSlightly used.."),
-    NEW_TOOL(0.1, "Brand New", "&8&oSparkly new!"),
+    BROKEN_TOOL(1, "Broken", "<dark_gray><italic>Doesn't seem repairable.."),
+    DAMAGED_TOOL(2, "Damaged", "<dark_gray><italic>Still got a few uses left.."),
+    WORN_TOOL(5, "Worn", "<dark_gray><italic>Started to rust.."),
+    USED_TOOL(1.5, "Used", "<dark_gray><italic>Slightly used.."),
+    NEW_TOOL(0.1, "Brand New", "<dark_gray><italic>Sparkly new!"),
 
     GLOW_BERRIES(1.5, "", ""),
     SWEET_BERRIES(2.0, "", ""),
 
-    FECES(0.5, "Brown Surprise", "&8&oThat wasnt a mushroom..");
+    FECES(0.5, "<#b25f23>Brown Surprise", "<dark_gray><italic>That wasnt a mushroom..");
 
     private final double chance;
     private final String title;
@@ -104,7 +102,6 @@ public enum RandomReward {
 
 
     private static ItemStack itemFromReward(RandomReward reward) {
-        SkyPrisonCore plugin = JavaPlugin.getPlugin(SkyPrisonCore.class);
         String rew = reward.name().toLowerCase();
         ItemStack item = new ItemStack(Material.DIRT, 1);
         ItemMeta iMeta = item.getItemMeta();
@@ -123,44 +120,44 @@ public enum RandomReward {
         } else if(rew.contains("feces")) {
             amount = rand.nextInt(5) + 1;
             item = new ItemStack(Material.BROWN_DYE, amount);
-            lore.add(Component.text(plugin.colourMessage(reward.desc)));
+            lore.add(MiniMessage.miniMessage().deserialize(reward.desc));
             iMeta.lore(lore);
-            iMeta.displayName(Component.text(reward.title).color(TextColor.fromHexString("#b25f23")));
+            iMeta.displayName(MiniMessage.miniMessage().deserialize(reward.title));
             item.setItemMeta(iMeta);
         } else if(rew.equalsIgnoreCase("maggoty_bread")) {
             amount =biasedRandom(4, 16);
             item = new ItemStack(Material.BREAD, amount);
-            lore.add(Component.text(plugin.colourMessage(reward.desc)));
+            lore.add(MiniMessage.miniMessage().deserialize(reward.desc));
             iMeta.lore(lore);
-            iMeta.displayName(Component.text(reward.title).color(TextColor.fromHexString("#7E6A45")));
+            iMeta.displayName(MiniMessage.miniMessage().deserialize(reward.title));
             item.setItemMeta(iMeta);
         } else if(rew.equalsIgnoreCase("suspicious_meat")) {
             amount = biasedRandom(4, 16);
             item = new ItemStack(Material.COOKED_BEEF, amount);
-            lore.add(Component.text(plugin.colourMessage(reward.desc)));
+            lore.add(MiniMessage.miniMessage().deserialize(reward.desc));
             iMeta.lore(lore);
-            iMeta.displayName(Component.text(reward.title).color(TextColor.fromHexString("#C38A8A")));
+            iMeta.displayName(MiniMessage.miniMessage().deserialize(reward.title));
             item.setItemMeta(iMeta);
         } else if(rew.equalsIgnoreCase("lapis_lazuli")) {
             amount = biasedRandom(4, 16);
             item = new ItemStack(Material.LAPIS_LAZULI, amount);
-            lore.add(Component.text(plugin.colourMessage(reward.desc)));
+            lore.add(MiniMessage.miniMessage().deserialize(reward.desc));
             iMeta.lore(lore);
-            iMeta.displayName(Component.text(reward.title).color(TextColor.fromHexString("#2DD4DC")));
+            iMeta.displayName(MiniMessage.miniMessage().deserialize(reward.title));
             item.setItemMeta(iMeta);
         } else if(rew.equalsIgnoreCase("golden_apple")) {
             amount = rand.nextInt(3) + 1;
             item = new ItemStack(Material.GOLDEN_APPLE, amount);
-            lore.add(Component.text(plugin.colourMessage(reward.desc)));
+            lore.add(MiniMessage.miniMessage().deserialize(reward.desc));
             iMeta.lore(lore);
-            iMeta.displayName(Component.text(reward.title).color(TextColor.fromHexString("#f2ff00")));
+            iMeta.displayName(MiniMessage.miniMessage().deserialize(reward.title));
             item.setItemMeta(iMeta);
         } else if(rew.equalsIgnoreCase("gold_nugget")) {
             amount = rand.nextInt(3) + 1;
             item = new ItemStack(Material.GOLD_NUGGET, amount);
-            lore.add(Component.text(plugin.colourMessage(reward.desc)));
+            lore.add(MiniMessage.miniMessage().deserialize(reward.desc));
             iMeta.lore(lore);
-            iMeta.displayName(Component.text(reward.title).color(TextColor.fromHexString("#FFD700")));
+            iMeta.displayName(MiniMessage.miniMessage().deserialize(reward.title));
             item.setItemMeta(iMeta);
         } else if(rew.contains("tool")) {
             item = new ItemStack(TOOLS[rand.nextInt(TOOLS.length)], amount);
@@ -236,9 +233,9 @@ public enum RandomReward {
                 type = item.getType().toString().toLowerCase().replace("_", " ");
             }
             String name = WordUtils.capitalize(reward.title + " " + type);
-            lore.add(Component.text(plugin.colourMessage(reward.desc)));
+            lore.add(MiniMessage.miniMessage().deserialize(reward.desc));
             iMeta.lore(lore);
-            iMeta.displayName(Component.text(name).color(NamedTextColor.GRAY));
+            iMeta.displayName(Component.text(name, NamedTextColor.GRAY));
             item.setItemMeta(iMeta);
 
             item.setRepairCost(10000);

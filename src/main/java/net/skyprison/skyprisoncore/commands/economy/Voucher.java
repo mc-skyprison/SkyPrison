@@ -4,6 +4,7 @@ import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Material;
@@ -33,15 +34,15 @@ public class Voucher implements CommandExecutor { // /voucher give <player> <vou
         ItemStack voucher = new ItemStack(Material.PAPER, amount);
         ItemMeta vMeta = voucher.getItemMeta();
         String voucherName = WordUtils.capitalize(voucherType.toLowerCase().replace("-", " "));
-        vMeta.displayName(Component.text(plugin.colourMessage("&e" + voucherName + " Voucher")));
+        vMeta.displayName(Component.text(voucherName + " Voucher", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
         ArrayList<Component> lore = new ArrayList<>();
         if(voucherType.equalsIgnoreCase("mine-reset")) {
-            lore.add(Component.text(plugin.colourMessage("&7&oUsing an on cooldown Mine Rest sign will")));
-            lore.add(Component.text(plugin.colourMessage("&7&oredeem this voucher.")));
+            lore.add(Component.text("Using an on cooldown Mine Rest sign will", NamedTextColor.GRAY));
+            lore.add(Component.text("redeem this voucher.", NamedTextColor.GRAY));
         } else if(voucherType.equalsIgnoreCase("token-shop")) {
-            lore.add(Component.text(plugin.colourMessage("&7&oBuying something from the TokenShop")));
-            lore.add(Component.text(plugin.colourMessage("&7&owith this voucher in your inventory")));
-            lore.add(Component.text(plugin.colourMessage("&7&owill redeem the voucher.")));
+            lore.add(Component.text("Buying something from the TokenShop", NamedTextColor.GRAY));
+            lore.add(Component.text("with this voucher in your inventory", NamedTextColor.GRAY));
+            lore.add(Component.text("will redeem the voucher.", NamedTextColor.GRAY));
         }
         vMeta.addEnchant(Enchantment.PROTECTION_FALL, 1, true);
         vMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);

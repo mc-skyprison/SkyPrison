@@ -1,5 +1,8 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.minecraft;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -34,7 +37,7 @@ public class PlayerInteract implements Listener {
                     int expToGive = expMeta.getPersistentDataContainer().get(key, PersistentDataType.INTEGER);
                     Player player = event.getPlayer();
                     player.giveExp(expToGive);
-                    player.sendMessage(plugin.colourMessage("&2&l+" + plugin.formatNumber(expToGive)) + " XP");
+                    player.sendMessage(Component.text("+" + plugin.formatNumber(expToGive) + " XP", NamedTextColor.DARK_GREEN, TextDecoration.BOLD));
                     if (expBottle.getAmount() - 1 > 0) {
                         expBottle.setAmount(expBottle.getAmount() - 1);
                     } else {

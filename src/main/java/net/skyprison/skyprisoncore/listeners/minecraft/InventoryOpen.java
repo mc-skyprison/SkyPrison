@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;

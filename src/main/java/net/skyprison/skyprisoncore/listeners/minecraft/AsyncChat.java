@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.world.weather.WeatherTypes;
@@ -20,18 +20,19 @@ import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.Claim;
+import net.skyprison.skyprisoncore.commands.ItemLore;
 import net.skyprison.skyprisoncore.commands.Tags;
 import net.skyprison.skyprisoncore.inventories.ClaimFlags;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.inventory.ItemStack;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.channel.TextChannel;
 
@@ -39,6 +40,7 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -49,18 +51,21 @@ public class AsyncChat implements Listener {
     private final DiscordApi discApi;
     private final DatabaseHook db;
     private final Tags tag;
+    private final ItemLore itemLore;
 
-    public AsyncChat(SkyPrisonCore plugin, DiscordApi discApi, DatabaseHook db, Tags tag) {
+    public AsyncChat(SkyPrisonCore plugin, DiscordApi discApi, DatabaseHook db, Tags tag, ItemLore itemLore) {
         this.plugin = plugin;
         this.discApi = discApi;
         this.db = db;
         this.tag = tag;
+        this.itemLore = itemLore;
     }
 
     @EventHandler (priority = EventPriority.LOWEST)
     public void onAsyncChat(AsyncChatEvent event) {
         Player player = event.getPlayer();
         String msg = PlainTextComponentSerializer.plainText().serialize(event.originalMessage());
+        String miniMsg = MiniMessage.miniMessage().serialize(event.originalMessage());
         if(plugin.chatLock.containsKey(player.getUniqueId())) {
             event.setCancelled(true);
             Bukkit.getScheduler().runTask(plugin, () -> {
@@ -124,54 +129,99 @@ public class AsyncChat implements Listener {
                     }
                 } else if(lockType instanceof String lockedString) {
                     switch (lockedString.toLowerCase()) {
-                        case "tags-display" -> {
+                        case "tags-display" -> { // ID
                             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE tags SET tags_display = ? WHERE tags_id = ?")) {
-                                ps.setString(1, msg);
-                                ps.setString(2, (String) chatLock.get(1));
+                                ps.setString(1, miniMsg);
+                                ps.setInt(2, (int) chatLock.get(1));
                                 ps.executeUpdate();
                             } catch (SQLException e) {
                                 e.printStackTrace();
                             }
-                            player.sendMessage(plugin.colourMessage("&aUpdated tag display!"));
+                            player.sendMessage(Component.text("Updated tag display!", NamedTextColor.GREEN));
                             tag.openSpecificGUI(player, (Integer) chatLock.get(1));
                         }
-                        case "tags-lore" -> {
+                        case "tags-lore" -> { // ID
+                            String lore = miniMsg;
+                            if (msg.equalsIgnoreCase("null")) {
+                                lore = null;
+                            }
+
                             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE tags SET tags_lore = ? WHERE tags_id = ?")) {
-                                ps.setString(1, msg);
-                                ps.setString(2, (String) chatLock.get(1));
+                                ps.setString(1, lore);
+                                ps.setInt(2, (int) chatLock.get(1));
                                 ps.executeUpdate();
                             } catch (SQLException e) {
                                 e.printStackTrace();
                             }
-                            player.sendMessage(plugin.colourMessage("&aUpdated tag lore!"));
+                            player.sendMessage(Component.text("Updated tag lore!", NamedTextColor.GREEN));
                             tag.openSpecificGUI(player, (Integer) chatLock.get(1));
                         }
-                        case "tags-effect" -> {
+                        case "tags-effect" -> { // ID
                             String effect = msg;
                             if (effect.equalsIgnoreCase("null")) {
                                 effect = null;
                             }
                             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE tags SET tags_effect = ? WHERE tags_id = ?")) {
                                 ps.setString(1, effect);
-                                ps.setString(2, (String) chatLock.get(1));
+                                ps.setInt(2, (int) chatLock.get(1));
                                 ps.executeUpdate();
                             } catch (SQLException e) {
                                 e.printStackTrace();
                             }
-                            player.sendMessage(plugin.colourMessage("&aUpdated tag effect!"));
+                            player.sendMessage(Component.text("Updated tag effect!", NamedTextColor.GREEN));
                             tag.openSpecificGUI(player, (Integer) chatLock.get(1));
                         }
-                        case "tags-new-display" -> {
-                            player.sendMessage(plugin.colourMessage("&aSet the tag display!"));
-                            tag.openNewGUI(player, msg, (String) chatLock.get(2), (String) chatLock.get(3));
+                        case "tags-new-display" -> { // DISPLAY, LORE, EFFECT
+                            player.sendMessage(Component.text("Set the tag display!", NamedTextColor.GREEN));
+                            tag.openNewGUI(player, miniMsg, (String) chatLock.get(2), (String) chatLock.get(3));
                         }
-                        case "tags-new-lore" -> {
-                            player.sendMessage(plugin.colourMessage("&aSet the tag lore!"));
-                            tag.openNewGUI(player, (String) chatLock.get(1), msg, (String) chatLock.get(3));
+                        case "tags-new-lore" -> { // DISPLAY, LORE, EFFECT
+                            player.sendMessage(Component.text("Set the tag lore!", NamedTextColor.GREEN));
+                            tag.openNewGUI(player, (String) chatLock.get(1), miniMsg, (String) chatLock.get(3));
                         }
-                        case "tags-new-effect" -> {
-                            player.sendMessage(plugin.colourMessage("&aSet the tag effect!"));
+                        case "tags-new-effect" -> { // DISPLAY, LORE, EFFECT
+                            player.sendMessage(Component.text("Set the tag effect!", NamedTextColor.GREEN));
                             tag.openNewGUI(player, (String) chatLock.get(1), (String) chatLock.get(2), msg);
+                        }
+                        case "new-lore" -> {
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                ItemStack heldItem = (ItemStack) chatLock.get(1);
+                                ItemStack currHeldItem = player.getInventory().getItemInMainHand();
+                                List<Component> lore = new ArrayList<>();
+                                if(player.getInventory().getItemInMainHand().hasLore()) {
+                                    lore = player.getInventory().getItemInMainHand().lore();
+                                }
+
+                                assert lore != null;
+                                lore.add(MiniMessage.miniMessage().deserialize(miniMsg));
+
+                                if (heldItem.equals(currHeldItem)) {
+                                    player.getInventory().getItemInMainHand().lore(lore);
+                                    itemLore.displayLore(player);
+                                } else {
+                                    player.sendMessage(Component.text("Item in hand has changed! Cancelling..", NamedTextColor.RED));
+                                }
+                            } else {
+                                itemLore.displayLore(player);
+                            }
+                        }
+                        case "edit-lore" -> {
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                ItemStack heldItem = (ItemStack) chatLock.get(1);
+                                ItemStack currHeldItem = player.getInventory().getItemInMainHand();
+                                int line = (int) chatLock.get(2);
+                                if(heldItem.equals(currHeldItem)) {
+                                    List<Component> lore = player.getInventory().getItemInMainHand().lore();
+                                    assert lore != null;
+                                    lore.set(line - 1, MiniMessage.miniMessage().deserialize(miniMsg));
+                                    player.getInventory().getItemInMainHand().lore(lore);
+                                    itemLore.displayLore(player);
+                                } else {
+                                    player.sendMessage(Component.text("Item in hand has changed! Cancelling..", NamedTextColor.RED));
+                                }
+                            } else {
+                                itemLore.displayLore(player);
+                            }
                         }
                     }
                 }
@@ -191,12 +241,15 @@ public class AsyncChat implements Listener {
 
                 String format = Objects.requireNonNull(langConf.getString("chat." + split[0] + ".format")).replaceAll("\\[name]", Matcher.quoteReplacement(player.getName()));
                 String msgContent = format.replaceAll("\\[message]", Matcher.quoteReplacement(msg));
+                Component formatMsg = player.isOp() ? MiniMessage.miniMessage().deserialize(msgContent) : plugin.playerMsgBuilder.deserialize(msgContent);
+
                 for (Player online : Bukkit.getServer().getOnlinePlayers()) {
                     if (online.hasPermission("skyprisoncore.command." + split[0])) {
-                        online.sendMessage(plugin.translateHexColorCodes(ChatColor.translateAlternateColorCodes('&', msgContent)));
+                        online.sendMessage(formatMsg);
                     }
                 }
-                Bukkit.getConsoleSender().sendMessage(plugin.translateHexColorCodes(ChatColor.translateAlternateColorCodes('&', msgContent)));
+
+                Bukkit.getConsoleSender().sendMessage(plugin.playerMsgBuilder.deserialize(msgContent));
                 if(discApi != null) {
                     String dFormat = Objects.requireNonNull(langConf.getString("chat.discordSRV.format")).replaceAll("\\[name]", Matcher.quoteReplacement(player.getName()));
                     String dMessage = dFormat.replaceAll("\\[message]", Matcher.quoteReplacement(msg));
@@ -223,7 +276,11 @@ public class AsyncChat implements Listener {
                     }
                     Component separator = Component.text(" » ", NamedTextColor.DARK_GRAY);
 
-                    return Component.empty().append(prefix).append(sourceDisplayName).append(separator).append(message);
+                    Component userTag = MiniMessage.miniMessage().deserialize(plugin.userTags.getOrDefault(player.getUniqueId(), ""));
+
+                    if(userTag.equals(Component.text(""))) separator = Component.text("» ", NamedTextColor.DARK_GRAY);
+
+                    return Component.empty().append(prefix).append(Objects.requireNonNullElse(source.customName(), source.displayName())).appendSpace().append(userTag).append(separator).append(message);
                 });
             }
         }

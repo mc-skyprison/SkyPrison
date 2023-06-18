@@ -74,7 +74,7 @@ public class Tags implements CommandExecutor {
             ArrayList<Component> lore = new ArrayList<>();
             ItemStack head = new ItemStack(Material.NAME_TAG);
             ItemMeta meta = head.getItemMeta();
-            meta.displayName(MiniMessage.miniMessage().deserialize((String) tag.get(1)));
+            meta.displayName(MiniMessage.miniMessage().deserialize((String) tag.get(1)).decoration(TextDecoration.ITALIC, false));
             if(tag.get(2) != null && !String.valueOf(tag.get(2)).isEmpty()) {
                 String loreTexts = String.valueOf(tag.get(2));
                 if (loreTexts.contains("\n")) {
@@ -186,7 +186,7 @@ public class Tags implements CommandExecutor {
                 ItemMeta meta = head.getItemMeta();
                 meta.displayName(Component.text("Edit Tag Display", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
                 ArrayList<Component> loreList = new ArrayList<>();
-                loreList.add(Component.text("&7Current name: ").append(formatMsg(display)).decoration(TextDecoration.ITALIC, false));
+                loreList.add(Component.text("Current name: ").append(formatMsg(display)).decoration(TextDecoration.ITALIC, false));
                 loreList.add(Component.empty());
                 loreList.add(Component.text("--", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
                 loreList.add(Component.text("REQUIRED", NamedTextColor.RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
@@ -265,7 +265,7 @@ public class Tags implements CommandExecutor {
             e.printStackTrace();
         }
 
-        Inventory bounties = Bukkit.createInventory(null, 27, Component.text("Tags | " + name, NamedTextColor.RED));
+        Inventory bounties = Bukkit.createInventory(null, 27, Component.text("Tags | ", NamedTextColor.RED).append(MiniMessage.miniMessage().deserialize(name)));
         for (int i = 0; i < 27; i++) {
             if(i == 9) {
                 ItemStack head = new ItemStack(Material.NAME_TAG);
@@ -460,12 +460,12 @@ public class Tags implements CommandExecutor {
                     if(player.hasPermission("skyprisoncore.command.tags.admin"))
                         openEditGUI(player, 1);
                     else
-                        player.sendMessage(plugin.colourMessage("&cYou do not have access to this command!"));
+                        player.sendMessage(Component.text("You do not have access to this command!", NamedTextColor.RED));
                 } else if(args[0].equalsIgnoreCase("new")) {
                     if(player.hasPermission("skyprisoncore.command.tags.admin"))
                         openNewGUI(player, "", "", "");
                     else
-                        player.sendMessage(plugin.colourMessage("&cYou do not have access to this command!"));
+                        player.sendMessage(Component.text("You do not have access to this command!", NamedTextColor.RED));
                 }
             }
         }

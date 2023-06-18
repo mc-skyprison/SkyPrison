@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;

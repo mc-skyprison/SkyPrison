@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.WorldEdit;
@@ -96,13 +96,41 @@ public class PlayerJoin implements Listener {
         messages = messages.append(Component.text("\nYou've received some messages while you were offline!", NamedTextColor.GRAY));
 
         List<String> ids = new ArrayList<>();
+        boolean hasSchedules = false;
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT type, content FROM schedule_online WHERE user_id = ?")) {
+            ps.setString(1, player.getUniqueId().toString());
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                hasSchedules = true;
+                String type = rs.getString(1);
+                if(type.equalsIgnoreCase("namecolour")) {
+                    Component content = GsonComponentSerializer.gson().deserialize(rs.getString(2));
+                    player.customName(content);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        if(hasSchedules) {
+            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM schedule_online WHERE user_id = ?")) {
+                ps.setString(1, player.getUniqueId().toString());
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+
 
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id, message FROM notifications WHERE user_id = ?")) {
             ps.setString(1, player.getUniqueId().toString());
             ResultSet rs = ps.executeQuery();
+            int i = 1;
             while(rs.next()) {
-                messages = messages.append(Component.newline().appendNewline().append(GsonComponentSerializer.gson().deserialize(rs.getString(2))));
-
+                messages = messages.append(Component.newline().appendNewline().append(Component.text(i + ".", NamedTextColor.GRAY, TextDecoration.BOLD))
+                        .appendNewline().append(GsonComponentSerializer.gson().deserialize(rs.getString(2))));
+                i++;
                 if(!rs.getString(1).equalsIgnoreCase("claim-invite") && !rs.getString(2).equalsIgnoreCase("claim-transfer")) {
                     ids.add(rs.getString(1));
                 }
@@ -122,6 +150,7 @@ public class PlayerJoin implements Listener {
                 e.printStackTrace();
             }
 
+            messages = messages.appendNewline();
             player.sendMessage(messages);
         }
 

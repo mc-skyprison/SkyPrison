@@ -276,7 +276,7 @@ public class DailyMissions {
             completed = 1;
             Random randInt = new Random();
             int reward = randInt.nextInt(25) + 25;
-            plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), reward, "Daily Mission", mSplit[0] + ":" + needed);
+            plugin.tokens.addTokens(player.getUniqueId(), reward, "Daily Mission", mSplit[0] + ":" + needed);
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
 
             uMission = uMission + ":completed";

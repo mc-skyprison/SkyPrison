@@ -23,6 +23,8 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.*;
 import org.bukkit.command.Command;
@@ -54,6 +56,8 @@ public class SkyPlot implements CommandExecutor {
 	public SkyPlot(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}
+
+	private final Component prefix = Component.text("SkyPlots", NamedTextColor.GREEN, TextDecoration.BOLD).append(Component.text(" » ", NamedTextColor.DARK_GRAY));
 
 	public void createSkyPlot(Player player) {
 		World w = Bukkit.getWorld("world_skyplots");
@@ -100,7 +104,7 @@ public class SkyPlot implements CommandExecutor {
 						fData.save(f);
 						Location loc = new Location(w, i-0.5, 66, j-8.5);
 						player.teleportAsync(loc);
-						player.sendMessage(plugin.colourMessage("&aSkyPlots &f&l>> &eYour skyplot has successfully been created! Use /skyplot to open the SkyPlot Menu."));
+						player.sendMessage(prefix.append(Component.text("Your skyplot has successfully been created! Use /skyplot to open the SkyPlot Menu.", NamedTextColor.YELLOW)));
 					} catch (WorldEditException | IOException e) {
 						e.printStackTrace();
 					}
@@ -125,7 +129,7 @@ public class SkyPlot implements CommandExecutor {
 
 		switch (page.toLowerCase()) {
 			case "main" -> {
-				skyplotInv = Bukkit.createInventory(null, 45, Component.text(plugin.colourMessage("&bSky Plots")));
+				skyplotInv = Bukkit.createInventory(null, 45, Component.text("Sky Plots", NamedTextColor.AQUA));
 				for (int i = 0; i < skyplotInv.getSize(); i++) {
 					if (i <= 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35) {
 						skyplotInv.setItem(i, whitePane);
@@ -134,33 +138,33 @@ public class SkyPlot implements CommandExecutor {
 					} else if (i == 24) {
 						ItemStack visit = hAPI.getItemHead("38200");
 						ItemMeta visitMeta = visit.getItemMeta();
-						visitMeta.displayName(Component.text(plugin.colourMessage("&eVisit Public SkyPlots")));
+						visitMeta.displayName(Component.text("Visit Public SkyPlots", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
 						visit.setItemMeta(visitMeta);
 						skyplotInv.setItem(i, visit);
 					} else if (i == 20) {
 						ItemStack expand = hAPI.getItemHead("18243");
 						ItemMeta expMeta = expand.getItemMeta();
-						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
+						expMeta.displayName(Component.text("Expand SkyPlot", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
 					} else if (i == 13) {
 						ItemStack plotStats = new ItemStack(Material.PLAYER_HEAD);
 						SkullMeta plotMeta = (SkullMeta) plotStats.getItemMeta();
 						plotMeta.setOwningPlayer(player);
-						plotMeta.displayName(Component.text(plugin.colourMessage("&eYour SkyPlot")));
+						plotMeta.displayName(Component.text("Your SkyPlot", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
 						plotStats.setItemMeta(plotMeta);
 						skyplotInv.setItem(i, plotStats);
 					} else if (i == 31) {
 						ItemStack settings = new ItemStack(Material.REPEATER);
 						ItemMeta setMeta = settings.getItemMeta();
-						setMeta.displayName(Component.text(plugin.colourMessage("&eSkyPlot Settings")));
+						setMeta.displayName(Component.text("SkyPlot Settings", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
 						settings.setItemMeta(setMeta);
 						skyplotInv.setItem(i, settings);
 					}
 				}
 			}
 			case "expand" -> {
-				skyplotInv = Bukkit.createInventory(null, 27, Component.text(plugin.colourMessage("&bYour SkyPlot")));
+				skyplotInv = Bukkit.createInventory(null, 27, Component.text("Your SkyPlot", NamedTextColor.AQUA));
 				for (int i = 0; i < skyplotInv.getSize(); i++) {
 					if (i <= 9) {
 						skyplotInv.setItem(i, whitePane);
@@ -171,54 +175,54 @@ public class SkyPlot implements CommandExecutor {
 					} else if (i == 10) {
 						ItemStack expand = hAPI.getItemHead("18243");
 						ItemMeta expMeta = expand.getItemMeta();
-						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
+						expMeta.displayName(Component.text("Expand SkyPlot", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
 					} else if (i == 11) {
 						ItemStack expand = hAPI.getItemHead("18243");
 						ItemMeta expMeta = expand.getItemMeta();
-						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
+						expMeta.displayName(Component.text("Expand SkyPlot", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
 					} else if (i == 12) {
 						ItemStack expand = hAPI.getItemHead("18243");
 						ItemMeta expMeta = expand.getItemMeta();
-						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
+						expMeta.displayName(Component.text("Expand SkyPlot", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
 					} else if (i == 13) {
 						ItemStack expand = hAPI.getItemHead("18243");
 						ItemMeta expMeta = expand.getItemMeta();
-						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
+						expMeta.displayName(Component.text("Expand SkyPlot", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
 					} else if (i == 14) {
 						ItemStack expand = hAPI.getItemHead("18243");
 						ItemMeta expMeta = expand.getItemMeta();
-						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
+						expMeta.displayName(Component.text("Expand SkyPlot", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
 					} else if (i == 15) {
 						ItemStack expand = hAPI.getItemHead("18243");
 						ItemMeta expMeta = expand.getItemMeta();
-						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
+						expMeta.displayName(Component.text("Expand SkyPlot", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
 					} else if (i == 16) {
 						ItemStack expand = hAPI.getItemHead("18243");
 						ItemMeta expMeta = expand.getItemMeta();
-						expMeta.displayName(Component.text(plugin.colourMessage("&eExpand SkyPlot")));
+						expMeta.displayName(Component.text("Expand SkyPlot", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
 					} else {
 						ItemStack backButton = new ItemStack(Material.NETHER_STAR);
 						ItemMeta backMeta = backButton.getItemMeta();
-						backMeta.displayName(Component.text(plugin.colourMessage("&cPrevious Page")));
+						backMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
 					}
 				}
 			}
 			case "settings" -> {
-				skyplotInv = Bukkit.createInventory(null, 27, Component.text(plugin.colourMessage("&bSkyPlot Settings")));
+				skyplotInv = Bukkit.createInventory(null, 27, Component.text("SkyPlot Settings", NamedTextColor.AQUA));
 				for (int i = 0; i < skyplotInv.getSize(); i++) {
 					if (i <= 9) {
 						skyplotInv.setItem(i, whitePane);
@@ -229,18 +233,18 @@ public class SkyPlot implements CommandExecutor {
 					} else if (i == 11) {
 						ItemStack expand = new ItemStack(Material.BARRIER);
 						ItemMeta expMeta = expand.getItemMeta();
-						expMeta.displayName(Component.text(plugin.colourMessage("&eBanned Players")));
+						expMeta.displayName(Component.text("Banned Players", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
 						expand.setItemMeta(expMeta);
 						skyplotInv.setItem(i, expand);
 					} else if (i == 15) {
 						ItemStack expand = hAPI.getItemHead("38200");
 						ItemMeta expMeta = expand.getItemMeta();
-						expMeta.displayName(Component.text(plugin.colourMessage("&ePlot Visit Status")));
+						expMeta.displayName(Component.text("Plot Visit Status", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
 						ArrayList<Component> lore = new ArrayList<>();
 						if (canVisit(player)) {
-							lore.add(Component.text(plugin.colourMessage("&7Visitng is &2ENABLED")));
+							lore.add(Component.text("Visitng is ", NamedTextColor.GRAY).append(Component.text("ENABLED", NamedTextColor.DARK_GREEN)).decoration(TextDecoration.ITALIC, false));
 						} else {
-							lore.add(Component.text(plugin.colourMessage("&7Visitng is &4DISABLED")));
+							lore.add(Component.text("Visitng is ", NamedTextColor.GRAY).append(Component.text("DISABLED", NamedTextColor.DARK_RED)).decoration(TextDecoration.ITALIC, false));
 						}
 						expMeta.lore(lore);
 						expand.setItemMeta(expMeta);
@@ -248,12 +252,12 @@ public class SkyPlot implements CommandExecutor {
 					} else if (i == 22) {
 						ItemStack backButton = new ItemStack(Material.NETHER_STAR);
 						ItemMeta backMeta = backButton.getItemMeta();
-						backMeta.displayName(Component.text(plugin.colourMessage("&cPrevious Page")));
+						backMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
 					}
 				}
 			}
 			case "other" -> {
-				skyplotInv = Bukkit.createInventory(null, 54, Component.text(plugin.colourMessage("&bOther SkyPlots")));
+				skyplotInv = Bukkit.createInventory(null, 54, Component.text("Other SkyPlots", NamedTextColor.AQUA));
 				for (int i = 0; i < skyplotInv.getSize(); i++) {
 					if (i <= 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35 || i == 36 || i == 44) {
 						skyplotInv.setItem(i, whitePane);
@@ -262,12 +266,12 @@ public class SkyPlot implements CommandExecutor {
 					} else if (i == 49) {
 						ItemStack backButton = new ItemStack(Material.NETHER_STAR);
 						ItemMeta backMeta = backButton.getItemMeta();
-						backMeta.displayName(Component.text(plugin.colourMessage("&cPrevious Page")));
+						backMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
 					}
 				}
 			}
 			case "banned" -> {
-				skyplotInv = Bukkit.createInventory(null, 54, Component.text(plugin.colourMessage("&bBanned Players")));
+				skyplotInv = Bukkit.createInventory(null, 54, Component.text("Banned Players", NamedTextColor.AQUA));
 				for (int i = 0; i < skyplotInv.getSize(); i++) {
 					if (i <= 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35 || i == 36 || i == 44) {
 						skyplotInv.setItem(i, whitePane);
@@ -276,7 +280,7 @@ public class SkyPlot implements CommandExecutor {
 					} else if (i == 49) {
 						ItemStack backButton = new ItemStack(Material.NETHER_STAR);
 						ItemMeta backMeta = backButton.getItemMeta();
-						backMeta.displayName(Component.text(plugin.colourMessage("&cPrevious Page")));
+						backMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
 					}
 				}
 			}
@@ -342,15 +346,15 @@ public class SkyPlot implements CommandExecutor {
 						double z = fData.getDouble(player.getUniqueId() + ".z");
 						Location loc = new Location(Bukkit.getWorld("world_skyplots"), x, y, z);
 						player.teleport(loc);
-						player.sendMessage(plugin.colourMessage("&aSkyPlots &f&l>> &eYou've been teleported to your SkyPlot!"));
+						player.sendMessage(prefix.append(Component.text("You've been teleported to your SkyPlot!", NamedTextColor.YELLOW)));
 					} else {
-						player.sendMessage(plugin.colourMessage("&cYou can only use this command on your SkyPlot!"));
+						player.sendMessage(Component.text("You can only use this command on your SkyPlot!", NamedTextColor.RED));
 					}
 				}
 			} else {
 				if(args.length == 0) {
-						TextComponent confirmMsg = Component.text(plugin.colourMessage("&eClick here to confirm the creation of your Sky Plot!"))
-								.hoverEvent(HoverEvent.showText(Component.text(plugin.colourMessage("&7Click me to confirm Sky Plot Creation.."))))
+						TextComponent confirmMsg = Component.text("Click here to confirm the creation of your Sky Plot!", NamedTextColor.YELLOW)
+								.hoverEvent(HoverEvent.showText(Component.text("Click me to confirm Sky Plot Creation..", NamedTextColor.GRAY)))
 								.clickEvent(ClickEvent.runCommand("/skyplot confirm"));
 						player.sendMessage(confirmMsg);
 						createConfirm.put(player.getUniqueId(), true);
@@ -360,7 +364,7 @@ public class SkyPlot implements CommandExecutor {
 							createSkyPlot(player);
 							createConfirm.remove(player.getUniqueId());
 						} else {
-							player.sendMessage(plugin.colourMessage("&cCorrect Usage: /skyplot"));
+							player.sendMessage(Component.text("Incorrect Usage! /skyplot", NamedTextColor.RED));
 						}
 					}
 				}

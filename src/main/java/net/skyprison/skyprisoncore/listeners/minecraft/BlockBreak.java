@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
@@ -81,7 +81,7 @@ public class BlockBreak implements Listener {
                     plugin.blockBreaks.put(player.getUniqueId(), 0);
                     Random rand = new Random();
                     int tReward = rand.nextInt(25 - 10 + 1) + 10;
-                    plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), tReward, "2000 Blocks Broken", "");
+                    plugin.tokens.addTokens(player.getUniqueId(), tReward, "2000 Blocks Broken", "");
                     player.sendMessage(Component.text("You've mined 2,000 blocks and have received some tokens!", NamedTextColor.GRAY));
                 } else {
                     plugin.blockBreaks.put(player.getUniqueId(), brokeBlocks + 1);

@@ -90,7 +90,7 @@ public class Daily implements CommandExecutor {
 						dReward = new ItemStack(Material.MINECART);
 					}
 					ItemMeta dMeta = dReward.getItemMeta();
-					dMeta.displayName(Component.text("&e&lDaily Reward", NamedTextColor.YELLOW, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+					dMeta.displayName(Component.text("Daily Reward", NamedTextColor.YELLOW, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
 					ArrayList<Component> lore = new ArrayList<>();
 					if (!hasCollected) {
 						lore.add(Component.text("Click here to collect your reward!", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));

@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.entity.Player;

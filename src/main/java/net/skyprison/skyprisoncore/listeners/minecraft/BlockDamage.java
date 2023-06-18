@@ -1,6 +1,5 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.minecraft;
 
-import com.Zrips.CMI.CMI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -60,7 +59,7 @@ public class BlockDamage implements Listener {
                 try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET sponges_found = sponges_found + 1 WHERE user_id = ?")) {
                     ps.setString(1, player.getUniqueId().toString());
                     ps.executeUpdate();
-                    plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(event.getPlayer()), 25, "Found Sponge", "");
+                    plugin.tokens.addTokens(player.getUniqueId(), 25, "Found Sponge", "");
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }

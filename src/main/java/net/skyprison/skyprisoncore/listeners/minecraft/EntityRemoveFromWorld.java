@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import net.skyprison.skyprisoncore.SkyPrisonCore;

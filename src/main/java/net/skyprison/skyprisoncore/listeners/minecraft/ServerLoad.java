@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import dev.esophose.playerparticles.api.PlayerParticlesAPI;
 import net.skyprison.skyprisoncore.SkyPrisonCore;

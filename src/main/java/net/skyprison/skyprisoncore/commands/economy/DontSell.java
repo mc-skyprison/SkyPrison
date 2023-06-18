@@ -1,7 +1,9 @@
 package net.skyprison.skyprisoncore.commands.economy;
 
 import net.brcdev.shopgui.ShopGuiPlusApi;
-import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -20,11 +22,9 @@ import java.util.List;
 import java.util.Objects;
 
 public class DontSell implements CommandExecutor {
-	private final SkyPrisonCore plugin;
 	private final DatabaseHook db;
 
-	public DontSell(SkyPrisonCore plugin, DatabaseHook db) {
-		this.plugin = plugin;
+	public DontSell(DatabaseHook db) {
 		this.db = db;
 	}
 
@@ -46,13 +46,14 @@ public class DontSell implements CommandExecutor {
 				if(args.length >= 1) {
 					if(args[0].equalsIgnoreCase("list")) {
 						if(!blockedSales.isEmpty()) {
-							StringBuilder blockedFormatted = new StringBuilder("&b---=== &c&lBlocked Items &b===---");
+							Component blockMsg = Component.text("---=== ", NamedTextColor.AQUA).append(Component.text("Blocked Items", NamedTextColor.RED, TextDecoration.BOLD))
+									.append(Component.text(" ===---", NamedTextColor.AQUA));
 							for(String blockedSale : blockedSales) {
-								blockedFormatted.append("\n&b- &3").append(blockedSale);
+								blockMsg = blockMsg.append(Component.text("\n-", NamedTextColor.AQUA).append(Component.text(blockedSale, NamedTextColor.DARK_AQUA)));
 							}
-							player.sendMessage(plugin.colourMessage(blockedFormatted.toString()));
+							player.sendMessage(blockMsg);
 						} else {
-							player.sendMessage(plugin.colourMessage("&cYou havn't blocked any items!"));
+							player.sendMessage(Component.text("You havn't blocked any items!", NamedTextColor.RED));
 						}
 					} else {
 						if (Material.getMaterial(args[0].toUpperCase()) != null) {
@@ -61,9 +62,11 @@ public class DontSell implements CommandExecutor {
 								String iName = item.getType().name();
 
 								if (!blockedSales.contains(iName)) {
-									player.sendMessage(plugin.colourMessage("&aSuccessfully &lADDED &aitem to the dont sell list!"));
+									player.sendMessage(Component.text("Successfully ", NamedTextColor.GREEN).append(Component.text("ADDED", NamedTextColor.GREEN, TextDecoration.BOLD))
+											.append(Component.text("item to the dont sell list!", NamedTextColor.GREEN)));
 								} else {
-									player.sendMessage(plugin.colourMessage("&aSuccessfully &lREMOVED &aitem from the dont sell list!"));
+									player.sendMessage(Component.text("Successfully ", NamedTextColor.GREEN).append(Component.text("REMOVED", NamedTextColor.GREEN, TextDecoration.BOLD))
+											.append(Component.text("item from the dont sell list!", NamedTextColor.GREEN)));
 								}
 
 								try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO block_sells (user_id, block_item) VALUES (?, ?)")) {
@@ -74,10 +77,10 @@ public class DontSell implements CommandExecutor {
 									e.printStackTrace();
 								}
 							} else {
-								player.sendMessage(plugin.colourMessage("&cThis item can't be sold!"));
+								player.sendMessage(Component.text("This item can't be sold!", NamedTextColor.RED));
 							}
 						} else {
-							player.sendMessage(plugin.colourMessage("&cThat is not a valid item name!"));
+							player.sendMessage(Component.text("That is not a valid item name!", NamedTextColor.RED));
 						}
 					}
 				} else {
@@ -87,7 +90,8 @@ public class DontSell implements CommandExecutor {
 							String iName = item.getType().name();
 
 							if (!blockedSales.contains(iName)) {
-								player.sendMessage(plugin.colourMessage("&aSuccessfully &lADDED &aitem to the dont sell list!"));
+								player.sendMessage(Component.text("Successfully ", NamedTextColor.GREEN).append(Component.text("ADDED", NamedTextColor.GREEN, TextDecoration.BOLD))
+										.append(Component.text("item to the dont sell list!", NamedTextColor.GREEN)));
 
 								try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO block_sells (user_id, block_item) VALUES (?, ?)")) {
 									ps.setString(1, player.getUniqueId().toString());
@@ -97,7 +101,8 @@ public class DontSell implements CommandExecutor {
 									e.printStackTrace();
 								}
 							} else {
-								player.sendMessage(plugin.colourMessage("&aSuccessfully &lREMOVED &aitem from the dont sell list!"));
+								player.sendMessage(Component.text("Successfully ", NamedTextColor.GREEN).append(Component.text("REMOVED", NamedTextColor.GREEN, TextDecoration.BOLD))
+										.append(Component.text("item from the dont sell list!", NamedTextColor.GREEN)));
 
 								try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM block_sells WHERE user_id = ? AND block_item = ?")) {
 									ps.setString(1, player.getUniqueId().toString());
@@ -109,14 +114,14 @@ public class DontSell implements CommandExecutor {
 							}
 
 						} else {
-							player.sendMessage(plugin.colourMessage("&cThis item can't be sold!"));
+							player.sendMessage(Component.text("This item can't be sold!", NamedTextColor.RED));
 						}
 					} else {
-						player.sendMessage(plugin.colourMessage("&cYou're not holding any item!"));
+						player.sendMessage(Component.text("You're not holding any item!", NamedTextColor.RED));
 					}
 				}
 			} else {
-				player.sendMessage(plugin.colourMessage("&cYou need to have access to /sellall to use this command!"));
+				player.sendMessage(Component.text("You need to have access to /sellall to use this command!", NamedTextColor.RED));
 			}
 		}
 

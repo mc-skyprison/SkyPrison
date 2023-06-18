@@ -119,7 +119,7 @@ public class PlotTeleport implements CommandExecutor {
 			if(!player.getWorld().getName().equalsIgnoreCase("world_prison")) {
 				openGUI((Player) sender);
 			} else {
-				player.sendMessage(Component.text("&cCan't use this command here!", NamedTextColor.RED));
+				player.sendMessage(Component.text("Can't use this command here!", NamedTextColor.RED));
 			}
 		}
 		return true;

@@ -301,7 +301,7 @@ public class Claim implements CommandExecutor {
                     Player tPlayer = targetPlayer.getPlayer();
                     Objects.requireNonNull(tPlayer).sendMessage(targetMsg);
                 } else {
-                    plugin.createNotification("claim-delete", null, targetPlayer, targetMsg, null, true);
+                    plugin.createNotification("claim-delete", null, targetPlayer.getUniqueId().toString(), targetMsg, null, true);
                 }
             }
         } else {
@@ -1002,7 +1002,7 @@ public class Claim implements CommandExecutor {
                 .append(Component.text("\nACCEPT INVITE", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.runCommand("/claim accept invite " + notifId)))
                 .append(Component.text("     "))
                 .append(Component.text("DECLINE INVITE", NamedTextColor.RED, TextDecoration.BOLD).clickEvent(ClickEvent.runCommand("/claim decline invite " + notifId)));
-        plugin.createNotification("claim-invite", claimId, iUser.getOfflinePlayer(), msg, notifId, false);
+        plugin.createNotification("claim-invite", claimId, iUser.getOfflinePlayer().toString(), msg, notifId, false);
 
 
         if (iUser.isOnline()) {
@@ -1032,7 +1032,7 @@ public class Claim implements CommandExecutor {
                 if (oPlayer.isOnline()) {
                     Objects.requireNonNull(oPlayer.getPlayer()).sendMessage(msg);
                 } else {
-                    plugin.createNotification("claim-invite-declined", claimId, oPlayer, msg, null, true);
+                    plugin.createNotification("claim-invite-declined", claimId, pUUID.toString(), msg, null, true);
                 }
             }
         }
@@ -1072,7 +1072,7 @@ public class Claim implements CommandExecutor {
                 if (oPlayer.isOnline()) {
                     Objects.requireNonNull(oPlayer.getPlayer()).sendMessage(msg);
                 } else {
-                    plugin.createNotification("claim-invite-accepted", claimId, oPlayer, msg, null, true);
+                    plugin.createNotification("claim-invite-accepted", claimId, pUUID.toString(), msg, null, true);
                 }
             }
         }
@@ -1129,7 +1129,7 @@ public class Claim implements CommandExecutor {
         if(kickedPlayer.isOnline()) {
             kickedPlayer.getPlayer().sendMessage(msg);
         } else {
-            plugin.createNotification("claim-kick", claimId, kickedPlayer.getOfflinePlayer(), msg, null, true);
+            plugin.createNotification("claim-kick", claimId, kickedPlayer.getUniqueId().toString(), msg, null, true);
         }
     }
 
@@ -1157,7 +1157,7 @@ public class Claim implements CommandExecutor {
         if(promotedPlayer.isOnline()) {
             promotedPlayer.getPlayer().sendMessage(msg);
         } else {
-            plugin.createNotification("claim-promote", claimId, promotedPlayer.getOfflinePlayer(), msg, null, true);
+            plugin.createNotification("claim-promote", claimId, promotedPlayer.getUniqueId().toString(), msg, null, true);
         }
     }
 
@@ -1184,7 +1184,7 @@ public class Claim implements CommandExecutor {
         if(demotedPlayer.isOnline()) {
             demotedPlayer.getPlayer().sendMessage(msg);
         } else {
-            plugin.createNotification("claim-demote", claimId, demotedPlayer.getOfflinePlayer(), msg, null, true);
+            plugin.createNotification("claim-demote", claimId, demotedPlayer.getUniqueId().toString(), msg, null, true);
         }
     }
 
@@ -1224,7 +1224,7 @@ public class Claim implements CommandExecutor {
                 } else {
                     executorPlayer.sendMessage(prefix.append(Component.text("Successfully created transfer request! " + transferPlayer.getName() + " will receive the request when they log on. ", TextColor.fromHexString("#20df80"))));
                 }
-                plugin.createNotification("claim-transfer", claimId, transferPlayer.getOfflinePlayer(), msg, notifId, false);
+                plugin.createNotification("claim-transfer", claimId, transferPlayer.getUniqueId().toString(), msg, notifId, false);
             } else {
                 executorPlayer.sendMessage(prefix.append(Component.text(transferPlayer.getName(), NamedTextColor.RED, TextDecoration.BOLD)
                         .append(Component.text(" doesn't have enough claim blocks!", NamedTextColor.RED))));
@@ -1253,7 +1253,7 @@ public class Claim implements CommandExecutor {
             if (Bukkit.getPlayer(owner) != null) {
                 Objects.requireNonNull(Bukkit.getPlayer(owner)).sendMessage(msg);
             } else {
-                plugin.createNotification("claim-transfer-declined", claimId, Bukkit.getOfflinePlayer(owner), msg, null, true);
+                plugin.createNotification("claim-transfer-declined", claimId, owner.toString(), msg, null, true);
             }
         }
     }
@@ -1385,7 +1385,7 @@ public class Claim implements CommandExecutor {
                     if (Bukkit.getPlayer(owner) != null) {
                         Objects.requireNonNull(Bukkit.getPlayer(owner)).sendMessage(msg);
                     } else {
-                        plugin.createNotification("claim-transfer-accepted", claimId, Bukkit.getOfflinePlayer(owner), msg, null, true);
+                        plugin.createNotification("claim-transfer-accepted", claimId, owner.toString(), msg, null, true);
                     }
                 } else {
                     transferPlayer.sendMessage(prefix.append(Component.text("You don't have enough claim blocks for this claim transfer! Cancelling transfer..", NamedTextColor.RED)));
@@ -2234,7 +2234,7 @@ public class Claim implements CommandExecutor {
                                                 if(tUser.isOnline()) {
                                                     tUser.getPlayer().sendMessage(msg);
                                                 } else {
-                                                    plugin.createNotification("claim-give", null, tUser.getOfflinePlayer(), msg, null, true);
+                                                    plugin.createNotification("claim-give", null, tUser.getUniqueId().toString(), msg, null, true);
                                                 }
                                             } else {
                                                 player.sendMessage(prefix.append(Component.text("Incorrect Usage! /claim blocks give <player> <amount>", NamedTextColor.RED)));
@@ -2277,7 +2277,7 @@ public class Claim implements CommandExecutor {
                                                         if (tUser.isOnline()) {
                                                             tUser.getPlayer().sendMessage(msg);
                                                         } else {
-                                                            plugin.createNotification("claim-set", null, tUser.getOfflinePlayer(), msg, null, true);
+                                                            plugin.createNotification("claim-set", null, tUser.getUniqueId().toString(), msg, null, true);
                                                         }
                                                     } else {
                                                         player.sendMessage(prefix.append(Component.text("This would put the player's total blocks below their used blocks!", NamedTextColor.RED)));
@@ -2325,7 +2325,7 @@ public class Claim implements CommandExecutor {
                                                     if(tUser.isOnline()) {
                                                         tUser.getPlayer().sendMessage(msg);
                                                     } else {
-                                                        plugin.createNotification("claim-take", null, tUser.getOfflinePlayer(), msg, null, true);
+                                                        plugin.createNotification("claim-take", null, tUser.getUniqueId().toString(), msg, null, true);
                                                     }
                                                 } else {
                                                     player.sendMessage(prefix.append(Component.text("Player doesn't have enough claim blocks!", NamedTextColor.RED)));

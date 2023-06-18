@@ -1,6 +1,5 @@
 package net.skyprison.skyprisoncore.listeners.discord;
 
-import com.Zrips.CMI.CMI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
@@ -74,7 +73,7 @@ public class SlashCommandCreate implements SlashCommandCreateListener {
 
                             if (!gottenReward) {
                                 msg += "\nYou've also received 500 tokens for having linked your discord!";
-                                plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(player), 500, "Linking Discord", "");
+                                plugin.tokens.addTokens(pUUID, 500, "Linking Discord", "");
                             }
 
                             command.createImmediateResponder()

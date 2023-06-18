@@ -1,5 +1,8 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.minecraft;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -33,7 +36,8 @@ public class EntityDamage implements Listener {
                 double z = fData.getDouble(player.getUniqueId() + ".z");
                 Location loc = new Location(Bukkit.getWorld("world_skyplots"), x, y, z);
                 player.teleport(loc);
-                player.sendMessage(plugin.colourMessage("&aSkyPlots &f&l>> &eYou've been teleported to your SkyPlot!"));
+                player.sendMessage(Component.text("SkyPlots", NamedTextColor.GREEN, TextDecoration.BOLD).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
+                                .append(Component.text("You've been teleported to your SkyPlot!", NamedTextColor.YELLOW)));
             }
         }
     }

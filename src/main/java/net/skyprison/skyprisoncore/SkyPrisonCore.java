@@ -12,13 +12,14 @@ import dev.esophose.playerparticles.api.PlayerParticlesAPI;
 import litebans.api.Entry;
 import litebans.api.Events;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
 import net.skyprison.skyprisoncore.commands.*;
 import net.skyprison.skyprisoncore.commands.chats.Admin;
 import net.skyprison.skyprisoncore.commands.chats.Build;
@@ -31,7 +32,6 @@ import net.skyprison.skyprisoncore.commands.economy.*;
 import net.skyprison.skyprisoncore.commands.guard.*;
 import net.skyprison.skyprisoncore.commands.secrets.SecretFound;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
-import net.skyprison.skyprisoncore.listeners.*;
 import net.skyprison.skyprisoncore.listeners.advancedregionmarket.UnsellRegion;
 import net.skyprison.skyprisoncore.listeners.brewery.BrewDrink;
 import net.skyprison.skyprisoncore.listeners.cmi.CMIPlayerTeleportRequest;
@@ -44,6 +44,7 @@ import net.skyprison.skyprisoncore.listeners.discord.UserRoleRemove;
 import net.skyprison.skyprisoncore.listeners.excellentcrates.CrateObtainReward;
 import net.skyprison.skyprisoncore.listeners.mcmmo.McMMOLevelUp;
 import net.skyprison.skyprisoncore.listeners.mcmmo.McMMOPartyChat;
+import net.skyprison.skyprisoncore.listeners.minecraft.*;
 import net.skyprison.skyprisoncore.listeners.parkour.ParkourFinish;
 import net.skyprison.skyprisoncore.listeners.pvpmanager.PlayerTag;
 import net.skyprison.skyprisoncore.listeners.pvpmanager.PlayerTogglePvP;
@@ -57,11 +58,11 @@ import net.skyprison.skyprisoncore.utils.*;
 import net.skyprison.skyprisoncore.utils.claims.ConsoleCommandFlagHandler;
 import net.skyprison.skyprisoncore.utils.claims.EffectFlagHandler;
 import net.skyprison.skyprisoncore.utils.claims.FlyFlagHandler;
-import org.apache.commons.lang.StringUtils;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginManager;
@@ -69,7 +70,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
-import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.intent.Intent;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.Role;
@@ -79,7 +79,6 @@ import org.javacord.api.interaction.SlashCommand;
 import org.javacord.api.interaction.SlashCommandOption;
 import org.javacord.api.interaction.SlashCommandOptionType;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -90,8 +89,6 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
@@ -113,8 +110,6 @@ public class SkyPrisonCore extends JavaPlugin {
 
     public List<UUID> deleteClaim = new ArrayList<>();
     public List<UUID> transferClaim = new ArrayList<>();
-
-    private FileConfiguration infoConf;
 
     public HashMap<UUID, String> stickyChat = new HashMap<>();
 
@@ -250,9 +245,6 @@ public class SkyPrisonCore extends JavaPlugin {
 
         timer.schedule(new NextDayTask(this, getDatabase()), date.getTime());
 
-        File infoFile = new File(this.getDataFolder() + File.separator + "info.yml");
-        infoConf = YamlConfiguration.loadConfiguration(infoFile);
-
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -311,17 +303,29 @@ public class SkyPrisonCore extends JavaPlugin {
             Map.entry("gradient", StandardTags.gradient()),
             Map.entry("transition", StandardTags.transition()),
             Map.entry("font", StandardTags.font()),
-            Map.entry("newline", StandardTags.newline()),
-            Map.entry("selector", StandardTags.selector()),
-            Map.entry("score", StandardTags.score()),
-            Map.entry("nbt", StandardTags.nbt())
+            Map.entry("newline", StandardTags.newline())
     );
 
+    public Component getParsedName(String name, boolean allTags) {
+        TagResolver.Builder resolver = TagResolver.builder();
+        if(allTags) {
+            resolver.resolvers(StandardTags.defaults());
+        } else {
+            resolver.resolvers(StandardTags.color(), StandardTags.gradient(), StandardTags.rainbow());
+        }
+        final MiniMessage miniMessage = MiniMessage.builder().tags(resolver.build()).build();
+        return miniMessage.deserialize(name);
+    }
     public Component getParsedMessage(Player player, String message) {
         TagResolver.Builder resolver = TagResolver.builder();
+        Component chatColour = MiniMessage.miniMessage().deserialize("");
         if(player != null) {
-            if (!player.hasPermission("skyprisoncore.chat.format")) return Component.text(message);
+            LuckPerms luckAPI = LuckPermsProvider.get();
+            net.luckperms.api.model.user.User user = luckAPI.getPlayerAdapter(Player.class).getUser(player);
+            String chatColourString = Objects.requireNonNullElse(user.getCachedData().getMetaData().getMetaValue("chat-colour"), "");
+            chatColour = MiniMessage.miniMessage().deserialize(chatColourString);
 
+            if (!player.hasPermission("skyprisoncore.chat.format")) return chatColour.append(Component.text(message));
 
             for (Map.Entry<String, TagResolver> entry : DEFAULT_TAGS.entrySet()) {
                 if (player.hasPermission("skyprisoncore.chat." + entry.getKey())) {
@@ -339,7 +343,7 @@ public class SkyPrisonCore extends JavaPlugin {
             resolver.resolvers(StandardTags.defaults());
         }
         final MiniMessage miniMessage = MiniMessage.builder().tags(resolver.build()).build();
-        return miniMessage.deserialize(message);
+        return chatColour.append(miniMessage.deserialize(message));
     }
 
     @Override
@@ -347,9 +351,9 @@ public class SkyPrisonCore extends JavaPlugin {
         if(!shinyGrass.isEmpty()) {
             particles.removeFixedEffectsInRange(shinyGrass.get(0), 1000);
         }
-        if(discApi != null) {
+        if(discApi != null && discApi.getServerTextChannelById("788108242797854751").isPresent()) {
             try {
-                discApi.getTextChannelById("788108242797854751").get().sendMessage(":octagonal_sign: **Server has stopped**");
+                discApi.getServerTextChannelById("788108242797854751").get().sendMessage(":octagonal_sign: **Server has stopped**");
                 discApi.getServerTextChannelById("788108242797854751").get().updateTopic("Server is offline!");
             } catch (Exception e) {
                 e.printStackTrace();
@@ -360,19 +364,27 @@ public class SkyPrisonCore extends JavaPlugin {
         shinyTimer.cancel();
         spongeTimer.cancel();
         dailyExecutor.shutdown();
-        getLogger().info("Disabled SkyPrisonCore v" + getDescription().getVersion());
+        getLogger().info("Disabled SkyPrisonCore v" + getPluginMeta().getVersion());
     }
 
     private void onConnectToDiscord() {
-        if(discApi != null) {
+        if(discApi != null && discApi.getTextChannelById("788108242797854751").isPresent()) {
             getLogger().info("Connected to Discord as " + discApi.getYourself().getDiscriminatedName());
             getLogger().info("Open the following url to invite the bot: " + discApi.createBotInvite());
             discApi.getTextChannelById("788108242797854751").get().sendMessage(":white_check_mark: **Server has started**");
 
             try {
-                for(SlashCommand command: discApi.getGlobalSlashCommands().get()) {
+                for(SlashCommand command : discApi.getGlobalSlashCommands().get()) {
                     if(!command.getName().equalsIgnoreCase("link")) {
                         command.delete();
+                    }
+                }
+                if(discApi.getServerById("782795465632251955").isPresent()) {
+                    Server serv = discApi.getServerById("782795465632251955").get();
+                    for (SlashCommand command : discApi.getServerSlashCommands(serv).get()) {
+                        if(!command.getName().equalsIgnoreCase("link")) {
+                            command.delete();
+                        }
                     }
                 }
             } catch (InterruptedException | ExecutionException ignored) {
@@ -380,10 +392,9 @@ public class SkyPrisonCore extends JavaPlugin {
 
 
 
-            SlashCommand link = SlashCommand.with("link", "Link your Discord and Minecraft Account", List.of(
+            SlashCommand.with("link", "Link your Discord and Minecraft Account", List.of(
                             SlashCommandOption.createWithChoices(SlashCommandOptionType.STRING, "link-code", "Code for linking", true)
-                    )).createGlobal(discApi)
-                    .join();
+                    )).createGlobal(discApi).join();
             discApi.addListener(new SlashCommandCreate(this, getDatabase()));
             discApi.addListener(new MessageCreate(this, new ChatUtils(this, discApi), discApi));
             discApi.addListener(new UserRoleAdd(this, getDatabase()));
@@ -392,15 +403,14 @@ public class SkyPrisonCore extends JavaPlugin {
     }
 
     private void updateTopic() {
-        if(discApi != null) {
-            TextChannel channel = discApi.getTextChannelById("788108242797854751").get();
-            channel.asServerTextChannel().get().updateTopic("Online Players: " + Bukkit.getOnlinePlayers().size() + "/50");
+        if(discApi != null && discApi.getServerTextChannelById("788108242797854751").isPresent()) {
+            discApi.getServerTextChannelById("788108242797854751").get().updateTopic("Online Players: " + Bukkit.getOnlinePlayers().size() + "/50");
         }
     }
 
 
     public void updateDiscordRoles() {
-        if(discApi != null) {
+        if(discApi != null && discApi.getServerById("782795465632251955").isPresent()) {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 long discordId = 0;
                 try(Connection conn = getDatabase().getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT discord_id FROM users WHERE user_id = ?")) {
@@ -430,11 +440,6 @@ public class SkyPrisonCore extends JavaPlugin {
             }
         }
     }
-
-    public final MiniMessage miniSerial = MiniMessage.builder()
-            .tags(TagResolver.standard()
-            )
-            .build();
 
     public void registerMinPrice() {
         minPrice.put(Material.BIRCH_LOG, 5.0);
@@ -493,7 +498,7 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("permshop")).setExecutor(new PermShop());
         Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, getDatabase()));
         Objects.requireNonNull(getCommand("dropchest")).setExecutor(new DropChest(this));
-        Objects.requireNonNull(getCommand("dontsell")).setExecutor(new DontSell(this, getDatabase()));
+        Objects.requireNonNull(getCommand("dontsell")).setExecutor(new DontSell(getDatabase()));
         Objects.requireNonNull(getCommand("endupgrade")).setExecutor(new EndUpgrade(this));
         Objects.requireNonNull(getCommand("secretfound")).setExecutor(new SecretFound(this, dailyMissions, getDatabase()));
         Objects.requireNonNull(getCommand("rewards")).setExecutor(new SecretsGUI(this, getDatabase()));
@@ -527,6 +532,10 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("randomgive")).setExecutor(new RandomGive(this));
         Objects.requireNonNull(getCommand("customrecipes")).setExecutor(new CustomRecipes(this));
         Objects.requireNonNull(getCommand("claim")).setExecutor(new Claim(this, getDatabase()));
+
+        Objects.requireNonNull(getCommand("rename")).setExecutor(new Rename());
+        Objects.requireNonNull(getCommand("itemlore")).setExecutor(new ItemLore(this));
+        Objects.requireNonNull(getCommand("namecolour")).setExecutor(new NameColour(this, getDatabase()));
 
         Objects.requireNonNull(getCommand("referral")).setExecutor(new Referral(this, getDatabase()));
         Objects.requireNonNull(getCommand("discord")).setExecutor(new Discord(this, getDatabase(), discApi));
@@ -573,16 +582,18 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PlayerFish(dailyMissions), this);
         pm.registerEvents(new InventoryClose(this), this);
         pm.registerEvents(new EntityDamage(this), this);
-        pm.registerEvents(new PlayerCommandPreprocess(this), this);
+        pm.registerEvents(new PlayerCommandPreprocess(), this);
         pm.registerEvents(new ParkourFinish(this, dailyMissions), this);
         pm.registerEvents(new PlayerTogglePvP(), this);
         pm.registerEvents(new ServerLoad(this, particles, getDatabase()), this);
         pm.registerEvents(new CrateObtainReward(getDatabase()), this);
         pm.registerEvents(new EntityToggleGlide(), this);
         pm.registerEvents(new PlayerBucketEmpty(), this);
-        pm.registerEvents(new AsyncChatDecorate(this, getDatabase()), this);
+        pm.registerEvents(new AsyncChatDecorate(this), this);
+        pm.registerEvents(new SignChange(this), this);
+        pm.registerEvents(new PlayerEditBook(this), this);
 
-        pm.registerEvents(new AsyncChat(this, discApi, getDatabase(), new Tags(this, getDatabase())), this);
+        pm.registerEvents(new AsyncChat(this, discApi, getDatabase(), new Tags(this, getDatabase()), new ItemLore(this)), this);
         pm.registerEvents(new PlayerQuit(this, getDatabase(), discApi, dailyMissions), this);
         pm.registerEvents(new PlayerJoin(this, getDatabase(), discApi, dailyMissions, particles), this);
         pm.registerEvents(new McMMOPartyChat(discApi), this);
@@ -591,7 +602,7 @@ public class SkyPrisonCore extends JavaPlugin {
             Events.get().register(new Events.Listener() {
                 @Override
                 public void entryAdded(Entry entry) {
-                    if (entry.getType().equals("ban")) {
+                    if (discApi.getTextChannelById("823392480241516584").isPresent() && entry.getType().equals("ban") && entry.getExecutorUUID() != null) {
                         CMIUser bannedUser = CMI.getInstance().getPlayerManager().getUser(entry.getUuid());
                         if(!entry.getExecutorUUID().equalsIgnoreCase("console")) {
                             CMIUser user = CMI.getInstance().getPlayerManager().getUser(entry.getExecutorUUID());
@@ -611,7 +622,7 @@ public class SkyPrisonCore extends JavaPlugin {
                 }
                 @Override
                 public void entryRemoved(Entry entry) {
-                    if (entry.getType().equals("ban")) {
+                    if (discApi.getTextChannelById("823392480241516584").isPresent() && entry.getType().equals("ban") && entry.getExecutorUUID() != null) {
                         CMIUser bannedUser = CMI.getInstance().getPlayerManager().getUser(entry.getUuid());
                         if(!entry.getExecutorUUID().equalsIgnoreCase("console")) {
                             CMIUser user = CMI.getInstance().getPlayerManager().getUser(entry.getExecutorUUID());
@@ -639,126 +650,7 @@ public class SkyPrisonCore extends JavaPlugin {
     }
 
     private void announcer() {
-        boolean prisonPlayers = false;
-        boolean freePlayers = false;
-        for(Player player : Bukkit.getOnlinePlayers()) {
-            if(player.hasPermission("group.free")) {
-                freePlayers = true;
-            } else if(player.hasPermission("group.default")) {
-                prisonPlayers = true;
-            }
-        }
-        Random rand = new Random();
-        Component fMsgComp = null;
-        Component pMsgComp = null;
 
-        String splitter = "          &8&l&m⎯⎯⎯⎯=⎯⎯⎯⎯⎯⎯⎯⎯=⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯=⎯⎯⎯⎯⎯⎯⎯⎯=⎯⎯⎯⎯&f";
-
-
-        String hSplitter = "&8&l&m⎯⎯⎯⎯⎯=⎯⎯⎯⎯⎯⎯⎯⎯=⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯=⎯⎯⎯⎯⎯⎯⎯⎯=⎯⎯⎯⎯⎯&f";
-
-        if(freePlayers) {
-            ArrayList<String> free = new ArrayList<>(infoConf.getStringList("general"));
-            free.addAll(infoConf.getStringList("free"));
-            String fullMsg = free.get(rand.nextInt(free.size()));
-
-            String msg = StringUtils.substringsBetween(fullMsg, "<T>", "</T>")[0];
-
-            String[] splitMsg = msg.split("\\[LINE]");
-
-            StringBuilder cMsg = new StringBuilder();
-
-            for(Iterator<String> iterator = Arrays.stream(splitMsg).iterator(); iterator.hasNext();) {
-                msg = iterator.next();
-                String centeredMsg = getCenteredLine(msg);
-                cMsg.append(centeredMsg);
-                if(iterator.hasNext()) {
-                    cMsg.append("\n");
-                }
-            }
-
-            fMsgComp = Component.text(colourMessage("\n" + getCenteredLine("&4&lInfo") + "\n" + splitter + "\n" + cMsg + "&l\n" + splitter));
-
-            String[] hMsg = StringUtils.substringsBetween(fullMsg, "<H>", "</H>");
-            String[] cmd = StringUtils.substringsBetween(fullMsg, "<C>", "</C>");
-            String[] url = StringUtils.substringsBetween(fullMsg, "<URL>", "</URL>");
-
-
-            if(cmd != null)
-                fMsgComp = fMsgComp.clickEvent(ClickEvent.runCommand(cmd[0]));
-            if(url != null)
-                fMsgComp = fMsgComp.clickEvent(ClickEvent.openUrl(url[0]));
-
-            if(hMsg != null) {
-                splitMsg = hMsg[0].split("\\[LINE]");
-                cMsg = new StringBuilder();
-                for(Iterator<String> iterator = Arrays.stream(splitMsg).iterator(); iterator.hasNext();) {
-                    hMsg[0] = iterator.next();
-                    String centeredMsg = getCenteredHover(hMsg[0]);
-                    cMsg.append(centeredMsg);
-                    if(iterator.hasNext()) {
-                        cMsg.append("\n");
-                    }
-                }
-                fMsgComp = fMsgComp.hoverEvent(HoverEvent.showText(Component.text(colourMessage(hSplitter + "\n" + cMsg + "&l\n" + hSplitter))));
-            }
-
-        }
-        if(prisonPlayers) {
-            ArrayList<String> prison = new ArrayList<>(infoConf.getStringList("general"));
-            prison.addAll(infoConf.getStringList("prison"));
-            String fullMsg = prison.get(rand.nextInt(prison.size()));
-
-            String msg = StringUtils.substringsBetween(fullMsg, "<T>", "</T>")[0];
-
-            String[] splitMsg = msg.split("\\[LINE]");
-
-            StringBuilder cMsg = new StringBuilder();
-
-            for(Iterator<String> iterator = Arrays.stream(splitMsg).iterator(); iterator.hasNext();) {
-                String centeredMsg = getCenteredLine(iterator.next());
-                cMsg.append(centeredMsg);
-                if(iterator.hasNext()) {
-                    cMsg.append("\n");
-                }
-            }
-
-            pMsgComp = Component.text(colourMessage("\n" + getCenteredLine("&4&lInfo") + "\n" + splitter + "\n" + cMsg + "\n" + splitter));
-
-
-            String[] hMsg = StringUtils.substringsBetween(fullMsg, "<H>", "</H>");
-            String[] cmd = StringUtils.substringsBetween(fullMsg, "<C>", "</C>");
-            String[] url = StringUtils.substringsBetween(fullMsg, "<URL>", "</URL>");
-
-
-            if(cmd != null)
-                pMsgComp = pMsgComp.clickEvent(ClickEvent.runCommand(cmd[0]));
-            if(url != null)
-                pMsgComp = pMsgComp.clickEvent(ClickEvent.openUrl(url[0]));
-
-            if(hMsg != null) {
-                splitMsg = hMsg[0].split("\\[LINE]");
-                cMsg = new StringBuilder();
-                for(Iterator<String> iterator = Arrays.stream(splitMsg).iterator(); iterator.hasNext();) {
-                    hMsg[0] = iterator.next();
-                    String centeredMsg = getCenteredHover(hMsg[0]);
-                    cMsg.append(centeredMsg);
-                    if(iterator.hasNext()) {
-                        cMsg.append("\n");
-                    }
-                }
-                pMsgComp = pMsgComp.hoverEvent(HoverEvent.showText(Component.text(colourMessage(hSplitter + "\n" + cMsg + "\n" + hSplitter))));
-            }
-        }
-
-
-        for(Player player : Bukkit.getServer().getOnlinePlayers()){
-            if(player.hasPermission("group.free")) {
-                player.sendMessage(fMsgComp);
-            } else {
-                player.sendMessage(pMsgComp);
-            }
-        }
     }
 
     public String hasNotification(String id, OfflinePlayer player) {
@@ -821,13 +713,25 @@ public class SkyPrisonCore extends JavaPlugin {
         return notifications;
     }
 
-    public void createNotification(String type, String extraData, OfflinePlayer player, Component msg, String id, boolean deleteOnView) {
+
+    public void scheduleForOnline(String pUUID, String type, String content) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO schedule_online (user_id, type, content) VALUES (?, ?, ?)")) {
+            ps.setString(1, pUUID);
+            ps.setString(2, type);
+            ps.setString(3, content);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void createNotification(String type, String extraData, String pUUID, Component msg, String id, boolean deleteOnView) {
         if(id == null || id.isEmpty()) id = UUID.randomUUID().toString();
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO notifications (id, type, extra_data, user_id, message, delete_on_view) VALUES (?, ?, ?, ?, ?, ?)")) {
             ps.setString(1, id);
             ps.setString(2, type);
             ps.setString(3, extraData);
-            ps.setString(4, player.getUniqueId().toString());
+            ps.setString(4, pUUID);
             ps.setString(5, GsonComponentSerializer.gson().serialize(msg));
             ps.setInt(6, deleteOnView ? 1 : 0);
             ps.executeUpdate();
@@ -879,75 +783,6 @@ public class SkyPrisonCore extends JavaPlugin {
         String[] split = time.split(":");
         return (int) ((Integer.parseInt(split[0]) * 1000) + ((Math.rint(Integer.parseInt(split[1]) / 60.0 * 100.0) / 100.0) * 1000));
     }
-
-    private final static int CENTER_PX = 154;
-
-    private final static int CENTER_PX_HOVER = 114;
-
-    public static String getCenteredHover(String message) {
-        message = ChatColor.translateAlternateColorCodes('&', message);
-
-        int messagePxSize = 0;
-        boolean previousCode = false;
-        boolean isBold = false;
-
-        for(char c : message.toCharArray()){
-            if(c == '§'){
-                previousCode = true;
-            }else if(previousCode){
-                previousCode = false;
-                isBold = c == 'l' || c == 'L';
-            }else{
-                DefaultFontInfo dFI = DefaultFontInfo.getDefaultFontInfo(c);
-                messagePxSize += isBold ? dFI.getBoldLength() : dFI.getLength();
-                messagePxSize++;
-            }
-        }
-
-        int halvedMessageSize = messagePxSize / 2;
-        int toCompensate = CENTER_PX_HOVER - halvedMessageSize;
-        int spaceLength = DefaultFontInfo.SPACE.getLength() + 1;
-        int compensated = 0;
-        StringBuilder sb = new StringBuilder();
-        while(compensated < toCompensate){
-            sb.append(" ");
-            compensated += spaceLength;
-        }
-        return sb + message;
-    }
-
-    public static String getCenteredLine(String message){
-        message = ChatColor.translateAlternateColorCodes('&', message);
-
-        int messagePxSize = 0;
-        boolean previousCode = false;
-        boolean isBold = false;
-
-        for(char c : message.toCharArray()){
-            if(c == '§'){
-                previousCode = true;
-            }else if(previousCode){
-                previousCode = false;
-                isBold = c == 'l' || c == 'L';
-            }else{
-                DefaultFontInfo dFI = DefaultFontInfo.getDefaultFontInfo(c);
-                messagePxSize += isBold ? dFI.getBoldLength() : dFI.getLength();
-                messagePxSize++;
-            }
-        }
-
-        int halvedMessageSize = messagePxSize / 2;
-        int toCompensate = CENTER_PX - halvedMessageSize;
-        int spaceLength = DefaultFontInfo.SPACE.getLength() + 1;
-        int compensated = 0;
-        StringBuilder sb = new StringBuilder();
-        while(compensated < toCompensate){
-            sb.append(" ");
-            compensated += spaceLength;
-        }
-        return sb + message;
-    }
-
     public boolean isLong(String str) {
         try {
             Long.parseLong(str);
@@ -956,14 +791,7 @@ public class SkyPrisonCore extends JavaPlugin {
             return false;
         }
     }
-    public boolean isDouble(String str) {
-        try {
-            Double.parseDouble(str);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
+
     public boolean isInt(String str) {
         try {
             Integer.parseInt(str);
@@ -971,27 +799,6 @@ public class SkyPrisonCore extends JavaPlugin {
         } catch (NumberFormatException e) {
             return false;
         }
-    }
-
-
-    public String colourMessage(String message) {
-        message = translateHexColorCodes(ChatColor.translateAlternateColorCodes('&', message));
-        return message;
-    }
-
-    public String translateHexColorCodes(String message) {
-        final Pattern hexPattern = Pattern.compile("\\{#" + "([A-Fa-f0-9]{6})" + "}");
-        Matcher matcher = hexPattern.matcher(message);
-        StringBuffer buffer = new StringBuffer(message.length() + 4 * 8);
-        while (matcher.find()) {
-            String group = matcher.group(1);
-            matcher.appendReplacement(buffer, ChatColor.COLOR_CHAR + "x"
-                    + ChatColor.COLOR_CHAR + group.charAt(0) + ChatColor.COLOR_CHAR + group.charAt(1)
-                    + ChatColor.COLOR_CHAR + group.charAt(2) + ChatColor.COLOR_CHAR + group.charAt(3)
-                    + ChatColor.COLOR_CHAR + group.charAt(4) + ChatColor.COLOR_CHAR + group.charAt(5)
-            );
-        }
-        return matcher.appendTail(buffer).toString();
     }
 
     public void checkOnlineDailies() {
@@ -1012,7 +819,7 @@ public class SkyPrisonCore extends JavaPlugin {
             }
 
             if(lastDay != null && !lastDay.equalsIgnoreCase(currDate)) {
-                player.sendMessage(colourMessage("&aYou can collect your &l/daily&l!"));
+                player.sendMessage(Component.text("You can collect your ", NamedTextColor.GREEN).append(Component.text("/daily!", NamedTextColor.GREEN, TextDecoration.BOLD)));
             }
         }
     }
@@ -1025,9 +832,19 @@ public class SkyPrisonCore extends JavaPlugin {
         }
     }
 
+    public final MiniMessage playerMsgBuilder = MiniMessage.builder()
+            .tags(TagResolver.builder()
+                    .resolver(StandardTags.color())
+                    .resolver(StandardTags.decorations())
+                    .build()
+            )
+            .build();
+
+
     public void tellConsole(Component message){
         Bukkit.getConsoleSender().sendMessage(message);
     }
+
     public void asConsole(String command){
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
     }
@@ -1042,10 +859,10 @@ public class SkyPrisonCore extends JavaPlugin {
         if (i != null) {
             if (i.getType() == Material.CHAINMAIL_HELMET || i.getType() == Material.CHAINMAIL_CHESTPLATE || i.getType() == Material.CHAINMAIL_LEGGINGS || i.getType() == Material.CHAINMAIL_BOOTS || i.getType() == Material.DIAMOND_SWORD) {
                 return true;
-            } else if (i.getType() == Material.BOW) {
-                return i.getItemMeta().hasDisplayName() && i.getItemMeta().getDisplayName().contains("Guard Bow") && i.getItemMeta().isUnbreakable();
-            } else if (i.getType() == Material.SHIELD) {
-                return i.getItemMeta().hasDisplayName() && i.getItemMeta().getDisplayName().contains("Guard Shield") && i.getItemMeta().isUnbreakable();
+            } else if (i.getType() == Material.BOW && i.getItemMeta().hasDisplayName()) {
+                return i.getItemMeta().hasDisplayName() && Objects.requireNonNull(i.getItemMeta().displayName()).toString().contains("Guard Bow") && i.getItemMeta().isUnbreakable();
+            } else if (i.getType() == Material.SHIELD && i.getItemMeta().hasDisplayName()) {
+                return i.getItemMeta().hasDisplayName() && Objects.requireNonNull(i.getItemMeta().displayName()).toString().contains("Guard Shield") && i.getItemMeta().isUnbreakable();
             }
         }
         return false;
@@ -1059,29 +876,6 @@ public class SkyPrisonCore extends JavaPlugin {
             }
         }
     }
-
-/*
-
-    @EventHandler
-    public void CustomVillagerTrades(VillagerAcquireTradeEvent event) {
-        AbstractVillager villager = event.getEntity();
-        List<MerchantRecipe> vSales = Lists.newArrayList(villager.getRecipes());
-
-        vSales.removeIf(recipe -> recipe.getResult().getType().equals(Material.EMERALD));
-
-        ItemStack wham = new ItemStack(Material.BOOK, 1);
-        ItemMeta whams = wham.getItemMeta();
-        whams.setDisplayName("Ur a potat");
-        wham.setItemMeta(whams);
-        MerchantRecipe newRecipe = new MerchantRecipe(wham, 5);
-        newRecipe.addIngredient(new ItemStack(Material.COOKED_PORKCHOP, 69));
-        vSales.add(newRecipe);
-        villager.setRecipes(vSales);
-    }
-
-*/
-
-
 }
 
 

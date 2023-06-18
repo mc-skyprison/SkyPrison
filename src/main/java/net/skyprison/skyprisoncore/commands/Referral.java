@@ -128,13 +128,13 @@ public class Referral implements CommandExecutor {
 									if(reffedPlayer.isOnline()) {
 										reffedPlayer.getPlayer().sendMessage(beenReffed);
 									} else {
-										plugin.createNotification("referred", player.getName(), reffedPlayer.getOfflinePlayer(), beenReffed, null, true);
+										plugin.createNotification("referred", player.getName(), reffedPlayer.getUniqueId().toString(), beenReffed, null, true);
 									}
 									player.sendMessage(Component.text("You sucessfully referred ", NamedTextColor.DARK_AQUA)
 											.append(Component.text(reffedPlayer.getName(), NamedTextColor.AQUA)).append(Component.text(" and have received ", NamedTextColor.DARK_AQUA))
 											.append(Component.text("50", NamedTextColor.GOLD)).append(Component.text(" tokens!", NamedTextColor.DARK_AQUA)));
-									plugin.tokens.addTokens(reffedPlayer, 250, "Referred Someone", player.getName());
-									plugin.tokens.addTokens(user, 50, "Was Referred", reffedPlayer.getName());
+									plugin.tokens.addTokens(reffedPlayer.getUniqueId(), 250, "Referred Someone", player.getName());
+									plugin.tokens.addTokens(player.getUniqueId(), 50, "Was Referred", reffedPlayer.getName());
 								} else {
 									player.sendMessage(Component.text("/referral <player>", NamedTextColor.RED));
 								}

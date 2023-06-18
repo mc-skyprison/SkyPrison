@@ -48,12 +48,12 @@ public class SecretsGUI implements CommandExecutor {
 		ItemStack item = new ItemStack(material, amount);
 		if(material.equals(Material.PLAYER_HEAD)) {
 			SkullMeta itemMeta = (SkullMeta) item.getItemMeta();
-			itemMeta.displayName(Component.text(name));
+			itemMeta.displayName(Component.text(name).decoration(TextDecoration.ITALIC, false));
 			itemMeta.setOwningPlayer(player);
 			item.setItemMeta(itemMeta);
 		} else {
 			ItemMeta itemMeta = item.getItemMeta();
-			itemMeta.displayName(Component.text(name));
+			itemMeta.displayName(Component.text(name).decoration(TextDecoration.ITALIC, false));
 			item.setItemMeta(itemMeta);
 		}
 		return item;
@@ -75,7 +75,7 @@ public class SecretsGUI implements CommandExecutor {
 
 			ItemStack item = new ItemStack(material, amount);
 			ItemMeta itemMeta = item.getItemMeta();
-			itemMeta.displayName(Component.text(name));
+			itemMeta.displayName(Component.text(name).decoration(TextDecoration.ITALIC, false));
 			int secretsFound = 0;
 
 			try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT secret_name FROM secrets_data WHERE user_id = ?")) {
@@ -90,25 +90,26 @@ public class SecretsGUI implements CommandExecutor {
 				e.printStackTrace();
 			}
 
-			itemMeta.lore(Collections.singletonList(Component.text("Secrets Found: " + secretsFound + "/" + totalSecrets, NamedTextColor.GRAY)));
+			itemMeta.lore(Collections.singletonList(Component.text("Secrets Found: " + secretsFound + "/" + totalSecrets, NamedTextColor.GRAY)
+					.decoration(TextDecoration.ITALIC, false)));
 			item.setItemMeta(itemMeta);
 
 			return item;
 		} else {
 			ItemStack item = new ItemStack(material, amount);
 			ItemMeta itemMeta = item.getItemMeta();
-			itemMeta.displayName(Component.text(name));
+			itemMeta.displayName(Component.text(name).decoration(TextDecoration.ITALIC, false));
 			item.setItemMeta(itemMeta);
 			return item;
 		}
 	}
 
 	private ItemStack unknownItemStack() {
-		Component name = Component.text("???", NamedTextColor.RED, TextDecoration.BOLD);
+		Component name = Component.text("???", NamedTextColor.RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false);
 		ItemStack item = new ItemStack(Material.BOOK, 1);
 		ItemMeta itemMeta = item.getItemMeta();
 		itemMeta.displayName(name);
-		itemMeta.lore(Collections.singletonList(Component.text("Find this secret to unlock it..", NamedTextColor.GRAY)));
+		itemMeta.lore(Collections.singletonList(Component.text("Find this secret to unlock it..", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)));
 		item.setItemMeta(itemMeta);
 		return item;
 	}
@@ -118,7 +119,7 @@ public class SecretsGUI implements CommandExecutor {
 		NamespacedKey key = new NamespacedKey(plugin, "reward");
 		ItemMeta itemMeta = item.getItemMeta();
 		itemMeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, reward);
-		itemMeta.displayName(Component.text(name));
+		itemMeta.displayName(Component.text(name).decoration(TextDecoration.ITALIC, false));
 		itemMeta.lore(lore);
 		item.setItemMeta(itemMeta);
 		return item;
@@ -129,7 +130,7 @@ public class SecretsGUI implements CommandExecutor {
 		ItemStack item = new ItemStack(material, amount);
 		ItemMeta itemMeta = item.getItemMeta();
 
-		itemMeta.displayName(Component.text(name));
+		itemMeta.displayName(Component.text(name).decoration(TextDecoration.ITALIC, false));
 		String plsName = name.replaceAll("\\s", "");
 
 
@@ -151,10 +152,10 @@ public class SecretsGUI implements CommandExecutor {
 
 		ArrayList<Component> lore = new ArrayList<>();
 		lore.add(Component.text("You've " + (isParkour ? "done this parkour " : isPuzzle ? "completed this puzzle " : "found this secret "), NamedTextColor.GRAY)
-				.append(Component.text(amountFound, NamedTextColor.AQUA)).append(Component.text(" time(s)", NamedTextColor.GRAY)));
-		lore.add(Component.text("Cooldown: ", NamedTextColor.DARK_PURPLE).append(cooldown));
+				.append(Component.text(amountFound, NamedTextColor.AQUA)).append(Component.text(" time(s)", NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
+		lore.add(Component.text("Cooldown: ", NamedTextColor.RED).append(cooldown).decoration(TextDecoration.ITALIC, false));
 		lore.add(Component.empty());
-		lore.add(Component.text("Tokens: ", NamedTextColor.AQUA).append(Component.text(tokenAmount, NamedTextColor.GRAY)));
+		lore.add(Component.text("Tokens: ", NamedTextColor.AQUA).append(Component.text(tokenAmount, NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
 
 
 		itemMeta.lore(lore);
@@ -253,7 +254,7 @@ public class SecretsGUI implements CommandExecutor {
 						boolean hasFound = false;
 						try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT secret_amount FROM secrets_data WHERE user_id = ? AND secret_name = ?")) {
 							ps.setString(1, player.getUniqueId().toString());
-							ps.setString(1, secretId);
+							ps.setString(2, secretId);
 							ResultSet rs = ps.executeQuery();
 							while(rs.next()) {
 								hasFound = true;
@@ -308,7 +309,7 @@ public class SecretsGUI implements CommandExecutor {
 								String name = rData.getString(reward + ".name");
 								List<String> stringLore = rData.getStringList(reward + ".lore");
 								List<Component> lore = new ArrayList<>();
-								stringLore.forEach(sLore -> lore.add(MiniMessage.miniMessage().deserialize(sLore)));
+								stringLore.forEach(sLore -> lore.add(MiniMessage.miniMessage().deserialize(sLore).decoration(TextDecoration.ITALIC, false)));
 								ItemStack item = rewardItemStack(lore, name, reward);
 								rewardInv.setItem(i, item);
 							}

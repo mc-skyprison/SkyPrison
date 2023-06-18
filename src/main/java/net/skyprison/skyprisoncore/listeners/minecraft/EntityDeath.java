@@ -1,9 +1,10 @@
-package net.skyprison.skyprisoncore.listeners;
+package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.guard.Safezone;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
@@ -206,20 +207,26 @@ public class EntityDeath implements Listener {
 
         if(pDeaths == 1000) {
             plugin.asConsole("lp user " + killed.getName() + " permission set skyprisoncore.tag.52");
-            killer.sendMessage(plugin.colourMessage("&7You have died a whopping &c&l1000 &7times! Therefore, you get a special tag!"));
+            killer.sendMessage(Component.text("You have died a whopping", NamedTextColor.GRAY).append(Component.text(" 1,000 ", NamedTextColor.RED, TextDecoration.BOLD)
+                    .append(Component.text("times! Therefore, you get a special tag!", NamedTextColor.GRAY))));
         }
 
         if(pKills == 1000) {
             plugin.asConsole("lp user " + killer.getName() + " permission set skyprisoncore.tag.53");
-            killed.sendMessage(plugin.colourMessage("&7You have killed &c&l1000 &7players! Therefore, you get a special tag!"));
+            killer.sendMessage(Component.text("You have killed a whopping", NamedTextColor.GRAY).append(Component.text(" 1,000 ", NamedTextColor.RED, TextDecoration.BOLD)
+                    .append(Component.text("players! Therefore, you get a special tag!", NamedTextColor.GRAY))));
         }
 
         if(pKillStreak % 5 == 0 && pKillStreak <= 100) {
-            killer.sendMessage(plugin.colourMessage("&7You've hit a kill streak of &c&l" + pKillStreak + "&7! You have received &c&l15 &7tokens as a reward!"));
-            plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 15, "Kill Streak", String.valueOf(pKillStreak));
+            killer.sendMessage(Component.text("You've hit a kill streak of ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(pKillStreak), NamedTextColor.RED, TextDecoration.BOLD)
+                    .append(Component.text("! You have received", NamedTextColor.GRAY).append(Component.text(" 15 tokens ", NamedTextColor.RED, TextDecoration.BOLD)
+                            .append(Component.text("as a reward!", NamedTextColor.GRAY))))));
+            plugin.tokens.addTokens(killer.getUniqueId(), 15, "Kill Streak", String.valueOf(pKillStreak));
         } else if(pKillStreak % 50 == 0) {
-            killer.sendMessage(plugin.colourMessage("&7You've hit a kill streak of &c&l" + pKillStreak + "&7! You have received &c&l30 &7tokens as a reward!"));
-            plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 30, "Kill Streak", String.valueOf(pKillStreak));
+            killer.sendMessage(Component.text("You've hit a kill streak of ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(pKillStreak), NamedTextColor.RED, TextDecoration.BOLD)
+                    .append(Component.text("! You have received", NamedTextColor.GRAY).append(Component.text(" 30 tokens ", NamedTextColor.RED, TextDecoration.BOLD)
+                            .append(Component.text("as a reward!", NamedTextColor.GRAY))))));
+            plugin.tokens.addTokens(killer.getUniqueId(), 30, "Kill Streak", String.valueOf(pKillStreak));
         }
 
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET pvp_kills = pvp_kills + ?, pvp_killstreak = pvp_killstreak + ? WHERE user_id = ?")) {
@@ -244,11 +251,11 @@ public class EntityDeath implements Listener {
         if(killed.hasPermission("skyprisoncore.guard.onduty")) {
             killer.sendMessage(Component.text("You killed ", NamedTextColor.GRAY).append(Component.text(killed.getName(), NamedTextColor.RED))
                     .append(Component.text(" and received ", NamedTextColor.GRAY)).append(Component.text("15", NamedTextColor.RED)).append(Component.text(" tokens!", NamedTextColor.GRAY)));
-            plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 15, "Guard Kill", killed.getName());
+            plugin.tokens.addTokens(killer.getUniqueId(), 15, "Guard Kill", killed.getName());
         } else {
             killer.sendMessage(Component.text("You killed ", NamedTextColor.GRAY).append(Component.text(killed.getName(), NamedTextColor.RED))
                     .append(Component.text(" and received ", NamedTextColor.GRAY)).append(Component.text("1", NamedTextColor.RED)).append(Component.text(" token!", NamedTextColor.GRAY)));
-            plugin.tokens.addTokens(CMI.getInstance().getPlayerManager().getUser(killer), 1, "Player Kill", killed.getName());
+            plugin.tokens.addTokens(killer.getUniqueId(), 1, "Player Kill", killed.getName());
         }
 
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO player_kills (killer_id, killed_id, killed_on) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE killed_on = VALUE(killed_on)")) {

@@ -99,7 +99,7 @@ public class ShopBan implements CommandExecutor {
 									player.sendMessage(Component.text("That player isnt banned from your shops!", NamedTextColor.RED));
 								}
 							} else {
-								player.sendMessage(Component.text("&c" + args[1] + " has never joined the server before!", NamedTextColor.RED));
+								player.sendMessage(Component.text(args[1] + " has never joined the server before!", NamedTextColor.RED));
 							}
 						} else {
 							player.sendMessage(Component.text("Inorrect Usage! /shopban remove <player>", NamedTextColor.RED));

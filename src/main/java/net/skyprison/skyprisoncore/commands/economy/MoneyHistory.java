@@ -228,7 +228,7 @@ public class MoneyHistory implements CommandExecutor {
 
             player.openInventory(transGUI);
         } else {
-            player.sendMessage(plugin.colourMessage("&cPage doesn't exist! Total pages: " + totalPages));
+            player.sendMessage(Component.text("Page doesn't exist! Total pages: " + totalPages, NamedTextColor.RED));
         }
     }
 
@@ -417,7 +417,7 @@ public class MoneyHistory implements CommandExecutor {
 
             player.openInventory(transGUI);
         } else {
-            player.sendMessage(plugin.colourMessage("&cPage doesn't exist! Total pages: " + totalPages));
+            player.sendMessage(Component.text("Page doesn't exist! Total pages: " + totalPages, NamedTextColor.RED));
         }
     }
 
@@ -438,7 +438,7 @@ public class MoneyHistory implements CommandExecutor {
                                 CMIUser user = CMI.getInstance().getPlayerManager().getUser(args[0]);
                                 openGUI(player, false, "null", 1, user.getUniqueId().toString());
                             } else {
-                                player.sendMessage(plugin.colourMessage("&cNo player with that name exists!"));
+                                player.sendMessage(Component.text("No player with that name exists!", NamedTextColor.RED));
                             }
                         } else {
                             if(args[0].equalsIgnoreCase("lookup")) {
@@ -446,12 +446,12 @@ public class MoneyHistory implements CommandExecutor {
                                     CMIUser user = CMI.getInstance().getPlayerManager().getUser(args[1]);
                                     openLookupGUI(player, false, "null", 1, user.getUniqueId().toString());
                                 } else {
-                                    player.sendMessage(plugin.colourMessage("&cNo player with that name exists!"));
+                                    player.sendMessage(Component.text("No player with that name exists!", NamedTextColor.RED));
                                 }
                             }
                         }
                     } else {
-                        player.sendMessage(plugin.colourMessage("&cCorrect Usage: /moneyhistory (page)"));
+                        player.sendMessage(Component.text("Incorrect Usage! /moneyhistory (page)", NamedTextColor.RED));
                     }
                 }
             }

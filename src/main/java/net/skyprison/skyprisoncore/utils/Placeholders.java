@@ -5,8 +5,13 @@ import com.Zrips.CMI.Containers.CMIUser;
 import com.Zrips.CMI.Modules.PlayerOptions.PlayerOption;
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.model.user.User;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +20,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Objects;
 
 public class Placeholders extends PlaceholderExpansion {
 	private final SkyPrisonCore plugin;
@@ -39,7 +45,7 @@ public class Placeholders extends PlaceholderExpansion {
 
 	@Override
 	public @NotNull String getAuthor() {
-		return plugin.getDescription().getAuthors().toString();
+		return plugin.getPluginMeta().getAuthors().toString();
 	}
 
 	@Override
@@ -49,7 +55,7 @@ public class Placeholders extends PlaceholderExpansion {
 
 	@Override
 	public @NotNull String getVersion(){
-		return plugin.getDescription().getVersion();
+		return plugin.getPluginMeta().getVersion();
 	}
 
 	private String getBusPrice(Player player, String identifier) {
@@ -57,17 +63,17 @@ public class Placeholders extends PlaceholderExpansion {
 		Location warpLoc = CMI.getInstance().getWarpManager().getWarp(identifier).getLoc();
 		int dist = (int) user.getLocation().distance(warpLoc);
 		if(dist < 10) {
-			return ChatColor.GRAY + "" + ChatColor.ITALIC + "You Are Here";
+			return "&7&oYou Are Here";
 		} else {
 			if(!player.hasPermission("skyprisoncore.command.transportpass.bus")) {
 				if (user.getWorld().getTime() > 0 && user.getWorld().getTime() < 12300) {
-					return ChatColor.GRAY + "Price: " + ChatColor.YELLOW + "$" + dist;
+					return "&7Price: &e$" + dist;
 				} else {
 					int nightDist = (int) (dist * 1.5);
-					return ChatColor.GRAY + "Price: " + ChatColor.YELLOW + "$" + nightDist;
+					return "&7Price: &e$" + nightDist;
 				}
 			} else {
-				return ChatColor.GRAY + "Price: " + ChatColor.YELLOW + "FREE";
+				return "&7Price: &eFREE";
 			}
 		}
 	}
@@ -97,12 +103,12 @@ public class Placeholders extends PlaceholderExpansion {
 		Location warpLoc = CMI.getInstance().getWarpManager().getWarp(identifier).getLoc();
 		int dist = (int) user.getLocation().distance(warpLoc);
 		if(dist < 50) {
-			return ChatColor.GRAY + "" + ChatColor.ITALIC + "You Are Here";
+			return "&7&oYou Are Here";
 		} else {
 			if(!player.hasPermission("skyprisoncore.command.transportpass.train"))
-				return ChatColor.GRAY + "Price: " + ChatColor.YELLOW + "$" + dist;
+				return "&7Price: &e$" + dist;
 			else
-				return ChatColor.GRAY + "Price: " + ChatColor.YELLOW + "FREE";
+				return "&7Price: &eFREE";
 		}
 	}
 
@@ -143,6 +149,18 @@ public class Placeholders extends PlaceholderExpansion {
 			return String.valueOf(highestStreak);
 		}
 
+		if(identifier.equalsIgnoreCase("player_rank")) {
+			LuckPerms luckAPI = LuckPermsProvider.get();
+			User user = luckAPI.getPlayerAdapter(Player.class).getUser(player);
+			if(user.getCachedData().getMetaData().getPrefix() != null) {
+				Component prefix = MiniMessage.miniMessage().deserialize(Objects.requireNonNull(user.getCachedData().getMetaData().getPrefix())).appendSpace();
+				return LegacyComponentSerializer.legacySection().serialize(prefix);
+			} else {
+				return "";
+			}
+		}
+
+
 
 		if(identifier.equalsIgnoreCase("daily_total_collected")) {
 			int totalColl = 0;
@@ -177,15 +195,15 @@ public class Placeholders extends PlaceholderExpansion {
 			}
 
 			if(dailyMissions.isCompleted(player, mission)) {
-				return plugin.colourMessage("{#ACBED8}&m" + mSplit[2] + " &f&m" + amFormat + "/" + neeFormat);
+				return "<#ACBED8>&m" + mSplit[2] + " &f&m" + amFormat + "/" + neeFormat;
 			} else {
-				return plugin.colourMessage("{#ACBED8}" + mSplit[2] + " &f" + amFormat + "/" + neeFormat);
+				return "<#ACBED8>" + mSplit[2] + " &f" + amFormat + "/" + neeFormat;
 			}
 		}
 
 		if(identifier.equalsIgnoreCase("daily_mission_two")) {
 			if(dailyMissions.getMissions(player).isEmpty()) {
-				return "&7-";
+				return "&7>-";
 			}
 			String mission = dailyMissions.getMissions(player).get(1);
 			String[] mSplit = mission.split("-");
@@ -201,9 +219,9 @@ public class Placeholders extends PlaceholderExpansion {
 			}
 
 			if(dailyMissions.isCompleted(player, mission)) {
-				return plugin.colourMessage("{#ACBED8}&m" + mSplit[2] + " &f&m" + amFormat + "/" + neeFormat);
+				return "<#ACBED8>&m" + mSplit[2] + " &f&m" + amFormat + "/" + neeFormat;
 			} else {
-				return plugin.colourMessage("{#ACBED8}" + mSplit[2] + " &f" + amFormat + "/" + neeFormat);
+				return "<#ACBED8>" + mSplit[2] + " &f" + amFormat + "/" + neeFormat;
 			}
 		}
 
@@ -239,40 +257,19 @@ public class Placeholders extends PlaceholderExpansion {
 
         if(identifier.equalsIgnoreCase("user_tag")) {
 			if(plugin.userTags.get(player.getUniqueId()) != null) {
-				return plugin.colourMessage(plugin.userTags.get(player.getUniqueId()));
+				return plugin.userTags.get(player.getUniqueId());
 			} else {
 				return "";
 			}
 
         }
 
-		if(identifier.equalsIgnoreCase("mod_tag")) {
-			if (player.hasPermission("group.trmod")) {
-				CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-				String tag = switch (user.getRank().getName().toLowerCase()) {
-					case "grass" -> "&f[{#2ee600}G&f]";
-					case "desert" -> "&f[{#e6b22e}D&f]";
-					case "nether" -> "&f[{#ff2400}N&f]";
-					case "snow" -> "&f[{#3dc3cc}S&f]";
-					case "free" -> "&f[{#f75394}F&f]";
-					case "hell" -> "&f[{#cc141f}H&f]";
-					case "end" -> "&f[{#0085e6}E&f]";
-					default -> "";
-				};
-
-				return plugin.colourMessage(tag);
-			} else {
-				return "";
-			}
-		}
-
-
 		if(identifier.equalsIgnoreCase("silence")) {
 			CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
 			if (user.isSilenceMode()) {
-				return ChatColor.GRAY + "Global Chat is " + ChatColor.DARK_RED + "DISABLED";
+				return "&7Global Chat is &4DISABLED";
 			} else {
-				return ChatColor.GRAY + "Global Chat is " + ChatColor.GREEN + "ENABLED";
+				return "&7Global Chat is &aENABLED";
 			}
 		}
 
@@ -294,17 +291,17 @@ public class Placeholders extends PlaceholderExpansion {
 		if(identifier.equalsIgnoreCase("silence_private")) {
 			CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
 			if(!user.getOptionState(PlayerOption.acceptingPM)) {
-				return ChatColor.GRAY + "Private Chat is " + ChatColor.DARK_RED + "DISABLED";
+				return "&7Private Chat is &4DISABLED";
 			} else {
-				return ChatColor.GRAY + "Private Chat is " + ChatColor.GREEN + "ENABLED";
+				return "&7Private Chat is &aENABLED";
 			}
 		}
 
 		if(identifier.equalsIgnoreCase("silence_bounty")) {
 			if(player.hasPermission("skyprisoncore.command.bounty.silent")) {
-				return ChatColor.GRAY + "Bounty Notifications are " + ChatColor.DARK_RED + "DISABLED";
+				return "&7Bounty Notifications are &4DISABLED";
 			} else {
-				return ChatColor.GRAY + "Bounty Notifications are " + ChatColor.GREEN + "ENABLED";
+				return "&7Bounty Notifications are &aENABLED";
 			}
 		}
 
@@ -326,7 +323,7 @@ public class Placeholders extends PlaceholderExpansion {
 		for(int i = 1; i <= 8; i++) {
 			if(identifier.equalsIgnoreCase("parkour"+i)) {
 				String parkourPlaceholder = PlaceholderAPI.setPlaceholders(player, "%parkour_player_prize_delay_parkour"+ i +"%");
-				String availableMessage = ChatColor.GREEN + "Available Now";
+				String availableMessage = "&aAvailable Now";
 				if(parkourPlaceholder.equalsIgnoreCase("0")) {
 					return availableMessage;
 				} else {
@@ -337,8 +334,8 @@ public class Placeholders extends PlaceholderExpansion {
 
 		if(identifier.equalsIgnoreCase("bus_pass_time")) {
 			String timePlaceholder = PlaceholderAPI.setPlaceholders(player, "%luckperms_expiry_time_skyprisoncore.command.transportpass.bus%");
-			String availableMessage = ChatColor.RED + "You don't have a bus pass!";
-			String hasPassMessage = plugin.colourMessage("&7Expires In: &a" + timePlaceholder);
+			String availableMessage = "&cYou don't have a bus pass!";
+			String hasPassMessage = "&7Expires In: &a" + timePlaceholder;
 			if(timePlaceholder.equalsIgnoreCase("")) {
 				return availableMessage;
 			} else {
@@ -349,8 +346,8 @@ public class Placeholders extends PlaceholderExpansion {
 
 		if(identifier.equalsIgnoreCase("train_pass_time")) {
 			String timePlaceholder = PlaceholderAPI.setPlaceholders(player, "%luckperms_expiry_time_skyprisoncore.command.transportpass.train%");
-			String availableMessage = ChatColor.RED + "You don't have a train pass!";
-			String hasPassMessage = plugin.colourMessage("&7Expires In: &a" + timePlaceholder);
+			String availableMessage = "&cYou don't have a train pass!";
+			String hasPassMessage = "&7Expires In: &a" + timePlaceholder;
 			if(timePlaceholder.equalsIgnoreCase("")) {
 				return availableMessage;
 			} else {
