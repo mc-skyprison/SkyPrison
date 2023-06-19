@@ -19,6 +19,11 @@ public class ConfigCreator {
 		config.addDefault("guard-worlds", Lists.newArrayList("world_prison"));
 		config.addDefault("claim-worlds", Lists.newArrayList("world_free"));
 		config.addDefault("discord-token", "");
+		config.addDefault("database.ip", "");
+		config.addDefault("database.port", "");
+		config.addDefault("database.name", "");
+		config.addDefault("database.user", "");
+		config.addDefault("database.password", "");
 		config.options().copyDefaults(true);
 		plugin.saveConfig();
 	}

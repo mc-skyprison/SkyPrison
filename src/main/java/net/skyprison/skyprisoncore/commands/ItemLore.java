@@ -109,40 +109,44 @@ public class ItemLore implements CommandExecutor { // /itemlore
 
     public void displayLore(Player player) {
         ItemStack heldItem = player.getInventory().getItemInMainHand();
-        ItemMeta heldMeta = heldItem.getItemMeta();
-        Component msg = Component.text("");
-        msg = msg.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
-                .append(Component.text(" Item Lore ", TextColor.fromHexString("#0fc3ff"), TextDecoration.BOLD))
-                .append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
+        if (heldItem.getType().isItem() && !heldItem.getType().isAir()) {
+            ItemMeta heldMeta = heldItem.getItemMeta();
+            Component msg = Component.text("");
+            msg = msg.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
+                    .append(Component.text(" Item Lore ", TextColor.fromHexString("#0fc3ff"), TextDecoration.BOLD))
+                    .append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
 
-        if (heldMeta.hasLore()) {
-            List<Component> lore = heldMeta.lore();
-            int i = 1;
-            for (Component loreLine : Objects.requireNonNull(lore)) {
-                int pos = i;
-                msg = msg.appendNewline().append(Component.text("[X]", NamedTextColor.RED).hoverEvent(HoverEvent.showText(Component.text("Delete line ", NamedTextColor.RED)
-                                        .append(Component.text( pos + ".", NamedTextColor.RED, TextDecoration.BOLD))))
-                                .clickEvent(ClickEvent.callback(audience -> deleteLoreLine(player, heldItem, pos))))
+            if (heldMeta.hasLore()) {
+                List<Component> lore = heldMeta.lore();
+                int i = 1;
+                for (Component loreLine : Objects.requireNonNull(lore)) {
+                    int pos = i;
+                    msg = msg.appendNewline().append(Component.text("[X]", NamedTextColor.RED).hoverEvent(HoverEvent.showText(Component.text("Delete line ", NamedTextColor.RED)
+                                            .append(Component.text( pos + ".", NamedTextColor.RED, TextDecoration.BOLD))))
+                                    .clickEvent(ClickEvent.callback(audience -> deleteLoreLine(player, heldItem, pos))))
 
-                        .appendSpace().append(Component.text(pos + ". ", NamedTextColor.GRAY))
+                            .appendSpace().append(Component.text(pos + ". ", NamedTextColor.GRAY))
 
-                        .append(Component.text("↑", NamedTextColor.GOLD).hoverEvent(HoverEvent.showText(Component.text("Move Up", NamedTextColor.YELLOW)))
-                        .clickEvent(ClickEvent.callback(audience -> moveLoreLine(player, heldItem, pos, true)))).appendSpace()
+                            .append(Component.text("↑", NamedTextColor.GOLD).hoverEvent(HoverEvent.showText(Component.text("Move Up", NamedTextColor.YELLOW)))
+                            .clickEvent(ClickEvent.callback(audience -> moveLoreLine(player, heldItem, pos, true)))).appendSpace()
 
-                        .append(Component.text("↓", NamedTextColor.GOLD).hoverEvent(HoverEvent.showText(Component.text("Move Down", NamedTextColor.YELLOW)))
-                                .clickEvent(ClickEvent.callback(audience -> moveLoreLine(player, heldItem, pos, false)))).appendSpace()
+                            .append(Component.text("↓", NamedTextColor.GOLD).hoverEvent(HoverEvent.showText(Component.text("Move Down", NamedTextColor.YELLOW)))
+                                    .clickEvent(ClickEvent.callback(audience -> moveLoreLine(player, heldItem, pos, false)))).appendSpace()
 
-                        .appendSpace().append(loreLine.hoverEvent(HoverEvent.showText(Component.text("Edit line ", NamedTextColor.RED)
-                                        .append(Component.text( pos + ".", NamedTextColor.RED, TextDecoration.BOLD))))
-                                .clickEvent(ClickEvent.callback(audience -> editLoreLine(player, heldItem, pos))));
-                i++;
+                            .appendSpace().append(loreLine.hoverEvent(HoverEvent.showText(Component.text("Edit line ", NamedTextColor.RED)
+                                            .append(Component.text( pos + ".", NamedTextColor.RED, TextDecoration.BOLD))))
+                                    .clickEvent(ClickEvent.callback(audience -> editLoreLine(player, heldItem, pos))));
+                    i++;
+                }
             }
+
+            msg = msg.appendNewline().append(Component.text("[+]", NamedTextColor.DARK_GREEN).hoverEvent(HoverEvent.showText(Component.text("Add a new line", NamedTextColor.RED)))
+                    .clickEvent(ClickEvent.callback(audience -> newLoreLine(player, heldItem))));
+
+            player.sendMessage(msg);
+        } else {
+            player.sendMessage(Component.text("You're not holding an item!", NamedTextColor.RED));
         }
-
-        msg = msg.appendNewline().append(Component.text("[+]", NamedTextColor.DARK_GREEN).hoverEvent(HoverEvent.showText(Component.text("Add a new line", NamedTextColor.RED)))
-                .clickEvent(ClickEvent.callback(audience -> newLoreLine(player, heldItem))));
-
-        player.sendMessage(msg);
     }
 
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {

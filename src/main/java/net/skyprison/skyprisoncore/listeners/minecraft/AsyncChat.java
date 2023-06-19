@@ -13,6 +13,7 @@ import com.sk89q.worldguard.protection.regions.RegionContainer;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.luckperms.api.LuckPerms;
@@ -23,6 +24,7 @@ import net.skyprison.skyprisoncore.commands.Claim;
 import net.skyprison.skyprisoncore.commands.ItemLore;
 import net.skyprison.skyprisoncore.commands.Tags;
 import net.skyprison.skyprisoncore.inventories.ClaimFlags;
+import net.skyprison.skyprisoncore.inventories.NewsMessageEdit;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
 import org.bukkit.Bukkit;
@@ -40,9 +42,12 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -64,10 +69,21 @@ public class AsyncChat implements Listener {
     @EventHandler (priority = EventPriority.LOWEST)
     public void onAsyncChat(AsyncChatEvent event) {
         Player player = event.getPlayer();
+
         String msg = PlainTextComponentSerializer.plainText().serialize(event.originalMessage());
         String miniMsg = MiniMessage.miniMessage().serialize(event.originalMessage());
+        if(miniMsg.startsWith("<yellow>")) {
+            miniMsg = miniMsg.substring(8);
+        } else if(miniMsg.startsWith("<gray>")) {
+            miniMsg = miniMsg.substring(6);
+        } else if(miniMsg.startsWith("<aqua>")) {
+            miniMsg = miniMsg.substring(6);
+        } else if(miniMsg.startsWith("<gold>")) {
+            miniMsg = miniMsg.substring(6);
+        }
         if(plugin.chatLock.containsKey(player.getUniqueId())) {
             event.setCancelled(true);
+            String finalMiniMsg = miniMsg;
             Bukkit.getScheduler().runTask(plugin, () -> {
                 boolean removeChatLock = true;
                 List<Object> chatLock = plugin.chatLock.get(player.getUniqueId());
@@ -97,11 +113,11 @@ public class AsyncChat implements Listener {
                                         region.setFlag(Flags.TIME_LOCK, String.valueOf(plugin.timeToTicks(msg)));
                                     } else {
                                         if(!msg.equalsIgnoreCase("cancel")) {
-                                            player.sendMessage(prefix.append(Component.text("Incorrect Time! Time must be specified in 24:00 format. Type 'cancel' to cancel.")
-                                                    .color(NamedTextColor.RED)));
+                                            player.sendMessage(prefix.append(
+                                                    Component.text("Incorrect Time! Time must be specified in 24:00 format. Type 'cancel' to cancel.", NamedTextColor.RED)));
                                             removeChatLock = false;
                                         } else {
-                                            player.sendMessage(prefix.append(Component.text("Cancelling..").color(NamedTextColor.GRAY)));
+                                            player.sendMessage(prefix.append(Component.text("Cancelling..", NamedTextColor.GRAY)));
                                         }
                                     }
                                 }
@@ -112,11 +128,10 @@ public class AsyncChat implements Listener {
                                     } else {
                                         if(!msg.equalsIgnoreCase("cancel")) {
                                             player.sendMessage(prefix.append(
-                                                    Component.text("Incorrect Weather Type! Available types are 'Clear', 'Rain', 'Thunder'. Type 'cancel' to cancel.")
-                                                            .color(NamedTextColor.RED)));
+                                                    Component.text("Incorrect Weather Type! Available types are 'Clear', 'Rain', 'Thunder'. Type 'cancel' to cancel.", NamedTextColor.RED)));
                                             removeChatLock = false;
                                         } else {
-                                            player.sendMessage(prefix.append(Component.text("Cancelling..").color(NamedTextColor.GRAY)));
+                                            player.sendMessage(prefix.append(Component.text("Cancelling..", NamedTextColor.GRAY)));
                                         }
                                     }
                                 }
@@ -131,7 +146,7 @@ public class AsyncChat implements Listener {
                     switch (lockedString.toLowerCase()) {
                         case "tags-display" -> { // ID
                             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE tags SET tags_display = ? WHERE tags_id = ?")) {
-                                ps.setString(1, miniMsg);
+                                ps.setString(1, finalMiniMsg);
                                 ps.setInt(2, (int) chatLock.get(1));
                                 ps.executeUpdate();
                             } catch (SQLException e) {
@@ -141,7 +156,7 @@ public class AsyncChat implements Listener {
                             tag.openSpecificGUI(player, (Integer) chatLock.get(1));
                         }
                         case "tags-lore" -> { // ID
-                            String lore = miniMsg;
+                            String lore = finalMiniMsg;
                             if (msg.equalsIgnoreCase("null")) {
                                 lore = null;
                             }
@@ -173,11 +188,11 @@ public class AsyncChat implements Listener {
                         }
                         case "tags-new-display" -> { // DISPLAY, LORE, EFFECT
                             player.sendMessage(Component.text("Set the tag display!", NamedTextColor.GREEN));
-                            tag.openNewGUI(player, miniMsg, (String) chatLock.get(2), (String) chatLock.get(3));
+                            tag.openNewGUI(player, finalMiniMsg, (String) chatLock.get(2), (String) chatLock.get(3));
                         }
                         case "tags-new-lore" -> { // DISPLAY, LORE, EFFECT
                             player.sendMessage(Component.text("Set the tag lore!", NamedTextColor.GREEN));
-                            tag.openNewGUI(player, (String) chatLock.get(1), miniMsg, (String) chatLock.get(3));
+                            tag.openNewGUI(player, (String) chatLock.get(1), finalMiniMsg, (String) chatLock.get(3));
                         }
                         case "tags-new-effect" -> { // DISPLAY, LORE, EFFECT
                             player.sendMessage(Component.text("Set the tag effect!", NamedTextColor.GREEN));
@@ -193,7 +208,7 @@ public class AsyncChat implements Listener {
                                 }
 
                                 assert lore != null;
-                                lore.add(MiniMessage.miniMessage().deserialize(miniMsg));
+                                lore.add(MiniMessage.miniMessage().deserialize(finalMiniMsg).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
 
                                 if (heldItem.equals(currHeldItem)) {
                                     player.getInventory().getItemInMainHand().lore(lore);
@@ -213,7 +228,7 @@ public class AsyncChat implements Listener {
                                 if(heldItem.equals(currHeldItem)) {
                                     List<Component> lore = player.getInventory().getItemInMainHand().lore();
                                     assert lore != null;
-                                    lore.set(line - 1, MiniMessage.miniMessage().deserialize(miniMsg));
+                                    lore.set(line - 1, MiniMessage.miniMessage().deserialize(finalMiniMsg).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
                                     player.getInventory().getItemInMainHand().lore(lore);
                                     itemLore.displayLore(player);
                                 } else {
@@ -221,6 +236,146 @@ public class AsyncChat implements Listener {
                                 }
                             } else {
                                 itemLore.displayLore(player);
+                            }
+                        }
+                        case "news-title" -> {
+                            NewsMessageEdit messageEdit = (NewsMessageEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                messageEdit.setTitle(finalMiniMsg);
+                            }
+                            player.openInventory(messageEdit.getInventory());
+                        }
+                        case "news-content" -> {
+                            NewsMessageEdit messageEdit = (NewsMessageEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                messageEdit.setContent(finalMiniMsg);
+                            }
+                            player.openInventory(messageEdit.getInventory());
+                        }
+                        case "news-hover" -> {
+                            NewsMessageEdit messageEdit = (NewsMessageEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                messageEdit.setHover(finalMiniMsg);
+                            }
+                            player.openInventory(messageEdit.getInventory());
+                        }
+                        case "news-permission" -> {
+                            NewsMessageEdit messageEdit = (NewsMessageEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                messageEdit.setPermission(msg);
+                            }
+                            player.openInventory(messageEdit.getInventory());
+                        }
+                        case "news-priority" -> {
+                            NewsMessageEdit messageEdit = (NewsMessageEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                if(plugin.isInt(msg)) {
+                                    messageEdit.setPriority(Integer.parseInt(msg));
+                                    player.openInventory(messageEdit.getInventory());
+                                } else {
+                                    player.sendMessage(Component.text("Priority must be a number! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(messageEdit.getInventory());
+                            }
+                        }
+                        case "news-click-type" -> {
+                            NewsMessageEdit messageEdit = (NewsMessageEdit) chatLock.get(1);
+                            List<String> options = new ArrayList<>();
+                            options.add("OPEN_URL");
+                            options.add("RUN_COMMAND");
+                            options.add("SUGGEST_COMMAND");
+                            options.add("COPY_TO_CLIPBOARD");
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                if(options.contains(msg.toUpperCase())) {
+                                    messageEdit.setClickType(msg);
+                                    player.openInventory(messageEdit.getInventory());
+                                } else {
+                                    player.sendMessage(Component.text("Incorrect Option! Options are: OPEN_URL, RUN_COMMAND, SUGGEST_COMMAND, COPY_TO_CLIPBOARD", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(messageEdit.getInventory());
+                            }
+                        }
+                        case "news-click-data" -> {
+                            NewsMessageEdit messageEdit = (NewsMessageEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                messageEdit.setClickData(finalMiniMsg);
+                            }
+                            player.openInventory(messageEdit.getInventory());
+                        }
+                        case "news-limited-start" -> {
+                            NewsMessageEdit messageEdit = (NewsMessageEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+                                try {
+                                    LocalDate date = LocalDate.parse(msg, formatter);
+                                    LocalDate currDate = LocalDate.now();
+                                    if(!date.isBefore(currDate)) {
+                                        long timeMillis = TimeUnit.DAYS.toMillis(date.toEpochDay());
+                                        messageEdit.setLimitedStart(timeMillis);
+                                        if (messageEdit.getLimitedEnd() < timeMillis) messageEdit.setLimitedEnd(0);
+                                        player.openInventory(messageEdit.getInventory());
+                                    } else {
+                                        player.sendMessage(Component.text("The start date can't be before today!", NamedTextColor.RED));
+                                        removeChatLock = false;
+                                    }
+                                } catch (Exception ignored) {
+                                    player.sendMessage(Component.text("Incorrect Format! Format is: yyyy/MM/dd (Ex: 2023/01/24)", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(messageEdit.getInventory());
+                            }
+                        }
+                        case "news-limited-time" -> {
+                            NewsMessageEdit messageEdit = (NewsMessageEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                int limitOption = -1;
+                                if(msg.equalsIgnoreCase("ENABLED")) {
+                                    limitOption = 1;
+                                } else if(msg.equalsIgnoreCase("DISABLED")) {
+                                    limitOption = 0;
+                                } else {
+                                    player.sendMessage(Component.text("Incorrect Option! Options are: ENABLED | DISABLED", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                                if(removeChatLock) {
+                                    messageEdit.setLimitedTime(limitOption);
+                                    player.openInventory(messageEdit.getInventory());
+                                }
+                            } else {
+                                player.openInventory(messageEdit.getInventory());
+                            }
+                        }
+                        case "news-limited-end" -> {
+                            NewsMessageEdit messageEdit = (NewsMessageEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+                                try {
+                                    LocalDate date = LocalDate.parse(msg, formatter);
+                                    LocalDate currDate = LocalDate.now();
+                                    if(date.isAfter(currDate)) {
+                                        long timeMillis = TimeUnit.DAYS.toMillis(date.toEpochDay());
+                                        if (messageEdit.getLimitedStart() < timeMillis) {
+                                            messageEdit.setLimitedEnd(timeMillis);
+                                            player.openInventory(messageEdit.getInventory());
+                                        } else {
+                                            player.sendMessage(Component.text("The end date can't be before the start date!", NamedTextColor.RED));
+                                            removeChatLock = false;
+                                        }
+                                    } else {
+                                        player.sendMessage(Component.text("The end date can't be before today!", NamedTextColor.RED));
+                                        removeChatLock = false;
+                                    }
+                                } catch (Exception ignored) {
+                                    player.sendMessage(Component.text("Incorrect Format! Format is: yyyy/MM/dd (Ex: 2023/01/24)", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(messageEdit.getInventory());
                             }
                         }
                     }

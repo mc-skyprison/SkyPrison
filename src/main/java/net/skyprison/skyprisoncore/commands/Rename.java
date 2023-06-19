@@ -2,6 +2,7 @@ package net.skyprison.skyprisoncore.commands;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -21,8 +22,9 @@ public class Rename implements CommandExecutor { // /rename <name/remove>
                 if (heldItem.getType().isItem() && !heldItem.getType().isAir()) {
                     ItemMeta heldMeta = heldItem.getItemMeta();
                     if (!args[0].equalsIgnoreCase("remove")) {
-                        Component displayName = MiniMessage.miniMessage().deserialize(args[0]);
-                        heldMeta.displayName(displayName);
+                        String name = String.join(" ", args);
+                        Component displayName = MiniMessage.miniMessage().deserialize(name);
+                        heldMeta.displayName(displayName.decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
 
                         player.getInventory().getItemInMainHand().setItemMeta(heldMeta);
                         player.sendMessage(Component.text("Successfully changed custom item name to ", NamedTextColor.YELLOW).append(displayName));

@@ -12,6 +12,9 @@ import dev.esophose.playerparticles.api.PlayerParticlesAPI;
 import litebans.api.Entry;
 import litebans.api.Events;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.ClickEvent.Action;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -32,6 +35,7 @@ import net.skyprison.skyprisoncore.commands.economy.*;
 import net.skyprison.skyprisoncore.commands.guard.*;
 import net.skyprison.skyprisoncore.commands.secrets.SecretFound;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
+import net.skyprison.skyprisoncore.inventories.NewsMessageEdit;
 import net.skyprison.skyprisoncore.listeners.advancedregionmarket.UnsellRegion;
 import net.skyprison.skyprisoncore.listeners.brewery.BrewDrink;
 import net.skyprison.skyprisoncore.listeners.cmi.CMIPlayerTeleportRequest;
@@ -108,6 +112,7 @@ public class SkyPrisonCore extends JavaPlugin {
 
     public Map<UUID, Integer> blockBreaks = new HashMap<>();
 
+    public List<UUID> newsMessageChanges = new ArrayList<>();
     public List<UUID> deleteClaim = new ArrayList<>();
     public List<UUID> transferClaim = new ArrayList<>();
 
@@ -137,6 +142,8 @@ public class SkyPrisonCore extends JavaPlugin {
 
     public Timer spongeTimer = new Timer();
 
+
+    public HashMap<UUID, HashMap<Integer, NewsMessageEdit>> newsEditing = new HashMap<>();
 
     private static DatabaseHook db;
 
@@ -176,6 +183,9 @@ public class SkyPrisonCore extends JavaPlugin {
     }
 
     public void onEnable() {
+        new ConfigCreator(this).init();
+        new LangCreator(this).init();
+
 
         try {
             db = new DatabaseHook(this);
@@ -227,9 +237,6 @@ public class SkyPrisonCore extends JavaPlugin {
         registerCommands();
         registerEvents();
 
-        new ConfigCreator(this).init();
-        new LangCreator(this).init();
-
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new Placeholders(this, dailyMissions, getDatabase()).register();
             getLogger().info("Placeholders registered");
@@ -248,9 +255,7 @@ public class SkyPrisonCore extends JavaPlugin {
         new BukkitRunnable() {
             @Override
             public void run() {
-                if(Bukkit.getServer().getOnlinePlayers().size() > 0) {
-                    announcer();
-                }
+                Bukkit.getOnlinePlayers().forEach(player -> sendNewsMessage(player, 0));
             }
         }.runTaskTimer(this, 20*950, 20*950);
 
@@ -536,6 +541,7 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("rename")).setExecutor(new Rename());
         Objects.requireNonNull(getCommand("itemlore")).setExecutor(new ItemLore(this));
         Objects.requireNonNull(getCommand("namecolour")).setExecutor(new NameColour(this, getDatabase()));
+        Objects.requireNonNull(getCommand("news")).setExecutor(new News(this, getDatabase()));
 
         Objects.requireNonNull(getCommand("referral")).setExecutor(new Referral(this, getDatabase()));
         Objects.requireNonNull(getCommand("discord")).setExecutor(new Discord(this, getDatabase(), discApi));
@@ -649,13 +655,92 @@ public class SkyPrisonCore extends JavaPlugin {
         return db;
     }
 
-    private void announcer() {
 
+    public void sendNewsMessage(Player player, int newsMessage) {
+        Component msg = Component.newline().append(MiniMessage.miniMessage().deserialize("<b><#0fc3ff>Sky<#ff0000>Prison <#e65151>News</b>").appendNewline().appendSpace());
+        HoverEvent<Component> hoverEvent = null;
+        ClickEvent clickEvent = null;
+        if(newsMessage == 0) {
+            LinkedHashMap<Component, Integer> newsMessages = new LinkedHashMap<>();
+
+            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT content, hover, click_type, click_data, permission, priority, " +
+                    "limited_time, limited_start, limited_end FROM news")) {
+                ps.setInt(1, newsMessage);
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    if(rs.getInt(7) != 0) {
+                        long start = rs.getLong(8);
+                        long end = rs.getLong(9);
+                        long curr = System.currentTimeMillis();
+                        if(start < curr || end < curr) continue;
+                    }
+                    if(player.hasPermission("skyprisoncore.news." + rs.getString(5))) {
+                        Component message = MiniMessage.miniMessage().deserialize(rs.getString(1));
+
+                        if(!rs.getString(2).isEmpty()) {
+                            hoverEvent = HoverEvent.showText(MiniMessage.miniMessage().deserialize(rs.getString(2)));
+                        }
+                        if(!rs.getString(3).isEmpty()) {
+                            clickEvent = ClickEvent.clickEvent(Objects.requireNonNull(Action.NAMES.value(rs.getString(3).toLowerCase())), rs.getString(4));
+                        }
+                        newsMessages.put(message, rs.getInt(6));
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            if(!newsMessages.isEmpty()) {
+                List<Integer> cumulativeWeights = new ArrayList<>();
+                int totalWeight = 0;
+
+                for (Integer weight : newsMessages.values()) {
+                    totalWeight += weight;
+                    cumulativeWeights.add(totalWeight);
+                }
+
+                Random rand = new Random();
+                int randomWeight = rand.nextInt(totalWeight);
+
+                int index = Collections.binarySearch(cumulativeWeights, randomWeight);
+
+                if (index < 0) {
+                    index = Math.abs(index + 1);
+                }
+
+                msg = msg.append(new ArrayList<>(newsMessages.keySet()).get(index));
+            }
+        } else {
+            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT content, hover, click_type, click_data FROM news WHERE id = ?")) {
+                ps.setInt(1, newsMessage);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    Component message = MiniMessage.miniMessage().deserialize(rs.getString(1));
+                    msg = msg.append(message);
+                    if(!rs.getString(2).isEmpty()) {
+                        hoverEvent = HoverEvent.showText(MiniMessage.miniMessage().deserialize(rs.getString(2)));
+                    }
+                    if(!rs.getString(3).isEmpty()) {
+                        Action action = Objects.requireNonNull(Action.NAMES.value(rs.getString(3).toLowerCase()));
+                        String value = "";
+                        switch (action) {
+                            case OPEN_URL, SUGGEST_COMMAND, COPY_TO_CLIPBOARD -> value = rs.getString(4);
+                            case RUN_COMMAND -> value = "/" + rs.getString(4);
+                        }
+                        clickEvent = ClickEvent.clickEvent(action, value);
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        msg = msg.appendNewline().hoverEvent(hoverEvent).clickEvent(clickEvent);
+        player.sendMessage(msg);
     }
 
     public String hasNotification(String id, OfflinePlayer player) {
         String notification = "";
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT extra_data FROM notifications WHERE id = ? AND user_id = ? ")) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT extra_data FROM notifications WHERE id = ? AND user_id = ?")) {
             ps.setString(1, id);
             ps.setString(2, player.getUniqueId().toString());
             ResultSet rs = ps.executeQuery();

@@ -40,10 +40,10 @@ public class Sponge implements CommandExecutor {
 			help = help.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
 					.append(Component.text(" Sponge Commands ", TextColor.fromHexString("#FFFF00"), TextDecoration.BOLD))
 					.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
-					.append(Component.text("\n/sponge set").color(TextColor.fromHexString("#7fff00")))
-					.append(Component.text("\n/sponge list").color(TextColor.fromHexString("#7fff00")))
-					.append(Component.text("\n/sponge delete <id>").color(TextColor.fromHexString("#7fff00")))
-					.append(Component.text("\n/sponge tp <id>").color(TextColor.fromHexString("#7fff00")));
+					.append(Component.text("\n/sponge set", TextColor.fromHexString("#7fff00")))
+					.append(Component.text("\n/sponge list", TextColor.fromHexString("#7fff00")))
+					.append(Component.text("\n/sponge delete <id>", TextColor.fromHexString("#7fff00")))
+					.append(Component.text("\n/sponge tp <id>", TextColor.fromHexString("#7fff00")));
 			if (args.length > 0) {
 				switch(args[0].toLowerCase()) {
 					case "set" -> {
@@ -82,7 +82,7 @@ public class Sponge implements CommandExecutor {
 							ps.setInt(4, y);
 							ps.setInt(5, z);
 							ps.executeUpdate();
-							player.sendMessage(prefix.append(Component.text("Successfully created a sponge location!").color(TextColor.fromHexString("#7fff00"))));
+							player.sendMessage(prefix.append(Component.text("Successfully created a sponge location!", TextColor.fromHexString("#7fff00"))));
 						} catch (SQLException e) {
 							e.printStackTrace();
 						}
@@ -125,32 +125,32 @@ public class Sponge implements CommandExecutor {
 						for (int i = pageStart; i < pageStart + 10; i++) {
 							if(!locs.containsKey(i)) break;
 							Location loc = locs.get(i);
-							msg = msg.append(Component.text("\n" + i + ". ").color(TextColor.fromHexString("#cea916"))
-									.append(Component.text("X " + loc.getBlockX() + " Y " + loc.getBlockY() + " Z " + loc.getBlockZ()).color(TextColor.fromHexString("#7fff00")))
-									.hoverEvent(HoverEvent.showText(Component.text("Click to teleport to this location").color(NamedTextColor.GRAY)))
+							msg = msg.append(Component.text("\n" + i + ". ", TextColor.fromHexString("#cea916"))
+									.append(Component.text("X " + loc.getBlockX() + " Y " + loc.getBlockY() + " Z " + loc.getBlockZ(), TextColor.fromHexString("#7fff00")))
+									.hoverEvent(HoverEvent.showText(Component.text("Click to teleport to this location", NamedTextColor.GRAY)))
 									.clickEvent(ClickEvent.runCommand("/sponge tp " + i)));
 						}
 						if (page == 1) {
 							if(locs.size() > 10) {
-								msg = msg.append(Component.text("\n" + page).color(TextColor.fromHexString("#266d27"))
-										.append(Component.text("/").color(NamedTextColor.GRAY)
-												.append(Component.text(totalPages).color(TextColor.fromHexString("#266d27"))))
-										.append(Component.text(" Next --->").color(NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text(">>>").color(NamedTextColor.GRAY)))
+								msg = msg.append(Component.text("\n" + page, TextColor.fromHexString("#266d27"))
+										.append(Component.text("/", NamedTextColor.GRAY)
+												.append(Component.text(totalPages, TextColor.fromHexString("#266d27"))))
+										.append(Component.text(" Next --->", NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text(">>>", NamedTextColor.GRAY)))
 												.clickEvent(ClickEvent.runCommand("/sponge list " + nextPage))));
 							}
 						} else if (page == totalPages) {
-							msg = msg.append(Component.text("\n<--- Prev ").color(NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text("<<<").color(NamedTextColor.GRAY)))
+							msg = msg.append(Component.text("\n<--- Prev ", NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text("<<<", NamedTextColor.GRAY)))
 									.clickEvent(ClickEvent.runCommand("/sponge list " + prevPage))
-									.append(Component.text(page).color(TextColor.fromHexString("#266d27"))
-											.append(Component.text("/").color(NamedTextColor.GRAY)
-													.append(Component.text(totalPages).color(TextColor.fromHexString("#266d27"))))));
+									.append(Component.text(page, TextColor.fromHexString("#266d27"))
+											.append(Component.text("/", NamedTextColor.GRAY)
+													.append(Component.text(totalPages, TextColor.fromHexString("#266d27"))))));
 						} else {
-							msg = msg.append(Component.text("\n<--- Prev ").color(NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text("<<<").color(NamedTextColor.GRAY)))
+							msg = msg.append(Component.text("\n<--- Prev ", NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text("<<<", NamedTextColor.GRAY)))
 									.clickEvent(ClickEvent.runCommand("/sponge list " + prevPage))
-									.append(Component.text(page).color(TextColor.fromHexString("#266d27"))
-											.append(Component.text("/").color(NamedTextColor.GRAY)
-													.append(Component.text(totalPages).color(TextColor.fromHexString("#266d27")))))
-									.append(Component.text(" Next --->").color(NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text(">>>").color(NamedTextColor.GRAY))))
+									.append(Component.text(page, TextColor.fromHexString("#266d27"))
+											.append(Component.text("/", NamedTextColor.GRAY)
+													.append(Component.text(totalPages, TextColor.fromHexString("#266d27")))))
+									.append(Component.text(" Next --->", NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text(">>>", NamedTextColor.GRAY))))
 									.clickEvent(ClickEvent.runCommand("/sponge list " + nextPage)));
 						}
 						player.sendMessage(msg);
@@ -185,7 +185,7 @@ public class Sponge implements CommandExecutor {
 									e.printStackTrace();
 								}
 
-								Component msg = prefix.append(Component.text("Successfully deleted sponge location!").color(TextColor.fromHexString("#7fff00")));
+								Component msg = prefix.append(Component.text("Successfully deleted sponge location!", TextColor.fromHexString("#7fff00")));
 								player.sendMessage(msg);
 							} else {
 								Component msg = Component.text("Correct Usage: /sponge delete <id>", NamedTextColor.RED);
@@ -211,7 +211,7 @@ public class Sponge implements CommandExecutor {
 									e.printStackTrace();
 								}
 								if (loc != null && player.teleport(loc)) {
-									player.sendMessage(prefix.append(Component.text("Successfully teleported to location!").color(NamedTextColor.GREEN)));
+									player.sendMessage(prefix.append(Component.text("Successfully teleported to location!", NamedTextColor.GREEN)));
 								} else {
 									player.sendMessage(prefix.append(Component.text("Teleport failed!", NamedTextColor.RED)));
 								}

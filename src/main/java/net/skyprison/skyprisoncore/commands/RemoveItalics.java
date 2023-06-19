@@ -56,9 +56,7 @@ public class RemoveItalics implements CommandExecutor {
 						if (iMeta.hasDisplayName()) {
 							if (!Objects.requireNonNull(iMeta.displayName()).hasDecoration(TextDecoration.ITALIC)) {
 								confirmItalics.put(player.getUniqueId(), item);
-								Component confirm = Component.text("Click here to confirm italics removal")
-										.color(NamedTextColor.YELLOW)
-										.decorate(TextDecoration.BOLD)
+								Component confirm = Component.text("Click here to confirm italics removal", NamedTextColor.YELLOW, TextDecoration.BOLD)
 										.clickEvent(ClickEvent.runCommand("/removeitalics confirm"));
 								player.sendMessage(confirm);
 							} else {

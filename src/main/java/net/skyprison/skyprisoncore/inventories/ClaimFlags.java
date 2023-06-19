@@ -50,7 +50,7 @@ public class ClaimFlags implements CustomInventory {
         this.page = page;
         this.category = category;
         this.canEdit = canEdit;
-        this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Claim Flags").color(TextColor.fromHexString("#0fc3ff")).decoration(TextDecoration.ITALIC, false));
+        this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Claim Flags", TextColor.fromHexString("#0fc3ff")));
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
         ItemMeta redMeta = redPane.getItemMeta();
         redMeta.displayName(Component.text(" "));
@@ -63,11 +63,11 @@ public class ClaimFlags implements CustomInventory {
 
         ItemStack nextPage = new ItemStack(Material.PAPER);
         ItemMeta nextMeta = nextPage.getItemMeta();
-        nextMeta.displayName(Component.text("Next Page").color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+        nextMeta.displayName(Component.text("Next Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
         nextPage.setItemMeta(nextMeta);
         ItemStack prevPage = new ItemStack(Material.PAPER);
         ItemMeta prevMeta = prevPage.getItemMeta();
-        prevMeta.displayName(Component.text("Previous Page").color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+        prevMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
         prevPage.setItemMeta(prevMeta);
         List<AvailableFlags> flags;
         if(!category.isEmpty()) {
@@ -99,13 +99,13 @@ public class ClaimFlags implements CustomInventory {
                 ItemMeta catMeta = cat.getItemMeta();
                 TextColor color = NamedTextColor.GRAY;
                 TextColor selectedColor = TextColor.fromHexString("#0fffc3");
-                catMeta.displayName(Component.text("Toggle Flags").color(TextColor.fromHexString("#20df80")).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                catMeta.displayName(Component.text("Toggle Flags", TextColor.fromHexString("#20df80"), TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("All Flags").color(category.equalsIgnoreCase("") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("General Flags").color(category.equalsIgnoreCase("general") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Protection Flags").color(category.equalsIgnoreCase("protection") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Terrain Flags").color(category.equalsIgnoreCase("terrain") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Purchased Flags").color(category.equalsIgnoreCase("purchased") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("All Flags", category.equalsIgnoreCase("") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("General Flags", category.equalsIgnoreCase("general") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("Protection Flags", category.equalsIgnoreCase("protection") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("Terrain Flags", category.equalsIgnoreCase("terrain") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("Purchased Flags", category.equalsIgnoreCase("purchased") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
                 catMeta.lore(lore);
 
                 cat.setItemMeta(catMeta);
@@ -114,9 +114,9 @@ public class ClaimFlags implements CustomInventory {
                 ItemStack cat = new ItemStack(Material.ZOMBIE_SPAWN_EGG);
                 ItemMeta catMeta = cat.getItemMeta();
                 TextColor color = NamedTextColor.GRAY;
-                catMeta.displayName(Component.text("Mob Spawning").color(TextColor.fromHexString("#20df80")).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                catMeta.displayName(Component.text("Mob Spawning", TextColor.fromHexString("#20df80"), TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Open the mob spawning GUI").color(color).decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("Open the mob spawning GUI", color).decoration(TextDecoration.ITALIC, false));
                 catMeta.lore(lore);
 
                 cat.setItemMeta(catMeta);
@@ -131,9 +131,9 @@ public class ClaimFlags implements CustomInventory {
 
                     ItemStack flagItem = new ItemStack(flag.getType());
                     ItemMeta flagMeta = flagItem.getItemMeta();
-                    flagMeta.displayName(Component.text(flag.getTitle()).color(TextColor.fromHexString("#0fffc3")).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                    flagMeta.displayName(Component.text(flag.getTitle(), TextColor.fromHexString("#0fffc3"), TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
                     List<Component> lore = new ArrayList<>();
-                    lore.add(Component.text(flag.getDescription()).color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                    lore.add(Component.text(flag.getDescription(), NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
                     lore.add(Component.text(""));
                     Component flagStatus = Component.text("");
                     AvailableFlags.FlagState flagState = flag.getFlagState();
@@ -143,32 +143,33 @@ public class ClaimFlags implements CustomInventory {
                         case MESSAGE -> {
                             if(isSet) {
                                 if(flag.getFlags().get(0).equals(Flags.TIME_LOCK)) {
-                                    flagStatus = Component.text(plugin.ticksToTime(Integer.parseInt(currFlagState.toString()))).color(NamedTextColor.GREEN).decorate(TextDecoration.BOLD);
+                                    flagStatus = Component.text(plugin.ticksToTime(Integer.parseInt(currFlagState.toString())), NamedTextColor.GREEN, TextDecoration.BOLD);
                                 } else {
                                     flagStatus = LegacyComponentSerializer.legacyAmpersand().deserialize(currFlagState.toString());
                                 }
                             } else {
-                                flagStatus = Component.text(flag.getNotSet()).color(NamedTextColor.GRAY).decorate(TextDecoration.BOLD);
+                                flagStatus = Component.text(flag.getNotSet(), NamedTextColor.GRAY, TextDecoration.BOLD);
                             }
                         }
                         case BOOLEAN -> {
                             if(isSet) {
                                 if(currFlagState.equals(StateFlag.State.ALLOW)) {
-                                    flagStatus = Component.text(flag.getAllowed(), flag.getAllowed().equalsIgnoreCase("enabled") ? NamedTextColor.GREEN : NamedTextColor.RED, TextDecoration.BOLD);
+                                    flagStatus = Component.text(flag.getAllowed(), flag.getAllowed().equalsIgnoreCase("enabled") ?
+                                            NamedTextColor.GREEN : NamedTextColor.RED, TextDecoration.BOLD);
                                 } else {
-                                    flagStatus = Component.text(flag.getDenied()).color(NamedTextColor.RED).decorate(TextDecoration.BOLD);
+                                    flagStatus = Component.text(flag.getDenied(), NamedTextColor.RED, TextDecoration.BOLD);
                                 }
                             } else {
                                 flagStatus = Component.text(flag.getNotSet().isEmpty() ? flag.getAllowed() : flag.getNotSet(),
-                                        flag.getNotSet().isEmpty() ? NamedTextColor.GREEN : flag.getNotSet().equalsIgnoreCase("disabled") ? NamedTextColor.RED : NamedTextColor.GREEN,
-                                        TextDecoration.BOLD);
+                                        flag.getNotSet().isEmpty() ? NamedTextColor.GREEN : flag.getNotSet().equalsIgnoreCase("disabled") ?
+                                                NamedTextColor.RED : NamedTextColor.GREEN, TextDecoration.BOLD);
                             }
                         }
                         case OTHER -> {
                             if(isSet) {
-                                flagStatus = Component.text(currFlagState.toString()).color(NamedTextColor.GREEN).decorate(TextDecoration.BOLD);
+                                flagStatus = Component.text(currFlagState.toString(), NamedTextColor.GREEN, TextDecoration.BOLD);
                             } else {
-                                flagStatus = Component.text(flag.getNotSet()).color(NamedTextColor.GRAY).decorate(TextDecoration.BOLD);
+                                flagStatus = Component.text(flag.getNotSet(), NamedTextColor.GRAY, TextDecoration.BOLD);
                             }
                         }
                     }

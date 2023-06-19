@@ -49,7 +49,7 @@ public class CustomRecipes implements CommandExecutor {
         blackMeta.displayName(Component.text(" "));
         blackPane.setItemMeta(blackMeta);
 
-        Inventory recipeGUI = Bukkit.createInventory(null, 27, Component.text("Recipes - Main").color(TextColor.fromHexString("#3B5998")));
+        Inventory recipeGUI = Bukkit.createInventory(null, 27, Component.text("Recipes - Main", TextColor.fromHexString("#3B5998")));
         for(int i = 0; i < recipeGUI.getSize(); i++) {
             if(i == 0) {
                 NamespacedKey key = new NamespacedKey(plugin, "stop-click");
@@ -96,7 +96,7 @@ public class CustomRecipes implements CommandExecutor {
         blackMeta.displayName(Component.text(" "));
         blackPane.setItemMeta(blackMeta);
 
-        Inventory recipeGUI = Bukkit.createInventory(null, 54, Component.text("Recipes - Custom").color(TextColor.fromHexString("#3B5998")));
+        Inventory recipeGUI = Bukkit.createInventory(null, 54, Component.text("Recipes - Custom", TextColor.fromHexString("#3B5998")));
         List<CustomRecipe<?>> recipes = CustomCrafting.inst().getRegistries().getRecipes().getAvailable();
 
         int b = 0;
@@ -149,7 +149,7 @@ public class CustomRecipes implements CommandExecutor {
         blackMeta.displayName(Component.text(" "));
         blackPane.setItemMeta(blackMeta);
 
-        Inventory recipeGUI = Bukkit.createInventory(null, 45, Component.text("Recipes - Custom").color(TextColor.fromHexString("#3B5998")));
+        Inventory recipeGUI = Bukkit.createInventory(null, 45, Component.text("Recipes - Custom", TextColor.fromHexString("#3B5998")));
         for(int i = 0; i < recipeGUI.getSize(); i++) {
             if(i == 0) {
                 NamespacedKey key = new NamespacedKey(plugin, "stop-click");
@@ -167,7 +167,7 @@ public class CustomRecipes implements CommandExecutor {
                 ItemMeta backMeta = back.getItemMeta();
                 backMeta.displayName(Component.text("Back to Custom Recipes", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Click here to go back to all custom recipes").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("Click here to go back to all custom recipes", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
                 backMeta.lore(lore);
                 back.setItemMeta(backMeta);
                 recipeGUI.setItem(i, back);
@@ -225,7 +225,7 @@ public class CustomRecipes implements CommandExecutor {
         blackMeta.displayName(Component.text(" "));
         blackPane.setItemMeta(blackMeta);
 
-        Inventory recipeGUI = Bukkit.createInventory(null, 54, Component.text("Recipes - Blocked").color(TextColor.fromHexString("#3B5998")));
+        Inventory recipeGUI = Bukkit.createInventory(null, 54, Component.text("Recipes - Blocked", TextColor.fromHexString("#3B5998")));
         List<Recipe> disabledRecipes = CustomCrafting.inst().getDisableRecipesHandler().getCachedVanillaRecipes();
         List<CustomRecipe<?>> customRecipes = CustomCrafting.inst().getRegistries().getRecipes().getAvailable();
 

@@ -31,7 +31,7 @@ public class ClaimPending implements CustomInventory {
         this.category = category;
         this.page = page;
 
-        this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Pending Claim Descisions").color(TextColor.fromHexString("#0fc3ff")).decoration(TextDecoration.ITALIC, false));
+        this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Pending Claim Descisions", TextColor.fromHexString("#0fc3ff")));
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
         ItemMeta redMeta = redPane.getItemMeta();
         redMeta.displayName(Component.text(" "));
@@ -44,11 +44,11 @@ public class ClaimPending implements CustomInventory {
 
         ItemStack nextPage = new ItemStack(Material.PAPER);
         ItemMeta nextMeta = nextPage.getItemMeta();
-        nextMeta.displayName(Component.text("Next Page").color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+        nextMeta.displayName(Component.text("Next Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
         nextPage.setItemMeta(nextMeta);
         ItemStack prevPage = new ItemStack(Material.PAPER);
         ItemMeta prevMeta = prevPage.getItemMeta();
-        prevMeta.displayName(Component.text("Previous Page").color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+        prevMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
         prevPage.setItemMeta(prevMeta);
 
 

@@ -317,6 +317,11 @@ commands:
     aliases: [ilore]
     permission: skyprisoncore.command.itemlore
     permission-message: §4Error:§c You do not have permission to execute this command...
+  news:
+    description: Claim commands
+    usage: /<command>
+    permission: skyprisoncore.command.news
+    permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
   skyprisoncore.command.build:
     description: Gives access to buildchat
@@ -482,4 +487,6 @@ permissions:
   skyprisoncore.command.rename:
     description: Gives access to tags stuff
   skyprisoncore.command.itemlore:
+    description: Gives access to tags stuff
+  skyprisoncore.command.news:
     description: Gives access to tags stuff

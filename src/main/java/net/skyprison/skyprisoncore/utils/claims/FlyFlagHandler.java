@@ -34,10 +34,10 @@ public class FlyFlagHandler extends FlagValueChangeHandler<State> {
         if(!p.getGameMode().equals(GameMode.CREATIVE) && !p.getGameMode().equals(GameMode.SPECTATOR)) {
             if (value == State.ALLOW) {
                 p.setAllowFlight(true);
-                p.sendMessage(Component.text("You can fly now!").color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                p.sendMessage(Component.text("You can fly now!", NamedTextColor.AQUA, TextDecoration.BOLD));
             } else if (value == State.DENY && p.getAllowFlight()) {
                 p.setAllowFlight(false);
-                p.sendMessage(Component.text("You can no longer fly!").color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                p.sendMessage(Component.text("You can no longer fly!", NamedTextColor.AQUA, TextDecoration.BOLD));
             }
         }
     }
@@ -48,10 +48,10 @@ public class FlyFlagHandler extends FlagValueChangeHandler<State> {
         if(!p.getGameMode().equals(GameMode.CREATIVE) && !p.getGameMode().equals(GameMode.SPECTATOR)) {
             if (currentValue == State.ALLOW && (lastValue == State.DENY || lastValue == null)) {
                 p.setAllowFlight(true);
-                p.sendMessage(Component.text("You can fly now!").color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                p.sendMessage(Component.text("You can fly now!", NamedTextColor.AQUA, TextDecoration.BOLD));
             } else if (currentValue == State.DENY && lastValue == State.ALLOW) {
                 p.setAllowFlight(false);
-                p.sendMessage(Component.text("You can no longer fly!").color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                p.sendMessage(Component.text("You can no longer fly!", NamedTextColor.AQUA, TextDecoration.BOLD));
             }
         }
         return true;
@@ -63,7 +63,7 @@ public class FlyFlagHandler extends FlagValueChangeHandler<State> {
         if(!p.getGameMode().equals(GameMode.CREATIVE) && !p.getGameMode().equals(GameMode.SPECTATOR)) {
             if (lastValue == State.ALLOW) {
                 p.setAllowFlight(false);
-                p.sendMessage(Component.text("You can no longer fly!").color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                p.sendMessage(Component.text("You can no longer fly!", NamedTextColor.AQUA, TextDecoration.BOLD));
             }
         }
         return true;

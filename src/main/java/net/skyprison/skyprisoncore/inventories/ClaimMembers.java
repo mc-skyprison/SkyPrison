@@ -24,13 +24,11 @@ import java.sql.SQLException;
 import java.util.*;
 
 public class ClaimMembers implements CustomInventory {
-
     private final Inventory inventory;
     private final String category;
     private final String claimName;
     private final HashMap<UUID, String> members;
     private final int page;
-
     private final DatabaseHook db;
 
     public ClaimMembers(SkyPrisonCore plugin, DatabaseHook db, String claimName, HashMap<UUID, String> members, String category, int page) {
@@ -39,7 +37,7 @@ public class ClaimMembers implements CustomInventory {
         this.members = members;
         this.category = category;
         this.page = page;
-        this.inventory = plugin.getServer().createInventory(this, 54, Component.text(claimName).color(TextColor.fromHexString("#0fc3ff")).decoration(TextDecoration.ITALIC, false));
+        this.inventory = plugin.getServer().createInventory(this, 54, Component.text(claimName, TextColor.fromHexString("#0fc3ff")));
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
         ItemMeta redMeta = redPane.getItemMeta();
         redMeta.displayName(Component.text(" "));
@@ -52,11 +50,11 @@ public class ClaimMembers implements CustomInventory {
 
         ItemStack nextPage = new ItemStack(Material.PAPER);
         ItemMeta nextMeta = nextPage.getItemMeta();
-        nextMeta.displayName(Component.text("Next Page").color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+        nextMeta.displayName(Component.text("Next Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
         nextPage.setItemMeta(nextMeta);
         ItemStack prevPage = new ItemStack(Material.PAPER);
         ItemMeta prevMeta = prevPage.getItemMeta();
-        prevMeta.displayName(Component.text("Previous Page").color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+        prevMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
         prevPage.setItemMeta(prevMeta);
 
         int totalPages = (int) Math.ceil((double) members.size() / 28);
@@ -89,10 +87,10 @@ public class ClaimMembers implements CustomInventory {
                         TextColor selectedColor = TextColor.fromHexString("#0fffc3");
                         sortMeta.displayName(Component.text("Toggle Members", TextColor.fromHexString("#20df80")).decoration(TextDecoration.ITALIC, false));
                         List<Component> lore = new ArrayList<>();
-                        lore.add(Component.text("All Members").color(category.equalsIgnoreCase("") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
-                        lore.add(Component.text("Owner").color(category.equalsIgnoreCase("owner") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
-                        lore.add(Component.text("Co-owners").color(category.equalsIgnoreCase("co-owner") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
-                        lore.add(Component.text("Members").color(category.equalsIgnoreCase("member") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
+                        lore.add(Component.text("All Members", category.equalsIgnoreCase("") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
+                        lore.add(Component.text("Owner", category.equalsIgnoreCase("owner") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
+                        lore.add(Component.text("Co-owners", category.equalsIgnoreCase("co-owner") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
+                        lore.add(Component.text("Members", category.equalsIgnoreCase("member") ? selectedColor : color).decoration(TextDecoration.ITALIC, false));
                         sortMeta.lore(lore);
                         itemSort.setItemMeta(sortMeta);
                         inventory.setItem(i, itemSort);
@@ -118,7 +116,7 @@ public class ClaimMembers implements CustomInventory {
                                 e.printStackTrace();
                             }
 
-                            itemMeta.displayName(Component.text(Objects.requireNonNull(name)).color(TextColor.fromHexString("#0fffc3")).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                            itemMeta.displayName(Component.text(Objects.requireNonNull(name), TextColor.fromHexString("#0fffc3"), TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
                             List<Component> lore = new ArrayList<>();
                             lore.add(Component.text(WordUtils.capitalize(members.get(memberUUID)), TextColor.fromHexString("#ffba75")).decoration(TextDecoration.ITALIC, false));
                             itemMeta.lore(lore);

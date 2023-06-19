@@ -16,6 +16,8 @@ import dev.esophose.playerparticles.api.PlayerParticlesAPI;
 import dev.esophose.playerparticles.particles.ParticleEffect;
 import dev.esophose.playerparticles.styles.ParticleStyle;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -323,6 +325,214 @@ public class InventoryClick implements Listener {
                                 if (clickedMat.equals(Material.PAPER)) {
                                     player.openInventory(new ClaimPending(plugin, inv.getClaimIds(), inv.getCategory(), inv.getPage() + 1).getInventory());
                                 }
+                            }
+                        }
+                    }
+                } else if (customInv instanceof NewsMessages inv) {
+                    if(event.getCurrentItem() != null) {
+                        Material clickedMat = event.getCurrentItem().getType();
+                        switch (event.getSlot()) {
+                            case 47 -> {
+                                if (clickedMat.equals(Material.PAPER)) {
+                                    player.openInventory(new NewsMessages(plugin, inv.getDatabase(), inv.getCanEdit(),inv.getPage() - 1).getInventory());
+                                }
+                            }
+                            case 51 -> {
+                                if (clickedMat.equals(Material.PAPER)) {
+                                    player.openInventory(new NewsMessages(plugin, inv.getDatabase(), inv.getCanEdit(),inv.getPage() + 1).getInventory());
+                                }
+                            }
+                            case 49 -> {
+                                if(clickedMat.equals(Material.LIME_CONCRETE)) {
+                                    if(plugin.newsEditing.containsKey(player.getUniqueId()) && plugin.newsEditing.get(player.getUniqueId()).containsKey(0)) {
+                                        player.openInventory(plugin.newsEditing.get(player.getUniqueId()).get(0).getInventory());
+                                    } else {
+                                        player.openInventory(new NewsMessageEdit(plugin, inv.getDatabase(), player.getUniqueId(), 0).getInventory());
+                                    }
+                                }
+                            }
+                            default -> {
+                                if(!clickedMat.isEmpty() && clickedMat.equals(Material.WRITABLE_BOOK)) {
+                                    NamespacedKey newsKey = new NamespacedKey(plugin, "news-message");
+                                    PersistentDataContainer newsPersist = event.getCurrentItem().getPersistentDataContainer();
+                                    if(newsPersist.has(newsKey, PersistentDataType.INTEGER)) {
+                                        int newsMessage = newsPersist.get(newsKey, PersistentDataType.INTEGER);
+                                        if(event.isShiftClick() && player.hasPermission("skyprisoncore.command.news.edit")) {
+                                            if(plugin.newsEditing.containsKey(player.getUniqueId()) && plugin.newsEditing.get(player.getUniqueId()).containsKey(newsMessage)) {
+                                                player.openInventory(plugin.newsEditing.get(player.getUniqueId()).get(newsMessage).getInventory());
+                                            } else {
+                                                player.openInventory(new NewsMessageEdit(plugin, inv.getDatabase(), player.getUniqueId(), newsMessage).getInventory());
+                                            }
+                                        } else {
+                                            plugin.sendNewsMessage(player, newsMessage);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if (customInv instanceof NewsMessageEdit inv) {
+                    if(event.getCurrentItem() != null) {
+                        Material clickedMat = event.getCurrentItem().getType();
+                        switch (clickedMat) {
+                            case NAME_TAG -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("news-title", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new news title in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current title to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getTitle())));
+                            }
+                            case WRITABLE_BOOK -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("news-content", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new news content in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current content to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getContent())));
+                            }
+                            case BOOK -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("news-hover", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new news hover in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current hover to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getHover())));
+                            }
+                            case DAYLIGHT_DETECTOR -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("news-permission", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new news permission in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current permission to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getPermission())));
+                            }
+                            case HOPPER -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("news-priority", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new news priority in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current priority to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(String.valueOf(inv.getPriority()))));
+                            }
+                            case CHAIN_COMMAND_BLOCK -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("news-click-type", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new news click type in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current click type to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getClickType()))
+                                        .appendNewline().append(MiniMessage.miniMessage().deserialize("<gray>Options: " +
+                                                "<gold><b><click:suggest_command:OPEN_URL><hover:show_text:'<gray>Click to paste to chat'>OPEN_URL</hover></click> " +
+                                                "<click:suggest_command:RUN_COMMAND><hover:show_text:'<gray>Click to paste to chat'>RUN_COMMAND</hover></click> " +
+                                                "<click:suggest_command:SUGGEST_COMMAND><hover:show_text:'<gray>Click to paste to chat'>SUGGEST_COMMAND</hover></click> " +
+                                                "<click:suggest_command:COPY_TO_CLIPBOARD><hover:show_text:'<gray>Click to paste to chat'>COPY_TO_CLIPBOARD</hover></click>")));
+                            }
+                            case COMMAND_BLOCK -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("news-click-data", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new news click data in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current click data to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getClickData())));
+                            }
+                            case LIME_CANDLE -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("news-limited-start", inv));
+                                player.closeInventory();
+                                SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd");
+                                Date date = new Date();
+                                date.setTime(inv.getLimitedStart());
+                                player.sendMessage(Component.text("Type new news start date in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current start date to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(formatter.format(date)))
+                                        .appendNewline().append(MiniMessage.miniMessage().deserialize("<gray>Format: <gold><b>yyyy/MM/dd (Ex: 2023/01/24)")));
+                            }
+                            case CLOCK -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("news-limited-time", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new news time limit option in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current time limit option to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getLimitedTime() == 1 ? "ENABLED" : "DISABLED"))
+                                        .appendNewline().append(MiniMessage.miniMessage().deserialize("<gray>Options: <green><b>ENABLED <white>| <red><b>DISABLED")));
+                            }
+                            case RED_CANDLE -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("news-limited-end", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new news end date in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current title to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getTitle()))
+                                        .appendNewline().append(MiniMessage.miniMessage().deserialize("<gray>Format: <gold><b>yyyy/MM/dd (Ex: 2023/01/24)")));
+                            }
+                            case PLAYER_HEAD -> player.openInventory(new NewsMessages(plugin, db, player.hasPermission("skyprisoncore.command.news.edit"), 1).getInventory());
+                            case RED_CONCRETE -> {
+                                player.closeInventory();
+                                plugin.newsMessageChanges.add(player.getUniqueId());
+                                Component msg = Component.text("Are you sure you want to delete this news message?", NamedTextColor.GRAY)
+                                        .append(Component.text("\nDELETE NEWS MESSAGE", NamedTextColor.RED, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            if (plugin.newsMessageChanges.contains(player.getUniqueId())) {
+                                                plugin.newsMessageChanges.remove(player.getUniqueId());
+                                                HashMap<Integer, NewsMessageEdit> newsEdits = plugin.newsEditing.get(player.getUniqueId());
+                                                newsEdits.remove(inv.getNewsMessage());
+                                                plugin.newsEditing.put(player.getUniqueId(), newsEdits);
+                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM news WHERE id = ?")) {
+                                                    ps.setInt(1, inv.getNewsMessage());
+                                                    ps.executeUpdate();
+                                                } catch (SQLException e) {
+                                                    e.printStackTrace();
+                                                }
+                                                audience.sendMessage(Component.text("News message has been deleted!", NamedTextColor.RED));
+                                                player.openInventory(new NewsMessages(plugin, db, player.hasPermission("skyprisoncore.command.news.edit"), 1).getInventory());
+                                            }
+                                        })))
+                                        .append(Component.text("     "))
+                                        .append(Component.text("CANCEL DELETION", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            plugin.newsMessageChanges.remove(player.getUniqueId());
+                                            audience.sendMessage(Component.text("News message deletion cancelled!", NamedTextColor.GRAY));
+                                            player.openInventory(inv.getInventory());
+                                        })));
+                                player.sendMessage(msg);
+                            }
+                            case GRAY_CONCRETE -> {
+                                player.closeInventory();
+                                plugin.newsMessageChanges.add(player.getUniqueId());
+                                Component msg = Component.text("Are you sure you want to discard your changes?", NamedTextColor.GRAY)
+                                        .append(Component.text("\nDISCARD CHANGES", NamedTextColor.RED, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            if (plugin.newsMessageChanges.contains(player.getUniqueId())) {
+                                                plugin.newsMessageChanges.remove(player.getUniqueId());
+                                                HashMap<Integer, NewsMessageEdit> newsEdits = plugin.newsEditing.get(player.getUniqueId());
+                                                newsEdits.remove(inv.getNewsMessage());
+                                                plugin.newsEditing.put(player.getUniqueId(), newsEdits);
+                                                audience.sendMessage(Component.text("Changes have been discarded!", NamedTextColor.RED));
+                                                player.openInventory(new NewsMessages(plugin, db, player.hasPermission("skyprisoncore.command.news.edit"), 1).getInventory());
+                                            }
+                                        })))
+                                        .append(Component.text("     "))
+                                        .append(Component.text("CANCEL", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            plugin.newsMessageChanges.remove(player.getUniqueId());
+                                            audience.sendMessage(Component.text("Discard changes cancelled!", NamedTextColor.GRAY));
+                                            player.openInventory(inv.getInventory());
+                                        })));
+                                player.sendMessage(msg);
+                            }
+                            case LIME_CONCRETE -> {
+                                player.closeInventory();
+                                plugin.newsMessageChanges.add(player.getUniqueId());
+                                Component msg = Component.text("Are you sure you want to save this news message?", NamedTextColor.GRAY)
+                                        .append(Component.text("\nSAVE NEWS MESSAGE", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            if (plugin.newsMessageChanges.contains(player.getUniqueId())) {
+                                                if(new News(plugin, db).saveMessage(inv)) {
+                                                    plugin.newsMessageChanges.remove(player.getUniqueId());
+                                                    HashMap<Integer, NewsMessageEdit> newsEdits = plugin.newsEditing.get(player.getUniqueId());
+                                                    newsEdits.remove(inv.getNewsMessage());
+                                                    plugin.newsEditing.put(player.getUniqueId(), newsEdits);
+                                                    audience.sendMessage(Component.text("News message has been saved!", NamedTextColor.GREEN));
+                                                    player.openInventory(new NewsMessages(plugin, db, player.hasPermission("skyprisoncore.command.news.edit"), 1).getInventory());
+                                                } else {
+                                                    audience.sendMessage(Component.text("Something went wrong when saving! Cancelling..", NamedTextColor.RED));
+                                                    player.openInventory(inv.getInventory());
+                                                }
+                                            }
+                                        })))
+                                        .append(Component.text("     "))
+                                        .append(Component.text("CANCEL", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            plugin.newsMessageChanges.remove(player.getUniqueId());
+                                            audience.sendMessage(Component.text("News message saving cancelled!", NamedTextColor.GRAY));
+                                            player.openInventory(inv.getInventory());
+                                        })));
+                                player.sendMessage(msg);
                             }
                         }
                     }
