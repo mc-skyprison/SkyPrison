@@ -30,7 +30,7 @@ public class NewsMessageEdit implements CustomInventory {
     private int priority = 1;
     private String clickType = "";
     private String clickData = "";
-    private String permission = "";
+    private String permission = "general";
     private int limitedTime = 0;
     private long limitedStart = 0;
     private long limitedEnd = 0;

@@ -655,7 +655,6 @@ public class SkyPrisonCore extends JavaPlugin {
         return db;
     }
 
-
     public void sendNewsMessage(Player player, int newsMessage) {
         Component msg = Component.newline().append(MiniMessage.miniMessage().deserialize("<b><#0fc3ff>Sky<#ff0000>Prison <#e65151>News</b>").appendNewline().appendSpace());
         HoverEvent<Component> hoverEvent = null;

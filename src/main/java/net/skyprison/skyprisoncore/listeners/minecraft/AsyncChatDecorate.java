@@ -16,7 +16,7 @@ public class AsyncChatDecorate implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onAsyncChat(AsyncChatDecorateEvent event) {
+    public void onAsyncChatDecorate(AsyncChatDecorateEvent event) {
         Component msg = event.originalMessage();
         event.result(plugin.getParsedMessage(event.player(), PlainTextComponentSerializer.plainText().serialize(msg)));
     }
