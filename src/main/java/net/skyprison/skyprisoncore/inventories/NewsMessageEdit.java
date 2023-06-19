@@ -23,12 +23,11 @@ import java.util.*;
 
 public class NewsMessageEdit implements CustomInventory {
     private final Inventory inventory;
-    private final DatabaseHook db;
     private final int newsMessage;
     private String title = "";
     private String content = "";
     private String hover = "";
-    private int priority = 0;
+    private int priority = 1;
     private String clickType = "";
     private String clickData = "";
     private String permission = "";
@@ -208,7 +207,6 @@ public class NewsMessageEdit implements CustomInventory {
 
 
     public NewsMessageEdit(SkyPrisonCore plugin, DatabaseHook db, UUID pUUID, int newsMessage) {
-        this.db = db;
         this.newsMessage = newsMessage;
 
         HashMap<Integer, NewsMessageEdit> edits = new HashMap<>();
