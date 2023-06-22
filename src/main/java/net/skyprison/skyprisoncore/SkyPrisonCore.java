@@ -35,6 +35,7 @@ import net.skyprison.skyprisoncore.commands.economy.*;
 import net.skyprison.skyprisoncore.commands.guard.*;
 import net.skyprison.skyprisoncore.commands.secrets.SecretFound;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
+import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
 import net.skyprison.skyprisoncore.inventories.NewsMessageEdit;
 import net.skyprison.skyprisoncore.listeners.advancedregionmarket.UnsellRegion;
 import net.skyprison.skyprisoncore.listeners.brewery.BrewDrink;
@@ -113,6 +114,7 @@ public class SkyPrisonCore extends JavaPlugin {
     public Map<UUID, Integer> blockBreaks = new HashMap<>();
 
     public List<UUID> newsMessageChanges = new ArrayList<>();
+    public List<UUID> customItemChanges = new ArrayList<>();
     public List<UUID> deleteClaim = new ArrayList<>();
     public List<UUID> transferClaim = new ArrayList<>();
 
@@ -142,7 +144,7 @@ public class SkyPrisonCore extends JavaPlugin {
 
     public Timer spongeTimer = new Timer();
 
-
+    public HashMap<UUID, HashMap<Integer, DatabaseInventoryEdit>> itemEditing = new HashMap<>();
     public HashMap<UUID, HashMap<Integer, NewsMessageEdit>> newsEditing = new HashMap<>();
 
     private static DatabaseHook db;
@@ -574,7 +576,6 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PlayerInteract(this), this);
         pm.registerEvents(new PlayerMove(this), this);
         pm.registerEvents(new PlayerPostRespawn(), this);
-        pm.registerEvents(new PlayerRiptide(), this);
         pm.registerEvents(new PlayerTag(this), this);
         pm.registerEvents(new PlayerTeleport(this), this);
         pm.registerEvents(new PlayerUnJail(), this);
@@ -660,7 +661,7 @@ public class SkyPrisonCore extends JavaPlugin {
         HoverEvent<Component> hoverEvent = null;
         ClickEvent clickEvent = null;
         if(newsMessage == 0) {
-            LinkedHashMap<Component, Integer> newsMessages = new LinkedHashMap<>();
+            LinkedHashMap<HashMap<String, Object>, Integer> newsMessages = new LinkedHashMap<>();
 
             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT content, hover, click_type, click_data, permission, priority, " +
                     "limited_time, limited_start, limited_end FROM news")) {
@@ -674,15 +675,23 @@ public class SkyPrisonCore extends JavaPlugin {
                         if(start < curr || end < curr) continue;
                     }
                     if(player.hasPermission("skyprisoncore.news." + rs.getString(5))) {
+                        HashMap<String, Object> messageComps = new HashMap<>();
                         Component message = MiniMessage.miniMessage().deserialize(rs.getString(1));
-
+                        messageComps.put("content", message);
                         if(!rs.getString(2).isEmpty()) {
-                            hoverEvent = HoverEvent.showText(MiniMessage.miniMessage().deserialize(rs.getString(2)));
+                            messageComps.put("hover", HoverEvent.showText(MiniMessage.miniMessage().deserialize(rs.getString(2))));
                         }
                         if(!rs.getString(3).isEmpty()) {
-                            clickEvent = ClickEvent.clickEvent(Objects.requireNonNull(Action.NAMES.value(rs.getString(3).toLowerCase())), rs.getString(4));
+                            Action action = Objects.requireNonNull(Action.NAMES.value(rs.getString(3).toLowerCase()));
+                            String value = "";
+                            switch (action) {
+                                case OPEN_URL, SUGGEST_COMMAND, COPY_TO_CLIPBOARD -> value = rs.getString(4);
+                                case RUN_COMMAND -> value = "/" + rs.getString(4);
+                            }
+                            clickEvent = ClickEvent.clickEvent(action, value);
+                            messageComps.put("click", clickEvent);
                         }
-                        newsMessages.put(message, rs.getInt(6));
+                        newsMessages.put(messageComps, rs.getInt(6));
                     }
                 }
             } catch (SQLException e) {
@@ -706,8 +715,11 @@ public class SkyPrisonCore extends JavaPlugin {
                 if (index < 0) {
                     index = Math.abs(index + 1);
                 }
-
-                msg = msg.append(new ArrayList<>(newsMessages.keySet()).get(index));
+                HashMap<String, Object> finalMsg = new ArrayList<>(newsMessages.keySet()).get(index);
+                Component content = (Component) finalMsg.get("content");
+                hoverEvent = (HoverEvent<Component>) finalMsg.getOrDefault("hover", null);
+                clickEvent = (ClickEvent) finalMsg.getOrDefault("click", null);
+                msg = msg.append(content);
             }
         } else {
             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT content, hover, click_type, click_data FROM news WHERE id = ?")) {
@@ -908,6 +920,20 @@ public class SkyPrisonCore extends JavaPlugin {
         }
     }
 
+
+    public UUID getPlayer(String name) {
+        try(Connection conn = getDatabase().getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id FROM users WHERE current_name = ?")) {
+            ps.setString(1, name);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return UUID.fromString(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public String getQuestionMarks(List<String> list) {
         if(!list.isEmpty()) {
             return "(" + list.stream().map(id -> "?").collect(Collectors.joining(",")) + ")";
@@ -928,6 +954,7 @@ public class SkyPrisonCore extends JavaPlugin {
     public void tellConsole(Component message){
         Bukkit.getConsoleSender().sendMessage(message);
     }
+
 
     public void asConsole(String command){
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);

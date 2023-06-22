@@ -2,6 +2,7 @@ package net.skyprison.skyprisoncore.commands.economy;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
+import me.arcaniax.hdb.api.HeadDatabaseAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -43,6 +44,12 @@ public class Voucher implements CommandExecutor { // /voucher give <player> <vou
             lore.add(Component.text("Buying something from the TokenShop", NamedTextColor.GRAY));
             lore.add(Component.text("with this voucher in your inventory", NamedTextColor.GRAY));
             lore.add(Component.text("will redeem the voucher.", NamedTextColor.GRAY));
+        } else if(voucherType.equalsIgnoreCase("one-time-enderchest")) {
+            HeadDatabaseAPI hAPI = new HeadDatabaseAPI();
+            voucher = hAPI.getItemHead("1647");
+            vMeta = voucher.getItemMeta();
+            vMeta.displayName(Component.text(voucherName + " Voucher", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+            lore.add(Component.text("Right click to open your ender chest!", NamedTextColor.GRAY));
         }
         vMeta.addEnchant(Enchantment.PROTECTION_FALL, 1, true);
         vMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);

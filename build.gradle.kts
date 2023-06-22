@@ -32,6 +32,7 @@ repositories {
 dependencies {
     implementation("org.javacord:javacord:3.7.0")
     implementation("org.mariadb.jdbc:mariadb-java-client:3.1.4")
+    implementation("cloud.commandframework", "cloud-paper", "1.8.3")
     compileOnly("org.jetbrains:annotations:24.0.0")
     compileOnly("org.purpurmc.purpur:purpur-api:1.19.4-R0.1-SNAPSHOT")
     compileOnly("net.luckperms:api:5.4")
@@ -68,5 +69,7 @@ tasks.withType<JavaCompile> {
 }
 
 tasks.withType<ShadowJar> {
-    relocate("org.mariadb.jdbc", "net.skyprison.skyprisoncore")
+    relocate("org.mariadb.jdbc", "net.skyprison.skyprisoncore.shaded.mariadb")
+    relocate("cloud.commandframework", "net.skyprison.skyprisoncore.shaded.cloud")
+    relocate("o.leangen.geantyref", "net.skyprison.skyprisoncore.shaded.typetoken")
 }

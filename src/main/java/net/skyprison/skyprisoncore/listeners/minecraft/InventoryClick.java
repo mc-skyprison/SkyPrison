@@ -119,7 +119,7 @@ public class InventoryClick implements Listener {
             if (event.getClickedInventory() instanceof PlayerInventory) {
                 InvStickFix(player);
             }
-            if(event.getClickedInventory() != null && event.getClickedInventory().getHolder() instanceof CustomInventory customInv) {
+            if(event.getClickedInventory() != null && event.getClickedInventory().getHolder(false) instanceof CustomInventory customInv) {
 
                 switch (customInv.defaultClickBehavior()) {
                     case DISABLE_ALL, ENABLE_SPECIFIC -> event.setCancelled(true);
@@ -530,6 +530,171 @@ public class InventoryClick implements Listener {
                                         .append(Component.text("CANCEL", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
                                             plugin.newsMessageChanges.remove(player.getUniqueId());
                                             audience.sendMessage(Component.text("News message saving cancelled!", NamedTextColor.GRAY));
+                                            player.openInventory(inv.getInventory());
+                                        })));
+                                player.sendMessage(msg);
+                            }
+                        }
+                    }
+                } else if (customInv instanceof DatabaseInventory inv) {
+                    if(event.getCurrentItem() != null) {
+                        Material clickedMat = event.getCurrentItem().getType();
+                        if(clickedMat.isAir()) {
+
+                        } else if(clickedMat.isItem()) {
+
+                        }
+                    }
+                } else if (customInv instanceof DatabaseInventoryEdit inv) {
+                    if(event.getCurrentItem() != null) {
+                        Material clickedMat = event.getCurrentItem().getType();
+                        int clickedSlot = event.getSlot();
+                        switch (clickedSlot) {
+                            case 10 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("item-permission", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new item permission in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current permission to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getPermission())));
+                            }
+                            case 11 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("item-permission-message", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new permission message in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current permission message to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getPermissionMessage())));
+                            }
+                            case 13 -> {
+                                ItemStack newPreview = player.getItemOnCursor();
+                                if(!newPreview.getType().isAir()) {
+                                    event.setCancelled(false);
+                                    inv.setItem(newPreview);
+                                    player.openInventory(inv.getInventory());
+                                }
+                            }
+                            case 15 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("item-price-money", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new money cost in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current money cost to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(String.valueOf(inv.getPriceMoney()))));
+                            }
+                            case 16 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("item-price-tokens", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new tokens cost in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current tokens cost to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(String.valueOf(inv.getPriceTokens()))));
+                            }
+                            case 19 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("item-commands", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type the command to add in chat: (Type 'cancel' to cancel, Type command number to remove existing one)", NamedTextColor.YELLOW));
+                            }
+                            case 20 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("item-max-uses", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new max uses in chat: (Type 'cancel' to cancel, Type 0 for infinite)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current max uses to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(String.valueOf(inv.getMaxUses()))));
+                            }
+                            case 24 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("item-voucher-type", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type the voucher type to set in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current voucher type to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getPriceVoucherType()))
+                                        .appendNewline().append(MiniMessage.miniMessage().deserialize("<gray>Options: " +
+                                                "<gold><b><click:suggest_command:none><hover:show_text:'<gray>Click to paste to chat'>none</hover></click> " +
+                                                "<click:suggest_command:token-shop><hover:show_text:'<gray>Click to paste to chat'>token-shop</hover></click> ")));
+                            }
+                            case 25 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("item-price-voucher", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new voucher cost in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current voucher cost to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(String.valueOf(inv.getPriceVoucher()))));
+                            }
+                            case 27 -> player.openInventory(new DatabaseInventory(plugin, db, player,
+                                    player.hasPermission("skyprisoncore.inventories." + inv.getCategory() + ".editing"), inv.getCategory()).getInventory());
+                            case 30 -> {
+                                if(clickedMat.equals(Material.RED_CONCRETE)) {
+                                    player.closeInventory();
+                                    plugin.customItemChanges.add(player.getUniqueId());
+                                    Component msg = Component.text("Are you sure you want to delete this item?", NamedTextColor.GRAY)
+                                            .append(Component.text("\nDELETE ITEM", NamedTextColor.RED, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                                if (plugin.customItemChanges.contains(player.getUniqueId())) {
+                                                    plugin.customItemChanges.remove(player.getUniqueId());
+                                                    HashMap<Integer, DatabaseInventoryEdit> itemEdits = plugin.itemEditing.get(player.getUniqueId());
+                                                    itemEdits.remove(inv.getItemId());
+                                                    plugin.itemEditing.put(player.getUniqueId(), itemEdits);
+                                                    try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM gui_items WHERE id = ?")) {
+                                                        ps.setInt(1, inv.getItemId());
+                                                        ps.executeUpdate();
+                                                    } catch (SQLException e) {
+                                                        e.printStackTrace();
+                                                    }
+                                                    audience.sendMessage(Component.text("Item has been deleted!", NamedTextColor.RED));
+                                                    player.openInventory(new DatabaseInventory(plugin, db, player,
+                                                            player.hasPermission("skyprisoncore.inventories." + inv.getCategory() + ".editing"), inv.getCategory()).getInventory());
+                                                }
+                                            })))
+                                            .append(Component.text("     "))
+                                            .append(Component.text("CANCEL DELETION", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                                plugin.customItemChanges.remove(player.getUniqueId());
+                                                audience.sendMessage(Component.text("Item deletion cancelled!", NamedTextColor.GRAY));
+                                                player.openInventory(inv.getInventory());
+                                            })));
+                                    player.sendMessage(msg);
+                                }
+                            }
+                            case 31 -> {
+                                player.closeInventory();
+                                plugin.customItemChanges.add(player.getUniqueId());
+                                Component msg = Component.text("Are you sure you want to discard your changes?", NamedTextColor.GRAY)
+                                        .append(Component.text("\nDISCARD CHANGES", NamedTextColor.RED, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            if (plugin.customItemChanges.contains(player.getUniqueId())) {
+                                                plugin.customItemChanges.remove(player.getUniqueId());
+                                                HashMap<Integer, DatabaseInventoryEdit> itemEdits = plugin.itemEditing.get(player.getUniqueId());
+                                                itemEdits.remove(inv.getItemId());
+                                                plugin.itemEditing.put(player.getUniqueId(), itemEdits);
+                                                audience.sendMessage(Component.text("Changes have been discarded!", NamedTextColor.RED));
+                                                player.openInventory(new DatabaseInventory(plugin, db, player,
+                                                        player.hasPermission("skyprisoncore.inventories." + inv.getCategory() + ".editing"), inv.getCategory()).getInventory());
+                                            }
+                                        })))
+                                        .append(Component.text("     "))
+                                        .append(Component.text("CANCEL", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            plugin.customItemChanges.remove(player.getUniqueId());
+                                            audience.sendMessage(Component.text("Discard changes cancelled!", NamedTextColor.GRAY));
+                                            player.openInventory(inv.getInventory());
+                                        })));
+                                player.sendMessage(msg);
+                            }
+                            case 32 -> {
+                                player.closeInventory();
+                                plugin.customItemChanges.add(player.getUniqueId());
+                                Component msg = Component.text("Are you sure you want to save this item?", NamedTextColor.GRAY)
+                                        .append(Component.text("\nSAVE ITEM", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            if (plugin.customItemChanges.contains(player.getUniqueId())) {
+                                                if(new News(plugin, db).saveMessage(inv)) {
+                                                    plugin.customItemChanges.remove(player.getUniqueId());
+                                                    HashMap<Integer, DatabaseInventoryEdit> itemEdits = plugin.itemEditing.get(player.getUniqueId());
+                                                    itemEdits.remove(inv.getItemId());
+                                                    plugin.itemEditing.put(player.getUniqueId(), itemEdits);
+                                                    audience.sendMessage(Component.text("Item has been saved!", NamedTextColor.GREEN));
+                                                    player.openInventory(new DatabaseInventory(plugin, db, player,
+                                                            player.hasPermission("skyprisoncore.inventories." + inv.getCategory() + ".editing"), inv.getCategory()).getInventory());
+                                                } else {
+                                                    audience.sendMessage(Component.text("Something went wrong when saving! Cancelling..", NamedTextColor.RED));
+                                                    player.openInventory(inv.getInventory());
+                                                }
+                                            }
+                                        })))
+                                        .append(Component.text("     "))
+                                        .append(Component.text("CANCEL", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            plugin.customItemChanges.remove(player.getUniqueId());
+                                            audience.sendMessage(Component.text("Item saving cancelled!", NamedTextColor.GRAY));
                                             player.openInventory(inv.getInventory());
                                         })));
                                 player.sendMessage(msg);

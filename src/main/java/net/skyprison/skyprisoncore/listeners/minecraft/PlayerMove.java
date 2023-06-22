@@ -54,6 +54,9 @@ public class PlayerMove implements Listener {
                 Location toLoc = event.getTo();
                 Location fromLoc = event.getFrom();
                 if(toLoc.getBlockX() != fromLoc.getBlockX() || toLoc.getBlockZ() != fromLoc.getBlockZ()) {
+                    if(player.isRiptiding() || player.isGliding()) {
+                        event.setCancelled(true);
+                    }
                     boolean toFly = true;
                     boolean fromFly = true;
 
@@ -99,9 +102,6 @@ public class PlayerMove implements Listener {
                         }
                     } else if (!toFly && fromFly) {
                         player.setAllowFlight(false);
-                        if(player.isGliding()) {
-                            player.setGliding(false);
-                        }
                         player.sendMessage(Component.text("You can no longer fly!", NamedTextColor.AQUA, TextDecoration.BOLD));
                     }
                 }
