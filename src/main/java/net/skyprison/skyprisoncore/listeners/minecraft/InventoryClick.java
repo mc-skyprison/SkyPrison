@@ -119,12 +119,11 @@ public class InventoryClick implements Listener {
             if (event.getClickedInventory() instanceof PlayerInventory) {
                 InvStickFix(player);
             }
-            if(event.getClickedInventory() != null && event.getClickedInventory().getHolder(false) instanceof CustomInventory customInv) {
 
+            if(event.getInventory().getHolder(false) instanceof CustomInventory customInv) {
                 switch (customInv.defaultClickBehavior()) {
                     case DISABLE_ALL, ENABLE_SPECIFIC -> event.setCancelled(true);
                 }
-
                 if (customInv instanceof ClaimFlags inv) {
                     Component prefix = new Claim(plugin, db).prefix;
                     if(event.getCurrentItem() != null) {
@@ -652,6 +651,9 @@ public class InventoryClick implements Listener {
                         }
                 } else if (customInv instanceof DatabaseInventoryEdit inv) {
                     if(event.getCurrentItem() != null) {
+                        if(event.getClickedInventory() instanceof PlayerInventory) {
+                            event.setCancelled(false);
+                        }
                         Material clickedMat = event.getCurrentItem().getType();
                         int clickedSlot = event.getSlot();
                         switch (clickedSlot) {
@@ -816,7 +818,6 @@ public class InventoryClick implements Listener {
                 }
             } else {
                 CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-                user.getCMIPlayTime().getPlayDayOfToday().getTotalTime();
                 Inventory clickInv = event.getClickedInventory();
                 if (clickInv != null && !clickInv.isEmpty()) {
                     ItemStack fItem = clickInv.getItem(0);
@@ -1586,22 +1587,6 @@ public class InventoryClick implements Listener {
                                             }
                                         }
                                         break;
-                                }
-                            } else if (clickCheck == 0) {
-                                if (guiType.equalsIgnoreCase("tokenshop-edit")) {
-                                    if (event.isShiftClick()) {
-                                        if (event.getCurrentItem() != null && !event.getCurrentItem().getType().isAir()) {
-                                            ItemStack clickedItem = event.getCurrentItem();
-                                            ItemMeta cMeta = clickedItem.getItemMeta();
-                                            PersistentDataContainer cData = fMeta.getPersistentDataContainer();
-                                            NamespacedKey idKey = new NamespacedKey(plugin, "id");
-                                            if (cData.has(idKey, PersistentDataType.STRING)) {
-                                                event.setCancelled(true);
-                                                String itemId = cData.get(idKey, PersistentDataType.STRING);
-
-                                            }
-                                        }
-                                    }
                                 }
                             }
                         }
