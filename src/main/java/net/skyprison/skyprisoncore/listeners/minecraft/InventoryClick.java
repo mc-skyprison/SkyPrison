@@ -537,14 +537,119 @@ public class InventoryClick implements Listener {
                         }
                     }
                 } else if (customInv instanceof DatabaseInventory inv) {
-                    if(event.getCurrentItem() != null) {
-                        Material clickedMat = event.getCurrentItem().getType();
-                        if(clickedMat.isAir()) {
+                        if(event.getCurrentItem() == null && inv.getCanEdit()) {
+                            player.openInventory(new DatabaseInventoryEdit(plugin, db, player.getUniqueId(), -1, event.getSlot(), inv.getCategory()).getInventory());
+                        } else if(event.getCurrentItem() != null) {
+                            Material clickedMat = event.getCurrentItem().getType();
+                            if (!clickedMat.isAir() && clickedMat.isItem() && !clickedMat.equals(Material.BARRIER)) {
+                                HashMap<String, Object> item = inv.getItem(event.getSlot());
+                                if (item != null) {
+                                    String voucherType = (String) item.get("price_voucher_type");
+                                    boolean useMoney = ((int) item.get("price_money") != 0);
+                                    boolean useTokens = ((int) item.get("price_tokens") != 0);
+                                    boolean useVouchers = ((int) item.get("price_voucher") != 0 && !item.get("price_voucher_type").toString().equalsIgnoreCase("none"));
 
-                        } else if(clickedMat.isItem()) {
+                                    if (event.isShiftClick() && inv.getCanEdit() && !(useMoney && useTokens && useVouchers)) {
+                                        player.openInventory(new DatabaseInventoryEdit(plugin, db, player.getUniqueId(), (int) item.get("id"), event.getSlot(), inv.getCategory()).getInventory());
+                                    } else if (event.isShiftClick() && event.isLeftClick() && inv.getCanEdit() && (useMoney && useTokens && useVouchers)) {
+                                        player.openInventory(new DatabaseInventoryEdit(plugin, db, player.getUniqueId(), (int) item.get("id"), event.getSlot(), inv.getCategory()).getInventory());
+                                    } else {
+                                        boolean runCommands = true;
 
+                                        int moneyCost = (int) item.get("price_money");
+                                        int tokenCost = (int) item.get("price_tokens");
+                                        int voucherCost = (int) item.get("price_voucher");
+
+
+                                        boolean removeMoney = false;
+                                        boolean removeTokens = false;
+                                        boolean removeVoucher = false;
+
+                                        if (useMoney) {
+                                            boolean usingMoney = (!useTokens && !useVouchers) || event.isLeftClick() && !event.isShiftClick();
+                                            if (usingMoney) {
+                                                CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
+                                                if (moneyCost <= user.getBalance()) {
+                                                    removeMoney = true;
+                                                } else {
+                                                    player.sendMessage(Component.text("You can't afford this!", NamedTextColor.RED));
+                                                    runCommands = false;
+                                                }
+                                            }
+                                        }
+
+                                        if (useTokens) {
+                                            boolean usingTokens = (!useMoney && !useVouchers) || event.isRightClick() && !event.isShiftClick();
+                                            if (usingTokens) {
+                                                int tokens = plugin.tokens.getTokens(player.getUniqueId());
+                                                if (tokenCost <= tokens) {
+                                                    removeTokens = true;
+                                                } else {
+                                                    player.sendMessage(Component.text("You can't afford this!", NamedTextColor.RED));
+                                                    runCommands = false;
+                                                }
+                                            }
+                                        }
+
+                                        if (useVouchers) {
+                                            boolean usingVouchers = !useMoney && !useTokens
+                                                    || useMoney && !useTokens && event.isRightClick() && !event.isShiftClick()
+                                                    || !useMoney && event.isRightClick() && !event.isShiftClick()
+                                                    || useMoney && useTokens && event.isRightClick() && event.isShiftClick();
+
+                                            if (usingVouchers) {
+                                                if (plugin.hasVoucher(player, voucherType, voucherCost)) {
+                                                    removeVoucher = true;
+                                                } else {
+                                                    player.sendMessage(Component.text("You can't afford this!", NamedTextColor.RED));
+                                                    runCommands = false;
+                                                }
+                                            }
+                                        }
+
+                                        if (runCommands) {
+                                            String commandString = (String) item.get("commands");
+                                            if (commandString != null && !commandString.isEmpty() && !commandString.isBlank()) {
+                                                if(commandString.contains("give <player>") || commandString.contains("brew create")) {
+                                                    if(player.getInventory().firstEmpty() == -1) {
+                                                        player.sendMessage(Component.text("No available space in your inventory!", NamedTextColor.RED));
+                                                        return;
+                                                    }
+                                                }
+
+                                                List<String> commands = new ArrayList<>();
+                                                if(commandString.contains("<new_command>")) {
+                                                    commands = Arrays.stream(commandString.split("<new_command>")).toList();
+                                                } else {
+                                                    commands.add(commandString);
+                                                }
+                                                commands.forEach(command -> {
+                                                    command = command.replace("<player>", player.getName());
+                                                    plugin.asConsole(command);
+                                                });
+                                            }
+
+                                            if(removeMoney) {
+                                                plugin.asConsole("money take " + player.getName() + " " + moneyCost);
+                                            } else if(removeTokens) {
+                                                plugin.tokens.removeTokens(player.getUniqueId(), tokenCost, inv.getCategory(), clickedMat.toString());
+                                            } else if(removeVoucher) {
+                                                ItemStack voucher = Voucher.getVoucher(voucherType, voucherCost);
+                                                player.getInventory().removeItem(voucher);
+                                            }
+
+
+                                            CustomInv.addUses(player.getUniqueId(), (int) item.get("id"), db);
+                                            inv.updateUsage(player, event.getSlot());
+                                            inv.updateInventory(player);
+                                            player.openInventory(inv.getInventory());
+                                        }
+                                    }
+                                } else {
+                                    player.sendMessage(Component.text("ERROR! Couldn't find the item that was clicked!", NamedTextColor.RED));
+                                }
+                            }
                         }
-                    }
                 } else if (customInv instanceof DatabaseInventoryEdit inv) {
                     if(event.getCurrentItem() != null) {
                         Material clickedMat = event.getCurrentItem().getType();
@@ -597,6 +702,13 @@ public class InventoryClick implements Listener {
                                 player.sendMessage(Component.text("Type new max uses in chat: (Type 'cancel' to cancel, Type 0 for infinite)", NamedTextColor.YELLOW)
                                         .hoverEvent(HoverEvent.showText(Component.text("Click to paste current max uses to chat", NamedTextColor.GRAY)))
                                         .clickEvent(ClickEvent.suggestCommand(String.valueOf(inv.getMaxUses()))));
+                            }
+                            case 21 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("item-usage-lore", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new usage lore in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current usage lore to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getUsageLore())));
                             }
                             case 24 -> {
                                 plugin.chatLock.put(player.getUniqueId(), Arrays.asList("item-voucher-type", inv));
@@ -677,7 +789,7 @@ public class InventoryClick implements Listener {
                                 Component msg = Component.text("Are you sure you want to save this item?", NamedTextColor.GRAY)
                                         .append(Component.text("\nSAVE ITEM", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
                                             if (plugin.customItemChanges.contains(player.getUniqueId())) {
-                                                if(new News(plugin, db).saveMessage(inv)) {
+                                                if(new CustomInv(plugin, db).saveItem(inv)) {
                                                     plugin.customItemChanges.remove(player.getUniqueId());
                                                     HashMap<Integer, DatabaseInventoryEdit> itemEdits = plugin.itemEditing.get(player.getUniqueId());
                                                     itemEdits.remove(inv.getItemId());

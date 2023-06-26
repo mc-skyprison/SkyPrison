@@ -84,10 +84,14 @@ public class ItemLore implements CommandExecutor { // /itemlore
             loreInfo.add("edit-lore");
             loreInfo.add(heldItem);
             loreInfo.add(line);
+            String loreLine = MiniMessage.miniMessage().serialize(Objects.requireNonNull(currHeldItem.lore()).get(line - 1));
+            if(loreLine.startsWith("<!italic>")) {
+                loreLine = loreLine.substring(9);
+            }
             plugin.chatLock.put(player.getUniqueId(), loreInfo);
             player.sendMessage(Component.text("Type new lore line in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
                     .hoverEvent(HoverEvent.showText(Component.text("Click to paste current line to chat", NamedTextColor.GRAY)))
-                    .clickEvent(ClickEvent.suggestCommand(MiniMessage.miniMessage().serialize(Objects.requireNonNull(currHeldItem.lore()).get(line - 1)))));
+                    .clickEvent(ClickEvent.suggestCommand(loreLine)));
         } else {
             player.sendMessage(Component.text("Item in hand has changed! Cancelling..", NamedTextColor.RED));
         }

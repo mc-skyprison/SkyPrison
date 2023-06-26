@@ -1,7 +1,5 @@
 package net.skyprison.skyprisoncore.commands.economy;
 
-import com.Zrips.CMI.CMI;
-import com.Zrips.CMI.Containers.CMIUser;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -32,16 +30,12 @@ import java.util.*;
 public class Tokens implements CommandExecutor {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
-
     public Tokens(SkyPrisonCore plugin, DatabaseHook db) {
         this.plugin = plugin;
         this.db = db;
     }
-
     private final Component prefix = Component.text("Tokens", NamedTextColor.AQUA).append(Component.text(" » ", NamedTextColor.DARK_GRAY));
-
-
-    private void sendHelpMessage(Player player) {
+    private void sendHelpMessage(CommandSender sender) {
         Component helpMsg = Component.text("");
         helpMsg = helpMsg.append(Component.text("━━━━━━━━━━━━━━━━━|", NamedTextColor.DARK_GRAY, TextDecoration.STRIKETHROUGH)).append(Component.text(" Tokens ", NamedTextColor.AQUA))
                 .append(Component.text("|━━━━━━━━━━━━━━━━━━", NamedTextColor.DARK_GRAY, TextDecoration.STRIKETHROUGH));
@@ -56,28 +50,26 @@ public class Tokens implements CommandExecutor {
                         .append(Component.text("Displays the top token balances", NamedTextColor.GRAY)));
 
 
-        if(player.hasPermission("skyprisoncore.command.tokens.admin")) {
-            helpMsg = helpMsg.append(Component.text("\n/tokens add <player> <anount>", NamedTextColor.AQUA).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
+        if(sender.hasPermission("skyprisoncore.command.tokens.admin")) {
+            helpMsg = helpMsg.append(Component.text("\n/tokens add <player> <amount>", NamedTextColor.AQUA).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
                             .append(Component.text("Adds tokens to the specified player", NamedTextColor.GRAY)))
 
-                    .append(Component.text("\n/tokens remove <player> <anount>", NamedTextColor.AQUA).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
+                    .append(Component.text("\n/tokens remove <player> <amount>", NamedTextColor.AQUA).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
                             .append(Component.text("Removes tokens from the specified player", NamedTextColor.GRAY)))
 
-                    .append(Component.text("\n/tokens set <player> <anount>", NamedTextColor.AQUA).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
+                    .append(Component.text("\n/tokens set <player> <amount>", NamedTextColor.AQUA).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
                             .append(Component.text("Sets the tokens of the specified player to the specified amount", NamedTextColor.GRAY)))
 
                     .append(Component.text("\n/tokens giveall <amount>", NamedTextColor.AQUA).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
                             .append(Component.text("Gives tokens of the specified amount to everyone online", NamedTextColor.GRAY)));
         }
-        player.sendMessage(helpMsg);
+        sender.sendMessage(helpMsg);
     }
-
-
     public void addTokens(UUID pUUID, Integer amount, String type, String source) {
         Player player = Bukkit.getPlayer(pUUID);
         if(player != null && player.isOnline()) {
-            int tokens = amount;
-            tokens += plugin.tokensData.get(pUUID);
+            int tokens = plugin.tokensData.get(pUUID);
+            tokens += amount;
             plugin.tokensData.put(pUUID, tokens);
             player.sendMessage(prefix.append(Component.text(plugin.formatNumber(amount) + " tokens ", NamedTextColor.AQUA).append(Component.text("has been added to your balance", NamedTextColor.GRAY))));
         } else {
@@ -116,6 +108,75 @@ public class Tokens implements CommandExecutor {
             pData.close();
         }
     }
+    public void removeTokens(UUID pUUID, Integer amount, String type, String source) {
+        Player player = Bukkit.getPlayer(pUUID);
+        if(player != null && player.isOnline()) {
+            int tokens = plugin.tokensData.get(pUUID);
+            tokens -= amount;
+            plugin.tokensData.put(pUUID, Math.max(tokens, 0));
+            player.sendMessage(prefix.append(Component.text(plugin.formatNumber(amount) + " tokens ", NamedTextColor.AQUA)
+                    .append(Component.text("was removed from your balance", NamedTextColor.GRAY))));
+        } else {
+            int tokens = getTokens(pUUID);
+            
+            tokens -= amount;
+            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET tokens = ? WHERE user_id = ?")) {
+                ps.setInt(1, Math.max(tokens, 0));
+                ps.setString(2, pUUID.toString());
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        File f = new File(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions" + File.separator + pUUID + ".log");
+        FileWriter fData = null;
+        try {
+            fData = new FileWriter(f, true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if(fData != null) {
+            PrintWriter pData = new PrintWriter(fData);
+
+            Long date = System.currentTimeMillis();
+            // Date ; remove/receive ; amount ; type ; what bought if tokenshop
+            if (type.isEmpty()) {
+                pData.println(date + ";remove;" + amount + ";Other Removals;null");
+            } else {
+                if (source.isEmpty()) {
+                    pData.println(date + ";remove;" + amount + ";" + type + ";null");
+                } else {
+                    pData.println(date + ";remove;" + amount + ";" + type + ";" + source);
+                }
+            }
+
+            pData.flush();
+            pData.close();
+        }
+    }
+
+    public int getTokens(UUID pUUID) {
+        int tokens = 0;
+
+        if(plugin.tokensData.containsKey(pUUID)) {
+            tokens = plugin.tokensData.get(pUUID);
+        } else {
+            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = ?")) {
+                ps.setString(1, pUUID.toString());
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    tokens = rs.getInt(1);
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return tokens;
+    }
+
+
 
     public void openCheckGUI(Player player, int page, String sortMethod) {
         // date ; amount ; tokens ;  type ; source
@@ -347,8 +408,6 @@ public class Tokens implements CommandExecutor {
         }
         player.openInventory(shopLogInv);
     }
-
-
     public void openHistoryGUI(Player player, Boolean sort, int toggle, Integer page, String playerId) {
         File f = new File(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions" + File.separator + playerId + ".log");
         // Date ; remove/receive ; amount ; type ; what bought if tokenshop
@@ -543,12 +602,11 @@ public class Tokens implements CommandExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
-        if(sender instanceof Player player) {
             if(args.length > 0) {
                 switch (args[0].toLowerCase()) {
-                    case "help" -> sendHelpMessage(player);
+                    case "help" -> sendHelpMessage(sender);
                     case "giveall" -> {
-                        if (player.hasPermission("skyprisoncore.command.tokens.admin")) {
+                        if (sender.hasPermission("skyprisoncore.command.tokens.admin")) {
                             if (args.length > 1) {
                                 if (plugin.isInt(args[1])) {
                                     if (Integer.parseInt(args[1]) >= 0) {
@@ -566,26 +624,26 @@ public class Tokens implements CommandExecutor {
                                         for (Player oPlayer : Bukkit.getOnlinePlayers()) {
                                             addTokens(oPlayer.getUniqueId(), Integer.parseInt(args[1]), type, source);
                                         }
-                                        player.sendMessage(prefix.append(Component.text("Added ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(Integer.parseInt(args[1])) + " tokens ",
+                                        sender.sendMessage(prefix.append(Component.text("Added ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(Integer.parseInt(args[1])) + " tokens ",
                                                 NamedTextColor.AQUA).append(Component.text("to everyone online", NamedTextColor.GRAY)))));
                                     } else {
-                                        player.sendMessage(Component.text("The number must be positive!", NamedTextColor.RED));
+                                        sender.sendMessage(Component.text("The number must be positive!", NamedTextColor.RED));
                                     }
                                 } else {
-                                    player.sendMessage(Component.text("The amount must be a number!", NamedTextColor.RED));
+                                    sender.sendMessage(Component.text("The amount must be a number!", NamedTextColor.RED));
                                 }
                             } else {
-                                player.sendMessage(Component.text("Incorrect Usage! /tokens giveall <amount>", NamedTextColor.RED));
+                                sender.sendMessage(Component.text("Incorrect Usage! /tokens giveall <amount>", NamedTextColor.RED));
                             }
                         } else {
-                            player.sendMessage(Component.text("Error: ", NamedTextColor.DARK_RED).append(Component.text("You do not have permission to execute this command...", NamedTextColor.RED)));
+                            sender.sendMessage(Component.text("Error: ", NamedTextColor.DARK_RED).append(Component.text("You do not have permission to execute this command...", NamedTextColor.RED)));
                         }
                     }
                     case "add" -> {
-                        if (player.hasPermission("skyprisoncore.command.tokens.admin")) {
+                        if (sender.hasPermission("skyprisoncore.command.tokens.admin")) {
                             if (args.length > 2) {
-                                if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
-                                    CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
+                                UUID pUUID = plugin.getPlayer(args[1]);
+                                if (pUUID != null) {
                                     if (plugin.isInt(args[2])) {
                                         if (Integer.parseInt(args[2]) >= 0) {
                                             String type = "";
@@ -599,264 +657,199 @@ public class Tokens implements CommandExecutor {
                                                 source = args[4].replace("_", " ");
                                             }
 
-                                            addTokens(oPlayer.getUniqueId(), Integer.parseInt(args[2]), type, source);
-                                            player.sendMessage(prefix.append(Component.text("Added ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(Integer.parseInt(args[2])) + " tokens ",
-                                                    NamedTextColor.AQUA).append(Component.text("to " + oPlayer.getName(), NamedTextColor.GRAY)))));
+                                            addTokens(pUUID, Integer.parseInt(args[2]), type, source);
+                                            sender.sendMessage(prefix.append(Component.text("Added ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(Integer.parseInt(args[2])) + " tokens ",
+                                                    NamedTextColor.AQUA).append(Component.text("to " + args[1], NamedTextColor.GRAY)))));
                                         } else {
-                                            player.sendMessage(Component.text("The number must be positive!", NamedTextColor.RED));
+                                            sender.sendMessage(Component.text("The number must be positive!", NamedTextColor.RED));
                                         }
                                     } else {
-                                        player.sendMessage(Component.text("The amount must be a number!", NamedTextColor.RED));
+                                        sender.sendMessage(Component.text("The amount must be a number!", NamedTextColor.RED));
                                     }
+                                } else {
+                                    sender.sendMessage(Component.text("No player with that name exists!", NamedTextColor.RED));
                                 }
                             } else {
-                                player.sendMessage(Component.text("Incorrect Usage! /tokens add <player> <amount>", NamedTextColor.RED));
+                                sender.sendMessage(Component.text("Incorrect Usage! /tokens add <player> <amount>", NamedTextColor.RED));
                             }
                         } else {
-                            player.sendMessage(Component.text("Error: ", NamedTextColor.DARK_RED).append(Component.text("You do not have permission to execute this command...", NamedTextColor.RED)));
+                            sender.sendMessage(Component.text("Error: ", NamedTextColor.DARK_RED).append(Component.text("You do not have permission to execute this command...", NamedTextColor.RED)));
                         }
                     }
                     case "remove" -> {
-                        if (player.hasPermission("skyprisoncore.command.tokens.admin")) {
+                        if (sender.hasPermission("skyprisoncore.command.tokens.admin")) {
                             if (args.length > 2) {
-                                if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
-                                    CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
-                                    if (oPlayer.isOnline()) {
-                                        int tokens = plugin.tokensData.get(oPlayer.getUniqueId());
-                                        if (tokens != 0) {
-                                            if (plugin.isInt(args[2])) {
-                                                tokens -= Integer.parseInt(args[2]);
-                                                plugin.tokensData.put(oPlayer.getUniqueId(), Math.max(tokens, 0));
-                                                player.sendMessage(prefix.append(Component.text("Removed ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(Integer.parseInt(args[2])) + " tokens ",
-                                                                NamedTextColor.AQUA).append(Component.text("from " + oPlayer.getName(), NamedTextColor.GRAY)))));
-                                                oPlayer.getPlayer().sendMessage(prefix.append(Component.text(plugin.formatNumber(Integer.parseInt(args[2])) + " tokens ", NamedTextColor.AQUA)
-                                                        .append(Component.text("was removed from your balance", NamedTextColor.GRAY))));
+                                UUID pUUID = plugin.getPlayer(args[1]);
+                                if (pUUID != null) {
+                                    if (plugin.isInt(args[2])) {
+                                        int amount = Integer.parseInt(args[2]);
+                                        if (amount >= 0) {
+                                            String type = "";
+                                            String source = "";
 
-                                                File f = new File(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions" + File.separator + oPlayer.getUniqueId() + ".log");
-                                                FileWriter fData = null;
-                                                try {
-                                                    fData = new FileWriter(f, true);
-                                                } catch (IOException e) {
-                                                    e.printStackTrace();
-                                                }
-                                                if(fData != null) {
-                                                    PrintWriter pData = new PrintWriter(fData);
-
-                                                    Long date = System.currentTimeMillis();
-                                                    // Date ; remove/receive ; amount ; type ; what bought if tokenshop
-                                                    if (args.length == 3) {
-                                                        pData.println(date + ";remove;" + args[2] + ";Other Removals;null");
-                                                    } else {
-                                                        String type = args[3].replace("_", " ");
-
-                                                        if (args.length == 4) {
-                                                            pData.println(date + ";remove;" + args[2] + ";" + type + ";null");
-                                                        } else {
-                                                            String source = args[4].replace("_", " ");
-                                                            pData.println(date + ";remove;" + args[2] + ";" + type + ";" + source);
-                                                        }
-                                                    }
-
-                                                    pData.flush();
-                                                    pData.close();
-                                                }
-                                            } else {
-                                                player.sendMessage(Component.text("The amount must be a number!", NamedTextColor.RED));
+                                            if (args.length > 3) {
+                                                type = args[3].replace("_", " ");
                                             }
+
+                                            if (args.length > 4) {
+                                                source = args[4].replace("_", " ");
+                                            }
+
+                                            removeTokens(pUUID, amount, type, source);
+                                            sender.sendMessage(prefix.append(Component.text("Removed ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(amount) + " tokens ",
+                                                            NamedTextColor.AQUA).append(Component.text("from " + args[1], NamedTextColor.GRAY)))));
                                         } else {
-                                            player.sendMessage(Component.text("You can't remove tokens from soneone with 0 tokens!", NamedTextColor.RED));
+                                            sender.sendMessage(Component.text("The number must be positive!", NamedTextColor.RED));
                                         }
                                     } else {
-                                        if (plugin.isInt(args[2])) {
-                                            int tokens = 0;
-                                            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = ?")) {
-                                                ps.setString(1, oPlayer.getUniqueId().toString());
-                                                ResultSet rs = ps.executeQuery();
-                                                if (rs.next()) {
-                                                    tokens = rs.getInt(1);
-                                                    tokens -= Integer.parseInt(args[2]);
-                                                    tokens = Math.max(tokens, 0);
+                                        sender.sendMessage(Component.text("The amount must be a number!", NamedTextColor.RED));
+                                    }
+                                } else {
+                                    sender.sendMessage(Component.text("No player with that name exists!", NamedTextColor.RED));
+                                }
+                            } else {
+                                sender.sendMessage(Component.text("Incorrect Usage! /tokens remove <player> <amount>", NamedTextColor.RED));
+                            }
+                        } else {
+                            sender.sendMessage(Component.text("Error: ", NamedTextColor.DARK_RED).append(Component.text("You do not have permission to execute this command...", NamedTextColor.RED)));
+                        }
+                    }
+                    case "history" -> { // /tokens history (player)
+                        if(sender instanceof Player player) {
+                            if (args.length == 1) {
+                                openHistoryGUI(player, false, 1, 1, player.getUniqueId().toString());
+                            } else if (args.length == 2) {
+                                if (player.hasPermission("skyprisoncore.command.tokens.admin")) {
+                                    UUID pUUID = plugin.getPlayer(args[1]);
+                                    if (pUUID != null) {
+                                        openHistoryGUI(player, false, 1, 1, pUUID.toString());
+                                    } else {
+                                        player.sendMessage(Component.text("No player with that name exists!", NamedTextColor.RED));
+                                    }
+                                } else {
+                                    player.sendMessage(Component.text("Error: ", NamedTextColor.DARK_RED).append(Component.text("You do not have permission to execute this command...", NamedTextColor.RED)));
+                                }
+                            } else {
+                                player.sendMessage(Component.text("Incorrect Usage! /tokens history", NamedTextColor.RED));
+                            }
+                        } else {
+                            sender.sendMessage(Component.text("This command can only be used in game!", NamedTextColor.RED));
+                        }
+                    }
+                    case "check" -> { // /tokens check (player)
+                        if(sender instanceof Player player) {
+                            if (player.hasPermission("skyprisoncore.command.tokens.admin")) {
+                                LinkedHashMap<String, Integer> tokenLogAmount = new LinkedHashMap<>();
+                                LinkedHashMap<String, Integer> tokenLogUsage = new LinkedHashMap<>();
+                                LinkedHashMap<String, Integer> tokenLogPage = new LinkedHashMap<>();
+
+                                ArrayList<String> tokenLogs = new ArrayList<>();
+                                if (args.length > 1) {
+                                    UUID pUUID = plugin.getPlayer(args[1]);
+                                    if (pUUID != null) {
+                                        try {
+                                            FileInputStream fstream = new FileInputStream(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions" + File.separator + pUUID + ".log");
+                                            BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
+                                            String strLine;
+                                            // Date ; remove/receive ; amount ; type ; source
+                                            while ((strLine = br.readLine()) != null) {
+                                                if (strLine.split(";")[1].equalsIgnoreCase("receive")) {
+                                                    tokenLogs.add(strLine);
                                                 }
-                                            } catch (SQLException e) {
-                                                e.printStackTrace();
                                             }
-
-                                            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET tokens = ? WHERE user_id = ?")) {
-                                                ps.setInt(1, tokens);
-                                                ps.setString(2, oPlayer.getUniqueId().toString());
-                                                ps.executeUpdate();
-
-                                                player.sendMessage(prefix.append(Component.text("Removed ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(Integer.parseInt(args[2])) + " tokens ",
-                                                        NamedTextColor.AQUA).append(Component.text("from " + oPlayer.getName(), NamedTextColor.GRAY)))));
-
-                                                File f = new File(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions" + File.separator + oPlayer.getUniqueId() + ".log");
-                                                FileWriter fData = null;
-                                                try {
-                                                    fData = new FileWriter(f, true);
-                                                } catch (IOException e) {
-                                                    e.printStackTrace();
+                                            fstream.close();
+                                        } catch (Exception e) {
+                                            e.printStackTrace();}
+                                    }
+                                } else {
+                                    File folder = new File(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions");
+                                    for (File f : Objects.requireNonNull(folder.listFiles())) {
+                                        try {
+                                            FileInputStream fstream = new FileInputStream(f);
+                                            BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
+                                            String strLine;
+                                            // Date ; remove/receive ; amount ; type ; source
+                                            while ((strLine = br.readLine()) != null) {
+                                                if (strLine.split(";")[1].equalsIgnoreCase("receive")) {
+                                                    tokenLogs.add(strLine);
                                                 }
-                                                if (fData != null) {
-                                                    PrintWriter pData = new PrintWriter(fData);
-                                                    Long date = System.currentTimeMillis();
-                                                    // Date ; remove/receive ; amount ; type ; what bought if tokenshop
-                                                    if (args.length == 3) {
-                                                        pData.println(date + ";remove;" + args[2] + ";Other Removals;null");
-                                                    } else {
-                                                        String type = args[3].replace("_", " ");
-
-                                                        if (args.length == 4) {
-                                                            pData.println(date + ";remove;" + args[2] + ";" + type + ";null");
-                                                        } else {
-                                                            String source = args[4].replace("_", " ");
-                                                            pData.println(date + ";remove;" + args[2] + ";" + type + ";" + source);
-                                                        }
-                                                    }
-                                                    pData.flush();
-                                                    pData.close();
-                                                }
-                                            } catch (SQLException e) {
-                                                e.printStackTrace();
                                             }
-                                        } else {
-                                            player.sendMessage(Component.text("The amount must be a number!", NamedTextColor.RED));
+                                            fstream.close();
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
                                         }
                                     }
                                 }
-                            } else {
-                                player.sendMessage(Component.text("Incorrect Usage! /tokens remove <player> <amount>", NamedTextColor.RED));
-                            }
-                        } else {
-                            player.sendMessage(Component.text("Error: ", NamedTextColor.DARK_RED).append(Component.text("You do not have permission to execute this command...", NamedTextColor.RED)));
-                        }
-                    }
-                    case "history" -> { // /token history (player)
-                        if (args.length == 1) {
-                            openHistoryGUI(player, false, 1, 1, player.getUniqueId().toString());
-                        } else if (args.length == 2) {
-                            if (player.hasPermission("skyprisoncore.command.tokens.admin")) {
-                                if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
-                                    CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
-                                    openHistoryGUI(player, false, 1, 1, oPlayer.getUniqueId().toString());
-                                } else {
-                                    player.sendMessage(Component.text("No player with that name exists!", NamedTextColor.RED));
+
+                                int page = 0;
+                                int i = 0;
+                                for (String strLine : tokenLogs) {
+                                    String[] str = strLine.split(";");
+                                    // Date ; remove/receive ; amount ; type ; source
+                                    int tokenAmount = Integer.parseInt(str[2]);
+
+                                    String source = str[3].toLowerCase() + ";" + str[4].toLowerCase();
+
+                                    if (tokenLogAmount.containsKey(source)) {
+                                        int newNum = tokenAmount + tokenLogAmount.get(source);
+                                        tokenLogAmount.put(source, newNum);
+                                    } else {
+                                        tokenLogAmount.put(source, tokenAmount);
+                                        if (i == 45) {
+                                            page = 1 + page;
+                                            i = 0;
+                                        }
+                                        tokenLogPage.put(source, page);
+                                        i++;
+                                    }
+
+                                    if (tokenLogUsage.containsKey(source)) {
+                                        int newNum = 1 + tokenLogUsage.get(source);
+                                        tokenLogUsage.put(source, newNum);
+                                    } else {
+                                        tokenLogUsage.put(source, 1);
+                                    }
                                 }
+
+                                plugin.tokenLogAmountPlayer.put(player.getUniqueId(), tokenLogAmount);
+                                plugin.tokenLogUsagePlayer.put(player.getUniqueId(), tokenLogUsage);
+                                plugin.tokenLogPagePlayer.put(player.getUniqueId(), tokenLogPage);
+                                openCheckGUI(player, 0, "default");
                             } else {
                                 player.sendMessage(Component.text("Error: ", NamedTextColor.DARK_RED).append(Component.text("You do not have permission to execute this command...", NamedTextColor.RED)));
                             }
                         } else {
-                            player.sendMessage(Component.text("Incorrect Usage! /tokens history", NamedTextColor.RED));
-                        }
-                    }
-                    case "check" -> { // /token check (player)
-                        if (player.hasPermission("skyprisoncore.command.tokens.admin")) {
-                            LinkedHashMap<String, Integer> tokenLogAmount = new LinkedHashMap<>();
-                            LinkedHashMap<String, Integer> tokenLogUsage = new LinkedHashMap<>();
-                            LinkedHashMap<String, Integer> tokenLogPage = new LinkedHashMap<>();
-
-                            ArrayList<String> tokenLogs = new ArrayList<>();
-                            if (args.length > 1) {
-                                if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
-                                    CMIUser user = CMI.getInstance().getPlayerManager().getUser(args[1]);
-                                    try {
-                                        FileInputStream fstream = new FileInputStream(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions" + File.separator + user.getUniqueId() + ".log");
-                                        BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
-                                        String strLine;
-                                        // Date ; remove/receive ; amount ; type ; source
-                                        while ((strLine = br.readLine()) != null) {
-                                            if (strLine.split(";")[1].equalsIgnoreCase("receive")) {
-                                                tokenLogs.add(strLine);
-                                            }
-                                        }
-                                        fstream.close();
-                                    } catch (Exception e) {
-                                        e.printStackTrace();}
-                                }
-                            } else {
-                                File folder = new File(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions");
-                                for (File f : Objects.requireNonNull(folder.listFiles())) {
-                                    try {
-                                        FileInputStream fstream = new FileInputStream(f);
-                                        BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
-                                        String strLine;
-                                        // Date ; remove/receive ; amount ; type ; source
-                                        while ((strLine = br.readLine()) != null) {
-                                            if (strLine.split(";")[1].equalsIgnoreCase("receive")) {
-                                                tokenLogs.add(strLine);
-                                            }
-                                        }
-                                        fstream.close();
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
-
-                            int page = 0;
-                            int i = 0;
-                            for (String strLine : tokenLogs) {
-                                String[] str = strLine.split(";");
-                                // Date ; remove/receive ; amount ; type ; source
-                                int tokenAmount = Integer.parseInt(str[2]);
-
-                                String source = str[3].toLowerCase() + ";" + str[4].toLowerCase();
-
-                                if (tokenLogAmount.containsKey(source)) {
-                                    int newNum = tokenAmount + tokenLogAmount.get(source);
-                                    tokenLogAmount.put(source, newNum);
-                                } else {
-                                    tokenLogAmount.put(source, tokenAmount);
-                                    if (i == 45) {
-                                        page = 1 + page;
-                                        i = 0;
-                                    }
-                                    tokenLogPage.put(source, page);
-                                    i++;
-                                }
-
-                                if (tokenLogUsage.containsKey(source)) {
-                                    int newNum = 1 + tokenLogUsage.get(source);
-                                    tokenLogUsage.put(source, newNum);
-                                } else {
-                                    tokenLogUsage.put(source, 1);
-                                }
-                            }
-
-                            plugin.tokenLogAmountPlayer.put(player.getUniqueId(), tokenLogAmount);
-                            plugin.tokenLogUsagePlayer.put(player.getUniqueId(), tokenLogUsage);
-                            plugin.tokenLogPagePlayer.put(player.getUniqueId(), tokenLogPage);
-                            openCheckGUI(player, 0, "default");
-                        } else {
-                            player.sendMessage(Component.text("Error: ", NamedTextColor.DARK_RED).append(Component.text("You do not have permission to execute this command...", NamedTextColor.RED)));
+                            sender.sendMessage(Component.text("This command can only be used in game!", NamedTextColor.RED));
                         }
                     }
                     case "set" -> {
-                        if (player.hasPermission("skyprisoncore.command.tokens.admin")) {
+                        if (sender.hasPermission("skyprisoncore.command.tokens.admin")) {
                             if (args.length > 2) {
-                                if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
-                                    CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
+                                UUID pUUID = plugin.getPlayer(args[1]);
+                                if (pUUID != null) {
                                     if (plugin.isInt(args[2])) {
                                         if (Integer.parseInt(args[2]) >= 0) {
-                                            if (oPlayer.isOnline()) {
-                                                plugin.tokensData.put(oPlayer.getUniqueId(), Integer.parseInt(args[2]));
-                                                player.sendMessage(prefix.append(Component.text("Set " + oPlayer.getName() + "'s tokens to ", NamedTextColor.GRAY)
+                                            Player player = Bukkit.getPlayer(pUUID);
+                                            if (player != null && player.isOnline()) {
+                                                plugin.tokensData.put(player.getUniqueId(), Integer.parseInt(args[2]));
+                                                sender.sendMessage(prefix.append(Component.text("Set " + player.getName() + "'s tokens to ", NamedTextColor.GRAY)
                                                         .append(Component.text(plugin.formatNumber(Integer.parseInt(args[2])) + " tokens", NamedTextColor.AQUA))));
-                                                oPlayer.getPlayer().sendMessage(prefix.append(Component.text("Your token balance was set to ", NamedTextColor.GRAY)
+                                                player.sendMessage(prefix.append(Component.text("Your balance was set to ", NamedTextColor.GRAY)
                                                         .append(Component.text(plugin.formatNumber(Integer.parseInt(args[2])) + " tokens", NamedTextColor.AQUA))));
                                             } else {
                                                 try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET tokens = ? WHERE user_id = ?")) {
                                                     ps.setInt(1, Integer.parseInt(args[2]));
-                                                    ps.setString(2, oPlayer.getUniqueId().toString());
+                                                    ps.setString(2, pUUID.toString());
                                                     ps.executeUpdate();
-                                                    player.sendMessage(prefix.append(Component.text("Set " + oPlayer.getName() + "'s tokens to ", NamedTextColor.GRAY)
-                                                            .append(Component.text(plugin.formatNumber(Integer.parseInt(args[2])) + " tokens", NamedTextColor.AQUA))));
+                                                    sender.sendMessage(prefix.append(Component.text("Set " + args[1] + "'s tokens to ", NamedTextColor.GRAY)
+                                                            .append(Component.text(plugin.formatNumber(Integer.parseInt(args[2])), NamedTextColor.AQUA))));
                                                 } catch (SQLException e) {
                                                     e.printStackTrace();
                                                 }
 
                                             }
 
-                                            File f = new File(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions" + File.separator + oPlayer.getUniqueId() + ".log");
+                                            File f = new File(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions" + File.separator + pUUID + ".log");
                                             FileWriter fData = null;
                                             try {
                                                 fData = new FileWriter(f, true);
@@ -873,344 +866,55 @@ public class Tokens implements CommandExecutor {
                                                 pData.close();
                                             }
                                         } else {
-                                            player.sendMessage(Component.text("You can't set the token balance to a negative number!", NamedTextColor.RED));
+                                            sender.sendMessage(Component.text("You can't set the token balance to a negative number!", NamedTextColor.RED));
                                         }
-                                    } else {
-                                        player.sendMessage(Component.text("The amount must be a number!", NamedTextColor.RED));
-                                    }
-                                }
-                            } else {
-                                player.sendMessage(Component.text("Incorrect Usage! /tokens set <player> <amount>", NamedTextColor.RED));
-                            }
-                        } else {
-                            player.sendMessage(Component.text("Error: ", NamedTextColor.DARK_RED).append(Component.text("You do not have permission to execute this command...", NamedTextColor.RED)));
-                        }
-                    }
-                    case "balance", "bal" -> {
-                        if (args.length > 1) {
-                            if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
-                                CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
-                                if (oPlayer.isOnline()) {
-                                    player.sendMessage(prefix.append(Component.text(oPlayer.getName() + "'s token balance is ", NamedTextColor.GRAY)
-                                            .append(Component.text(plugin.formatNumber(plugin.tokensData.get(oPlayer.getUniqueId())) + " tokens", NamedTextColor.AQUA))));
-                                } else {
-                                    try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = ?")) {
-                                        ps.setString(1, oPlayer.getUniqueId().toString());
-                                        ResultSet rs = ps.executeQuery();
-                                        if (rs.next()) {
-                                            player.sendMessage(prefix.append(Component.text(oPlayer.getName() + "'s token balance is ", NamedTextColor.GRAY)
-                                                    .append(Component.text(plugin.formatNumber(rs.getInt(1)) + " tokens", NamedTextColor.AQUA))));
-                                        } else {
-                                            player.sendMessage(prefix.append(Component.text(oPlayer.getName() + "'s token balance is ", NamedTextColor.GRAY)
-                                                    .append(Component.text("0 tokens", NamedTextColor.AQUA))));
-                                        }
-                                    } catch (SQLException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            } else {
-                                player.sendMessage(Component.text("Player does not exist!", NamedTextColor.RED));
-                            }
-                        } else {
-                            player.sendMessage(prefix.append(Component.text("Your token balance is ", NamedTextColor.GRAY)
-                                    .append(Component.text(plugin.formatNumber(plugin.tokensData.get(player.getUniqueId())) + " tokens", NamedTextColor.AQUA))));
-                        }
-                    }
-                    case "shop" -> { // /token shop (page/edit)
-                        if (args.length > 1) {
-                            if (plugin.isInt(args[1])) {
-                                int page = Integer.parseInt(args[1]);
-                                if (page > 3) page = 1;
-                                //openShopGUI(player, page);
-                            } else if (args[1].equalsIgnoreCase("edit")) {
-                                if (player.hasPermission("skyprisoncore.command.tokens.admin")) {
-                                    if (args.length > 2) {
-                                        if (plugin.isInt(args[2])) {
-                                            int page = Integer.parseInt(args[2]);
-                                            if (page > 3) page = 1;
-                                            //openShopEditGUI(player, page);
-                                        } else {
-                                            player.sendMessage(Component.text("Incorrect Usage! /token shop edit (page)", NamedTextColor.RED));
-                                        }
-                                    } else {
-                                        //openShopEditGUI(player, 1);
-                                    }
-                                } else {
-                                    player.sendMessage(Component.text("Incorrect Usage! /token shop (page)", NamedTextColor.RED));
-                                }
-                            } else {
-                                player.sendMessage(Component.text("Incorrect Usage! /token shop (page)", NamedTextColor.RED));
-                            }
-                        } else {
-                            //openShopGUI(player, 1);
-                        }
-                    }
-                    case "top" -> player.chat("/lb tokens");
-                }
-            } else {
-                sendHelpMessage(player);
-            }
-        } else {
-            if(args.length > 0) {
-                switch (args[0].toLowerCase()) {
-                    case "giveall" -> {
-                        if (args.length > 1) {
-                            if (plugin.isInt(args[1])) {
-                                if (Integer.parseInt(args[1]) >= 0) {
-                                    for (Player oPlayer : Bukkit.getOnlinePlayers()) {
-                                        String type = "";
-                                        String source = "";
-
-                                        if (args.length > 2) {
-                                            type = args[2].replace("_", " ");
-                                        }
-
-                                        if (args.length > 3) {
-                                            source = args[3].replace("_", " ");
-                                        }
-
-                                        addTokens(oPlayer.getUniqueId(), Integer.parseInt(args[1]), type, source);
-                                    }
-                                    sender.sendMessage(prefix.append(Component.text("Added ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(Integer.parseInt(args[1])) + " tokens ",
-                                            NamedTextColor.AQUA).append(Component.text("to everyone online", NamedTextColor.GRAY)))));       
-                                } else {
-                                    sender.sendMessage(Component.text("The number must be positive!", NamedTextColor.RED));
-                                }
-                            } else {
-                                sender.sendMessage(Component.text("The amount must be a number!", NamedTextColor.RED));
-                            }
-                        } else {
-                            sender.sendMessage(Component.text("Incorrect Usage! /tokens giveall <amount>", NamedTextColor.RED));
-                        }
-                    }
-                    case "add" -> {
-                        if (args.length > 2) {
-                            if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
-                                CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
-                                if (plugin.isInt(args[2])) {
-                                    if (Integer.parseInt(args[2]) >= 0) {
-                                        String type = "";
-                                        String source = "";
-
-                                        if (args.length > 3) {
-                                            type = args[3].replace("_", " ");
-                                        }
-
-                                        if (args.length > 4) {
-                                            source = args[4].replace("_", " ");
-                                        }
-
-                                        addTokens(oPlayer.getUniqueId(), Integer.parseInt(args[2]), type, source);
-                                        sender.sendMessage(prefix.append(Component.text("Added ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(Integer.parseInt(args[2])) + " tokens ",
-                                                NamedTextColor.AQUA).append(Component.text("to " + oPlayer.getName(), NamedTextColor.GRAY)))));
-                                    } else {
-                                        sender.sendMessage(Component.text("The number must be positive!", NamedTextColor.RED));
-                                    }
-                                } else {
-                                    sender.sendMessage(Component.text("The amount must be a number!", NamedTextColor.RED));
-                                }
-                            }
-                        } else {
-                            sender.sendMessage(Component.text("Incorrect Usage! /tokens add <player> <amount>", NamedTextColor.RED));
-                        }
-                    }
-                    case "remove" -> {
-                        if (args.length > 2) {
-                            if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
-                                CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
-                                if (oPlayer.isOnline()) {
-                                    int tokens = plugin.tokensData.get(oPlayer.getUniqueId());
-                                    if (tokens != 0) {
-                                        if (plugin.isInt(args[2])) {
-                                            tokens -= Integer.parseInt((args[2]));
-                                            plugin.tokensData.put(oPlayer.getUniqueId(), Math.max(tokens, 0));
-                                            sender.sendMessage(prefix.append(Component.text("Removed ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(Integer.parseInt(args[2])) + " tokens ",
-                                                    NamedTextColor.AQUA).append(Component.text("from " + oPlayer.getName(), NamedTextColor.GRAY)))));
-                                            oPlayer.getPlayer().sendMessage(prefix.append(Component.text(plugin.formatNumber(Integer.parseInt(args[2])) + " tokens ", NamedTextColor.AQUA)
-                                                    .append(Component.text("was removed from your balance", NamedTextColor.GRAY))));
-
-                                            File f = new File(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions" + File.separator + oPlayer.getUniqueId() + ".log");
-                                            FileWriter fData = null;
-                                            try {
-                                                fData = new FileWriter(f, true);
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
-                                            if(fData != null) {
-                                                PrintWriter pData = new PrintWriter(fData);
-
-                                                Long date = System.currentTimeMillis();
-                                                // Date ; remove/receive ; amount ; type ; what bought if tokenshop
-                                                if (args.length == 3) {
-                                                    pData.println(date + ";remove;" + args[2] + ";Other Removals;null");
-                                                } else {
-                                                    String type = args[3].replace("_", " ");
-
-                                                    if (args.length == 4) {
-                                                        pData.println(date + ";remove;" + args[2] + ";" + type + ";null");
-                                                    } else {
-                                                        String source = args[4].replace("_", " ");
-                                                        pData.println(date + ";remove;" + args[2] + ";" + type + ";" + source);
-                                                    }
-                                                }
-
-                                                pData.flush();
-                                                pData.close();
-                                            }
-                                        } else {
-                                            sender.sendMessage(Component.text("The amount must be a number!", NamedTextColor.RED));
-                                        }
-                                    } else {
-                                        sender.sendMessage(Component.text("You can't remove tokens from soneone with 0 tokens!", NamedTextColor.RED));
-                                    }
-                                } else {
-                                    if (plugin.isInt(args[2])) {
-                                        int tokens = 0;
-                                        try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = ?")) {
-                                            ps.setString(1, oPlayer.getUniqueId().toString());
-                                            ResultSet rs = ps.executeQuery();
-                                            if (rs.next()) {
-                                                tokens = rs.getInt(1);
-                                                tokens -= Integer.parseInt(args[2]);
-                                                tokens = Math.max(tokens, 0);
-                                            }
-                                        } catch (SQLException e) {
-                                            e.printStackTrace();
-                                        }
-
-
-                                        try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET tokens = ? WHERE user_id = ?")) {
-                                            ps.setInt(1, tokens);
-                                            ps.setString(2, oPlayer.getUniqueId().toString());
-                                            ps.executeUpdate();
-                                            sender.sendMessage(prefix.append(Component.text("Removed ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(Integer.parseInt(args[2])) + " tokens ",
-                                                    NamedTextColor.AQUA).append(Component.text("from " + oPlayer.getName(), NamedTextColor.GRAY)))));
-
-                                            File f = new File(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions" + File.separator + oPlayer.getUniqueId() + ".log");
-                                            FileWriter fData = null;
-                                            try {
-                                                fData = new FileWriter(f, true);
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
-                                            if (fData != null) {
-                                                PrintWriter pData = new PrintWriter(fData);
-
-                                                Long date = System.currentTimeMillis();
-                                                // Date ; remove/receive ; amount ; type ; what bought if tokenshop
-                                                if (args.length == 3) {
-                                                    pData.println(date + ";remove;" + args[2] + ";Other Removals;null");
-                                                } else {
-                                                    String type = args[3].replace("_", " ");
-
-                                                    if (args.length == 4) {
-                                                        pData.println(date + ";remove;" + args[2] + ";" + type + ";null");
-                                                    } else {
-                                                        String source = args[4].replace("_", " ");
-                                                        pData.println(date + ";remove;" + args[2] + ";" + type + ";" + source);
-                                                    }
-                                                }
-
-                                                pData.flush();
-                                                pData.close();
-                                            }
-                                        } catch (SQLException e) {
-                                            e.printStackTrace();
-                                        }
-
-
                                     } else {
                                         sender.sendMessage(Component.text("The amount must be a number!", NamedTextColor.RED));
                                     }
                                 }
+                            } else {
+                                sender.sendMessage(Component.text("Incorrect Usage! /tokens set <player> <amount>", NamedTextColor.RED));
                             }
                         } else {
-                            sender.sendMessage(Component.text("Incorrect Usage! /tokens remove <player> <amount>", NamedTextColor.RED));
-                        }
-                    }
-                    case "set" -> {
-                        if (args.length > 2) {
-                            if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
-                                CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
-                                if (plugin.isInt(args[2])) {
-                                    if (Integer.parseInt(args[2]) >= 0) {
-                                        if (oPlayer.isOnline()) {
-                                            plugin.tokensData.put(oPlayer.getUniqueId(), Integer.parseInt(args[2]));
-                                            sender.sendMessage(prefix.append(Component.text("Set " + oPlayer.getName() + "'s tokens to ", NamedTextColor.GRAY)
-                                                    .append(Component.text(plugin.formatNumber(Integer.parseInt(args[2])) + " tokens", NamedTextColor.AQUA))));
-                                            oPlayer.getPlayer().sendMessage(prefix.append(Component.text("Your token balance was set to ", NamedTextColor.GRAY)
-                                                    .append(Component.text(plugin.formatNumber(Integer.parseInt(args[2])) + " tokens", NamedTextColor.AQUA))));
-                                        } else {
-                                            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET tokens = ? WHERE user_id = ?")) {
-                                                ps.setInt(1, Integer.parseInt(args[2]));
-                                                ps.setString(2, oPlayer.getUniqueId().toString());
-                                                ps.executeUpdate();
-                                                sender.sendMessage(prefix.append(Component.text("Set " + oPlayer.getName() + "'s tokens to ", NamedTextColor.GRAY)
-                                                        .append(Component.text(plugin.formatNumber(Integer.parseInt(args[2])) + " tokens", NamedTextColor.AQUA))));
-                                            } catch (SQLException e) {
-                                                e.printStackTrace();
-                                            }
-                                        }
-
-                                        File f = new File(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions" + File.separator + oPlayer.getUniqueId() + ".log");
-                                        FileWriter fData = null;
-                                        try {
-                                            fData = new FileWriter(f, true);
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
-                                        if (fData != null) {
-                                            PrintWriter pData = new PrintWriter(fData);
-
-                                            Long date = System.currentTimeMillis();
-                                            // Date ; remove/receive ; amount ; type ; what bought if tokenshop
-                                            pData.println(date + ";set;" + args[2] + ";admin;null");
-                                            pData.flush();
-                                            pData.close();
-                                        }
-                                    } else {
-                                        sender.sendMessage(Component.text("You can't set the token balance to a negative number!"));
-                                    }
-                                } else {
-                                    sender.sendMessage(Component.text("The amount must be a number!", NamedTextColor.RED));
-                                }
-                            }
-                        } else {
-                            sender.sendMessage(Component.text("Incorrect Usage! /tokens set <player> <amount>", NamedTextColor.RED));
+                            sender.sendMessage(Component.text("Error: ", NamedTextColor.DARK_RED).append(Component.text("You do not have permission to execute this command...", NamedTextColor.RED)));
                         }
                     }
                     case "balance", "bal" -> {
                         if (args.length > 1) {
-                            if (CMI.getInstance().getPlayerManager().getUser(args[1]) != null) {
-                                CMIUser oPlayer = CMI.getInstance().getPlayerManager().getUser(args[1]);
-                                if (oPlayer.isOnline()) {
-                                    sender.sendMessage(prefix.append(Component.text(oPlayer.getName() + "'s token balance is ", NamedTextColor.GRAY)
-                                            .append(Component.text(plugin.formatNumber(plugin.tokensData.get(oPlayer.getUniqueId())) + " tokens", NamedTextColor.AQUA))));
+                            UUID pUUID = plugin.getPlayer(args[1]);
+                            if (pUUID != null) {
+                                if (plugin.tokensData.containsKey(pUUID)) {
+                                    sender.sendMessage(prefix.append(Component.text(args[1] + "'s balance is ", NamedTextColor.GRAY)
+                                            .append(Component.text(plugin.formatNumber(plugin.tokensData.get(pUUID)) + " tokens", NamedTextColor.AQUA))));
                                 } else {
-                                    try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tokens FROM users WHERE user_id = ?")) {
-                                        ps.setString(1, oPlayer.getUniqueId().toString());
-                                        ResultSet rs = ps.executeQuery();
-                                        if (rs.next()) {
-                                            sender.sendMessage(prefix.append(Component.text(oPlayer.getName() + "'s token balance is ", NamedTextColor.GRAY)
-                                                    .append(Component.text(plugin.formatNumber(rs.getInt(1)) + " tokens", NamedTextColor.AQUA))));
-                                        } else {
-                                            sender.sendMessage(prefix.append(Component.text(oPlayer.getName() + "'s token balance is ", NamedTextColor.GRAY)
-                                                    .append(Component.text("0 tokens", NamedTextColor.AQUA))));
-                                        }
-                                    } catch (SQLException e) {
-                                        e.printStackTrace();
-                                    }
+                                    int tokens = getTokens(pUUID);
+                                    sender.sendMessage(prefix.append(Component.text(args[1] + "'s balance is ", NamedTextColor.GRAY)
+                                            .append(Component.text(plugin.formatNumber(tokens) + " tokens", NamedTextColor.AQUA))));
                                 }
                             } else {
-                                sender.sendMessage(Component.text("Player does not exist!", NamedTextColor.RED));
+                                sender.sendMessage(Component.text("No player with that name exists!", NamedTextColor.RED));
                             }
+                        } else if(sender instanceof Player player) {
+                            player.sendMessage(prefix.append(Component.text("Your balance is ", NamedTextColor.GRAY)
+                                    .append(Component.text(plugin.formatNumber(plugin.tokensData.get(player.getUniqueId())) + " tokens", NamedTextColor.AQUA))));
                         } else {
-                            sender.sendMessage(Component.text("You must specify a player!", NamedTextColor.RED));
+                            sender.sendMessage(Component.text("Incorrect Usage! /tokens balance <player>", NamedTextColor.RED));
                         }
                     }
+/*                    case "shop" -> { // /tokens shop (page)
+                        if(sender instanceof Player player) {
+                            int page = 1;
+                            if(args.length > 1 && plugin.isInt(args[1])) page = Integer.parseInt(args[1]);
+                            player.openInventory(new DatabaseInventory(plugin, db, player, player.hasPermission("skyprisoncore.inventories." + args[0] + ".editing"), args[0]).getInventory());
+                        } else {
+                            sender.sendMessage(Component.text("This command can only be used in game!", NamedTextColor.RED));
+                        }
+                    }*/
+                    case "top" -> Bukkit.dispatchCommand(sender, "lb tokens");
                 }
+            } else {
+                sendHelpMessage(sender);
             }
-        }
         return true;
     }
 }

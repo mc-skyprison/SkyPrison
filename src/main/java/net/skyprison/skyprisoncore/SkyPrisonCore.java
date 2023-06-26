@@ -70,6 +70,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -102,67 +103,40 @@ public class SkyPrisonCore extends JavaPlugin {
     public HashMap<UUID, Integer> teleportMove = new HashMap<>();
     public Map<UUID, Integer> tokensData = new HashMap<>();
     public HashMap<UUID, String> userTags = new HashMap<>();
-
     public HashMap<UUID, ArrayList<String>> missions = new HashMap<>();
-
     public Map<String, Long> mineCools = new HashMap<>();
-
     public HashMap<UUID, List<Object>> chatLock = new HashMap<>();
-
     public Map<Integer, UUID> discordLinking = new HashMap<>();
-
     public Map<UUID, Integer> blockBreaks = new HashMap<>();
-
     public List<UUID> newsMessageChanges = new ArrayList<>();
     public List<UUID> customItemChanges = new ArrayList<>();
     public List<UUID> deleteClaim = new ArrayList<>();
     public List<UUID> transferClaim = new ArrayList<>();
-
     public HashMap<UUID, String> stickyChat = new HashMap<>();
-
     public HashMap<UUID, Boolean> customClaimHeight = new HashMap<>();
-
     public HashMap<UUID, Boolean>  customClaimShape = new HashMap<>();
-
     public HashMap<Material, Double> minPrice = new HashMap<>();
-
     public List<Location> shinyGrass = new ArrayList<>();
-
     public Tokens tokens;
-
     private DiscordApi discApi;
-
     public DailyMissions dailyMissions;
-
     public ArrayList<Location> bombLocs = new ArrayList<>();
-
     private PlayerParticlesAPI particles;
-
     public List<Block> grassLocations = new ArrayList<>();
-
     public Timer shinyTimer = new Timer();
-
     public Timer spongeTimer = new Timer();
-
     public HashMap<UUID, HashMap<Integer, DatabaseInventoryEdit>> itemEditing = new HashMap<>();
     public HashMap<UUID, HashMap<Integer, NewsMessageEdit>> newsEditing = new HashMap<>();
-
     private static DatabaseHook db;
-
     public static StateFlag FLY;
     public static StringFlag EFFECTS;
     public static StringFlag CONSOLECMD;
-
     public HashMap<UUID, LinkedHashMap<String, Integer>> shopLogAmountPlayer = new HashMap<>();
     public HashMap<UUID, LinkedHashMap<String, Double>> shopLogPricePlayer = new HashMap<>();
     public HashMap<UUID, LinkedHashMap<String, Integer>> shopLogPagePlayer = new HashMap<>();
-
-
     public HashMap<UUID, LinkedHashMap<String, Integer>> tokenLogUsagePlayer = new HashMap<>();
     public HashMap<UUID, LinkedHashMap<String, Integer>> tokenLogAmountPlayer = new HashMap<>();
     public HashMap<UUID, LinkedHashMap<String, Integer>> tokenLogPagePlayer = new HashMap<>();
-
-
     private final ScheduledExecutorService dailyExecutor = Executors.newSingleThreadScheduledExecutor();
 
 
@@ -312,6 +286,12 @@ public class SkyPrisonCore extends JavaPlugin {
             Map.entry("font", StandardTags.font()),
             Map.entry("newline", StandardTags.newline())
     );
+
+    public boolean hasVoucher(Player player, String voucherType, int amount) {
+        PlayerInventory inv = player.getInventory();
+        ItemStack voucher = Voucher.getVoucher(voucherType, 1);
+        return inv.containsAtLeast(voucher, amount);
+    }
 
     public Component getParsedName(String name, boolean allTags) {
         TagResolver.Builder resolver = TagResolver.builder();
@@ -539,6 +519,7 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("randomgive")).setExecutor(new RandomGive(this));
         Objects.requireNonNull(getCommand("customrecipes")).setExecutor(new CustomRecipes(this));
         Objects.requireNonNull(getCommand("claim")).setExecutor(new Claim(this, getDatabase()));
+        Objects.requireNonNull(getCommand("custominv")).setExecutor(new CustomInv(this, getDatabase()));
 
         Objects.requireNonNull(getCommand("rename")).setExecutor(new Rename());
         Objects.requireNonNull(getCommand("itemlore")).setExecutor(new ItemLore(this));
@@ -956,7 +937,7 @@ public class SkyPrisonCore extends JavaPlugin {
     }
 
 
-    public void asConsole(String command){
+    public void asConsole(String command) {
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
     }
 

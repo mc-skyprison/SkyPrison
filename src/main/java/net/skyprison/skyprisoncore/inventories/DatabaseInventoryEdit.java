@@ -22,6 +22,7 @@ import java.util.*;
 
 public class DatabaseInventoryEdit implements CustomInventory {
     private final Inventory inventory;
+    private final SkyPrisonCore plugin;
     private final int itemId;
     private byte[] item;
     private String permission = "general";
@@ -30,8 +31,9 @@ public class DatabaseInventoryEdit implements CustomInventory {
     private int priceTokens = 0;
     private int priceVoucher = 0;
     private String priceVoucherType = "none";
-    private String commands = "general";
+    private String commands = "";
     private int maxUses = 0;
+    private String usageLore = "Times Bought:";
     private final int position;
     private final String category;
 
@@ -89,7 +91,8 @@ public class DatabaseInventoryEdit implements CustomInventory {
                 List<Component> lore = Objects.requireNonNullElse(previewMeta.lore(), new ArrayList<>());
                 lore.add(Component.empty());
                 lore.add(Component.text("CLICK TO GET A COPY", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
-                inventory.setItem(i, ItemStack.deserializeBytes(this.item));
+                preview.setItemMeta(previewMeta);
+                inventory.setItem(i, preview);
             } else if (i == 15) {
                 ItemStack item = new ItemStack(Material.GOLD_NUGGET);
                 ItemMeta itemMeta = item.getItemMeta();
@@ -116,18 +119,29 @@ public class DatabaseInventoryEdit implements CustomInventory {
                 itemMeta.displayName(Component.text("Commands", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = new ArrayList<>();
                 lore.add(Component.text("Currently: ", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                int b = 1;
-                for(String command : this.commands.split("<new_command>")) {
-                    lore.add(Component.text(b + ". ", NamedTextColor.GRAY).append(Component.text(command, NamedTextColor.GOLD)).decoration(TextDecoration.ITALIC, false));
-                    b++;
+                if(!this.commands.isEmpty() && !this.commands.isBlank()) {
+                    int b = 1;
+                    for (String command : this.commands.split("<new_command>")) {
+                        lore.add(Component.text(b + ". ", NamedTextColor.GRAY).append(Component.text(command, NamedTextColor.GOLD)).decoration(TextDecoration.ITALIC, false));
+                        b++;
+                    }
+                    itemMeta.lore(lore);
                 }
-                itemMeta.lore(lore);
                 item.setItemMeta(itemMeta);
                 inventory.setItem(i, item);
             } else if (i == 20) {
                 ItemStack item = new ItemStack(Material.REPEATER);
                 ItemMeta itemMeta = item.getItemMeta();
                 itemMeta.displayName(Component.text("Max Uses", NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false));
+                List<Component> lore = new ArrayList<>();
+                lore.add(Component.text("Currently: ", NamedTextColor.YELLOW).append(Component.text(this.maxUses, NamedTextColor.GOLD)).decoration(TextDecoration.ITALIC, false));
+                itemMeta.lore(lore);
+                item.setItemMeta(itemMeta);
+                inventory.setItem(i, item);
+            } else if (i == 21) {
+                ItemStack item = new ItemStack(Material.COMPARATOR);
+                ItemMeta itemMeta = item.getItemMeta();
+                itemMeta.displayName(Component.text("Usage Lore", NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = new ArrayList<>();
                 lore.add(Component.text("Currently: ", NamedTextColor.YELLOW).append(Component.text(this.maxUses, NamedTextColor.GOLD)).decoration(TextDecoration.ITALIC, false));
                 itemMeta.lore(lore);
@@ -189,6 +203,7 @@ public class DatabaseInventoryEdit implements CustomInventory {
         this.itemId = itemId;
         this.position = position;
         this.category = category;
+        this.plugin = plugin;
 
         HashMap<Integer, DatabaseInventoryEdit> edits = new HashMap<>();
         if (plugin.itemEditing.containsKey(pUUID)) edits = plugin.itemEditing.get(pUUID);
@@ -198,7 +213,7 @@ public class DatabaseInventoryEdit implements CustomInventory {
         this.inventory = plugin.getServer().createInventory(this, 36, Component.text("Item Editing", TextColor.fromHexString("#0fc3ff")));
         if (itemId != -1) {
             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT item, permission, permission_message, price_money, price_tokens, " +
-                    "price_voucher_type, price_voucher, commands, max_uses FROM gui_items WHERE id = ?")) {
+                    "price_voucher_type, price_voucher, commands, max_uses, usage_lore FROM gui_items WHERE id = ?")) {
                 ps.setInt(1, itemId);
                 ResultSet rs = ps.executeQuery();
                 while (rs.next()) {
@@ -211,6 +226,7 @@ public class DatabaseInventoryEdit implements CustomInventory {
                     this.priceVoucher = rs.getInt(7);
                     this.commands = rs.getString(8);
                     this.maxUses = rs.getInt(9);
+                    this.usageLore = rs.getString(10);
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -271,6 +287,9 @@ public class DatabaseInventoryEdit implements CustomInventory {
     public int getMaxUses() {
         return this.maxUses;
     }
+    public String getUsageLore() {
+        return this.usageLore;
+    }
     public int getPosition() {
         return this.position;
     }
@@ -310,13 +329,30 @@ public class DatabaseInventoryEdit implements CustomInventory {
         updateInventory();
     }
 
-    public void setCommands(String commands) {
-        this.commands = commands;
-        updateInventory();
+    public void setCommands(String command) {
+        if(plugin.isInt(command)) {
+            int cmdNum = Integer.parseInt(command) - 1;
+            List<String> cmds = new ArrayList<>(Arrays.stream(commands.split("<new_command>")).toList());
+            if(cmdNum < cmds.size()) {
+                cmds.remove(cmdNum);
+                this.commands = String.join("<new_command>", cmds);
+                updateInventory();
+            }
+        } else {
+            if(!this.commands.isEmpty() && !this.commands.isBlank())
+                this.commands += "<new_command>" + command;
+            else
+                this.commands = command;
+            updateInventory();
+        }
     }
 
     public void setMaxUses(int maxUses) {
         this.maxUses = maxUses;
+        updateInventory();
+    }
+    public void setUsageLore(String usageLore) {
+        this.usageLore = usageLore;
         updateInventory();
     }
 

@@ -24,6 +24,7 @@ import net.skyprison.skyprisoncore.commands.Claim;
 import net.skyprison.skyprisoncore.commands.ItemLore;
 import net.skyprison.skyprisoncore.commands.Tags;
 import net.skyprison.skyprisoncore.inventories.ClaimFlags;
+import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
 import net.skyprison.skyprisoncore.inventories.NewsMessageEdit;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
@@ -376,6 +377,107 @@ public class AsyncChat implements Listener {
                                 }
                             } else {
                                 player.openInventory(messageEdit.getInventory());
+                            }
+                        }
+                        case "item-permission" -> {
+                            DatabaseInventoryEdit inv = (DatabaseInventoryEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                inv.setPermission(msg);
+                            }
+                            player.openInventory(inv.getInventory());
+                        }
+                        case "item-permission-message" -> {
+                            DatabaseInventoryEdit inv = (DatabaseInventoryEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                inv.setPermissionMessage(finalMiniMsg);
+                            }
+                            player.openInventory(inv.getInventory());
+                        }
+                        case "item-usage-lore" -> {
+                            DatabaseInventoryEdit inv = (DatabaseInventoryEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                inv.setUsageLore(finalMiniMsg);
+                            }
+                            player.openInventory(inv.getInventory());
+                        }
+                        case "item-commands" -> {
+                            DatabaseInventoryEdit inv = (DatabaseInventoryEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                inv.setCommands(msg);
+                            }
+                            player.openInventory(inv.getInventory());
+                        }
+                        case "item-voucher-type" -> {
+                            DatabaseInventoryEdit inv = (DatabaseInventoryEdit) chatLock.get(1);
+                            List<String> options = new ArrayList<>();
+                            options.add("none");
+                            options.add("token-shop");
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                if(options.contains(msg.toLowerCase())) {
+                                    inv.setPriceVoucherType(msg);
+                                    player.openInventory(inv.getInventory());
+                                } else {
+                                    player.sendMessage(Component.text("Incorrect Option! Options are: none, token-shop", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
+                            }
+                        }
+                        case "item-price-money" -> {
+                            DatabaseInventoryEdit inv = (DatabaseInventoryEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                if(plugin.isInt(msg)) {
+                                    inv.setPriceMoney(Integer.parseInt(msg));
+                                    player.openInventory(inv.getInventory());
+                                } else {
+                                    player.sendMessage(Component.text("Money cost must be a number! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
+                            }
+                        }
+                        case "item-price-tokens" -> {
+                            DatabaseInventoryEdit inv = (DatabaseInventoryEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                if(plugin.isInt(msg)) {
+                                    inv.setPriceTokens(Integer.parseInt(msg));
+                                    player.openInventory(inv.getInventory());
+                                } else {
+                                    player.sendMessage(Component.text("Tokens cost must be a number! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
+                            }
+                        }
+                        case "item-price-voucher" -> {
+                            DatabaseInventoryEdit inv = (DatabaseInventoryEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                if(plugin.isInt(msg)) {
+                                    inv.setPriceVoucher(Integer.parseInt(msg));
+                                    player.openInventory(inv.getInventory());
+                                } else {
+                                    player.sendMessage(Component.text("Voucher cost must be a number! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
+                            }
+                        }
+                        case "item-max-uses" -> {
+                            DatabaseInventoryEdit inv = (DatabaseInventoryEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                if(plugin.isInt(msg)) {
+                                    inv.setMaxUses(Integer.parseInt(msg));
+                                    player.openInventory(inv.getInventory());
+                                } else {
+                                    player.sendMessage(Component.text("max uses must be a number! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
                             }
                         }
                     }
