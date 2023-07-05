@@ -64,9 +64,7 @@ public class MoneyHistory implements CommandExecutor {
                 }
             }
             read.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        } catch (IOException ignored) {}
 
         if(!sort) {
             Collections.reverse(trans);

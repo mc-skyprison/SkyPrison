@@ -129,6 +129,10 @@ public class CustomInv implements CommandExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        if(args.length == 0) {
+            sender.sendMessage(Component.text("Incorrect Usage! Available Commands: \n- /custominv <inventory> <player>\n- /custominv list", NamedTextColor.RED));
+            return true;
+        }
         // /custominv <inventory> <player>
         if(args.length == 1 && args[0].equalsIgnoreCase("list")) {
             List<String> categories = new ArrayList<>();
@@ -174,7 +178,6 @@ public class CustomInv implements CommandExecutor {
             sender.sendMessage(Component.text("Incorrect Usage! Available Commands: \n- /custominv <inventory> <player>\n- /custominv list", NamedTextColor.RED));
             return true;
         }
-
         if (categoryExists(args[0]) && player.hasPermission("skyprisoncore.inventories." + args[0])) {
             player.openInventory(new DatabaseInventory(plugin, db, player, player.hasPermission("skyprisoncore.inventories." + args[0] + ".editing"), args[0]).getInventory());
         } else if (player.hasPermission("skyprisoncore.command.custominv.create")) {

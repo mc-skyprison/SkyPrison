@@ -9,7 +9,6 @@ import java.io.IOException;
 
 public class LangCreator {
 	private final SkyPrisonCore plugin;
-
 	public LangCreator(SkyPrisonCore plugin) {
 		this.plugin = plugin;
 	}

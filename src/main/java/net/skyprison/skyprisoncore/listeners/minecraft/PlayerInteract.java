@@ -14,6 +14,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.Objects;
@@ -32,9 +33,10 @@ public class PlayerInteract implements Listener {
                 ItemStack expBottle = event.getItem();
                 ItemMeta expMeta = expBottle.getItemMeta();
                 NamespacedKey key = new NamespacedKey(plugin, "exp-amount");
-                if (expMeta.getPersistentDataContainer().has(key, PersistentDataType.INTEGER)) {
+                PersistentDataContainer expPers = expMeta.getPersistentDataContainer();
+                if (expPers.has(key, PersistentDataType.INTEGER)) {
                     event.setCancelled(true);
-                    int expToGive = expMeta.getPersistentDataContainer().get(key, PersistentDataType.INTEGER);
+                    int expToGive = expPers.get(key, PersistentDataType.INTEGER);
                     Player player = event.getPlayer();
                     player.giveExp(expToGive);
                     player.sendMessage(Component.text("+" + plugin.formatNumber(expToGive) + " XP", NamedTextColor.DARK_GREEN, TextDecoration.BOLD));

@@ -445,8 +445,7 @@ public class Tokens implements CommandExecutor {
                 }
             }
             read.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ignored) {
         }
 
         if(!sort) {

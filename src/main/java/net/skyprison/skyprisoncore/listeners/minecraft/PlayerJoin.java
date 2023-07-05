@@ -24,6 +24,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.commands.donations.DonorAdd;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
@@ -106,6 +107,8 @@ public class PlayerJoin implements Listener {
                 if(type.equalsIgnoreCase("namecolour")) {
                     Component content = GsonComponentSerializer.gson().deserialize(rs.getString(2));
                     player.customName(content);
+                } else if(type.equalsIgnoreCase("purchase-total-check")) {
+                    DonorAdd.checkTotal(player, Double.parseDouble(rs.getString(2)));
                 }
             }
         } catch (SQLException e) {

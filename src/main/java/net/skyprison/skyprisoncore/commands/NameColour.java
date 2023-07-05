@@ -21,6 +21,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import static net.skyprison.skyprisoncore.SkyPrisonCore.scheduleForOnline;
+
 public class NameColour implements CommandExecutor { // /namecolour <coloured name> (player)
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
@@ -108,7 +110,7 @@ public class NameColour implements CommandExecutor { // /namecolour <coloured na
                                         .append(sender.name().decorate(TextDecoration.BOLD)).append(Component.text(" to ", TextColor.fromHexString("#87fdd2"))).append(nickName);
                                 plugin.createNotification("namecolour-update", sender.getName(), pUUID, colourChange, null, true);
 
-                                plugin.scheduleForOnline(pUUID, "namecolour", GsonComponentSerializer.gson().serialize(nickName));
+                                scheduleForOnline(pUUID, "namecolour", GsonComponentSerializer.gson().serialize(nickName));
                             }
                             sender.sendMessage(Component.text("Successfully changed the name color to ", TextColor.fromHexString("#87fdd2")).append(nickName));
                         } else {
@@ -138,7 +140,7 @@ public class NameColour implements CommandExecutor { // /namecolour <coloured na
                                     .append(sender.name().decorate(TextDecoration.BOLD)).append(Component.text(" to ", TextColor.fromHexString("#87fdd2"))).append(nickName);
                             plugin.createNotification("namecolour-update", null, pUUID, colourChange, null, true);
 
-                            plugin.scheduleForOnline(pUUID, "namecolour", GsonComponentSerializer.gson().serialize(nickName));
+                            scheduleForOnline(pUUID, "namecolour", GsonComponentSerializer.gson().serialize(nickName));
                         }
                         sender.sendMessage(Component.text("Successfully changed the name color to ", TextColor.fromHexString("#87fdd2")).append(nickName));
                     } else {

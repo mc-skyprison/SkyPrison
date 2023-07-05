@@ -5,7 +5,7 @@ version: 7.0.0
 main: net.skyprison.skyprisoncore.SkyPrisonCore
 api-version: 1.18
 website: https://skyprison.net/
-depend: [WorldGuard, WorldEdit, PlaceholderAPI, VotingPlugin, CMI, Parkour, ShopGUIPlus, CoreProtect, PvPManager, QuickShop, AdvancedRegionMarket, CustomCrafting]
+depend: [WorldGuard, WorldEdit, PlaceholderAPI, CMI, Parkour, ShopGUIPlus, CoreProtect, PvPManager, QuickShop, AdvancedRegionMarket, CustomCrafting]
 commands:
   transportpass:
     description: bus/train pass

@@ -1,5 +1,20 @@
 package net.skyprison.skyprisoncore;
 
+import cloud.commandframework.CommandTree;
+import cloud.commandframework.arguments.standard.IntegerArgument;
+import cloud.commandframework.arguments.standard.StringArgument;
+import cloud.commandframework.bukkit.BukkitCommandManager;
+import cloud.commandframework.bukkit.CloudBukkitCapabilities;
+import cloud.commandframework.bukkit.parsers.MaterialArgument;
+import cloud.commandframework.bukkit.parsers.PlayerArgument;
+import cloud.commandframework.execution.AsynchronousCommandExecutionCoordinator;
+import cloud.commandframework.execution.CommandExecutionCoordinator;
+import cloud.commandframework.execution.FilteringCommandSuggestionProcessor;
+import cloud.commandframework.extra.confirmation.CommandConfirmationManager;
+import cloud.commandframework.minecraft.extras.AudienceProvider;
+import cloud.commandframework.minecraft.extras.MinecraftExceptionHandler;
+import cloud.commandframework.minecraft.extras.MinecraftHelp;
+import cloud.commandframework.paper.PaperCommandManager;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import com.sk89q.worldguard.WorldGuard;
@@ -37,6 +52,7 @@ import net.skyprison.skyprisoncore.commands.secrets.SecretFound;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
 import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
 import net.skyprison.skyprisoncore.inventories.NewsMessageEdit;
+import net.skyprison.skyprisoncore.items.TreeFellerAxe;
 import net.skyprison.skyprisoncore.listeners.advancedregionmarket.UnsellRegion;
 import net.skyprison.skyprisoncore.listeners.brewery.BrewDrink;
 import net.skyprison.skyprisoncore.listeners.cmi.CMIPlayerTeleportRequest;
@@ -68,6 +84,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -95,8 +112,9 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-
 
 public class SkyPrisonCore extends JavaPlugin {
     public HashMap<UUID, Boolean> flyPvP = new HashMap<>();
@@ -127,7 +145,7 @@ public class SkyPrisonCore extends JavaPlugin {
     public Timer spongeTimer = new Timer();
     public HashMap<UUID, HashMap<Integer, DatabaseInventoryEdit>> itemEditing = new HashMap<>();
     public HashMap<UUID, HashMap<Integer, NewsMessageEdit>> newsEditing = new HashMap<>();
-    private static DatabaseHook db;
+    public static DatabaseHook db;
     public static StateFlag FLY;
     public static StringFlag EFFECTS;
     public static StringFlag CONSOLECMD;
@@ -139,6 +157,10 @@ public class SkyPrisonCore extends JavaPlugin {
     public HashMap<UUID, LinkedHashMap<String, Integer>> tokenLogPagePlayer = new HashMap<>();
     private final ScheduledExecutorService dailyExecutor = Executors.newSingleThreadScheduledExecutor();
 
+
+    private BukkitCommandManager<CommandSender> manager;
+    private MinecraftHelp<CommandSender> minecraftHelp;
+    private CommandConfirmationManager<CommandSender> confirmationManager;
 
     @Override
     public void onLoad() {
@@ -153,7 +175,7 @@ public class SkyPrisonCore extends JavaPlugin {
             FLY = flyFlag;
             EFFECTS = effectsFlag;
             CONSOLECMD = consoleFlag;
-            this.getLogger().info("Loaded Custom Flags");
+            getLogger().info("Loaded Custom Flags");
         } catch (FlagConflictException ignored) {
         }
     }
@@ -210,7 +232,55 @@ public class SkyPrisonCore extends JavaPlugin {
         dailyMissions = new DailyMissions(this, getDatabase());
 
         registerMinPrice();
-        registerCommands();
+
+        final Function<CommandTree<CommandSender>, CommandExecutionCoordinator<CommandSender>> executionCoordinatorFunction =
+                AsynchronousCommandExecutionCoordinator.<CommandSender>builder().build();
+
+        final Function<CommandSender, CommandSender> mapperFunction = Function.identity();
+        try {
+            this.manager = new PaperCommandManager<>(this, executionCoordinatorFunction, mapperFunction, mapperFunction);
+        } catch (final Exception e) {
+            this.getLogger().severe("Failed to initialize the command manager!");
+            this.getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
+        this.manager.commandSuggestionProcessor(new FilteringCommandSuggestionProcessor<>(
+                FilteringCommandSuggestionProcessor.Filter.<CommandSender>contains(true).andTrimBeforeLastSpace()
+        ));
+
+        this.minecraftHelp = new MinecraftHelp<>( "/spc help", AudienceProvider.nativeAudience(), this.manager);
+
+        if (this.manager.hasCapability(CloudBukkitCapabilities.BRIGADIER)) {
+            this.manager.registerBrigadier();
+        }
+
+        if (this.manager.hasCapability(CloudBukkitCapabilities.ASYNCHRONOUS_COMPLETION)) {
+            ((PaperCommandManager<CommandSender>) this.manager).registerAsynchronousCompletions();
+        }
+
+        this.confirmationManager = new CommandConfirmationManager<>(30L, TimeUnit.SECONDS,
+                context -> context.getCommandContext().getSender().sendMessage(Component.text("Confirmation required. Confirm using /example confirm.", NamedTextColor.RED)),
+                sender -> sender.sendMessage(Component.text("You don't have any pending commands.", NamedTextColor.RED))
+        );
+
+        this.confirmationManager.registerConfirmationProcessor(this.manager);
+
+        new MinecraftExceptionHandler<CommandSender>()
+                .withInvalidSenderHandler()
+                .withNoPermissionHandler()
+                .withArgumentParsingHandler()
+                .withCommandExecutionHandler()
+                .withDecorator(component -> Component.text()
+                        .append(Component.text("[", NamedTextColor.DARK_GRAY))
+                        .append(Component.text("SkyPrison", NamedTextColor.GOLD))
+                        .append(Component.text("] ", NamedTextColor.DARK_GRAY))
+                        .append(component).build()
+                ).apply(this.manager, AudienceProvider.nativeAudience());
+
+        this.registerCommands();
+
+
         registerEvents();
 
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -475,6 +545,38 @@ public class SkyPrisonCore extends JavaPlugin {
     }
 
     public void registerCommands() {
+        manager.command(
+                manager.commandBuilder("spc")
+                        .literal("help")
+                        .argument(StringArgument.optional("query", StringArgument.StringMode.GREEDY))
+                        .handler(context -> {
+                            minecraftHelp.queryCommands(context.getOrDefault("query", ""), context.getSender());
+                        })
+        );
+
+        this.manager.command(this.manager.commandBuilder("treefeller")
+                .argument(PlayerArgument.of("player"))
+                .argument(MaterialArgument.of("material"))
+                .argument(IntegerArgument.of("amount"))
+                .handler(c -> {
+                    final Player player = c.get("player");
+                    final Material material = c.get("material");
+                    final int amount = c.get("amount");
+                    final ItemStack itemStack = TreeFellerAxe.getAxe(this, material, amount);
+                    player.getInventory().addItem(itemStack);
+                    c.getSender().sendMessage(Component.text("Successfully sent!"));
+                }));
+
+
+        this.manager.command(this.manager.commandBuilder("testmsg")
+                .argument(PlayerArgument.of("player"))
+                .argument(StringArgument.greedy("message"))
+                .handler(c -> {
+                    final Player player = c.get("player");
+                    final String message = c.get("message");
+                    player.sendMessage(Component.text(message));
+                }));
+
         Objects.requireNonNull(getCommand("tokens")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("tokens")).setTabCompleter(new TabCompleter());
@@ -584,6 +686,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new AsyncChat(this, discApi, getDatabase(), new Tags(this, getDatabase()), new ItemLore(this)), this);
         pm.registerEvents(new PlayerQuit(this, getDatabase(), discApi, dailyMissions), this);
         pm.registerEvents(new PlayerJoin(this, getDatabase(), discApi, dailyMissions, particles), this);
+
         pm.registerEvents(new McMMOPartyChat(discApi), this);
 
         if(discApi != null) {
@@ -791,7 +894,7 @@ public class SkyPrisonCore extends JavaPlugin {
     }
 
 
-    public void scheduleForOnline(String pUUID, String type, String content) {
+    public static void scheduleForOnline(String pUUID, String type, String content) {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO schedule_online (user_id, type, content) VALUES (?, ?, ?)")) {
             ps.setString(1, pUUID);
             ps.setString(2, type);
