@@ -39,7 +39,9 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -113,8 +115,19 @@ public class InventoryClick implements Listener {
     }
 
     @EventHandler
-    public void invClick(InventoryClickEvent event) {
-        if(event.getWhoClicked() instanceof Player player) {
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if(event.getInventory().getHolder(false) instanceof CustomInventory) {
+            int size = event.getInventory().getSize();
+            List<Integer> slots = event.getRawSlots().stream().filter(slot -> slot < size).toList();
+            if(!slots.isEmpty()) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
+        if(event.getWhoClicked() instanceof Player player && event.getRawSlot() >= 0) {
             if (event.getClickedInventory() instanceof PlayerInventory) {
                 InvStickFix(player);
             }
@@ -581,7 +594,12 @@ public class InventoryClick implements Listener {
                                     }
 
                                     if (useTokens) {
-                                        boolean usingTokens = (!useMoney && !useVouchers) || event.isRightClick() && !event.isShiftClick();
+                                        boolean usingTokens = false;
+                                        if(useMoney && event.isRightClick()) {
+                                            usingTokens = true;
+                                        } else if(useVouchers && event.isLeftClick()) {
+                                            usingTokens = true;
+                                        }
                                         if (usingTokens) {
                                             int tokens = plugin.tokens.getTokens(player.getUniqueId());
                                             if (tokenCost <= tokens) {
@@ -633,18 +651,19 @@ public class InventoryClick implements Listener {
 
                                         if(removeMoney) {
                                             plugin.asConsole("money take " + player.getName() + " " + moneyCost);
-                                        } else if(removeTokens) {
+                                        }
+                                        if(removeTokens) {
                                             plugin.tokens.removeTokens(player.getUniqueId(), tokenCost, inv.getCategory(), clickedMat.toString());
-                                        } else if(removeVoucher) {
+                                        }
+
+                                        if(removeVoucher) {
                                             ItemStack voucher = Voucher.getVoucher(voucherType, voucherCost);
                                             player.getInventory().removeItem(voucher);
                                         }
 
-
                                         CustomInv.addUses(player.getUniqueId(), (int) item.get("id"), db);
                                         inv.updateUsage(player, event.getSlot());
                                         inv.updateInventory(player);
-                                        player.openInventory(inv.getInventory());
                                     }
                                 }
                             } else {
@@ -653,11 +672,10 @@ public class InventoryClick implements Listener {
                         }
                     }
                 } else if (customInv instanceof DatabaseInventoryEdit inv) {
-                    if(event.getClickedInventory() instanceof PlayerInventory) {
+                    if(event.getClickedInventory() instanceof PlayerInventory && !event.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY)) {
                         event.setCancelled(false);
                         return;
-                    }
-                    if(event.getCurrentItem() == null) {
+                    } else if(event.getCurrentItem() == null) {
                         event.setCancelled(true);
                         return;
                     }
@@ -820,6 +838,27 @@ public class InventoryClick implements Listener {
                                             player.openInventory(inv.getInventory());
                                         })));
                                 player.sendMessage(msg);
+                            }
+                        }
+                    }
+                } else if(customInv instanceof BlacksmithUpgrade inv) {
+                    int clickedSlot = event.getRawSlot();
+                    if(event.getClickedInventory() instanceof PlayerInventory) {
+                        event.setCancelled(event.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY));
+                    } else {
+                        if(event.getCurrentItem() == null && clickedSlot != 10 && clickedSlot != 16) {
+                            event.setCancelled(true);
+                        } else {
+                            switch (clickedSlot) {
+                                case 10, 16 -> event.setCancelled(false);
+                                case 13 -> {
+                                    InventoryAction invAction = event.getAction();
+                                    if (invAction.equals(InventoryAction.PICKUP_ALL) || invAction.equals(InventoryAction.PICKUP_SOME)
+                                            || invAction.equals(InventoryAction.PICKUP_HALF) || invAction.equals(InventoryAction.PICKUP_ONE)) {
+                                        event.setCancelled(false);
+                                        inv.resultTaken();
+                                    }
+                                }
                             }
                         }
                     }

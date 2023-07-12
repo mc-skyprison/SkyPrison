@@ -73,15 +73,6 @@ public class AsyncChat implements Listener {
 
         String msg = PlainTextComponentSerializer.plainText().serialize(event.originalMessage());
         String miniMsg = MiniMessage.miniMessage().serialize(event.originalMessage());
-        if(miniMsg.startsWith("<yellow>")) {
-            miniMsg = miniMsg.substring(8);
-        } else if(miniMsg.startsWith("<gray>")) {
-            miniMsg = miniMsg.substring(6);
-        } else if(miniMsg.startsWith("<aqua>")) {
-            miniMsg = miniMsg.substring(6);
-        } else if(miniMsg.startsWith("<gold>")) {
-            miniMsg = miniMsg.substring(6);
-        }
         if(plugin.chatLock.containsKey(player.getUniqueId())) {
             event.setCancelled(true);
             String finalMiniMsg = miniMsg;
@@ -537,7 +528,8 @@ public class AsyncChat implements Listener {
 
                     if(userTag.equals(Component.text(""))) separator = Component.text("» ", NamedTextColor.DARK_GRAY);
 
-                    return Component.empty().append(prefix).append(Objects.requireNonNullElse(source.customName(), source.displayName())).appendSpace().append(userTag).append(separator).append(message);
+                    return Component.empty().append(prefix).append(Objects.requireNonNullElse(source.customName(), source.displayName()))
+                            .appendSpace().append(userTag).append(separator).append(message.colorIfAbsent(plugin.getChatColour(player)));
                 });
             }
         }

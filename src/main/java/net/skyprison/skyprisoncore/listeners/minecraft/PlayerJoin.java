@@ -105,7 +105,10 @@ public class PlayerJoin implements Listener {
                 hasSchedules = true;
                 String type = rs.getString(1);
                 if(type.equalsIgnoreCase("namecolour")) {
-                    Component content = GsonComponentSerializer.gson().deserialize(rs.getString(2));
+                    Component content = null;
+                    if(!rs.getString(2).equalsIgnoreCase("remove")) {
+                        content = GsonComponentSerializer.gson().deserialize(rs.getString(2));
+                    }
                     player.customName(content);
                 } else if(type.equalsIgnoreCase("purchase-total-check")) {
                     DonorAdd.checkTotal(player, Double.parseDouble(rs.getString(2)));

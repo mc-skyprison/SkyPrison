@@ -5,6 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.apache.commons.lang.WordUtils;
@@ -60,6 +61,19 @@ public class DatabaseInventory implements CustomInventory{
             }
             if(!hiddenName) {
                 List<Component> lore = Objects.requireNonNullElse(itemMeta.lore(), new ArrayList<>());
+
+                if(!lore.isEmpty()) {
+                    List<Component> newLore = new ArrayList<>();
+                    for(Component loreLine : lore) {
+                        String msg = MiniMessage.miniMessage().serialize(loreLine);
+                        if(msg.contains("\\<papi:")) {
+                            msg = msg.replaceAll("\\\\<papi:", "<papi:");
+                        }
+                        newLore.add(MiniMessage.miniMessage().deserialize(msg, TagResolver.standard(), SkyPrisonCore.papiTag(player)));
+                    }
+                    lore = newLore;
+                }
+
                 boolean useMoney = ((int) itemData.get("price_money") != 0);
                 boolean useTokens = ((int) itemData.get("price_tokens") != 0);
                 boolean useVouchers = ((int) itemData.get("price_voucher") != 0 && !itemData.get("price_voucher_type").toString().equalsIgnoreCase("none"));
@@ -83,17 +97,19 @@ public class DatabaseInventory implements CustomInventory{
                     lore.add(tokenComp);
                 }
                 if (useVouchers) {
-                    Component voucherComp = Component.text(" Voucher: " + plugin.formatNumber((int) itemData.get("price_voucher")), NamedTextColor.GRAY, TextDecoration.BOLD);
-                    voucherComp = voucherComp.append(Component.text(" (" + WordUtils.capitalize(itemData.get("price_voucher_type").toString().replace("-", "")) + ") ", NamedTextColor.GRAY));
+                    Component voucherComp = Component.text("Voucher: " + plugin.formatNumber((int) itemData.get("price_voucher")), NamedTextColor.GRAY, TextDecoration.BOLD);
+                    //voucherComp = voucherComp.append(Component.text(" (" + WordUtils.capitalize(itemData.get("price_voucher_type").toString().replace("-", "")) + ") ", NamedTextColor.GRAY));
                     if(useMoney && useTokens) {
-                        voucherComp = voucherComp.append(Component.text("(Shift Click)", NamedTextColor.GRAY, TextDecoration.ITALIC));
+                        voucherComp = voucherComp.append(Component.text(" (Shift Click)", NamedTextColor.GRAY, TextDecoration.ITALIC).decoration(TextDecoration.BOLD, false));
                     } else if(useMoney || useTokens) {
-                        voucherComp = voucherComp.append(Component.text("(Right Click)", NamedTextColor.GRAY, TextDecoration.ITALIC));
+                        voucherComp = voucherComp.append(Component.text(" (Right Click)", NamedTextColor.GRAY, TextDecoration.ITALIC).decoration(TextDecoration.BOLD, false));
                     }
                     voucherComp = voucherComp.decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
                     lore.add(voucherComp);
                 }
-                lore.add(Component.text(itemData.get("usage_lore") + " " + pUses + (maxUses > 0 ? "/" + maxUses : ""), canUse ? NamedTextColor.GRAY : NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                if(useMoney || useTokens || useVouchers) {
+                    lore.add(Component.text(itemData.get("usage_lore") + " " + pUses + (maxUses > 0 ? "/" + maxUses : ""), canUse ? NamedTextColor.GRAY : NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                }
 
                 if (!hasPerm && canUse) {
                     lore.add(Component.empty());

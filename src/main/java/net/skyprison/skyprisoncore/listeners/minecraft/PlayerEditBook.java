@@ -1,7 +1,7 @@
 package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -19,20 +19,15 @@ public class PlayerEditBook implements Listener {
 
     @EventHandler
     public void onPlayerEditBook(PlayerEditBookEvent event) {
-        if(event.isSigning()) {
-            Player player = event.getPlayer();
-            if(player.hasPermission("skyprisoncore.book.colours")) {
-                BookMeta bookMeta = event.getNewBookMeta();
-                List<Component> pages = bookMeta.pages();
-                int i = 1;
-                for(Component page : pages) {
-                    String pageString = PlainTextComponentSerializer.plainText().serialize(page);
-                    Component serialized = plugin.playerMsgBuilder.deserialize(pageString);
-                    bookMeta.page(i, serialized);
-                    i++;
-                }
-                event.setNewBookMeta(bookMeta);
-            }
+        Player player = event.getPlayer();
+        BookMeta bookMeta = event.getNewBookMeta();
+        List<Component> pages = bookMeta.pages();
+        int i = 1;
+        for(Component page : pages) {
+            String pageString = MiniMessage.miniMessage().serialize(page);
+            bookMeta.page(i, plugin.getParsedString(player, "book", pageString));
+            i++;
         }
+        event.setNewBookMeta(bookMeta);
     }
 }

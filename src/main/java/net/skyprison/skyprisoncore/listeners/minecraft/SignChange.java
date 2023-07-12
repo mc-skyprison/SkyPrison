@@ -20,16 +20,12 @@ public class SignChange implements Listener {
     @EventHandler
     public void onSignChange(SignChangeEvent event) {
         Player player = event.getPlayer();
-        if(player.hasPermission("skyprisoncore.sign.colours")) {
-            List<Component> lines = event.lines();
-            int i = 0;
-            for (Component line : lines) {
-                String lineString = PlainTextComponentSerializer.plainText().serialize(line);
-                Component serialized = plugin.playerMsgBuilder.deserialize(lineString);
-                event.line(i, serialized);
-                i++;
-            }
-
+        List<Component> lines = event.lines();
+        int i = 0;
+        for (Component line : lines) {
+            String lineString = PlainTextComponentSerializer.plainText().serialize(line);
+            event.line(i, plugin.getParsedString(player, "sign", lineString));
+            i++;
         }
     }
 }

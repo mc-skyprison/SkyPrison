@@ -10,6 +10,7 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.kyori.adventure.util.Index;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -20,6 +21,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.UUID;
 
 import static net.skyprison.skyprisoncore.SkyPrisonCore.scheduleForOnline;
 
@@ -61,13 +63,13 @@ public class NameColour implements CommandExecutor { // /namecolour <coloured na
                     <gray><st>           </st>
                     <#87fdd2>Example: <#568ac2><b>/namecolour \\<red>Drake\\<#5ee45e>Pork</b>
                     <gray><st>           </st>
-                    <red><b>/namecolour (coloured name)"""));
+                    <red><b>/namecolour (coloured name / remove)"""));
         } else {
             help = help.append(MiniMessage.miniMessage().deserialize("""
 
                     <#87fdd2>Example: <b>/namecolour <red>\\<red></b>
                     <gray><st>           </st>
-                    <red><b>/namecolour (colour)"""));
+                    <red><b>/namecolour (colour / remove)"""));
         }
 
         if(args.length > 0) {
@@ -97,20 +99,44 @@ public class NameColour implements CommandExecutor { // /namecolour <coloured na
             }
 
             if(!playerName.isEmpty() && !pUUID.isEmpty()) {
+                if(args[0].equalsIgnoreCase("remove")) {
+                    if (sender instanceof Player player && (args.length < 2 || !sender.hasPermission("skyprisoncore.command.namecolour.others"))) {
+                        player.customName(null);
+                    } else if(sender.hasPermission("skyprisoncore.command.namecolour.others")) {
+                        Component colourChange = Component.text("Your name colour was removed by ", TextColor.fromHexString("#87fdd2"))
+                                .append(sender.name().decorate(TextDecoration.BOLD)).append(Component.text("!", TextColor.fromHexString("#87fdd2")));
+                        Player player = Bukkit.getPlayer(UUID.fromString(pUUID));
+                        if(player != null) {
+                            player.customName(null);
+                            player.sendMessage(colourChange);
+                        } else {
+                            plugin.createNotification("namecolour-update", null, pUUID, colourChange, null, true);
+                            scheduleForOnline(pUUID, "namecolour", "remove");
+                        }
+                    }
+                    sender.sendMessage(Component.text("Successfully removed the name color", TextColor.fromHexString("#87fdd2")));
+                    return true;
+                }
+
                 if(sender.hasPermission("skyprisoncore.command.namecolour.multicolour")) {
-                    Component nickName = plugin.getParsedName(args[0], sender.hasPermission("skyprisoncore.command.namecolour.alltags"));
+                    Component nickName = plugin.getParsedString(sender, "namecolour", args[0]);
                     if (args[0].contains("<") && args[0].contains(">")) {
                         String plainName = PlainTextComponentSerializer.plainText().serialize(nickName);
 
                         if (plainName.equalsIgnoreCase(playerName) || (!plainName.equalsIgnoreCase(playerName) && sender.hasPermission("skyprisoncore.command.namecolour.others"))) {
                             if (sender instanceof Player player && (args.length < 2 || !sender.hasPermission("skyprisoncore.command.namecolour.others"))) {
                                 player.customName(nickName);
-                            } else {
+                            } else if(sender.hasPermission("skyprisoncore.command.namecolour.others")) {
                                 Component colourChange = Component.text("Your name colour was changed by ", TextColor.fromHexString("#87fdd2"))
                                         .append(sender.name().decorate(TextDecoration.BOLD)).append(Component.text(" to ", TextColor.fromHexString("#87fdd2"))).append(nickName);
-                                plugin.createNotification("namecolour-update", sender.getName(), pUUID, colourChange, null, true);
-
-                                scheduleForOnline(pUUID, "namecolour", GsonComponentSerializer.gson().serialize(nickName));
+                                Player player = Bukkit.getPlayer(UUID.fromString(pUUID));
+                                if(player != null) {
+                                    player.customName(nickName);
+                                    player.sendMessage(colourChange);
+                                } else {
+                                    plugin.createNotification("namecolour-update", null, pUUID, colourChange, null, true);
+                                    scheduleForOnline(pUUID, "namecolour", GsonComponentSerializer.gson().serialize(nickName));
+                                }
                             }
                             sender.sendMessage(Component.text("Successfully changed the name color to ", TextColor.fromHexString("#87fdd2")).append(nickName));
                         } else {
@@ -129,18 +155,23 @@ public class NameColour implements CommandExecutor { // /namecolour <coloured na
                         } else if (colorIndex.value(colour) != null) {
                             nickName = nickName.color(colorIndex.value(colour));
                         } else {
-                            sender.sendMessage(Component.text("Invalid colour! For available colours see /namecolour", NamedTextColor.RED));
+                            sender.sendMessage(Component.text("Invalid colour! For available colours, see /namecolour", NamedTextColor.RED));
                             return true;
                         }
 
-                        if (sender instanceof Player player && args.length < 2) {
+                        if (sender instanceof Player player && (args.length < 2 || !sender.hasPermission("skyprisoncore.command.namecolour.others"))) {
                             player.customName(nickName);
-                        } else {
+                        } else if(sender.hasPermission("skyprisoncore.command.namecolour.others")) {
                             Component colourChange = Component.text("Your name colour was changed by ", TextColor.fromHexString("#87fdd2"))
                                     .append(sender.name().decorate(TextDecoration.BOLD)).append(Component.text(" to ", TextColor.fromHexString("#87fdd2"))).append(nickName);
-                            plugin.createNotification("namecolour-update", null, pUUID, colourChange, null, true);
-
-                            scheduleForOnline(pUUID, "namecolour", GsonComponentSerializer.gson().serialize(nickName));
+                            Player player = Bukkit.getPlayer(UUID.fromString(pUUID));
+                            if(player != null) {
+                                player.customName(nickName);
+                                player.sendMessage(colourChange);
+                            } else {
+                                plugin.createNotification("namecolour-update", null, pUUID, colourChange, null, true);
+                                scheduleForOnline(pUUID, "namecolour", GsonComponentSerializer.gson().serialize(nickName));
+                            }
                         }
                         sender.sendMessage(Component.text("Successfully changed the name color to ", TextColor.fromHexString("#87fdd2")).append(nickName));
                     } else {

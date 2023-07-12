@@ -26,16 +26,21 @@ import com.sk89q.worldguard.session.SessionManager;
 import dev.esophose.playerparticles.api.PlayerParticlesAPI;
 import litebans.api.Entry;
 import litebans.api.Events;
+import me.clip.placeholderapi.PlaceholderAPI;
+import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.ClickEvent.Action;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.Tag;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.skyprison.skyprisoncore.commands.*;
@@ -50,9 +55,10 @@ import net.skyprison.skyprisoncore.commands.economy.*;
 import net.skyprison.skyprisoncore.commands.guard.*;
 import net.skyprison.skyprisoncore.commands.secrets.SecretFound;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
+import net.skyprison.skyprisoncore.inventories.BlacksmithUpgrade;
 import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
 import net.skyprison.skyprisoncore.inventories.NewsMessageEdit;
-import net.skyprison.skyprisoncore.items.TreeFellerAxe;
+import net.skyprison.skyprisoncore.items.TreeFeller;
 import net.skyprison.skyprisoncore.listeners.advancedregionmarket.UnsellRegion;
 import net.skyprison.skyprisoncore.listeners.brewery.BrewDrink;
 import net.skyprison.skyprisoncore.listeners.cmi.CMIPlayerTeleportRequest;
@@ -85,6 +91,7 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -101,6 +108,7 @@ import org.javacord.api.entity.user.User;
 import org.javacord.api.interaction.SlashCommand;
 import org.javacord.api.interaction.SlashCommandOption;
 import org.javacord.api.interaction.SlashCommandOptionType;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -157,6 +165,7 @@ public class SkyPrisonCore extends JavaPlugin {
     public HashMap<UUID, LinkedHashMap<String, Integer>> tokenLogPagePlayer = new HashMap<>();
     private final ScheduledExecutorService dailyExecutor = Executors.newSingleThreadScheduledExecutor();
 
+    public HashMap<Audience, Audience> lastMessaged = new HashMap<>();
 
     private BukkitCommandManager<CommandSender> manager;
     private MinecraftHelp<CommandSender> minecraftHelp;
@@ -354,7 +363,12 @@ public class SkyPrisonCore extends JavaPlugin {
             Map.entry("gradient", StandardTags.gradient()),
             Map.entry("transition", StandardTags.transition()),
             Map.entry("font", StandardTags.font()),
-            Map.entry("newline", StandardTags.newline())
+            Map.entry("newline", StandardTags.newline()),
+            Map.entry("italic", StandardTags.decorations(TextDecoration.ITALIC)),
+            Map.entry("bold", StandardTags.decorations(TextDecoration.BOLD)),
+            Map.entry("strikethrough", StandardTags.decorations(TextDecoration.STRIKETHROUGH)),
+            Map.entry("obfuscated", StandardTags.decorations(TextDecoration.OBFUSCATED)),
+            Map.entry("underlined", StandardTags.decorations(TextDecoration.UNDERLINED))
     );
 
     public boolean hasVoucher(Player player, String voucherType, int amount) {
@@ -373,34 +387,34 @@ public class SkyPrisonCore extends JavaPlugin {
         final MiniMessage miniMessage = MiniMessage.builder().tags(resolver.build()).build();
         return miniMessage.deserialize(name);
     }
-    public Component getParsedMessage(Player player, String message) {
-        TagResolver.Builder resolver = TagResolver.builder();
-        Component chatColour = MiniMessage.miniMessage().deserialize("");
+
+    public TextColor getChatColour(Player player) {
+        TextColor chatColour = NamedTextColor.GRAY;
         if(player != null) {
             LuckPerms luckAPI = LuckPermsProvider.get();
             net.luckperms.api.model.user.User user = luckAPI.getPlayerAdapter(Player.class).getUser(player);
             String chatColourString = Objects.requireNonNullElse(user.getCachedData().getMetaData().getMetaValue("chat-colour"), "");
-            chatColour = MiniMessage.miniMessage().deserialize(chatColourString);
+            chatColour = MiniMessage.miniMessage().deserialize(chatColourString).color();
+        }
+        return chatColour;
+    }
 
-            if (!player.hasPermission("skyprisoncore.chat.format")) return chatColour.append(Component.text(message));
+    public Component getParsedString(CommandSender sender, String formatType, String message) {
+        TagResolver.Builder resolver = TagResolver.builder();
+        if (!sender.hasPermission("skyprisoncore.format." + formatType)) return Component.text(message);
 
-            for (Map.Entry<String, TagResolver> entry : DEFAULT_TAGS.entrySet()) {
-                if (player.hasPermission("skyprisoncore.chat." + entry.getKey())) {
-                    resolver.resolver(entry.getValue());
-                }
+        for (Map.Entry<String, TagResolver> entry : DEFAULT_TAGS.entrySet()) {
+            if (sender.hasPermission("skyprisoncore.format." + formatType + "." + entry.getKey())) {
+                resolver.resolver(entry.getValue());
             }
-
-            for (TextDecoration decoration : TextDecoration.values()) {
-                if (player.hasPermission("skyprisoncore.chat." + decoration.name())) {
-                    resolver.resolver(StandardTags.decorations(decoration));
-                }
+        }
+        if(sender instanceof Player player) {
+            if(player.hasPermission("skyprisoncore.format." + formatType + ".papi")) {
+                resolver.resolver(papiTag(player));
             }
-
-        } else {
-            resolver.resolvers(StandardTags.defaults());
         }
         final MiniMessage miniMessage = MiniMessage.builder().tags(resolver.build()).build();
-        return chatColour.append(miniMessage.deserialize(message));
+        return miniMessage.deserialize(message);
     }
 
     @Override
@@ -544,6 +558,38 @@ public class SkyPrisonCore extends JavaPlugin {
         minPrice.put(Material.APPLE, 5.0);
     }
 
+    public void sendPrivateMessage(CommandSender sender, Audience receiver, String message) {
+        Component senderName = sender.name();
+        Component pMsg = Component.empty().append(Component.text(" » ", TextColor.fromHexString("#940b34")))
+                .append(getParsedString(sender, "private", message).colorIfAbsent(NamedTextColor.GRAY));
+        if (sender instanceof Player toPlayer) {
+            Component customName = toPlayer.customName();
+            if (customName != null) senderName = customName;
+        }
+
+        Component receiverName = Component.text("Unknown");
+        if(receiver instanceof Player player) {
+            receiverName = Objects.requireNonNullElse(player.customName(), player.displayName());
+        } else if(receiver instanceof CommandSender receiving) {
+            receiverName = receiving.name();
+        }
+
+        Component msgTo = Component.empty().append(Component.text("Me", TextColor.fromHexString("#f02d68"))).append(Component.text(" ⇒ ", TextColor.fromHexString("#940b34")))
+                .append(receiverName.colorIfAbsent(TextColor.fromHexString("#f02d68")));
+
+        Component msgFrom = Component.empty().append(senderName.colorIfAbsent(TextColor.fromHexString("#f02d68"))).append(Component.text(" ⇒ ", TextColor.fromHexString("#940b34")))
+                .append(Component.text("Me", TextColor.fromHexString("#f02d68")));
+        sender.sendMessage(msgTo.append(pMsg));
+        receiver.sendMessage(msgFrom.append(pMsg));
+
+        if (lastMessaged.isEmpty() || !lastMessaged.containsKey(sender) || !lastMessaged.get(sender).equals(receiver)) {
+            lastMessaged.put(sender, receiver);
+        }
+        if (lastMessaged.isEmpty() || !lastMessaged.containsKey(receiver)) {
+            lastMessaged.put(receiver, sender);
+        }
+    }
+
     public void registerCommands() {
         manager.command(
                 manager.commandBuilder("spc")
@@ -555,6 +601,7 @@ public class SkyPrisonCore extends JavaPlugin {
         );
 
         this.manager.command(this.manager.commandBuilder("treefeller")
+                .permission("skyprisoncore.command.treefeller")
                 .argument(PlayerArgument.of("player"))
                 .argument(MaterialArgument.of("material"))
                 .argument(IntegerArgument.of("amount"))
@@ -562,19 +609,63 @@ public class SkyPrisonCore extends JavaPlugin {
                     final Player player = c.get("player");
                     final Material material = c.get("material");
                     final int amount = c.get("amount");
-                    final ItemStack itemStack = TreeFellerAxe.getAxe(this, material, amount);
+                    final ItemStack itemStack = TreeFeller.getAxe(this, material, amount);
                     player.getInventory().addItem(itemStack);
                     c.getSender().sendMessage(Component.text("Successfully sent!"));
                 }));
 
 
-        this.manager.command(this.manager.commandBuilder("testmsg")
+        this.manager.command(this.manager.commandBuilder("blacksmith")
+                .permission("skyprisoncore.command.blacksmith")
+                .argument(PlayerArgument.optional("player"))
+                .handler(c -> Bukkit.getScheduler().runTask(this, () -> {
+                    if(c.getOptional("player").isPresent()) {
+                        final Player player = (Player) c.getOptional("player").get();
+                        player.openInventory(new BlacksmithUpgrade(this).getInventory());
+                    } else if(c.getSender() instanceof Player player) {
+                        player.openInventory(new BlacksmithUpgrade(this).getInventory());
+                    } else {
+                        c.getSender().sendMessage(Component.text("Invalid Usage! /blacksmith <player>", NamedTextColor.RED));
+                    }
+                })));
+
+        this.manager.command(this.manager.commandBuilder("treefeller-upgrade")
+                .permission("skyprisoncore.command.treefeller-upgrade")
+                .argument(PlayerArgument.of("player"))
+                .argument(StringArgument.of("type"))
+                .argument(IntegerArgument.of("amount"))
+                .handler(c -> {
+                    final Player player = c.get("player");
+                    final String type = c.get("type");
+                    final int amount = c.get("amount");
+                    final ItemStack itemStack = TreeFeller.getUpgradeItem(this, type, amount);
+                    player.getInventory().addItem(itemStack);
+                    c.getSender().sendMessage(Component.text("Successfully sent!"));
+                }));
+
+
+        this.manager.command(this.manager.commandBuilder("msg")
+                .permission("skyprisoncore.command.msg")
                 .argument(PlayerArgument.of("player"))
                 .argument(StringArgument.greedy("message"))
                 .handler(c -> {
+                    CommandSender sender = c.getSender();
                     final Player player = c.get("player");
                     final String message = c.get("message");
-                    player.sendMessage(Component.text(message));
+                    sendPrivateMessage(sender, player, message);
+                }));
+
+        this.manager.command(this.manager.commandBuilder("reply", "r")
+                .permission("skyprisoncore.command.reply")
+                .argument(StringArgument.greedy("message"))
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    if(!lastMessaged.isEmpty() && lastMessaged.containsKey(sender) && lastMessaged.get(sender) != null
+                            && ((lastMessaged.get(sender) instanceof Player player && player.isOnline()) || lastMessaged.get(sender) instanceof ConsoleCommandSender)) {
+                        sendPrivateMessage(sender, lastMessaged.get(sender), c.get("message"));
+                    } else {
+                        sender.sendMessage(Component.text("Noone to reply to found..", NamedTextColor.RED));
+                    }
                 }));
 
         Objects.requireNonNull(getCommand("tokens")).setExecutor(tokens);
@@ -733,6 +824,15 @@ public class SkyPrisonCore extends JavaPlugin {
                 }
             });
         }
+    }
+
+    public static @NotNull TagResolver papiTag(final @NotNull Player player) {
+        return TagResolver.resolver("papi", (argumentQueue, context) -> {
+            final String papiPlaceholder = argumentQueue.popOr("papi tag requires an argument").value();
+            final String parsedPlaceholder = PlaceholderAPI.setPlaceholders(player, '%' + papiPlaceholder + '%');
+            final Component componentPlaceholder = LegacyComponentSerializer.legacySection().deserialize(parsedPlaceholder);
+            return Tag.inserting(componentPlaceholder);
+        });
     }
 
 

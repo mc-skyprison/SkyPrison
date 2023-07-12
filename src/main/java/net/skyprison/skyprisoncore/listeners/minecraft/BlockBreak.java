@@ -25,6 +25,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.ArrayList;
@@ -45,18 +46,36 @@ public class BlockBreak implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onblockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
+        ItemStack item = player.getInventory().getItemInMainHand();
+        if(item.hasItemMeta() && item.getPersistentDataContainer().has(new NamespacedKey(plugin, "treefeller"))) {
+            int durabilityLeft = item.getType().getMaxDurability() - item.getDamage();
+            if(durabilityLeft <= 1) {
+                if(!player.hasMetadata("treefeller-broken-msg")) {
+                    player.setMetadata("treefeller-broken-msg", new FixedMetadataValue(plugin, true));
+                    player.sendMessage(Component.text("Your tool has broken! Get it repaired at a blacksmith.", NamedTextColor.GRAY));
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            player.removeMetadata("treefeller-broken-msg", plugin);
+                        }
+                    }.runTaskLater(plugin, 60);
+                }
+                event.setCancelled(true);
+                return;
+            }
+        }
+
 
         if(player.getGameMode().equals(GameMode.SURVIVAL)) {
             Block b = event.getBlock();
             Location loc = b.getLocation();
             Material bType = b.getType();
-            ItemStack item = player.getInventory().getItemInMainHand();
 
             if (!event.isCancelled()) {
                 if (loc.getWorld().getName().equalsIgnoreCase("world_event")) {
                     if (bType.equals(Material.SNOW_BLOCK))
                         event.setDropItems(false);
-                    if (!player.isOp() && bType.equals(Material.TNT)) {
+                    if (!player.getGameMode().equals(GameMode.CREATIVE) && bType.equals(Material.TNT)) {
                         event.setCancelled(true);
                     }
                 } else if (loc.getWorld().getName().equalsIgnoreCase("world_prison")) {
@@ -116,7 +135,8 @@ public class BlockBreak implements Listener {
                         if (b.getRelative(BlockFace.DOWN, 1).getType().equals(Material.BAMBOO))
                             event.setCancelled(false);
                     } else if (bType.equals(Material.BIRCH_LOG)) {
-                        if (item.getPersistentDataContainer().has(new NamespacedKey(plugin, "treefeller")) && !player.hasMetadata("treefeller-stop-looping") && !player.isSneaking() && notCell) {
+                        if (item.hasItemMeta() && item.getPersistentDataContainer().has(new NamespacedKey(plugin, "treefeller")) && !player.hasMetadata("treefeller-stop-looping") && !player.isSneaking() && notCell) {
+                            event.setCancelled(false);
                             player.setMetadata("treefeller-stop-looping", new FixedMetadataValue(plugin, true));
                             List<Block> blocks = new ArrayList<>();
                             boolean birch = true;
@@ -135,19 +155,37 @@ public class BlockBreak implements Listener {
                                     Block nBlock = b.getRelative(BlockFace.DOWN, i++);
                                     if (nBlock.getType().equals(Material.BIRCH_LOG)) {
                                         blocks.add(nBlock);
+                                    } else if(nBlock.isSolid()) {
+                                        new BukkitRunnable() {
+                                            @Override
+                                            public void run() {
+                                                nBlock.getRelative(BlockFace.UP, 1).setType(Material.BIRCH_SAPLING);
+                                            }
+                                        }.runTaskLater(plugin, 5);
+                                        birch = false;
                                     } else {
-                                        plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> loc.getBlock().setType(Material.BIRCH_SAPLING), 10L);
                                         birch = false;
                                     }
                                 }
                             }
                             blocks.forEach(player::breakBlock);
+                            int cooldown = item.getPersistentDataContainer().get(new NamespacedKey(plugin, "treefeller-cooldown"), PersistentDataType.INTEGER);
                             new BukkitRunnable() {
                                 @Override
                                 public void run() {
                                     player.removeMetadata("treefeller-stop-looping", plugin);
                                 }
-                            }.runTask(plugin);
+                            }.runTaskLater(plugin, 20L * cooldown);
+                        } else if(notCell) {
+                            event.setCancelled(false);
+                            if(!b.getRelative(BlockFace.DOWN, 1).getType().equals(Material.BIRCH_LOG) && b.getRelative(BlockFace.DOWN, 1).isSolid()) {
+                                new BukkitRunnable() {
+                                    @Override
+                                    public void run() {
+                                        b.setType(Material.BIRCH_SAPLING);
+                                    }
+                                }.runTaskLater(plugin, 5);
+                            }
                         }
                     }
                 }
