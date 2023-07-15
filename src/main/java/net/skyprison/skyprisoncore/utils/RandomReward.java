@@ -3,7 +3,9 @@ package net.skyprison.skyprisoncore.utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.Bomb;
+import net.skyprison.skyprisoncore.items.Shrek;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -73,7 +75,7 @@ public enum RandomReward {
             Material.STONE_SWORD, Material.IRON_SWORD
     };
 
-    public static ItemStack getRandomReward() {
+    public static ItemStack getRandomReward(SkyPrisonCore plugin) {
         List<RandomReward> weightedList = new ArrayList<>();
         for (RandomReward reward : RandomReward.values()) {
             int chance = (int) (reward.getChance() * 100);
@@ -85,7 +87,7 @@ public enum RandomReward {
         int randomIndex = new Random().nextInt(weightedList.size());
         RandomReward reward = weightedList.get(randomIndex);
 
-        return itemFromReward(reward);
+        return itemFromReward(plugin, reward);
     }
 
     public static int biasedRandom(int min, int max) {
@@ -101,7 +103,7 @@ public enum RandomReward {
     }
 
 
-    private static ItemStack itemFromReward(RandomReward reward) {
+    private static ItemStack itemFromReward(SkyPrisonCore plugin, RandomReward reward) {
         String rew = reward.name().toLowerCase();
         ItemStack item = new ItemStack(Material.DIRT, 1);
         ItemMeta iMeta = item.getItemMeta();
@@ -116,7 +118,7 @@ public enum RandomReward {
                     amount = biasedRandom(2, 4);
                 }
             }
-            item = Bomb.getBomb(reward.toString(), amount);
+            item = Bomb.getBomb(plugin, reward.toString(), amount);
         } else if(rew.contains("feces")) {
             amount = rand.nextInt(5) + 1;
             item = new ItemStack(Material.BROWN_DYE, amount);
@@ -140,11 +142,7 @@ public enum RandomReward {
             item.setItemMeta(iMeta);
         } else if(rew.equalsIgnoreCase("lapis_lazuli")) {
             amount = biasedRandom(4, 16);
-            item = new ItemStack(Material.LAPIS_LAZULI, amount);
-            lore.add(MiniMessage.miniMessage().deserialize(reward.desc));
-            iMeta.lore(lore);
-            iMeta.displayName(MiniMessage.miniMessage().deserialize(reward.title));
-            item.setItemMeta(iMeta);
+            item = Shrek.getAllayDust(plugin, amount);
         } else if(rew.equalsIgnoreCase("golden_apple")) {
             amount = rand.nextInt(3) + 1;
             item = new ItemStack(Material.GOLDEN_APPLE, amount);

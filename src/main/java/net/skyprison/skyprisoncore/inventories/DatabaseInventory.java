@@ -21,10 +21,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class DatabaseInventory implements CustomInventory{
     private final Inventory inventory;
@@ -176,7 +173,6 @@ public class DatabaseInventory implements CustomInventory{
         this.plugin = plugin;
         this.category = category;
         this.db = db;
-        this.inventory = plugin.getServer().createInventory(this, 54, Component.text(WordUtils.capitalize(category.replace("-", "")), TextColor.fromHexString("#0fc3ff")));
 
         HashMap<Integer, HashMap<String, Object>> items = new HashMap<>();
 
@@ -204,6 +200,18 @@ public class DatabaseInventory implements CustomInventory{
             e.printStackTrace();
         }
 
+        int invSize = 54;
+        if(!canEdit) {
+            Optional<Integer> optionalSize = items.keySet().stream().max(Integer::compare);
+            if (optionalSize.isPresent()) {
+                int size = optionalSize.get();
+                int multiplier = (size / 9) + 1;
+                invSize = multiplier * 9;
+                invSize = Math.min(invSize, 54);
+            }
+        }
+
+        this.inventory = plugin.getServer().createInventory(this, invSize, Component.text(WordUtils.capitalize(category.replace("-", "")), TextColor.fromHexString("#0fc3ff")));
         this.items = items;
 
         updateUsage(player);

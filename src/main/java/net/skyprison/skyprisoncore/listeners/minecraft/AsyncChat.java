@@ -75,7 +75,6 @@ public class AsyncChat implements Listener {
         String miniMsg = MiniMessage.miniMessage().serialize(event.originalMessage());
         if(plugin.chatLock.containsKey(player.getUniqueId())) {
             event.setCancelled(true);
-            String finalMiniMsg = miniMsg;
             Bukkit.getScheduler().runTask(plugin, () -> {
                 boolean removeChatLock = true;
                 List<Object> chatLock = plugin.chatLock.get(player.getUniqueId());
@@ -138,7 +137,7 @@ public class AsyncChat implements Listener {
                     switch (lockedString.toLowerCase()) {
                         case "tags-display" -> { // ID
                             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE tags SET tags_display = ? WHERE tags_id = ?")) {
-                                ps.setString(1, finalMiniMsg);
+                                ps.setString(1, miniMsg);
                                 ps.setInt(2, (int) chatLock.get(1));
                                 ps.executeUpdate();
                             } catch (SQLException e) {
@@ -148,7 +147,7 @@ public class AsyncChat implements Listener {
                             tag.openSpecificGUI(player, (Integer) chatLock.get(1));
                         }
                         case "tags-lore" -> { // ID
-                            String lore = finalMiniMsg;
+                            String lore = miniMsg;
                             if (msg.equalsIgnoreCase("null")) {
                                 lore = null;
                             }
@@ -180,11 +179,11 @@ public class AsyncChat implements Listener {
                         }
                         case "tags-new-display" -> { // DISPLAY, LORE, EFFECT
                             player.sendMessage(Component.text("Set the tag display!", NamedTextColor.GREEN));
-                            tag.openNewGUI(player, finalMiniMsg, (String) chatLock.get(2), (String) chatLock.get(3));
+                            tag.openNewGUI(player, miniMsg, (String) chatLock.get(2), (String) chatLock.get(3));
                         }
                         case "tags-new-lore" -> { // DISPLAY, LORE, EFFECT
                             player.sendMessage(Component.text("Set the tag lore!", NamedTextColor.GREEN));
-                            tag.openNewGUI(player, (String) chatLock.get(1), finalMiniMsg, (String) chatLock.get(3));
+                            tag.openNewGUI(player, (String) chatLock.get(1), miniMsg, (String) chatLock.get(3));
                         }
                         case "tags-new-effect" -> { // DISPLAY, LORE, EFFECT
                             player.sendMessage(Component.text("Set the tag effect!", NamedTextColor.GREEN));
@@ -200,7 +199,7 @@ public class AsyncChat implements Listener {
                                 }
 
                                 assert lore != null;
-                                lore.add(MiniMessage.miniMessage().deserialize(finalMiniMsg).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
+                                lore.add(MiniMessage.miniMessage().deserialize(miniMsg).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
 
                                 if (heldItem.equals(currHeldItem)) {
                                     player.getInventory().getItemInMainHand().lore(lore);
@@ -220,7 +219,7 @@ public class AsyncChat implements Listener {
                                 if(heldItem.equals(currHeldItem)) {
                                     List<Component> lore = player.getInventory().getItemInMainHand().lore();
                                     assert lore != null;
-                                    lore.set(line - 1, MiniMessage.miniMessage().deserialize(finalMiniMsg).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
+                                    lore.set(line - 1, MiniMessage.miniMessage().deserialize(miniMsg).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
                                     player.getInventory().getItemInMainHand().lore(lore);
                                     itemLore.displayLore(player);
                                 } else {
@@ -233,21 +232,21 @@ public class AsyncChat implements Listener {
                         case "news-title" -> {
                             NewsMessageEdit messageEdit = (NewsMessageEdit) chatLock.get(1);
                             if(!msg.equalsIgnoreCase("cancel")) {
-                                messageEdit.setTitle(finalMiniMsg);
+                                messageEdit.setTitle(miniMsg);
                             }
                             player.openInventory(messageEdit.getInventory());
                         }
                         case "news-content" -> {
                             NewsMessageEdit messageEdit = (NewsMessageEdit) chatLock.get(1);
                             if(!msg.equalsIgnoreCase("cancel")) {
-                                messageEdit.setContent(finalMiniMsg);
+                                messageEdit.setContent(miniMsg);
                             }
                             player.openInventory(messageEdit.getInventory());
                         }
                         case "news-hover" -> {
                             NewsMessageEdit messageEdit = (NewsMessageEdit) chatLock.get(1);
                             if(!msg.equalsIgnoreCase("cancel")) {
-                                messageEdit.setHover(finalMiniMsg);
+                                messageEdit.setHover(miniMsg);
                             }
                             player.openInventory(messageEdit.getInventory());
                         }
@@ -294,7 +293,7 @@ public class AsyncChat implements Listener {
                         case "news-click-data" -> {
                             NewsMessageEdit messageEdit = (NewsMessageEdit) chatLock.get(1);
                             if(!msg.equalsIgnoreCase("cancel")) {
-                                messageEdit.setClickData(finalMiniMsg);
+                                messageEdit.setClickData(miniMsg);
                             }
                             player.openInventory(messageEdit.getInventory());
                         }
@@ -380,14 +379,14 @@ public class AsyncChat implements Listener {
                         case "item-permission-message" -> {
                             DatabaseInventoryEdit inv = (DatabaseInventoryEdit) chatLock.get(1);
                             if(!msg.equalsIgnoreCase("cancel")) {
-                                inv.setPermissionMessage(finalMiniMsg);
+                                inv.setPermissionMessage(miniMsg);
                             }
                             player.openInventory(inv.getInventory());
                         }
                         case "item-usage-lore" -> {
                             DatabaseInventoryEdit inv = (DatabaseInventoryEdit) chatLock.get(1);
                             if(!msg.equalsIgnoreCase("cancel")) {
-                                inv.setUsageLore(finalMiniMsg);
+                                inv.setUsageLore(miniMsg);
                             }
                             player.openInventory(inv.getInventory());
                         }

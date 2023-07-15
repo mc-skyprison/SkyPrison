@@ -1,5 +1,6 @@
 package net.skyprison.skyprisoncore;
 
+import cloud.commandframework.Command;
 import cloud.commandframework.CommandTree;
 import cloud.commandframework.arguments.standard.IntegerArgument;
 import cloud.commandframework.arguments.standard.StringArgument;
@@ -58,7 +59,9 @@ import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
 import net.skyprison.skyprisoncore.inventories.BlacksmithUpgrade;
 import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
 import net.skyprison.skyprisoncore.inventories.NewsMessageEdit;
+import net.skyprison.skyprisoncore.items.Shrek;
 import net.skyprison.skyprisoncore.items.TreeFeller;
+import net.skyprison.skyprisoncore.items.Vouchers;
 import net.skyprison.skyprisoncore.listeners.advancedregionmarket.UnsellRegion;
 import net.skyprison.skyprisoncore.listeners.brewery.BrewDrink;
 import net.skyprison.skyprisoncore.listeners.cmi.CMIPlayerTeleportRequest;
@@ -373,7 +376,7 @@ public class SkyPrisonCore extends JavaPlugin {
 
     public boolean hasVoucher(Player player, String voucherType, int amount) {
         PlayerInventory inv = player.getInventory();
-        ItemStack voucher = Voucher.getVoucher(voucherType, 1);
+        ItemStack voucher = Vouchers.getVoucherFromType(this, voucherType, amount);
         return inv.containsAtLeast(voucher, amount);
     }
 
@@ -600,6 +603,7 @@ public class SkyPrisonCore extends JavaPlugin {
                         })
         );
 
+
         this.manager.command(this.manager.commandBuilder("treefeller")
                 .permission("skyprisoncore.command.treefeller")
                 .argument(PlayerArgument.of("player"))
@@ -643,6 +647,44 @@ public class SkyPrisonCore extends JavaPlugin {
                     c.getSender().sendMessage(Component.text("Successfully sent!"));
                 }));
 
+
+        Command.Builder<CommandSender> voucher = this.manager.commandBuilder("voucher")
+                .permission("skyprisoncore.command.voucher");
+        this.manager.command(voucher.literal("give")
+                        .permission("skyprisoncore.command.voucher.give")
+                        .argument(PlayerArgument.of("player"))
+                        .argument(StringArgument.<CommandSender>builder("voucher")
+                                .withSuggestionsProvider((commandSenderCommandContext, s) -> List.of("token-shop", "mine-reset", "single-use-enderchest")))
+                        .argument(IntegerArgument.of("amount"))
+                        .handler(c -> {
+                            final Player player = c.get("player");
+                            final String voucherType = c.get("voucher");
+                            final int amount = c.get("amount");
+                            ItemStack voucherItem = Vouchers.getVoucherFromType(this, voucherType, amount);
+                            if(voucherItem != null) {
+                                player.getInventory().addItem(voucherItem);
+                                c.getSender().sendMessage(Component.text("Successfully sent!"));
+                            }
+                        }));
+
+        Command.Builder<CommandSender> shrek = this.manager.commandBuilder("shrek")
+                .permission("skyprisoncore.command.shrek");
+        this.manager.command(shrek.literal("give")
+                .permission("skyprisoncore.command.shrek.give")
+                .argument(PlayerArgument.of("player"))
+                .argument(StringArgument.<CommandSender>builder("type")
+                        .withSuggestionsProvider((commandSenderCommandContext, s) -> List.of("shrek-grease", "allay-dust")))
+                .argument(IntegerArgument.of("amount"))
+                .handler(c -> {
+                    final Player player = c.get("player");
+                    final String type = c.get("type");
+                    final int amount = c.get("amount");
+                    ItemStack item = Shrek.getItemFromType(this, type, amount);
+                    if(item != null) {
+                        player.getInventory().addItem(item);
+                        c.getSender().sendMessage(Component.text("Successfully sent!"));
+                    }
+                }));
 
         this.manager.command(this.manager.commandBuilder("msg")
                 .permission("skyprisoncore.command.msg")
@@ -708,7 +750,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("bomb")).setExecutor(new Bomb(this));
         Objects.requireNonNull(getCommand("furnace")).setExecutor(new VirtualFurnace(this));
         Objects.requireNonNull(getCommand("minereset")).setExecutor(new MineReset(this));
-        Objects.requireNonNull(getCommand("voucher")).setExecutor(new Voucher());
         Objects.requireNonNull(getCommand("randomgive")).setExecutor(new RandomGive(this));
         Objects.requireNonNull(getCommand("customrecipes")).setExecutor(new CustomRecipes(this));
         Objects.requireNonNull(getCommand("claim")).setExecutor(new Claim(this, getDatabase()));
@@ -743,7 +784,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new InventoryClick(this, new EconomyCheck(this), new DropChest(this), new Bounty(getDatabase(), this),
                 new SecretsGUI(this, getDatabase()), new Daily(this, getDatabase()), new MoneyHistory(this), new EndUpgrade(this),
                 new BuyBack(this, getDatabase()), new SkyPlot(this), getDatabase(), new Tags(this, getDatabase()), particles, new CustomRecipes(this)), this);
-        pm.registerEvents(new InventoryOpen(), this);
+        pm.registerEvents(new InventoryOpen(this), this);
         pm.registerEvents(new LeavesDecay(), this);
         pm.registerEvents(new McMMOLevelUp(this), this);
         pm.registerEvents(new PlayerChangedWorld(), this);
@@ -773,6 +814,9 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new AsyncChatDecorate(this), this);
         pm.registerEvents(new SignChange(this), this);
         pm.registerEvents(new PlayerEditBook(this), this);
+        pm.registerEvents(new PrepareAnvil(), this);
+        pm.registerEvents(new EnchantItem(this), this);
+        pm.registerEvents(new PrepareItemEnchant(this), this);
 
         pm.registerEvents(new AsyncChat(this, discApi, getDatabase(), new Tags(this, getDatabase()), new ItemLore(this)), this);
         pm.registerEvents(new PlayerQuit(this, getDatabase(), discApi, dailyMissions), this);
@@ -1040,8 +1084,6 @@ public class SkyPrisonCore extends JavaPlugin {
         }
     }
 
-
-
     public String ticksToTime(int ticks) { // 500 -> 24:00
         String time = String.valueOf(ticks / 1000.0);
         String[] split = time.split("\\.");
@@ -1057,7 +1099,6 @@ public class SkyPrisonCore extends JavaPlugin {
         }
         return sHours + ":" + sMinutes;
     }
-
 
     public int timeToTicks(String time) {
         String[] split = time.split(":");

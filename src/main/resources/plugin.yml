@@ -5,7 +5,7 @@ version: 7.0.0
 main: net.skyprison.skyprisoncore.SkyPrisonCore
 api-version: 1.18
 website: https://skyprison.net/
-depend: [WorldGuard, WorldEdit, PlaceholderAPI, CMI, Parkour, ShopGUIPlus, CoreProtect, PvPManager, QuickShop, AdvancedRegionMarket, CustomCrafting]
+depend: [WorldGuard, WorldEdit, PlaceholderAPI, CMI, Parkour, ShopGUIPlus, CoreProtect, PvPManager, AdvancedRegionMarket, CustomCrafting]
 commands:
   transportpass:
     description: bus/train pass
@@ -280,11 +280,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.minereset
     permission-message: §4Error:§c You do not have permission to execute this command...
-  voucher:
-    description: Tags command
-    usage: /<command>
-    permission: skyprisoncore.command.voucher
-    permission-message: §4Error:§c You do not have permission to execute this command...
   randomgive:
     description: Randomgive command
     usage: /<command>
@@ -342,8 +337,6 @@ permissions:
   skyprisoncore.command.furnace:
     description: Gives access to discord
   skyprisoncore.command.minereset:
-    description: Gives access to discord
-  skyprisoncore.command.voucher:
     description: Gives access to discord
 
   #

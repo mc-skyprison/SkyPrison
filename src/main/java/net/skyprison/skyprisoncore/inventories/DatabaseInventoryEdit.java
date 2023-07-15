@@ -91,6 +91,7 @@ public class DatabaseInventoryEdit implements CustomInventory {
                 List<Component> lore = Objects.requireNonNullElse(previewMeta.lore(), new ArrayList<>());
                 lore.add(Component.empty());
                 lore.add(Component.text("CLICK TO GET A COPY", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                previewMeta.lore(lore);
                 preview.setItemMeta(previewMeta);
                 inventory.setItem(i, preview);
             } else if (i == 15) {

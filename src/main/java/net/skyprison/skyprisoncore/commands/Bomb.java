@@ -5,6 +5,7 @@ import com.Zrips.CMI.Containers.CMIUser;
 import me.arcaniax.hdb.api.HeadDatabaseAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.NamespacedKey;
@@ -15,7 +16,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -25,12 +25,7 @@ public class Bomb implements CommandExecutor {
     public Bomb(SkyPrisonCore plugin) {
         this.plugin = plugin;
     }
-
-
-
-
-    public static ItemStack getBomb(String bombName, int amount) {
-        SkyPrisonCore plugin = JavaPlugin.getPlugin(SkyPrisonCore.class);
+    public static ItemStack getBomb(SkyPrisonCore plugin, String bombName, int amount) {
         if(bombName.contains("_")) {
             bombName = bombName.split("_")[0];
         }
@@ -40,7 +35,7 @@ public class Bomb implements CommandExecutor {
         HeadDatabaseAPI hAPI = new HeadDatabaseAPI();
         ItemStack item = hAPI.getItemHead(getBombHdb(bombName));
         SkullMeta iMeta = (SkullMeta) item.getItemMeta();
-        iMeta.displayName(Component.text(WordUtils.capitalize(bombName) + " Bomb", NamedTextColor.YELLOW));
+        iMeta.displayName(Component.text(WordUtils.capitalize(bombName) + " Bomb", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
         NamespacedKey key = new NamespacedKey(plugin, "bomb-type");
         iMeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, bombName);
         item.setItemMeta(iMeta);
@@ -71,7 +66,7 @@ public class Bomb implements CommandExecutor {
                     if(getBombHdb(bomb) != null) {
                         if(plugin.isInt(args[3])) {
                             int amount = Integer.parseInt(args[3]);
-                            ItemStack item = getBomb(bomb, amount);
+                            ItemStack item = getBomb(plugin, bomb, amount);
                             if(user.getInventory().canFit(item)) {
                                 user.getInventory().addItem(item);
                             } else {

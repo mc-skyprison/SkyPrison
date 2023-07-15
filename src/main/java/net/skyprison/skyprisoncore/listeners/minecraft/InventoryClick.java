@@ -15,6 +15,7 @@ import com.sk89q.worldguard.protection.regions.RegionContainer;
 import dev.esophose.playerparticles.api.PlayerParticlesAPI;
 import dev.esophose.playerparticles.particles.ParticleEffect;
 import dev.esophose.playerparticles.styles.ParticleStyle;
+import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -28,6 +29,7 @@ import net.skyprison.skyprisoncore.commands.*;
 import net.skyprison.skyprisoncore.commands.economy.*;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
 import net.skyprison.skyprisoncore.inventories.*;
+import net.skyprison.skyprisoncore.items.Vouchers;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
 import org.apache.commons.lang.WordUtils;
@@ -645,6 +647,7 @@ public class InventoryClick implements Listener {
                                             }
                                             commands.forEach(command -> {
                                                 command = command.replace("<player>", player.getName());
+                                                command = PlaceholderAPI.setPlaceholders(player, command);
                                                 plugin.asConsole(command);
                                             });
                                         }
@@ -657,7 +660,7 @@ public class InventoryClick implements Listener {
                                         }
 
                                         if(removeVoucher) {
-                                            ItemStack voucher = Voucher.getVoucher(voucherType, voucherCost);
+                                            ItemStack voucher = Vouchers.getVoucherFromType(plugin, voucherType, voucherCost);
                                             player.getInventory().removeItem(voucher);
                                         }
 
@@ -703,6 +706,8 @@ public class InventoryClick implements Listener {
                                     event.setCancelled(false);
                                     inv.setItem(newPreview);
                                     player.openInventory(inv.getInventory());
+                                } else {
+                                    player.setItemOnCursor(ItemStack.deserializeBytes(inv.getItem()));
                                 }
                             }
                             case 15 -> {

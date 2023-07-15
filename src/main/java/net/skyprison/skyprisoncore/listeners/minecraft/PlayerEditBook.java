@@ -25,7 +25,9 @@ public class PlayerEditBook implements Listener {
         int i = 1;
         for(Component page : pages) {
             String pageString = MiniMessage.miniMessage().serialize(page);
-            bookMeta.page(i, plugin.getParsedString(player, "book", pageString));
+            pageString = pageString.replaceAll("\\\\<", "<");
+            Component newPage = plugin.getParsedString(player, "book", pageString);
+            bookMeta.page(i, newPage);
             i++;
         }
         event.setNewBookMeta(bookMeta);

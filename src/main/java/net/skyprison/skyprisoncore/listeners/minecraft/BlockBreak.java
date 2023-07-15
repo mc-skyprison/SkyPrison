@@ -117,7 +117,7 @@ public class BlockBreak implements Listener {
                                     plugin.shinyGrass.remove(loc);
                                     particles.removeFixedEffectsInRange(shinyLoc, 1);
                                     player.sendMessage(Component.text("Buried amidst the leafy foliage, you discover an unexpected treasure!", NamedTextColor.GRAY, TextDecoration.ITALIC));
-                                    item = RandomReward.getRandomReward();
+                                    item = RandomReward.getRandomReward(plugin);
                                     CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
                                     if (user.getInventory().canFit(item)) {
                                         player.getInventory().addItem(item);
