@@ -18,9 +18,10 @@ import java.util.List;
 import java.util.Objects;
 
 public class TreeFeller {
-    public static ItemStack getAxe(SkyPrisonCore plugin, Material axeMat, int amount) {
-        ItemStack axe = new ItemStack(axeMat, amount);
+    public static ItemStack getAxe(SkyPrisonCore plugin, int amount) {
+        ItemStack axe = new ItemStack(Material.IRON_AXE, amount);
         ItemMeta axeMeta = axe.getItemMeta();
+        axeMeta.displayName(Component.text("Treefeller Axe", TextColor.fromHexString("#adc17a")).decoration(TextDecoration.ITALIC, false));
         List<Component> lore = new ArrayList<>();
         lore.add(Component.text("Cooldown: ", NamedTextColor.GRAY).append(Component.text("10s", TextColor.fromHexString("#c4c6c5"))).decoration(TextDecoration.ITALIC, false));
         axeMeta.lore(lore);
@@ -93,9 +94,9 @@ public class TreeFeller {
         upgradeMeta.displayName(Component.text("Axe Upgrade", TextColor.fromHexString("#09f755"), TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
         List<Component> lore = new ArrayList<>();
         switch (type) {
-            case "speed" -> lore.add(Component.text("Break Speed", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-            case "cooldown" -> lore.add(Component.text("Cooldown Reduction", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-            case "durability" -> lore.add(Component.text("Durability", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+            case "speed" -> lore.add(Component.text("Break Speed", TextColor.fromHexString("#e7ebe0")).decoration(TextDecoration.ITALIC, false));
+            case "cooldown" -> lore.add(Component.text("Cooldown Reduction", TextColor.fromHexString("#e7ebe0")).decoration(TextDecoration.ITALIC, false));
+            case "durability" -> lore.add(Component.text("Durability", TextColor.fromHexString("#e7ebe0")).decoration(TextDecoration.ITALIC, false));
         }
         upgradeMeta.lore(lore);
         PersistentDataContainer axePers = upgradeMeta.getPersistentDataContainer();

@@ -27,6 +27,9 @@ public class BlacksmithUpgrade implements CustomInventory {
 
     private final Timer timer = new Timer();
 
+    private ItemStack currLeft = new ItemStack(Material.AIR);
+    private ItemStack currRight = new ItemStack(Material.AIR);
+
     public void updateInventory() {
         ItemStack left = inventory.getItem(10);
         ItemStack right = inventory.getItem(16);
@@ -59,27 +62,39 @@ public class BlacksmithUpgrade implements CustomInventory {
         ItemMeta greenMeta = greenPane.getItemMeta();
         greenMeta.displayName(Component.empty());
         greenPane.setItemMeta(greenMeta);
-        if(left && right) {
+
+        ItemStack leftItem = inventory.getItem(10);
+        ItemStack rightItem = inventory.getItem(16);
+        if(this.currLeft == null && left) {
+            this.currLeft = leftItem;
+        }
+        if(this.currRight == null && right) {
+            this.currRight = rightItem;
+        }
+
+        if((this.currLeft != null && !this.currLeft.equals(leftItem)) || (this.currRight != null && !this.currRight.equals(rightItem))) {
             resetResult();
+            this.currLeft = leftItem;
+            this.currRight = rightItem;
+        }
+
+        if(left && right) {
             inventory.setItem(11, greenPane);
             inventory.setItem(12, greenPane);
             inventory.setItem(14, greenPane);
             inventory.setItem(15, greenPane);
             setResult(inventory.getItem(10), inventory.getItem(16));
         } else if(left) {
-            resetResult();
             inventory.setItem(11, greenPane);
             inventory.setItem(12, greenPane);
             inventory.setItem(14, redPane);
             inventory.setItem(15, redPane);
         } else if(right) {
-            resetResult();
             inventory.setItem(11, redPane);
             inventory.setItem(12, redPane);
             inventory.setItem(14, greenPane);
             inventory.setItem(15, greenPane);
         } else {
-            resetResult();
             inventory.setItem(11, redPane);
             inventory.setItem(12, redPane);
             inventory.setItem(14, redPane);

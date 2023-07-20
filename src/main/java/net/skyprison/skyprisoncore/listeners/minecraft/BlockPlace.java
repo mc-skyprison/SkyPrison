@@ -46,14 +46,33 @@ public class BlockPlace implements Listener {
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
         Player player = event.getPlayer();
-        if ((!event.canBuild() || event.isCancelled()) && !event.getPlayer().hasPermission("antiblockjump.bypass")) {
-            player.setVelocity(new Vector(0, -1, 0));
+        if ((!event.canBuild() || event.isCancelled()) && !player.hasPermission("skyprisoncore.blockjump.bypass")) {
+            player.setVelocity(new Vector(0, 0, 0));
         } else {
             ItemStack item = event.getItemInHand();
+            Block block = event.getBlockPlaced();
+            if(block.getType().equals(Material.ENDER_CHEST) && block.getWorld().getName().equalsIgnoreCase("world_prison")) {
+                RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
+                RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(player.getWorld()));
+                if (regionManager != null) {
+                    ApplicableRegionSet regionList = regionManager.getApplicableRegions(BlockVector3.at(block.getLocation().getX(),
+                            block.getLocation().getY(), block.getLocation().getZ()));
+                    ProtectedRegion mineRegion = null;
+                    for (ProtectedRegion region : regionList.getRegions()) {
+                        if (region.getId().contains("mine") && !region.getId().contains("exit")) {
+                            mineRegion = region;
+                            break;
+                        }
+                    }
+                    if (mineRegion != null) {
+                        event.setCancelled(true);
+                        return;
+                    }
+                }
+            }
             if (item.hasItemMeta()) {
                 NamespacedKey bombKey = new NamespacedKey(plugin, "bomb-type");
                 if (event.getBlock().getWorld().getName().equalsIgnoreCase("world_prison")) {
-                    Block block = event.getBlockPlaced();
                     if (item.getType().equals(Material.PLAYER_HEAD) || item.getType().equals(Material.PLAYER_WALL_HEAD)) {
                         if (item.getPersistentDataContainer().has(bombKey)) {
                             RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();

@@ -4,7 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.items.Shrek;
+import net.skyprison.skyprisoncore.items.Greg;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -36,10 +36,10 @@ public class InventoryOpen implements Listener {
                 Location loc = event.getInventory().getLocation();
                 if(loc != null && loc.equals(new Location(Bukkit.getWorld("world_prison"), -121, 150, -175))) {
                     Player player = (Player) event.getPlayer();
-                    ItemStack grease = Shrek.getShrekGrease(plugin, 1);
+                    ItemStack grease = Greg.getGrease(plugin, 1);
                     if(!player.getInventory().containsAtLeast(grease, 1)) {
                         event.setCancelled(true);
-                        player.sendMessage(Component.text("The enchant table doesn't seem to be working.. I should ask Shrek about it.", NamedTextColor.GRAY, TextDecoration.ITALIC));
+                        player.sendMessage(Component.text("The enchant table doesn't seem to be working.. I should ask Greg about it.", NamedTextColor.GRAY, TextDecoration.ITALIC));
                     }
                 }
             }

@@ -138,6 +138,10 @@ public class InventoryClick implements Listener {
                 switch (customInv.defaultClickBehavior()) {
                     case DISABLE_ALL, ENABLE_SPECIFIC -> event.setCancelled(true);
                 }
+                if(event.getAction().equals(InventoryAction.COLLECT_TO_CURSOR)) {
+                    event.setCancelled(true);
+                    return;
+                }
                 if (customInv instanceof ClaimFlags inv) {
                     Component prefix = new Claim(plugin, db).prefix;
                     if(event.getCurrentItem() != null) {
@@ -632,7 +636,7 @@ public class InventoryClick implements Listener {
                                     if (runCommands) {
                                         String commandString = (String) item.get("commands");
                                         if (commandString != null && !commandString.isEmpty() && !commandString.isBlank()) {
-                                            if(commandString.contains("give <player>") || commandString.contains("brew create")) {
+                                            if(commandString.contains("give %player_name%") || commandString.contains("brew create")) {
                                                 if(player.getInventory().firstEmpty() == -1) {
                                                     player.sendMessage(Component.text("No available space in your inventory!", NamedTextColor.RED));
                                                     return;
@@ -645,8 +649,10 @@ public class InventoryClick implements Listener {
                                             } else {
                                                 commands.add(commandString);
                                             }
+
+                                            commands = commands.stream().filter(c -> !c.isEmpty()).toList();
+
                                             commands.forEach(command -> {
-                                                command = command.replace("<player>", player.getName());
                                                 command = PlaceholderAPI.setPlaceholders(player, command);
                                                 plugin.asConsole(command);
                                             });

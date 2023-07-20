@@ -80,7 +80,7 @@ public class PlayerJoin implements Listener {
             ApplicableRegionSet regionList = regions.getApplicableRegions(BlockVector3.at(loc.getX(), loc.getY(), loc.getZ()));
             for(ProtectedRegion region : regionList.getRegions()) {
                 if(region.getId().contains("mine")) {
-                    if(loc.getBlock().isSolid() && loc.clone().offset(0, 1, 0).toLocation(loc.getWorld()).getBlock().isSolid()) {
+                    if(loc.getBlock().isSolid() || loc.clone().offset(0, 1, 0).toLocation(loc.getWorld()).getBlock().isSolid()) {
                         plugin.asConsole("warp " + region.getId() + " " + player.getName());
                     }
                     break;
@@ -182,22 +182,31 @@ public class PlayerJoin implements Listener {
                 embedJoin = new EmbedBuilder()
                         .setAuthor(player.getName() + " joined the server", "",  "https://minotar.net/helm/" + player.getName())
                         .setColor(Color.GREEN);
-                boolean noData = false;
-                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT * FROM users WHERE user_id = ?")) {
+                String currentName = "";
+                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT current_name FROM users WHERE user_id = ?")) {
                     ps.setString(1, player.getUniqueId().toString());
                     ResultSet rs = ps.executeQuery();
-                    if(!rs.isBeforeFirst()) {
-                        noData = true;
+                    if(rs.next()) {
+                        currentName = rs.getString(1);
                     }
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
 
-                if(noData) {
+                if(currentName.isEmpty()) {
                     try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO users (user_id, current_name, first_join) VALUES (?, ?, ?)")) {
                         ps.setString(1, player.getUniqueId().toString());
                         ps.setString(2, player.getName());
                         ps.setLong(3, player.getFirstPlayed());
+                        ps.executeUpdate();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                } else if(!player.getName().equalsIgnoreCase(currentName)) {
+                    embedJoin.setDescription("They have changed their name! They were previously named " + currentName);
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET current_name = ? WHERE user_id = ?")) {
+                        ps.setString(1, player.getName());
+                        ps.setString(2, player.getUniqueId().toString());
                         ps.executeUpdate();
                     } catch (SQLException e) {
                         e.printStackTrace();

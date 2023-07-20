@@ -6,7 +6,6 @@ import cloud.commandframework.arguments.standard.IntegerArgument;
 import cloud.commandframework.arguments.standard.StringArgument;
 import cloud.commandframework.bukkit.BukkitCommandManager;
 import cloud.commandframework.bukkit.CloudBukkitCapabilities;
-import cloud.commandframework.bukkit.parsers.MaterialArgument;
 import cloud.commandframework.bukkit.parsers.PlayerArgument;
 import cloud.commandframework.execution.AsynchronousCommandExecutionCoordinator;
 import cloud.commandframework.execution.CommandExecutionCoordinator;
@@ -59,7 +58,7 @@ import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
 import net.skyprison.skyprisoncore.inventories.BlacksmithUpgrade;
 import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
 import net.skyprison.skyprisoncore.inventories.NewsMessageEdit;
-import net.skyprison.skyprisoncore.items.Shrek;
+import net.skyprison.skyprisoncore.items.Greg;
 import net.skyprison.skyprisoncore.items.TreeFeller;
 import net.skyprison.skyprisoncore.items.Vouchers;
 import net.skyprison.skyprisoncore.listeners.advancedregionmarket.UnsellRegion;
@@ -284,9 +283,9 @@ public class SkyPrisonCore extends JavaPlugin {
                 .withArgumentParsingHandler()
                 .withCommandExecutionHandler()
                 .withDecorator(component -> Component.text()
-                        .append(Component.text("[", NamedTextColor.DARK_GRAY))
-                        .append(Component.text("SkyPrison", NamedTextColor.GOLD))
-                        .append(Component.text("] ", NamedTextColor.DARK_GRAY))
+                        .append(Component.text("Sky", TextColor.fromHexString("#00ffff")))
+                        .append(Component.text("Prison", TextColor.fromHexString("#FF0000")))
+                        .append(Component.text(" » ", NamedTextColor.DARK_GRAY))
                         .append(component).build()
                 ).apply(this.manager, AudienceProvider.nativeAudience());
 
@@ -482,7 +481,6 @@ public class SkyPrisonCore extends JavaPlugin {
         }
     }
 
-
     public void updateDiscordRoles() {
         if(discApi != null && discApi.getServerById("782795465632251955").isPresent()) {
             for (Player player : Bukkit.getOnlinePlayers()) {
@@ -579,9 +577,9 @@ public class SkyPrisonCore extends JavaPlugin {
 
         Component msgTo = Component.empty().append(Component.text("Me", TextColor.fromHexString("#f02d68"))).append(Component.text(" ⇒ ", TextColor.fromHexString("#940b34")))
                 .append(receiverName.colorIfAbsent(TextColor.fromHexString("#f02d68")));
-
         Component msgFrom = Component.empty().append(senderName.colorIfAbsent(TextColor.fromHexString("#f02d68"))).append(Component.text(" ⇒ ", TextColor.fromHexString("#940b34")))
                 .append(Component.text("Me", TextColor.fromHexString("#f02d68")));
+
         sender.sendMessage(msgTo.append(pMsg));
         receiver.sendMessage(msgFrom.append(pMsg));
 
@@ -598,26 +596,33 @@ public class SkyPrisonCore extends JavaPlugin {
                 manager.commandBuilder("spc")
                         .literal("help")
                         .argument(StringArgument.optional("query", StringArgument.StringMode.GREEDY))
-                        .handler(context -> {
-                            minecraftHelp.queryCommands(context.getOrDefault("query", ""), context.getSender());
-                        })
+                        .handler(context -> minecraftHelp.queryCommands(context.getOrDefault("query", ""), context.getSender()))
         );
 
-
-        this.manager.command(this.manager.commandBuilder("treefeller")
-                .permission("skyprisoncore.command.treefeller")
+        Command.Builder<CommandSender> treefeller = this.manager.commandBuilder("treefeller")
+                .permission("skyprisoncore.command.treefeller");
+        List<String> treefellerOptions = List.of("axe", "speed", "cooldown", "durability");
+        this.manager.command(treefeller.literal("give")
+                .permission("skyprisoncore.command.treefeller.give")
                 .argument(PlayerArgument.of("player"))
-                .argument(MaterialArgument.of("material"))
+                .argument(StringArgument.<CommandSender>builder("type")
+                        .withSuggestionsProvider((commandSenderCommandContext, s) -> treefellerOptions))
                 .argument(IntegerArgument.of("amount"))
                 .handler(c -> {
                     final Player player = c.get("player");
-                    final Material material = c.get("material");
+                    final String type = c.get("type");
                     final int amount = c.get("amount");
-                    final ItemStack itemStack = TreeFeller.getAxe(this, material, amount);
-                    player.getInventory().addItem(itemStack);
-                    c.getSender().sendMessage(Component.text("Successfully sent!"));
+                    if(treefellerOptions.contains(type.toLowerCase())) {
+                        ItemStack treeItem;
+                        if(type.equalsIgnoreCase("axe")) {
+                            treeItem = TreeFeller.getAxe(this, amount);
+                        } else {
+                            treeItem = TreeFeller.getUpgradeItem(this, type, amount);
+                        }
+                        player.getInventory().addItem(treeItem);
+                        c.getSender().sendMessage(Component.text("Successfully sent!"));
+                    }
                 }));
-
 
         this.manager.command(this.manager.commandBuilder("blacksmith")
                 .permission("skyprisoncore.command.blacksmith")
@@ -632,21 +637,6 @@ public class SkyPrisonCore extends JavaPlugin {
                         c.getSender().sendMessage(Component.text("Invalid Usage! /blacksmith <player>", NamedTextColor.RED));
                     }
                 })));
-
-        this.manager.command(this.manager.commandBuilder("treefeller-upgrade")
-                .permission("skyprisoncore.command.treefeller-upgrade")
-                .argument(PlayerArgument.of("player"))
-                .argument(StringArgument.of("type"))
-                .argument(IntegerArgument.of("amount"))
-                .handler(c -> {
-                    final Player player = c.get("player");
-                    final String type = c.get("type");
-                    final int amount = c.get("amount");
-                    final ItemStack itemStack = TreeFeller.getUpgradeItem(this, type, amount);
-                    player.getInventory().addItem(itemStack);
-                    c.getSender().sendMessage(Component.text("Successfully sent!"));
-                }));
-
 
         Command.Builder<CommandSender> voucher = this.manager.commandBuilder("voucher")
                 .permission("skyprisoncore.command.voucher");
@@ -667,22 +657,25 @@ public class SkyPrisonCore extends JavaPlugin {
                             }
                         }));
 
-        Command.Builder<CommandSender> shrek = this.manager.commandBuilder("shrek")
-                .permission("skyprisoncore.command.shrek");
-        this.manager.command(shrek.literal("give")
-                .permission("skyprisoncore.command.shrek.give")
+        Command.Builder<CommandSender> greg = this.manager.commandBuilder("greg")
+                .permission("skyprisoncore.command.greg");
+        List<String> gregOptions = List.of("grease", "allay-dust", "strength", "speed", "fire-resistance", "instant-health", "instant-damage");
+        this.manager.command(greg.literal("give")
+                .permission("skyprisoncore.command.greg.give")
                 .argument(PlayerArgument.of("player"))
                 .argument(StringArgument.<CommandSender>builder("type")
-                        .withSuggestionsProvider((commandSenderCommandContext, s) -> List.of("shrek-grease", "allay-dust")))
+                        .withSuggestionsProvider((commandSenderCommandContext, s) -> gregOptions))
                 .argument(IntegerArgument.of("amount"))
                 .handler(c -> {
                     final Player player = c.get("player");
                     final String type = c.get("type");
                     final int amount = c.get("amount");
-                    ItemStack item = Shrek.getItemFromType(this, type, amount);
-                    if(item != null) {
-                        player.getInventory().addItem(item);
-                        c.getSender().sendMessage(Component.text("Successfully sent!"));
+                    if(gregOptions.contains(type.toLowerCase())) {
+                        ItemStack item = Greg.getItemFromType(this, type, amount);
+                        if (item != null) {
+                            player.getInventory().addItem(item);
+                            c.getSender().sendMessage(Component.text("Successfully sent!"));
+                        }
                     }
                 }));
 
@@ -817,6 +810,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PrepareAnvil(), this);
         pm.registerEvents(new EnchantItem(this), this);
         pm.registerEvents(new PrepareItemEnchant(this), this);
+        pm.registerEvents(new PlayerItemConsume(this), this);
 
         pm.registerEvents(new AsyncChat(this, discApi, getDatabase(), new Tags(this, getDatabase()), new ItemLore(this)), this);
         pm.registerEvents(new PlayerQuit(this, getDatabase(), discApi, dailyMissions), this);
@@ -1104,6 +1098,7 @@ public class SkyPrisonCore extends JavaPlugin {
         String[] split = time.split(":");
         return (int) ((Integer.parseInt(split[0]) * 1000) + ((Math.rint(Integer.parseInt(split[1]) / 60.0 * 100.0) / 100.0) * 1000));
     }
+
     public boolean isLong(String str) {
         try {
             Long.parseLong(str);

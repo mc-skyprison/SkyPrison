@@ -5,7 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.Bomb;
-import net.skyprison.skyprisoncore.items.Shrek;
+import net.skyprison.skyprisoncore.items.Greg;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -19,8 +19,8 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 public enum RandomReward {
-    SMALL_BOMB(3, "", "<dark_gray><italic>Could come in handy.."),
-    MEDIUM_BOMB(2.5, "", "<dark_gray><italic>Could come in handy.."),
+    SMALL_BOMB(5, "", "<dark_gray><italic>Could come in handy.."),
+    MEDIUM_BOMB(3.5, "", "<dark_gray><italic>Could come in handy.."),
     LARGE_BOMB(2, "", "<dark_gray><italic>Could come in handy.."),
     MASSIVE_BOMB(1, "", "<dark_gray><italic>Could come in handy.."),
     NUKE_BOMB(0.1, "", "<dark_gray><italic>What maniac left this in the bushes!?"),
@@ -142,7 +142,7 @@ public enum RandomReward {
             item.setItemMeta(iMeta);
         } else if(rew.equalsIgnoreCase("lapis_lazuli")) {
             amount = biasedRandom(4, 16);
-            item = Shrek.getAllayDust(plugin, amount);
+            item = Greg.getAllayDust(plugin, amount);
         } else if(rew.equalsIgnoreCase("golden_apple")) {
             amount = rand.nextInt(3) + 1;
             item = new ItemStack(Material.GOLDEN_APPLE, amount);
