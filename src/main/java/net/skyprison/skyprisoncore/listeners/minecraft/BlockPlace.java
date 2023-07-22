@@ -47,7 +47,7 @@ public class BlockPlace implements Listener {
     public void onBlockPlace(BlockPlaceEvent event) {
         Player player = event.getPlayer();
         if ((!event.canBuild() || event.isCancelled()) && !player.hasPermission("skyprisoncore.blockjump.bypass")) {
-            player.setVelocity(new Vector(0, 0, 0));
+            player.setVelocity(new Vector(0, -0.5, 0));
         } else {
             ItemStack item = event.getItemInHand();
             Block block = event.getBlockPlaced();

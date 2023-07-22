@@ -49,11 +49,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.ignoretp
     permission-message: §4Error:§c You do not have permission to execute this command...
-  bartender:
-    description: Opens bartender GUI
-    usage: /<command>
-    permission: skyprisoncore.command.bartender
-    permission-message: §4Error:§c You do not have permission to execute this command...
   safezone:
     description: Gives a player a safezone warning
     usage: /<command>
@@ -430,8 +425,6 @@ permissions:
     description: Gives access to /econcheck
   skyprisoncore.command.buyback:
     description: Gives access to /buyback
-  skyprisoncore.command.bartender:
-    description: Gives access to /bartender
   skyprisoncore.command.dontsell:
     description: Gives access to /dontsell
   skyprisoncore.command.endupgrade:

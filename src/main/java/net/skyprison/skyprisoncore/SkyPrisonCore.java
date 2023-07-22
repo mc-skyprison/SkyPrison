@@ -55,9 +55,7 @@ import net.skyprison.skyprisoncore.commands.economy.*;
 import net.skyprison.skyprisoncore.commands.guard.*;
 import net.skyprison.skyprisoncore.commands.secrets.SecretFound;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
-import net.skyprison.skyprisoncore.inventories.BlacksmithUpgrade;
-import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
-import net.skyprison.skyprisoncore.inventories.NewsMessageEdit;
+import net.skyprison.skyprisoncore.inventories.*;
 import net.skyprison.skyprisoncore.items.Greg;
 import net.skyprison.skyprisoncore.items.TreeFeller;
 import net.skyprison.skyprisoncore.items.Vouchers;
@@ -591,6 +589,23 @@ public class SkyPrisonCore extends JavaPlugin {
         }
     }
 
+    private CustomInventory openBlacksmith(String blacksmith, Player player) {
+        switch (blacksmith.toLowerCase()) {
+            case "astrid" -> {
+                return new GrassBlacksmithUpgrade(this, player);
+            }
+            case "end" -> {
+                return new EndBlacksmithUpgrade(this, player);
+            }
+            case "trim" -> {
+                return new BlacksmithTrimmer(this, player);
+            }
+            default -> {
+                return null;
+            }
+        }
+    }
+
     public void registerCommands() {
         manager.command(
                 manager.commandBuilder("spc")
@@ -624,17 +639,24 @@ public class SkyPrisonCore extends JavaPlugin {
                     }
                 }));
 
+        List<String> blacksmithOptions = List.of("astrid", "end", "trim");
         this.manager.command(this.manager.commandBuilder("blacksmith")
                 .permission("skyprisoncore.command.blacksmith")
+                .argument(StringArgument.<CommandSender>builder("blacksmith")
+                        .withSuggestionsProvider((commandSenderCommandContext, s) -> blacksmithOptions))
                 .argument(PlayerArgument.optional("player"))
                 .handler(c -> Bukkit.getScheduler().runTask(this, () -> {
-                    if(c.getOptional("player").isPresent()) {
-                        final Player player = (Player) c.getOptional("player").get();
-                        player.openInventory(new BlacksmithUpgrade(this).getInventory());
-                    } else if(c.getSender() instanceof Player player) {
-                        player.openInventory(new BlacksmithUpgrade(this).getInventory());
+                    Player player = c.getOptional("player").isPresent() ? (Player) c.getOptional("player").get() : c.getSender() instanceof Player ? (Player) c.getSender() : null;
+                    if(player != null) {
+                        final String blacksmith = c.get("blacksmith");
+                        CustomInventory inv = openBlacksmith(blacksmith, player);
+                        if (inv != null) {
+                            player.openInventory(inv.getInventory());
+                        } else {
+                            c.getSender().sendMessage(Component.text("Invalid Usage! /blacksmith <blacksmith> (player)", NamedTextColor.RED));
+                        }
                     } else {
-                        c.getSender().sendMessage(Component.text("Invalid Usage! /blacksmith <player>", NamedTextColor.RED));
+                        c.getSender().sendMessage(Component.text("Invalid Usage! /blacksmith <blacksmith> <player>", NamedTextColor.RED));
                     }
                 })));
 
@@ -690,6 +712,18 @@ public class SkyPrisonCore extends JavaPlugin {
                     sendPrivateMessage(sender, player, message);
                 }));
 
+        this.manager.command(this.manager.commandBuilder("bartender")
+                .permission("skyprisoncore.command.bartender")
+                .argument(PlayerArgument.optional("player"))
+                .handler(c -> {
+                    Player player = c.getOptional("player").isPresent() ? (Player) c.getOptional("player").get() : c.getSender() instanceof Player ? (Player) c.getSender() : null;
+                    if(player != null) {
+                        player.openInventory(new DatabaseInventory(this, db, player, player.hasPermission("skyprisoncore.inventories.bartender.editing"), "bartender").getInventory());
+                    } else {
+                        c.getSender().sendMessage(Component.text("Invalid Usage! /bartender (player)"));
+                    }
+                }));
+
         this.manager.command(this.manager.commandBuilder("reply", "r")
                 .permission("skyprisoncore.command.reply")
                 .argument(StringArgument.greedy("message"))
@@ -720,7 +754,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("bounty")).setExecutor(new Bounty(getDatabase(), this));
         Objects.requireNonNull(getCommand("killinfo")).setExecutor(new KillInfo(getDatabase()));
         Objects.requireNonNull(getCommand("firstjointop")).setExecutor(new FirstjoinTop(this, getDatabase()));
-        Objects.requireNonNull(getCommand("bartender")).setExecutor(new Bartender(this));
         Objects.requireNonNull(getCommand("sword")).setExecutor(new Sword());
         Objects.requireNonNull(getCommand("bow")).setExecutor(new Bow());
         Objects.requireNonNull(getCommand("contraband")).setExecutor(new Contraband());
@@ -795,7 +828,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new ShopSuccessPurchase(this), this);
         pm.registerEvents(new UnsellRegion(), this);
         pm.registerEvents(new PlayerFish(dailyMissions), this);
-        pm.registerEvents(new InventoryClose(this), this);
+        pm.registerEvents(new InventoryClose(), this);
         pm.registerEvents(new EntityDamage(this), this);
         pm.registerEvents(new PlayerCommandPreprocess(), this);
         pm.registerEvents(new ParkourFinish(this, dailyMissions), this);

@@ -1,14 +1,18 @@
 package net.skyprison.skyprisoncore.inventories;
 
+import com.Zrips.CMI.CMI;
+import com.Zrips.CMI.Containers.CMIUser;
 import me.arcaniax.hdb.api.HeadDatabaseAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.items.TreeFeller;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -16,14 +20,12 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
-public class BlacksmithUpgrade implements CustomInventory {
+public class GrassBlacksmithUpgrade implements CustomInventory {
     private final Inventory inventory;
     private final SkyPrisonCore plugin;
+    private final Player player;
 
     private final Timer timer = new Timer();
 
@@ -107,14 +109,49 @@ public class BlacksmithUpgrade implements CustomInventory {
     }
 
     public void setResult(ItemStack left, ItemStack right) {
-        inventory.setItem(13, TreeFeller.getUpgradedAxe(plugin, left, right));
+        if(hasMoney(10000) == 0) {
+            ItemStack treeAxe = TreeFeller.getUpgradedAxe(plugin, left, right);
+            treeAxe.editMeta(meta -> {
+                List<Component> lore = meta.lore();
+                if(lore != null) {
+                    lore.add(0, Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$10,000", TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
+                            .decoration(TextDecoration.ITALIC, false));
+                    lore.add(1, Component.text("                  ").decoration(TextDecoration.ITALIC, false));
+                    meta.lore(lore);
+                } else inventory.close();
+            });
+            inventory.setItem(13, TreeFeller.getUpgradedAxe(plugin, left, right));
+        } else {
+            ItemStack needMoney = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+            ItemMeta needMeta = needMoney.getItemMeta();
+            needMeta.displayName(Component.text("Not Enough Money", NamedTextColor.RED));
+            List<Component> lore = new ArrayList<>();
+            lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("", TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
+                    .decoration(TextDecoration.ITALIC, false));
+            lore.add(Component.text("Missing: ", NamedTextColor.GRAY).append(Component.text("", NamedTextColor.RED, TextDecoration.BOLD))
+                    .decoration(TextDecoration.ITALIC, false));
+            lore.add(Component.text("                  ").decoration(TextDecoration.ITALIC, false));
+            lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("", NamedTextColor.RED, TextDecoration.BOLD))
+                    .decoration(TextDecoration.ITALIC, false));
+            needMeta.lore(lore);
+            needMoney.setItemMeta(needMeta);
+            inventory.setItem(13, needMoney);
+        }
     }
 
     public void resultTaken() {
         inventory.setItem(10, new ItemStack(Material.AIR));
         inventory.setItem(16, new ItemStack(Material.AIR));
     }
-
+    public double hasMoney(double cost) {
+        CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
+        if(user.hasMoney(cost)) {
+            return 0;
+        } else {
+            double money = user.getBalance();
+            return cost - money;
+        }
+    }
     public void resetResult() {
         inventory.setItem(13, new ItemStack(Material.AIR));
     }
@@ -200,8 +237,9 @@ public class BlacksmithUpgrade implements CustomInventory {
         return false;
     }
 
-    public BlacksmithUpgrade(SkyPrisonCore plugin) {
+    public GrassBlacksmithUpgrade(SkyPrisonCore plugin, Player player) {
         this.plugin = plugin;
+        this.player = player;
         this.inventory = plugin.getServer().createInventory(this, 27, Component.text("Smithy", TextColor.fromHexString("#0fc3ff")));
 
         ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);

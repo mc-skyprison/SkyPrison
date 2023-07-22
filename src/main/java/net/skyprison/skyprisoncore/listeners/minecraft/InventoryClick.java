@@ -852,7 +852,7 @@ public class InventoryClick implements Listener {
                             }
                         }
                     }
-                } else if(customInv instanceof BlacksmithUpgrade inv) {
+                } else if(customInv instanceof GrassBlacksmithUpgrade inv) {
                     int clickedSlot = event.getRawSlot();
                     if(event.getClickedInventory() instanceof PlayerInventory) {
                         event.setCancelled(event.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY));
@@ -867,6 +867,29 @@ public class InventoryClick implements Listener {
                                     if (invAction.equals(InventoryAction.PICKUP_ALL) || invAction.equals(InventoryAction.PICKUP_SOME)
                                             || invAction.equals(InventoryAction.PICKUP_HALF) || invAction.equals(InventoryAction.PICKUP_ONE)) {
                                         event.setCancelled(false);
+                                        inv.resultTaken();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if(customInv instanceof BlacksmithTrimmer inv) {
+                    int clickedSlot = event.getRawSlot();
+                    if(event.getClickedInventory() instanceof PlayerInventory) {
+                        event.setCancelled(event.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY));
+                    } else {
+                        if(event.getCurrentItem() == null && clickedSlot != 10 && clickedSlot != 11 && clickedSlot != 12) {
+                            event.setCancelled(true);
+                        } else {
+                            switch (clickedSlot) {
+                                case 10, 11, 12 -> event.setCancelled(false);
+                                case 16 -> {
+                                    InventoryAction invAction = event.getAction();
+                                    if (invAction.equals(InventoryAction.PICKUP_ALL) || invAction.equals(InventoryAction.PICKUP_SOME)
+                                            || invAction.equals(InventoryAction.PICKUP_HALF) || invAction.equals(InventoryAction.PICKUP_ONE)) {
+                                        event.setCancelled(false);
+                                        event.getCurrentItem().editMeta(meta -> meta.lore(new ArrayList<>()));
+                                        plugin.asConsole("cmi money take " + player.getName() + " 10000");
                                         inv.resultTaken();
                                     }
                                 }
