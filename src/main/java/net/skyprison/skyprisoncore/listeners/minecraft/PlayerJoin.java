@@ -168,7 +168,6 @@ public class PlayerJoin implements Listener {
                 embedJoin = new EmbedBuilder()
                         .setAuthor(player.getName() + " joined the server for the first time!", "",  "https://minotar.net/helm/" + player.getName())
                         .setColor(Color.YELLOW);
-
                 try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO users (user_id, current_name, first_join) VALUES (?, ?, ?)")) {
                     ps.setString(1, player.getUniqueId().toString());
                     ps.setString(2, player.getName());
@@ -177,7 +176,6 @@ public class PlayerJoin implements Listener {
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
-
             } else {
                 embedJoin = new EmbedBuilder()
                         .setAuthor(player.getName() + " joined the server", "",  "https://minotar.net/helm/" + player.getName())

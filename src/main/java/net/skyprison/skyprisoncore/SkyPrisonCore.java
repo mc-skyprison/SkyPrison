@@ -56,6 +56,7 @@ import net.skyprison.skyprisoncore.commands.guard.*;
 import net.skyprison.skyprisoncore.commands.secrets.SecretFound;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
 import net.skyprison.skyprisoncore.inventories.*;
+import net.skyprison.skyprisoncore.items.BlacksmithEnd;
 import net.skyprison.skyprisoncore.items.Greg;
 import net.skyprison.skyprisoncore.items.TreeFeller;
 import net.skyprison.skyprisoncore.items.Vouchers;
@@ -687,6 +688,8 @@ public class SkyPrisonCore extends JavaPlugin {
                 .argument(PlayerArgument.of("player"))
                 .argument(StringArgument.<CommandSender>builder("type")
                         .withSuggestionsProvider((commandSenderCommandContext, s) -> gregOptions))
+                .argument(StringArgument.<CommandSender>builder("type")
+                        .withSuggestionsProvider((commandSenderCommandContext, s) -> gregOptions))
                 .argument(IntegerArgument.of("amount"))
                 .handler(c -> {
                     final Player player = c.get("player");
@@ -694,6 +697,47 @@ public class SkyPrisonCore extends JavaPlugin {
                     final int amount = c.get("amount");
                     if(gregOptions.contains(type.toLowerCase())) {
                         ItemStack item = Greg.getItemFromType(this, type, amount);
+                        if (item != null) {
+                            player.getInventory().addItem(item);
+                            c.getSender().sendMessage(Component.text("Successfully sent!"));
+                        }
+                    }
+                }));
+
+        Command.Builder<CommandSender> endSmith = this.manager.commandBuilder("endsmith")
+                .permission("skyprisoncore.command.endsmith");
+        List<String> endSmithOptions = List.of("reset-repair", "keep-enchants", "keep-trims");
+        this.manager.command(endSmith.literal("addon")
+                .permission("skyprisoncore.command.endsmith.give")
+                .argument(PlayerArgument.of("player"))
+                .argument(StringArgument.<CommandSender>builder("type")
+                        .withSuggestionsProvider((commandSenderCommandContext, s) -> endSmithOptions))
+                .argument(IntegerArgument.of("amount"))
+                .handler(c -> {
+                    final Player player = c.get("player");
+                    final String type = c.get("type");
+                    final int amount = c.get("amount");
+                    if(endSmithOptions.contains(type.toLowerCase())) {
+                        ItemStack item = BlacksmithEnd.getItemFromType(this, type, "", amount);
+                        if (item != null) {
+                            player.getInventory().addItem(item);
+                            c.getSender().sendMessage(Component.text("Successfully sent!"));
+                        }
+                    }
+                }));
+        List<String> templateOptions = List.of("helmet", "chestplate", "leggings", "boots", "axe", "pickaxe", "shovel", "hoe");
+        this.manager.command(endSmith.literal("template")
+                .permission("skyprisoncore.command.endsmith.give")
+                .argument(PlayerArgument.of("player"))
+                .argument(StringArgument.<CommandSender>builder("type")
+                        .withSuggestionsProvider((commandSenderCommandContext, s) -> templateOptions))
+                .argument(IntegerArgument.of("amount"))
+                .handler(c -> {
+                    final Player player = c.get("player");
+                    final String type = c.get("type");
+                    final int amount = c.get("amount");
+                    if(templateOptions.contains(type.toLowerCase())) {
+                        ItemStack item = BlacksmithEnd.getItemFromType(this, "upgrade-template", type, amount);
                         if (item != null) {
                             player.getInventory().addItem(item);
                             c.getSender().sendMessage(Component.text("Successfully sent!"));

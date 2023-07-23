@@ -20,19 +20,17 @@ import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 public class BlacksmithTrimmer implements CustomInventory {
     private final Inventory inventory;
+    private final SkyPrisonCore plugin;
     private final Player player;
     private final Timer timer = new Timer();
     private ItemStack currLeft = new ItemStack(Material.AIR);
     private ItemStack currMiddle = new ItemStack(Material.AIR);
     private ItemStack currRight = new ItemStack(Material.AIR);
-
+    private ItemStack armourPiece = new ItemStack(Material.AIR);
     public void updateInventory() {
         ItemStack left = inventory.getItem(10);
         ItemStack middle = inventory.getItem(11);
@@ -54,11 +52,10 @@ public class BlacksmithTrimmer implements CustomInventory {
             if(areAllValid(left.getType(), middle.getType(), right.getType()) && canTrim(left, middle, right)) {
                 setColour(true, true, true);
             } else {
-                setColour(false, true, false);
+                setColour(false, false, false);
             }
         } else setColour(leftValid, middleValid, rightValid);
     }
-
     private void setColour(boolean left, boolean middle, boolean right) {
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
         ItemMeta redMeta = redPane.getItemMeta();
@@ -102,18 +99,20 @@ public class BlacksmithTrimmer implements CustomInventory {
         timer.cancel();
     }
     public void setResult(ItemStack left, ItemStack middle, ItemStack right) {
-        ItemStack armourPiece = getArmourPieceItem(left, middle, right);
+        armourPiece = getArmourPieceItem(left, middle, right);
         ItemStack trimPattern = getTrimTemplateItem(left, middle, right);
         ItemStack trimMaterial = getTrimMaterialitem(left, middle, right);
         if(armourPiece != null && trimPattern != null && trimMaterial != null) {
-            if(hasMoney(10000) == 0) {
+            double price = getPrice();
+            double hasMoney = hasMoney(price);
+            if(hasMoney == 0) {
                 ItemStack trimmedArmour = armourPiece.clone();
                 ArmorMeta armorMeta = (ArmorMeta) trimmedArmour.getItemMeta();
                 ArmorTrim trim = new ArmorTrim(getTrimMaterial(trimMaterial.getType()), getTrimPattern(trimPattern.getType()));
                 armorMeta.setTrim(trim);
 
                 List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$10,000", TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
+                lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(price), TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
                 armorMeta.lore(lore);
                 trimmedArmour.setItemMeta(armorMeta);
@@ -123,12 +122,12 @@ public class BlacksmithTrimmer implements CustomInventory {
                 ItemMeta needMeta = needMoney.getItemMeta();
                 needMeta.displayName(Component.text("Not Enough Money", NamedTextColor.RED));
                 List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("", TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
+                lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(price), TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Missing: ", NamedTextColor.GRAY).append(Component.text("", NamedTextColor.RED, TextDecoration.BOLD))
+                lore.add(Component.text("Missing: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(hasMoney), NamedTextColor.RED, TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
                 lore.add(Component.text("                  ").decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("", NamedTextColor.RED, TextDecoration.BOLD))
+                lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(getBalance(player)), NamedTextColor.RED, TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
                 needMeta.lore(lore);
                 needMoney.setItemMeta(needMeta);
@@ -139,11 +138,16 @@ public class BlacksmithTrimmer implements CustomInventory {
             setColour(false, false, false);
         }
     }
-    private ItemStack getArmourPieceItem(ItemStack left, ItemStack middle, ItemStack right) {
-        if(MaterialSetTag.ITEMS_TRIMMABLE_ARMOR.isTagged(left.getType())) return left;
-        if(MaterialSetTag.ITEMS_TRIMMABLE_ARMOR.isTagged(middle.getType())) return middle;
-        if(MaterialSetTag.ITEMS_TRIMMABLE_ARMOR.isTagged(right.getType())) return right;
-        return null;
+    private ItemStack getArmourPieceItem(ItemStack... items) {
+        List<Material> chainmailTypes = Arrays.asList(Material.CHAINMAIL_HELMET, Material.CHAINMAIL_CHESTPLATE, Material.CHAINMAIL_LEGGINGS, Material.CHAINMAIL_BOOTS);
+        return Arrays.stream(items)
+                .filter(item -> isTrimmableArmor(item, chainmailTypes))
+                .findFirst()
+                .orElse(null);
+    }
+    private boolean isTrimmableArmor(ItemStack item, List<Material> excludedTypes) {
+        Material itemType = item.getType();
+        return MaterialSetTag.ITEMS_TRIMMABLE_ARMOR.isTagged(itemType) && !excludedTypes.contains(itemType);
     }
     private ItemStack getTrimTemplateItem(ItemStack left, ItemStack middle, ItemStack right) {
         if(MaterialSetTag.ITEMS_TRIM_TEMPLATES.isTagged(left.getType())) return left;
@@ -158,9 +162,9 @@ public class BlacksmithTrimmer implements CustomInventory {
         return null;
     }
     public void resultTaken() {
-        inventory.setItem(10, new ItemStack(Material.AIR));
-        inventory.setItem(11, new ItemStack(Material.AIR));
-        inventory.setItem(12, new ItemStack(Material.AIR));
+        currLeft.setAmount(currLeft.getAmount()-1);
+        currMiddle.setAmount(currMiddle.getAmount()-1);
+        currRight.setAmount(currRight.getAmount()-1);
     }
     public void resetResult() {
         inventory.setItem(16, new ItemStack(Material.AIR));
@@ -211,6 +215,29 @@ public class BlacksmithTrimmer implements CustomInventory {
             return cost - money;
         }
     }
+    public double getPrice() {
+        double price = 0;
+        if(armourPiece != null) {
+            switch (armourPiece.getType()) {
+                case LEATHER_HELMET, LEATHER_CHESTPLATE, LEATHER_LEGGINGS, LEATHER_BOOTS -> price = 1000;
+
+                case IRON_HELMET, IRON_CHESTPLATE, IRON_LEGGINGS, IRON_BOOTS -> price = 5000;
+
+                case GOLDEN_HELMET, GOLDEN_CHESTPLATE, GOLDEN_LEGGINGS, GOLDEN_BOOTS -> price = 7500;
+
+                case DIAMOND_HELMET, DIAMOND_CHESTPLATE, DIAMOND_LEGGINGS, DIAMOND_BOOTS -> price = 15000;
+
+                case NETHERITE_HELMET, NETHERITE_CHESTPLATE, NETHERITE_LEGGINGS, NETHERITE_BOOTS -> price = 50000;
+
+                case TURTLE_HELMET -> price = 25000;
+            }
+        }
+        return price;
+    }
+    public double getBalance(Player player) {
+        CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
+        return user.getBalance();
+    }
     public TrimMaterial getTrimMaterial(Material type) {
         TrimMaterial mat = null;
         switch (type) {
@@ -250,6 +277,7 @@ public class BlacksmithTrimmer implements CustomInventory {
         return pattern;
     }
     public BlacksmithTrimmer(SkyPrisonCore plugin, Player player) {
+        this.plugin = plugin;
         this.player = player;
         this.inventory = plugin.getServer().createInventory(this, 27, Component.text("Smithy", TextColor.fromHexString("#0fc3ff")));
 
@@ -281,22 +309,18 @@ public class BlacksmithTrimmer implements CustomInventory {
         };
         timer.scheduleAtFixedRate(update, 0, 50);
     }
-
     @Override
     public ClickBehavior defaultClickBehavior() {
         return ClickBehavior.DISABLE_ALL;
     }
-
     @Override
     public List<Object> customClickList() {
         return null;
     }
-
     @Override
     public int getPage() {
         return 1;
     }
-
     @Override
     public @NotNull Inventory getInventory() {
         return this.inventory;

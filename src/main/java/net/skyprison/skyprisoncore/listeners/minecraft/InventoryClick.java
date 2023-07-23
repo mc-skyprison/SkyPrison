@@ -135,6 +135,8 @@ public class InventoryClick implements Listener {
             }
 
             if(event.getInventory().getHolder(false) instanceof CustomInventory customInv) {
+                ItemStack currItem = event.getCurrentItem();
+                ItemStack cursor = event.getCursor();
                 switch (customInv.defaultClickBehavior()) {
                     case DISABLE_ALL, ENABLE_SPECIFIC -> event.setCancelled(true);
                 }
@@ -857,7 +859,7 @@ public class InventoryClick implements Listener {
                     if(event.getClickedInventory() instanceof PlayerInventory) {
                         event.setCancelled(event.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY));
                     } else {
-                        if(event.getCurrentItem() == null && clickedSlot != 10 && clickedSlot != 16) {
+                        if(currItem == null && clickedSlot != 10 && clickedSlot != 16) {
                             event.setCancelled(true);
                         } else {
                             switch (clickedSlot) {
@@ -866,8 +868,32 @@ public class InventoryClick implements Listener {
                                     InventoryAction invAction = event.getAction();
                                     if (invAction.equals(InventoryAction.PICKUP_ALL) || invAction.equals(InventoryAction.PICKUP_SOME)
                                             || invAction.equals(InventoryAction.PICKUP_HALF) || invAction.equals(InventoryAction.PICKUP_ONE)) {
-                                        event.setCancelled(false);
-                                        inv.resultTaken();
+                                        double price = inv.getPrice();
+                                        if (inv.hasMoney(price) == 0) {
+                                            event.setCancelled(false);
+                                            currItem.editMeta(meta -> {
+                                                List<Component> lore = meta.lore();
+                                                if(lore != null) {
+                                                    lore.remove(0);
+                                                    lore.remove(0);
+                                                    meta.lore(lore);
+                                                }
+                                            });
+                                            if(cursor != null) {
+                                                cursor.editMeta(meta -> {
+                                                    List<Component> lore = meta.lore();
+                                                    if(lore != null) {
+                                                        lore.remove(0);
+                                                        lore.remove(0);
+                                                        meta.lore(lore);
+                                                    }
+                                                });
+                                            }
+                                            plugin.asConsole("cmi money take " + player.getName() + " " + price);
+                                            inv.resultTaken();
+                                        } else {
+                                            event.setCancelled(true);
+                                        }
                                     }
                                 }
                             }
@@ -878,19 +904,62 @@ public class InventoryClick implements Listener {
                     if(event.getClickedInventory() instanceof PlayerInventory) {
                         event.setCancelled(event.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY));
                     } else {
-                        if(event.getCurrentItem() == null && clickedSlot != 10 && clickedSlot != 11 && clickedSlot != 12) {
+                        if(currItem == null && clickedSlot != 10 && clickedSlot != 11 && clickedSlot != 12) {
                             event.setCancelled(true);
                         } else {
                             switch (clickedSlot) {
                                 case 10, 11, 12 -> event.setCancelled(false);
                                 case 16 -> {
-                                    InventoryAction invAction = event.getAction();
-                                    if (invAction.equals(InventoryAction.PICKUP_ALL) || invAction.equals(InventoryAction.PICKUP_SOME)
-                                            || invAction.equals(InventoryAction.PICKUP_HALF) || invAction.equals(InventoryAction.PICKUP_ONE)) {
-                                        event.setCancelled(false);
-                                        event.getCurrentItem().editMeta(meta -> meta.lore(new ArrayList<>()));
-                                        plugin.asConsole("cmi money take " + player.getName() + " 10000");
-                                        inv.resultTaken();
+                                    if(currItem.getType().isArmor()) {
+                                        InventoryAction invAction = event.getAction();
+                                        if (invAction.equals(InventoryAction.PICKUP_ALL) || invAction.equals(InventoryAction.PICKUP_SOME)
+                                                || invAction.equals(InventoryAction.PICKUP_HALF) || invAction.equals(InventoryAction.PICKUP_ONE)) {
+                                            double price = inv.getPrice();
+                                            if (inv.hasMoney(price) == 0) {
+                                                event.setCancelled(false);
+                                                currItem.editMeta(meta -> meta.lore(null));
+                                                if(cursor != null) {
+                                                    cursor.editMeta(meta -> meta.lore(null));
+                                                }
+                                                plugin.asConsole("cmi money take " + player.getName() + " " + price);
+                                                inv.resultTaken();
+                                            } else {
+                                                event.setCancelled(true);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if(customInv instanceof EndBlacksmithUpgrade inv) {
+                    int clickedSlot = event.getRawSlot();
+                    if(event.getClickedInventory() instanceof PlayerInventory) {
+                        event.setCancelled(event.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY));
+                    } else {
+                        if(currItem == null && clickedSlot != 10 && clickedSlot != 11 && clickedSlot != 12 && clickedSlot != 13 && clickedSlot != 14) {
+                            event.setCancelled(true);
+                        } else {
+                            switch (clickedSlot) {
+                                case 10, 11, 12, 13, 14 -> event.setCancelled(false);
+                                case 16 -> {
+                                    if(currItem.getType().isArmor()) {
+                                        InventoryAction invAction = event.getAction();
+                                        if (invAction.equals(InventoryAction.PICKUP_ALL) || invAction.equals(InventoryAction.PICKUP_SOME)
+                                                || invAction.equals(InventoryAction.PICKUP_HALF) || invAction.equals(InventoryAction.PICKUP_ONE)) {
+                                            double price = inv.getPrice();
+                                            if (inv.hasMoney(price) == 0) {
+                                                event.setCancelled(false);
+                                                currItem.editMeta(meta -> meta.lore(null));
+                                                if(cursor != null) {
+                                                    cursor.editMeta(meta -> meta.lore(null));
+                                                }
+                                                plugin.asConsole("cmi money take " + player.getName() + " " + price);
+                                                inv.resultTaken();
+                                            } else {
+                                                event.setCancelled(true);
+                                            }
+                                        }
                                     }
                                 }
                             }
