@@ -943,7 +943,7 @@ public class InventoryClick implements Listener {
                             switch (clickedSlot) {
                                 case 10, 11, 12, 13, 14 -> event.setCancelled(false);
                                 case 16 -> {
-                                    if(currItem.getType().isArmor()) {
+                                    if(!currItem.getType().equals(Material.RED_STAINED_GLASS_PANE)) {
                                         InventoryAction invAction = event.getAction();
                                         if (invAction.equals(InventoryAction.PICKUP_ALL) || invAction.equals(InventoryAction.PICKUP_SOME)
                                                 || invAction.equals(InventoryAction.PICKUP_HALF) || invAction.equals(InventoryAction.PICKUP_ONE)) {

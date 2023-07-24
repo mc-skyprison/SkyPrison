@@ -30,6 +30,7 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
     private ItemStack currLeft = new ItemStack(Material.AIR);
     private ItemStack currRight = new ItemStack(Material.AIR);
     private ItemStack axeItem = new ItemStack(Material.AIR);
+    private ItemStack bookItem = new ItemStack(Material.AIR);
     public void updateInventory() {
         ItemStack left = inventory.getItem(10);
         ItemStack right = inventory.getItem(16);
@@ -94,8 +95,10 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
             NamespacedKey treefellerKey = new NamespacedKey(plugin, "treefeller");
             if (leftPers.has(treefellerKey)) {
                 axeItem = left;
+                bookItem = right;
             } else {
                 axeItem = right;
+                bookItem = left;
             }
             double price = getPrice();
             double hasMoney = hasMoney(price);
@@ -110,17 +113,17 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
                         meta.lore(lore);
                     } else inventory.close();
                 });
-                inventory.setItem(13, TreeFeller.getUpgradedAxe(plugin, left, right));
+                inventory.setItem(13, treeAxe);
             } else {
                 ItemStack needMoney = new ItemStack(Material.RED_STAINED_GLASS_PANE);
                 ItemMeta needMeta = needMoney.getItemMeta();
-                needMeta.displayName(Component.text("Not Enough Money", NamedTextColor.RED));
+                needMeta.displayName(Component.text("Not Enough Money", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = new ArrayList<>();
                 lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(price), TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
                 lore.add(Component.text("Missing: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(hasMoney), NamedTextColor.RED, TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("                  ").decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("                  ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH).decoration(TextDecoration.ITALIC, false));
                 lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(getBalance(player)), NamedTextColor.RED, TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
                 needMeta.lore(lore);
@@ -148,6 +151,10 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
     public double getPrice() {
         double price = 0;
         if(axeItem != null) {
+            if(bookItem != null && Objects.requireNonNull(bookItem.getPersistentDataContainer().get(new NamespacedKey(plugin, "treefeller-upgrade"), PersistentDataType.STRING))
+                    .equalsIgnoreCase("repair")) {
+                return 0;
+            }
             int upgradedAmounts = 0;
             ItemMeta axeMeta = axeItem.getItemMeta();
             PersistentDataContainer axePers = axeMeta.getPersistentDataContainer();
@@ -245,6 +252,9 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
                 } else {
                     return true;
                 }
+            }
+            case "repair" -> {
+                return true;
             }
         }
         return false;

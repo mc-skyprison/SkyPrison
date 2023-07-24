@@ -16,6 +16,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.Repairable;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,7 +32,7 @@ public class EndBlacksmithUpgrade implements CustomInventory {
     private ItemStack currRight = new ItemStack(Material.AIR);
     private ItemStack currBookLeft = new ItemStack(Material.AIR);
     private ItemStack currBookRight = new ItemStack(Material.AIR);
-    private final List<Material> diamondItems = new ArrayList<>(Arrays.asList(Material.DIAMOND_HELMET, Material.DIAMOND_CHESTPLATE, Material.DIAMOND_LEGGINGS, Material.DIAMOND_BLOCK,
+    public final List<Material> diamondItems = new ArrayList<>(Arrays.asList(Material.DIAMOND_HELMET, Material.DIAMOND_CHESTPLATE, Material.DIAMOND_LEGGINGS, Material.DIAMOND_BLOCK,
             Material.DIAMOND_AXE, Material.DIAMOND_PICKAXE, Material.DIAMOND_SHOVEL, Material.DIAMOND_HOE));
     public void updateInventory() {
         ItemStack left = inventory.getItem(10);
@@ -60,27 +61,34 @@ public class EndBlacksmithUpgrade implements CustomInventory {
             bookRightValid = true;
         }
         if(leftValid && middleValid && rightValid) {
-            System.out.println("all valido");
             if(areAllValid(left, middle, right)) {
-                System.out.println("all valido dos");
                 if(bookLeftValid && bookRightValid) {
-                    System.out.println("books valido");
                     if(areBooksValid(bookLeft, bookRight)) {
-                        System.out.println("books valido dos");
-                        setColour(true, true, true, true, true);
+                        if(!upgradingArmour(left, middle, right) && hasKeepTrims(bookLeft, bookRight)) {
+                            setColour(false, false, false, false, false);
+                        } else {
+                            setColour(true, true, true, true, true);
+                        }
                     } else {
-                        System.out.println("books NOT valido");
                         setColour(false, false, false, false, false);
                     }
                 } else {
-                    System.out.println("book left " + bookLeftValid + " book right " + bookRightValid);
-                    setColour(true, true, true, bookLeftValid, bookRightValid);
+                    if(!upgradingArmour(left, middle, right) && hasKeepTrims(bookLeft, bookRight)) {
+                        setColour(false, false, false, false, false);
+                    } else {
+                        setColour(true, true, true, bookLeftValid, bookRightValid);
+                    }
                 }
             } else {
-                System.out.println("all not valido");
                 setColour(false, false, false, false, false);
             }
-        } else setColour(leftValid, middleValid, rightValid, bookLeftValid, bookRightValid);
+        } else {
+            if(!upgradingArmour(left, middle, right) && hasKeepTrims(bookLeft, bookRight)) {
+                setColour(false, false, false, false, false);
+            } else {
+                setColour(leftValid, middleValid, rightValid, bookLeftValid, bookRightValid);
+            }
+        }
     }
     private void setColour(boolean left, boolean middle, boolean right, boolean bookLeft, boolean bookRight) {
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
@@ -114,6 +122,10 @@ public class EndBlacksmithUpgrade implements CustomInventory {
             this.currBookRight = bookRightItem;
         }
 
+        if(!left && !middle && !right && !bookLeft && !bookRight) {
+            resetResult();
+        }
+
         if((this.currLeft != null && !this.currLeft.equals(leftItem)) || (this.currMiddle != null && !this.currMiddle.equals(middleItem)) || (this.currRight != null && !this.currRight.equals(rightItem))
                 || (this.currBookLeft != null && !this.currBookLeft.equals(bookLeftItem)) || (this.currBookRight != null && !this.currBookRight.equals(bookRightItem))) {
             resetResult();
@@ -131,15 +143,7 @@ public class EndBlacksmithUpgrade implements CustomInventory {
         inventory.setItem(23, bookRight ? greenPane : redPane);
 
         if(left && middle && right) {
-            if(!upgradingArmour()) {
-                if(!hasKeepTrims()) {
-                    System.out.println("keepy trimmy: " + hasKeepTrims());
-                    setResult(leftItem, middleItem, rightItem);
-                }
-            } else {
-                System.out.println("IS ARMOUR: " + upgradingArmour());
-                setResult(leftItem, middleItem, rightItem);
-            }
+            setResult(leftItem, middleItem, rightItem);
         }
     }
     public void cancelTimer() {
@@ -173,7 +177,7 @@ public class EndBlacksmithUpgrade implements CustomInventory {
                     upgradeMeta.lore(lore);
 
                     if(hasResetRepairCost()) {
-                        upgrade.setRepairCost(0);
+                        ((Repairable) upgradeMeta).setRepairCost(0);
                     }
 
                     if(!hasKeepEnchants()) {
@@ -192,13 +196,13 @@ public class EndBlacksmithUpgrade implements CustomInventory {
             } else {
                 ItemStack needMoney = new ItemStack(Material.RED_STAINED_GLASS_PANE);
                 ItemMeta needMeta = needMoney.getItemMeta();
-                needMeta.displayName(Component.text("Not Enough Money", NamedTextColor.RED));
+                needMeta.displayName(Component.text("Not Enough Money", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = new ArrayList<>();
                 lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(price), TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
                 lore.add(Component.text("Missing: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(hasMoney), NamedTextColor.RED, TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("                  ").decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("                  ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH).decoration(TextDecoration.ITALIC, false));
                 lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(getBalance(player)), NamedTextColor.RED, TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
                 needMeta.lore(lore);
@@ -228,10 +232,12 @@ public class EndBlacksmithUpgrade implements CustomInventory {
         if(right.getType().equals(Material.NETHERITE_INGOT)) return right;
         return null;
     }
-
     public boolean upgradingArmour() {
-        return (currLeft != null && MaterialTags.ARMOR.isTagged(currLeft)) || (currMiddle != null && MaterialTags.ARMOR.isTagged(currMiddle))
-                || (currRight != null && MaterialTags.ARMOR.isTagged(currRight));
+        return upgradingArmour(currLeft, currMiddle, currRight);
+    }
+    public boolean upgradingArmour(ItemStack left, ItemStack middle, ItemStack right) {
+        return (left != null && MaterialTags.ARMOR.isTagged(left)) || (middle != null && MaterialTags.ARMOR.isTagged(middle))
+                || (right != null && MaterialTags.ARMOR.isTagged(right));
     }
 
     public void resultTaken() {
@@ -246,15 +252,8 @@ public class EndBlacksmithUpgrade implements CustomInventory {
     }
     public boolean isBookValid(ItemStack item) {
         NamespacedKey upgradeKey = new NamespacedKey(plugin, "blacksmith-end-addon");
-        if(item.getType().equals(Material.ENCHANTED_BOOK) && item.hasItemMeta()
-                && !item.getPersistentDataContainer().isEmpty() && item.getPersistentDataContainer().has(upgradeKey, PersistentDataType.STRING)) {
-            if(Objects.requireNonNull(item.getPersistentDataContainer().get(upgradeKey, PersistentDataType.STRING)).equalsIgnoreCase("keep-trims")) {
-                return upgradingArmour();
-            } else {
-                return true;
-            }
-        }
-        return false;
+        return item.getType().equals(Material.ENCHANTED_BOOK) && item.hasItemMeta()
+                && !item.getPersistentDataContainer().isEmpty() && item.getPersistentDataContainer().has(upgradeKey, PersistentDataType.STRING);
     }
     public boolean hasResetRepairCost() {
         NamespacedKey upgradeKey = new NamespacedKey(plugin, "blacksmith-end-addon");
@@ -271,10 +270,14 @@ public class EndBlacksmithUpgrade implements CustomInventory {
                 .get(upgradeKey, PersistentDataType.STRING)).equalsIgnoreCase("keep-enchants"));
     }
     public boolean hasKeepTrims() {
+        return hasKeepTrims(currBookLeft, currBookRight);
+    }
+
+    public boolean hasKeepTrims(ItemStack leftBook, ItemStack rightBook) {
         NamespacedKey upgradeKey = new NamespacedKey(plugin, "blacksmith-end-addon");
-        return (currBookLeft != null && isBookValid(currBookLeft) && Objects.requireNonNull(currBookLeft.getPersistentDataContainer()
+        return (leftBook != null && isBookValid(leftBook) && Objects.requireNonNull(leftBook.getPersistentDataContainer()
                 .get(upgradeKey, PersistentDataType.STRING)).equalsIgnoreCase("keep-trims"))
-                || (currBookRight != null && isBookValid(currBookRight) && Objects.requireNonNull(currBookRight.getPersistentDataContainer()
+                || (rightBook != null && isBookValid(rightBook) && Objects.requireNonNull(rightBook.getPersistentDataContainer()
                 .get(upgradeKey, PersistentDataType.STRING)).equalsIgnoreCase("keep-trims"));
     }
     public boolean areBooksValid(ItemStack leftBook, ItemStack rightBook) {
@@ -284,7 +287,7 @@ public class EndBlacksmithUpgrade implements CustomInventory {
         && rightBook != null && rightBook.getType().equals(Material.ENCHANTED_BOOK) && rightBook.hasItemMeta()
                 && !rightBook.getPersistentDataContainer().isEmpty() && rightBook.getPersistentDataContainer().has(upgradeKey, PersistentDataType.STRING)) {
             String leftType = leftBook.getPersistentDataContainer().get(upgradeKey, PersistentDataType.STRING);
-            String rightType = leftBook.getPersistentDataContainer().get(upgradeKey, PersistentDataType.STRING);
+            String rightType = rightBook.getPersistentDataContainer().get(upgradeKey, PersistentDataType.STRING);
             if(leftType != null & rightType != null) {
                 boolean keepEnchants = leftType.equalsIgnoreCase("keep-enchants") || rightType.equalsIgnoreCase("keep-enchants");
                 boolean resetRepair = leftType.equalsIgnoreCase("reset-repair") || rightType.equalsIgnoreCase("reset-repair");
@@ -348,7 +351,6 @@ public class EndBlacksmithUpgrade implements CustomInventory {
         this.plugin = plugin;
         this.player = player;
         this.inventory = plugin.getServer().createInventory(this, 27, Component.text("Smithy", TextColor.fromHexString("#0fc3ff")));
-
         ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         ItemMeta paneMeta = blackPane.getItemMeta();
         paneMeta.displayName(Component.empty());

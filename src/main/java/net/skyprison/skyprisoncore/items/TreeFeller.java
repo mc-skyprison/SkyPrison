@@ -9,6 +9,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -83,11 +84,21 @@ public class TreeFeller {
                 }
                 axeMeta.addEnchant(Enchantment.DURABILITY, enchLvl, false);
             }
+            case "repair" -> ((Damageable) axeMeta).setDamage(0);
         }
         axe.setItemMeta(axeMeta);
         return axe;
     }
-
+    public static ItemStack getRepairItem(SkyPrisonCore plugin, int amount) {
+        ItemStack upgrade = new ItemStack(Material.ENCHANTED_BOOK, amount);
+        ItemMeta upgradeMeta = upgrade.getItemMeta();
+        upgradeMeta.displayName(Component.text("Axe Repair", TextColor.fromHexString("#09f755"), TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+        PersistentDataContainer axePers = upgradeMeta.getPersistentDataContainer();
+        NamespacedKey upgradeKey = new NamespacedKey(plugin, "treefeller-upgrade");
+        axePers.set(upgradeKey, PersistentDataType.STRING, "repair");
+        upgrade.setItemMeta(upgradeMeta);
+        return upgrade;
+    }
     public static ItemStack getUpgradeItem(SkyPrisonCore plugin, String type, int amount) {
         ItemStack upgrade = new ItemStack(Material.ENCHANTED_BOOK, amount);
         ItemMeta upgradeMeta = upgrade.getItemMeta();

@@ -617,7 +617,7 @@ public class SkyPrisonCore extends JavaPlugin {
 
         Command.Builder<CommandSender> treefeller = this.manager.commandBuilder("treefeller")
                 .permission("skyprisoncore.command.treefeller");
-        List<String> treefellerOptions = List.of("axe", "speed", "cooldown", "durability");
+        List<String> treefellerOptions = List.of("axe", "speed", "cooldown", "durability", "repair");
         this.manager.command(treefeller.literal("give")
                 .permission("skyprisoncore.command.treefeller.give")
                 .argument(PlayerArgument.of("player"))
@@ -632,6 +632,8 @@ public class SkyPrisonCore extends JavaPlugin {
                         ItemStack treeItem;
                         if(type.equalsIgnoreCase("axe")) {
                             treeItem = TreeFeller.getAxe(this, amount);
+                        } else if(type.equalsIgnoreCase("repair")) {
+                            treeItem = TreeFeller.getRepairItem(this, amount);
                         } else {
                             treeItem = TreeFeller.getUpgradeItem(this, type, amount);
                         }

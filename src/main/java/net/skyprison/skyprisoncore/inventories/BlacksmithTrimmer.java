@@ -120,13 +120,13 @@ public class BlacksmithTrimmer implements CustomInventory {
             } else {
                 ItemStack needMoney = new ItemStack(Material.RED_STAINED_GLASS_PANE);
                 ItemMeta needMeta = needMoney.getItemMeta();
-                needMeta.displayName(Component.text("Not Enough Money", NamedTextColor.RED));
+                needMeta.displayName(Component.text("Not Enough Money", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = new ArrayList<>();
                 lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(price), TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
                 lore.add(Component.text("Missing: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(hasMoney), NamedTextColor.RED, TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("                  ").decoration(TextDecoration.ITALIC, false));
+                lore.add(Component.text("                  ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH).decoration(TextDecoration.ITALIC, false));
                 lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(getBalance(player)), NamedTextColor.RED, TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
                 needMeta.lore(lore);
