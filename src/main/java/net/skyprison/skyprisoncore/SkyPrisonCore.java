@@ -165,12 +165,12 @@ public class SkyPrisonCore extends JavaPlugin {
     public HashMap<UUID, LinkedHashMap<String, Integer>> tokenLogAmountPlayer = new HashMap<>();
     public HashMap<UUID, LinkedHashMap<String, Integer>> tokenLogPagePlayer = new HashMap<>();
     private final ScheduledExecutorService dailyExecutor = Executors.newSingleThreadScheduledExecutor();
-
+    public static HashMap<UUID, JailTimer> currentlyJailed = new HashMap<>();
     public HashMap<Audience, Audience> lastMessaged = new HashMap<>();
-
     private BukkitCommandManager<CommandSender> manager;
     private MinecraftHelp<CommandSender> minecraftHelp;
     private CommandConfirmationManager<CommandSender> confirmationManager;
+    public static final Component pluginPrefix = Component.text("Sky", TextColor.fromHexString("#0fc3ff")).append(Component.text("Prison", TextColor.fromHexString("#ff0000")));
 
     @Override
     public void onLoad() {
@@ -282,8 +282,7 @@ public class SkyPrisonCore extends JavaPlugin {
                 .withArgumentParsingHandler()
                 .withCommandExecutionHandler()
                 .withDecorator(component -> Component.text()
-                        .append(Component.text("Sky", TextColor.fromHexString("#00ffff")))
-                        .append(Component.text("Prison", TextColor.fromHexString("#FF0000")))
+                        .append(pluginPrefix)
                         .append(Component.text(" » ", NamedTextColor.DARK_GRAY))
                         .append(component).build()
                 ).apply(this.manager, AudienceProvider.nativeAudience());
@@ -607,6 +606,29 @@ public class SkyPrisonCore extends JavaPlugin {
         }
     }
 
+    public static void setJail(CommandSender sender, Player player, String reason, long time) {
+        Component start = Component.empty();
+        Component playerName = Component.text(player.getName(), TextColor.fromHexString("#e23857"), TextDecoration.BOLD);
+        Component senderName = Component.text(sender.getName(), TextColor.fromHexString("#e23857"), TextDecoration.BOLD);
+        Component yourself = Component.text("You've", TextColor.fromHexString("#e23857"), TextDecoration.BOLD);
+        Component timeComp = Component.text(" for ", NamedTextColor.GRAY).append(Component.text("5", TextColor.fromHexString("#e23857"), TextDecoration.BOLD))
+                .append(Component.text(" minutes!", NamedTextColor.GRAY));
+        Component reasonMsg = reason != null ? Component.text(" Reason", NamedTextColor.GRAY).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
+                .append(Component.text(reason)) : Component.empty();
+
+        sender.sendMessage(start.append(yourself).append(Component.text(" successfully jailed ", NamedTextColor.GRAY)).append(playerName)
+                .append(timeComp).append(reasonMsg));
+        player.sendMessage(start.append(yourself).append(Component.text(" been jailed by ", NamedTextColor.GRAY)).append(senderName)
+                .append(timeComp).append(reasonMsg));
+        Audience receivers =  Bukkit.getServer().filterAudience(audience -> !audience.equals(sender) && !audience.equals(player));
+        receivers.sendMessage(start.append(playerName).append(Component.text(" has been jailed by ", NamedTextColor.GRAY)).append(senderName)
+                .append(timeComp).append(reasonMsg));
+        Timer jail = new Timer();
+        JailTimer task = new JailTimer(db, player, time, reason);
+        currentlyJailed.put(player.getUniqueId(), task);
+        jail.scheduleAtFixedRate(task, 0, TimeUnit.SECONDS.toMillis(1));
+    }
+
     public void registerCommands() {
         manager.command(
                 manager.commandBuilder("spc")
@@ -758,13 +780,42 @@ public class SkyPrisonCore extends JavaPlugin {
                     sendPrivateMessage(sender, player, message);
                 }));
 
+        this.manager.command(this.manager.commandBuilder("jail")
+                .permission("skyprisoncore.command.jail")
+                .argument(PlayerArgument.of("player"))
+                .argument(StringArgument.greedy("reason"))
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    final Player player = c.get("player");
+                    final String message = c.get("reason");
+
+                    setJail(sender, player, message, TimeUnit.MINUTES.toMillis(5));
+                }));
+
+
+        this.manager.command(this.manager.commandBuilder("unjail")
+                .permission("skyprisoncore.command.unjail")
+                .argument(PlayerArgument.<CommandSender>builder("player")
+                        .withSuggestionsProvider((commandSenderCommandContext, s) -> currentlyJailed.keySet().stream().map(Bukkit::getPlayer).filter(Objects::nonNull).map(Player::getName).toList()))
+                .argument(StringArgument.optional("reason", StringArgument.StringMode.GREEDY))
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    final Player player = c.get("player");
+                    final String message = c.get("reason");
+                    currentlyJailed.remove(player.getUniqueId());
+                    Location leaveLoc = new Location(Bukkit.getWorld("world_prison"), 0.5, 135, 0.5);
+                    player.teleportAsync(leaveLoc);
+                    sender.sendMessage(Component.text("Success!"));
+                }));
+
         this.manager.command(this.manager.commandBuilder("bartender")
                 .permission("skyprisoncore.command.bartender")
                 .argument(PlayerArgument.optional("player"))
                 .handler(c -> {
                     Player player = c.getOptional("player").isPresent() ? (Player) c.getOptional("player").get() : c.getSender() instanceof Player ? (Player) c.getSender() : null;
                     if(player != null) {
-                        player.openInventory(new DatabaseInventory(this, db, player, player.hasPermission("skyprisoncore.inventories.bartender.editing"), "bartender").getInventory());
+                        Bukkit.getScheduler().runTask(this, () -> player.openInventory(new DatabaseInventory(this, db, player,
+                                player.hasPermission("skyprisoncore.inventories.bartender.editing"), "bartender").getInventory()));
                     } else {
                         c.getSender().sendMessage(Component.text("Invalid Usage! /bartender (player)"));
                     }
@@ -783,6 +834,43 @@ public class SkyPrisonCore extends JavaPlugin {
                     }
                 }));
 
+        Command.Builder<CommandSender> customInv = this.manager.commandBuilder("custominv")
+                .permission("skyprisoncore.command.custominv");
+        this.manager.command(customInv.literal("list")
+                .permission("skyprisoncore.command.custominv.list")
+                .argument(IntegerArgument.<CommandSender>builder("page").asOptionalWithDefault(1).withMin(1).withMax(20))
+                .handler(c -> {
+                    int page = c.get("page");
+                    Component list = new CustomInv(db).getFormattedList(page);
+                    c.getSender().sendMessage(list);
+                }));
+        this.manager.command(customInv.literal("open")
+                .permission("skyprisoncore.command.custominv.open")
+                .argument(StringArgument.<CommandSender>builder("name")
+                        .withSuggestionsProvider((commandSenderCommandContext, s) -> new CustomInv(db).getList()))
+                .argument(PlayerArgument.optional("player"))
+                .handler(c -> {
+                    Player player = c.getOptional("player").isPresent() ? (Player) c.getOptional("player").get() : c.getSender() instanceof Player ? (Player) c.getSender() : null;
+                    if(player != null) {
+                        String invName = c.get("name");
+                        if(player.hasPermission("skyprisoncore.inventories." + invName)) {
+                            Bukkit.getScheduler().runTask(this, () -> player.openInventory(new DatabaseInventory(this, db, player,
+                                    player.hasPermission("skyprisoncore.inventories." + invName + ".editing"), invName).getInventory()));
+                        }
+                    }
+                }));
+        this.manager.command(customInv.literal("create")
+                .permission("skyprisoncore.command.custominv.create")
+                .argument(StringArgument.of("name"))
+                .argument(StringArgument.optional("display"))
+                .handler(c -> {
+                    CustomInv inv = new CustomInv(db);
+                    String name = c.get("name");
+                    if(!inv.categoryExists(name)) {
+                        inv.createCategory(name, c.getOrDefault("display", null));
+                    }
+                }));
+
         Objects.requireNonNull(getCommand("tokens")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("tokens")).setTabCompleter(new TabCompleter());
@@ -794,7 +882,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, getDatabase()));
         Objects.requireNonNull(getCommand("dropchest")).setExecutor(new DropChest(this));
         Objects.requireNonNull(getCommand("dontsell")).setExecutor(new DontSell(getDatabase()));
-        Objects.requireNonNull(getCommand("endupgrade")).setExecutor(new EndUpgrade(this));
         Objects.requireNonNull(getCommand("secretfound")).setExecutor(new SecretFound(this, dailyMissions, getDatabase()));
         Objects.requireNonNull(getCommand("rewards")).setExecutor(new SecretsGUI(this, getDatabase()));
         Objects.requireNonNull(getCommand("bounty")).setExecutor(new Bounty(getDatabase(), this));
@@ -825,7 +912,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("randomgive")).setExecutor(new RandomGive(this));
         Objects.requireNonNull(getCommand("customrecipes")).setExecutor(new CustomRecipes(this));
         Objects.requireNonNull(getCommand("claim")).setExecutor(new Claim(this, getDatabase()));
-        Objects.requireNonNull(getCommand("custominv")).setExecutor(new CustomInv(this, getDatabase()));
 
         Objects.requireNonNull(getCommand("rename")).setExecutor(new Rename());
         Objects.requireNonNull(getCommand("itemlore")).setExecutor(new ItemLore(this));
@@ -854,7 +940,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EntityPickupItem(this), this);
         pm.registerEvents(new EntityRemoveFromWorld(this), this);
         pm.registerEvents(new InventoryClick(this, new EconomyCheck(this), new DropChest(this), new Bounty(getDatabase(), this),
-                new SecretsGUI(this, getDatabase()), new Daily(this, getDatabase()), new MoneyHistory(this), new EndUpgrade(this),
+                new SecretsGUI(this, getDatabase()), new Daily(this, getDatabase()), new MoneyHistory(this),
                 new BuyBack(this, getDatabase()), new SkyPlot(this), getDatabase(), new Tags(this, getDatabase()), particles, new CustomRecipes(this)), this);
         pm.registerEvents(new InventoryOpen(this), this);
         pm.registerEvents(new LeavesDecay(), this);

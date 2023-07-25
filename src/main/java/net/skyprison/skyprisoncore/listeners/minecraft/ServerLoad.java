@@ -16,18 +16,14 @@ import org.bukkit.event.server.ServerLoadEvent;
 import java.util.concurrent.TimeUnit;
 
 public class ServerLoad implements Listener {
-
     private final SkyPrisonCore plugin;
     private final PlayerParticlesAPI particles;
     private final DatabaseHook db;
-
     public ServerLoad(SkyPrisonCore plugin, PlayerParticlesAPI particles, DatabaseHook db) {
         this.plugin = plugin;
         this.particles = particles;
         this.db = db;
     }
-
-
     @EventHandler
     public void onServerLoad(ServerLoadEvent event) {
         World prisonWorld = Bukkit.getWorld("world_prison");

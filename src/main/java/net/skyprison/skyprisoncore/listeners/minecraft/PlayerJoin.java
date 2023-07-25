@@ -230,16 +230,26 @@ public class PlayerJoin implements Listener {
             }
 
             int tag_id = 0;
-            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT blocks_mined, tokens, active_tag FROM users WHERE user_id = ?")) {
+            int jailStatus = 0;
+            long jailTime = 0;
+            String jailReason = "";
+            try(Connection conn = db.getConnection();
+                PreparedStatement ps = conn.prepareStatement("SELECT blocks_mined, tokens, active_tag, jail_status, jail_time_left, jail_reason FROM users WHERE user_id = ?")) {
                 ps.setString(1, player.getUniqueId().toString());
                 ResultSet rs = ps.executeQuery();
                 while(rs.next()) {
                     plugin.blockBreaks.put(player.getUniqueId(), rs.getInt(1));
                     plugin.tokensData.put(player.getUniqueId(), rs.getInt(2));
                     tag_id = rs.getInt(3);
+                    jailStatus = rs.getInt(4);
+                    jailTime = rs.getLong(5);
+                    jailReason = rs.getString(6);
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
+            }
+            if(jailStatus == 1) {
+                SkyPrisonCore.setJail(Bukkit.getConsoleSender(), player, jailReason, jailTime);
             }
 
             if(!plugin.userTags.containsKey(player.getUniqueId())) {

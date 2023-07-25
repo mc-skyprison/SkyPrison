@@ -92,7 +92,7 @@ public class TreeFeller {
     public static ItemStack getRepairItem(SkyPrisonCore plugin, int amount) {
         ItemStack upgrade = new ItemStack(Material.ENCHANTED_BOOK, amount);
         ItemMeta upgradeMeta = upgrade.getItemMeta();
-        upgradeMeta.displayName(Component.text("Axe Repair", TextColor.fromHexString("#09f755"), TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+        upgradeMeta.displayName(Component.text("Axe Repair", TextColor.fromHexString("#ea7125"), TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
         PersistentDataContainer axePers = upgradeMeta.getPersistentDataContainer();
         NamespacedKey upgradeKey = new NamespacedKey(plugin, "treefeller-upgrade");
         axePers.set(upgradeKey, PersistentDataType.STRING, "repair");

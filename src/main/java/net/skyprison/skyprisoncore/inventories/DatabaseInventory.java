@@ -8,7 +8,6 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import org.apache.commons.lang.WordUtils;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -199,8 +198,23 @@ public class DatabaseInventory implements CustomInventory{
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        String displayName = "Placeholder";
+        TextColor colour = TextColor.fromHexString("#0fc3ff");
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id, display, colour FROM gui_inventories WHERE id = ?")) {
+            ps.setString(1, category);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                displayName = rs.getString(2) != null ? rs.getString(2) : rs.getString(1);
+                if(rs.getString(3) != null) {
+                    String colourCode = rs.getString(3);
+                    colour = NamedTextColor.NAMES.value(colourCode) != null ? NamedTextColor.NAMES.value(colourCode) : TextColor.fromHexString(colourCode);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
-        int invSize = 54;
+        int invSize = items.isEmpty() ? 9 : 54;
         if(!canEdit) {
             Optional<Integer> optionalSize = items.keySet().stream().max(Integer::compare);
             if (optionalSize.isPresent()) {
@@ -211,7 +225,7 @@ public class DatabaseInventory implements CustomInventory{
             }
         }
 
-        this.inventory = plugin.getServer().createInventory(this, invSize, Component.text(WordUtils.capitalize(category.replace("-", "")), TextColor.fromHexString("#0fc3ff")));
+        this.inventory = plugin.getServer().createInventory(this, invSize, Component.text(displayName, colour));
         this.items = items;
 
         updateUsage(player);

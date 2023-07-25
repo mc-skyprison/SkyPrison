@@ -1,20 +1,13 @@
 package net.skyprison.skyprisoncore.commands;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.inventories.DatabaseInventory;
 import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -24,14 +17,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class CustomInv implements CommandExecutor {
-    private final SkyPrisonCore plugin;
+public class CustomInv {
     private final DatabaseHook db;
-    public CustomInv(SkyPrisonCore plugin, DatabaseHook db) {
-        this.plugin = plugin;
+    public CustomInv(DatabaseHook db) {
         this.db = db;
     }
-
     public boolean saveItem(DatabaseInventoryEdit itemEdit) {
         if(itemEdit.getItemId() != -1) {
             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE gui_items SET item = ?, permission = ?, permission_message = ?, price_money = ?, " +
@@ -91,7 +81,7 @@ public class CustomInv implements CommandExecutor {
     }
 
     public boolean categoryExists(String category) {
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id FROM gui_items WHERE category = ?")) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id FROM gui_inventories WHERE id = ?")) {
             ps.setString(1, category);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
@@ -104,88 +94,72 @@ public class CustomInv implements CommandExecutor {
     }
 
 
-    private void createCategory(String category) {
-        ItemStack item = new ItemStack(Material.GRAY_CONCRETE);
-        try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO gui_items (item, permission, permission_message, price_money, price_tokens, " +
-                "price_voucher_type, price_voucher, commands, max_uses, usage_lore, position, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
-            ps.setBytes(1, item.serializeAsBytes());
-            ps.setString(2, "general");
-            ps.setString(3, "<red>You cant use this!");
-            ps.setInt(4, 0);
-            ps.setInt(5, 0);
-            ps.setString(6, "none");
-            ps.setInt(7, 0);
-            ps.setString(8, "");
-            ps.setInt(9, 0);
-            ps.setString(10, "Times Bought:");
-            ps.setInt(11, 0);
-            ps.setString(12, category);
+    public void createCategory(String category, String display) {
+        try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO gui_inventories (id, display) VALUES (?, ?)")) {
+            ps.setString(1, category);
+            ps.setString(2, display);
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if(args.length == 0) {
-            sender.sendMessage(Component.text("Incorrect Usage! Available Commands: \n- /custominv <inventory> <player>\n- /custominv list", NamedTextColor.RED));
-            return true;
+    public List<String> getList() {
+        List<String> categories = new ArrayList<>();
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id FROM gui_inventories")) {
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                categories.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-        // /custominv <inventory> <player>
-        if(args.length == 1 && args[0].equalsIgnoreCase("list")) {
-            List<String> categories = new ArrayList<>();
-            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT category FROM gui_items")) {
-                ResultSet rs = ps.executeQuery();
-                while (rs.next()) {
-                    if(!categories.contains(rs.getString(1))) categories.add(rs.getString(1));
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+        return categories;
+    }
 
-            Component msg = Component.text("");
-            msg = msg.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
-                    .append(Component.text(" Inventories ", NamedTextColor.GOLD, TextDecoration.BOLD))
-                    .append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
+    public Component getFormattedList(int page) {
+        List<String> categories = getList();
+        int totalPages = (int) Math.ceil(categories.size() / 10.0);
 
-            int i = 1;
-            for (String category : categories) {
-                msg = msg.appendNewline().append(Component.text(i + ". ", NamedTextColor.GRAY).append(Component.text(category, NamedTextColor.YELLOW)));
-                i++;
-            }
-            sender.sendMessage(msg);
-            return true;
+        int prevPage = Math.max(1, page - 1);
+        int nextPage = Math.min(totalPages, page + 1);
+
+        int pageStart = (page - 1) * 10;
+        Component msg = Component.empty();
+        msg = msg.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
+                .append(Component.text(" Custom Inventories ", TextColor.fromHexString("#FFFF00"), TextDecoration.BOLD))
+                .append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
+        for (int i = pageStart; i < Math.min(pageStart + 10, categories.size()); i++) {
+            String category = categories.get(i);
+            int listNum = i + 1;
+            msg = msg.append(Component.text("\n" + listNum + ". ", TextColor.fromHexString("#cea916"))
+                    .append(Component.text(category))
+                    .hoverEvent(HoverEvent.showText(Component.text("Open GUI", NamedTextColor.GRAY)))
+                    .clickEvent(ClickEvent.runCommand("/custominv open " + category)));
         }
-
-        Player player;
-        if(args.length > 1) {
-            UUID pUUID = plugin.getPlayer(args[1]);
-            if(pUUID == null) {
-                sender.sendMessage(Component.text("No player with that name exists!", NamedTextColor.RED));
-                return true;
-            } else {
-                player = Bukkit.getPlayer(pUUID);
-                if(player == null || !player.isOnline()) {
-                    sender.sendMessage(Component.text("Player must be online!", NamedTextColor.RED));
-                    return true;
-                }
+        if (page == 1) {
+            if(categories.size() > 10) {
+                msg = msg.append(Component.text("\n" + page, TextColor.fromHexString("#266d27"))
+                        .append(Component.text("/", NamedTextColor.GRAY)
+                                .append(Component.text(totalPages, TextColor.fromHexString("#266d27"))))
+                        .append(Component.text(" Next --->", NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text(">>>", NamedTextColor.GRAY)))
+                                .clickEvent(ClickEvent.runCommand("/custominv list " + nextPage))));
             }
-        } else if(sender instanceof Player oPlayer) {
-            player = oPlayer;
+        } else if (page == totalPages) {
+            msg = msg.append(Component.text("\n<--- Prev ", NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text("<<<", NamedTextColor.GRAY)))
+                    .clickEvent(ClickEvent.runCommand("/custominv list " + prevPage))
+                    .append(Component.text(page, TextColor.fromHexString("#266d27"))
+                            .append(Component.text("/", NamedTextColor.GRAY)
+                                    .append(Component.text(totalPages, TextColor.fromHexString("#266d27"))))));
         } else {
-            sender.sendMessage(Component.text("Incorrect Usage! Available Commands: \n- /custominv <inventory> <player>\n- /custominv list", NamedTextColor.RED));
-            return true;
+            msg = msg.append(Component.text("\n<--- Prev ", NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text("<<<", NamedTextColor.GRAY)))
+                    .clickEvent(ClickEvent.runCommand("/custominv list " + prevPage))
+                    .append(Component.text(page, TextColor.fromHexString("#266d27"))
+                            .append(Component.text("/", NamedTextColor.GRAY)
+                                    .append(Component.text(totalPages, TextColor.fromHexString("#266d27")))))
+                    .append(Component.text(" Next --->", NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text(">>>", NamedTextColor.GRAY))))
+                    .clickEvent(ClickEvent.runCommand("/custominv list " + nextPage)));
         }
-        if (categoryExists(args[0]) && player.hasPermission("skyprisoncore.inventories." + args[0])) {
-            player.openInventory(new DatabaseInventory(plugin, db, player, player.hasPermission("skyprisoncore.inventories." + args[0] + ".editing"), args[0]).getInventory());
-        } else if (player.hasPermission("skyprisoncore.command.custominv.create")) {
-            createCategory(args[0]);
-            player.openInventory(new DatabaseInventory(plugin, db, player, player.hasPermission("skyprisoncore.inventories." + args[0] + ".editing"), args[0]).getInventory());
-        } else {
-            sender.sendMessage(Component.text("No such category!", NamedTextColor.RED));
-        }
-        return true;
+        return msg;
     }
 }

@@ -3,13 +3,10 @@ package net.skyprison.skyprisoncore.listeners.minecraft;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.world.entity.EntityType;
 import com.sk89q.worldguard.WorldGuard;
-import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.flags.*;
 import com.sk89q.worldguard.protection.managers.RegionManager;
-import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import dev.esophose.playerparticles.api.PlayerParticlesAPI;
@@ -68,7 +65,6 @@ public class InventoryClick implements Listener {
     private final SecretsGUI secretsGUI;
     private final Daily daily;
     private final MoneyHistory moneyHistory;
-    private final EndUpgrade endUpgrade;
     private final BuyBack buyBack;
     private final SkyPlot skyPlot;
     private final DatabaseHook db;
@@ -77,7 +73,7 @@ public class InventoryClick implements Listener {
     private final CustomRecipes customRecipes;
 
     public InventoryClick(SkyPrisonCore plugin, EconomyCheck econCheck, DropChest dropChest, Bounty bounty,
-                          SecretsGUI secretsGUI, Daily daily, MoneyHistory moneyHistory, EndUpgrade endUpgrade,
+                          SecretsGUI secretsGUI, Daily daily, MoneyHistory moneyHistory,
                           BuyBack buyBack, SkyPlot skyPlot, DatabaseHook db, Tags tag, PlayerParticlesAPI particles, CustomRecipes customRecipes) {
         this.plugin = plugin;
         this.econCheck = econCheck;
@@ -86,7 +82,6 @@ public class InventoryClick implements Listener {
         this.secretsGUI = secretsGUI;
         this.daily = daily;
         this.moneyHistory = moneyHistory;
-        this.endUpgrade = endUpgrade;
         this.buyBack = buyBack;
         this.skyPlot = skyPlot;
         this.db = db;
@@ -830,7 +825,7 @@ public class InventoryClick implements Listener {
                                 Component msg = Component.text("Are you sure you want to save this item?", NamedTextColor.GRAY)
                                         .append(Component.text("\nSAVE ITEM", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
                                             if (plugin.customItemChanges.contains(player.getUniqueId())) {
-                                                if(new CustomInv(plugin, db).saveItem(inv)) {
+                                                if(new CustomInv(db).saveItem(inv)) {
                                                     plugin.customItemChanges.remove(player.getUniqueId());
                                                     HashMap<Integer, DatabaseInventoryEdit> itemEdits = plugin.itemEditing.get(player.getUniqueId());
                                                     itemEdits.remove(inv.getItemId());
@@ -1067,142 +1062,6 @@ public class InventoryClick implements Listener {
                                             }
                                         }
                                         break;
-                                    case "netheriteupgrade":
-                                        if (event.getSlot() == 11) {
-                                            ItemStack pMain = player.getInventory().getItemInMainHand();
-                                            if (pMain.getType() != Material.AIR) {
-                                                if (clickInv.getItem(event.getSlot()).getType() == Material.GREEN_CONCRETE) {
-                                                    plugin.asConsole("cmi money take " + user.getName() + " 500000");
-                                                    pMain.setRepairCost(0);
-                                                    player.sendMessage(Component.text("Blacksmith", TextColor.fromHexString("#725246"), TextDecoration.BOLD).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
-                                                            .append(Component.text("Your ", NamedTextColor.GRAY)).append(Component.text(clickInv.getItem(13).getType().name(), NamedTextColor.DARK_AQUA))
-                                                            .append(Component.text(" has had its repair cost reset for ", NamedTextColor.GRAY)).append(Component.text("$500,000!", NamedTextColor.GREEN)));player.closeInventory();
-                                                } else {
-                                                    player.sendMessage(Component.text("You can't afford this!", NamedTextColor.RED));
-                                                }
-                                            } else {
-                                                player.closeInventory();
-                                                player.sendMessage(Component.text("Blacksmith", TextColor.fromHexString("#725246"), TextDecoration.BOLD).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
-                                                                .append(Component.text("You are not holding anything in your hand!")));
-                                            }
-                                        } else if (event.getSlot() == 15) {
-                                            player.closeInventory();
-                                        }
-                                        break;
-                                    case "endupgrade":
-                                        ItemStack clickedItem = clickInv.getItem(event.getSlot());
-                                        if (event.getSlot() == 20) {
-                                            ItemStack repItem = clickInv.getItem(24);
-                                            PersistentDataContainer repData = Objects.requireNonNull(repItem).getPersistentDataContainer();
-                                            NamespacedKey repKey = new NamespacedKey(plugin, "repair-state");
-                                            int repCheck = repData.get(repKey, PersistentDataType.INTEGER);
-
-                                            PersistentDataContainer clickData = Objects.requireNonNull(clickedItem).getPersistentDataContainer();
-                                            NamespacedKey enchKey = new NamespacedKey(plugin, "ench-state");
-                                            int enchCheck = clickData.get(enchKey, PersistentDataType.INTEGER);
-                                            if (enchCheck != 1) {
-                                                endUpgrade.openGUI(player, true, repCheck == 1);
-                                            } else {
-                                                endUpgrade.openGUI(player, false, repCheck == 1);
-                                            }
-                                        } else if (event.getSlot() == 24) {
-                                            ItemStack enchItem = clickInv.getItem(20);
-                                            PersistentDataContainer enchData = Objects.requireNonNull(enchItem).getPersistentDataContainer();
-                                            NamespacedKey enchKey = new NamespacedKey(plugin, "ench-state");
-                                            int enchCheck = enchData.get(enchKey, PersistentDataType.INTEGER);
-
-                                            PersistentDataContainer clickData = Objects.requireNonNull(clickedItem).getPersistentDataContainer();
-                                            NamespacedKey repKey = new NamespacedKey(plugin, "repair-state");
-                                            int repCheck = clickData.get(repKey, PersistentDataType.INTEGER);
-                                            if (repCheck != 1) {
-                                                endUpgrade.openGUI(player, enchCheck == 1, true);
-                                            } else {
-                                                endUpgrade.openGUI(player, enchCheck == 1, false);
-                                            }
-                                        } else if (event.getSlot() == 31) {
-                                            ItemStack pMain = player.getInventory().getItemInMainHand();
-                                            if (pMain.getType() != Material.AIR) {
-                                                if (clickInv.getItem(event.getSlot()).getType() == Material.GREEN_CONCRETE) {
-                                                    ItemStack enchState = clickInv.getItem(20);
-                                                    assert enchState != null;
-                                                    PersistentDataContainer enchData = enchState.getPersistentDataContainer();
-                                                    NamespacedKey enchKey = new NamespacedKey(plugin, "ench-state");
-                                                    int enchCheck = enchData.get(enchKey, PersistentDataType.INTEGER);
-
-                                                    ItemStack repItem = clickInv.getItem(24);
-                                                    PersistentDataContainer repData = Objects.requireNonNull(repItem).getPersistentDataContainer();
-                                                    NamespacedKey repKey = new NamespacedKey(plugin, "repair-state");
-                                                    int repCheck = repData.get(repKey, PersistentDataType.INTEGER);
-
-                                                    endUpgrade.confirmGUI(player, enchCheck == 1, repCheck == 1);
-                                                } else {
-                                                    player.sendMessage(Component.text("You can't afford this!", NamedTextColor.RED));
-                                                }
-                                            } else {
-                                                player.closeInventory();
-                                                player.sendMessage(Component.text("Blacksmith", TextColor.fromHexString("#725246"), TextDecoration.BOLD).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
-                                                        .append(Component.text("You are not holding anything in your hand!")));
-                                            }
-                                        }
-                                        break;
-                                    case "confirm-endupgrade":
-                                        if (event.getSlot() == 11) {
-                                            ItemStack pMain = player.getInventory().getItemInMainHand();
-                                            if (pMain.getType() != Material.AIR) {
-                                                ItemStack confirmItem = clickInv.getItem(11);
-                                                PersistentDataContainer confirmData = Objects.requireNonNull(confirmItem).getPersistentDataContainer();
-                                                NamespacedKey enchKey = new NamespacedKey(plugin, "ench-state");
-                                                int enchCheck = confirmData.get(enchKey, PersistentDataType.INTEGER);
-
-                                                NamespacedKey repKey = new NamespacedKey(plugin, "repair-state");
-                                                int repCheck = confirmData.get(repKey, PersistentDataType.INTEGER);
-
-                                                if (pMain.getRepairCost() >= 1000) {
-                                                    repCheck = 0;
-                                                }
-
-                                                int cost = endUpgrade.upgradeCost(player, enchCheck == 1, repCheck == 1);
-
-                                                switch (pMain.getType().toString()) {
-                                                    case "DIAMOND_AXE" -> pMain.setType(Material.NETHERITE_AXE);
-                                                    case "DIAMOND_PICKAXE" -> pMain.setType(Material.NETHERITE_PICKAXE);
-                                                    case "DIAMOND_SHOVEL" -> pMain.setType(Material.NETHERITE_SHOVEL);
-                                                    case "DIAMOND_HOE" -> pMain.setType(Material.NETHERITE_HOE);
-                                                    case "DIAMOND_HELMET" -> pMain.setType(Material.NETHERITE_HELMET);
-                                                    case "DIAMOND_CHESTPLATE" ->
-                                                            pMain.setType(Material.NETHERITE_CHESTPLATE);
-                                                    case "DIAMOND_LEGGINGS" ->
-                                                            pMain.setType(Material.NETHERITE_LEGGINGS);
-                                                    case "DIAMOND_BOOTS" -> pMain.setType(Material.NETHERITE_BOOTS);
-                                                }
-                                                if (enchCheck != 1) {
-                                                    if (pMain.hasEnchants()) {
-                                                        for (Enchantment ench : pMain.getEnchants().keySet()) {
-                                                            pMain.removeEnchant(ench);
-                                                        }
-                                                    }
-                                                }
-                                                if (repCheck == 1) {
-                                                    pMain.setRepairCost(0);
-                                                }
-
-                                                if (!player.hasPermission("skyprisoncore.command.endupgrade.first-time")) {
-                                                    plugin.asConsole("money take " + player.getName() + " " + cost);
-                                                    player.sendMessage(Component.text("Blacksmith", TextColor.fromHexString("#725246"), TextDecoration.BOLD).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
-                                                            .append(Component.text("Your ", NamedTextColor.GRAY)).append(Component.text(clickInv.getItem(4).getType().name(), NamedTextColor.DARK_AQUA))
-                                                            .append(Component.text(" has been upgraded for ", NamedTextColor.GRAY)).append(Component.text("$" + plugin.formatNumber(cost) + "!", NamedTextColor.GREEN)));
-                                                } else {
-                                                    plugin.asConsole("lp user " + player.getName() + " permission unset skyprisoncore.command.endupgrade.first-time");
-                                                    player.sendMessage(Component.text("Blacksmith", TextColor.fromHexString("#725246"), TextDecoration.BOLD).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
-                                                                    .append(Component.text("Your ", NamedTextColor.GRAY)).append(Component.text(clickInv.getItem(4).getType().name(), NamedTextColor.DARK_AQUA))
-                                                                    .append(Component.text(" has been upgraded!", NamedTextColor.GRAY)));
-                                                }
-                                                player.closeInventory();
-                                            }
-                                        } else if (event.getSlot() == 15) {
-                                            player.closeInventory();
-                                        }
-                                        break;
                                     case "bounties":
                                         if (event.getClickedInventory().getItem(event.getSlot()) != null) {
                                             Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
@@ -1316,113 +1175,6 @@ public class InventoryClick implements Listener {
                                             }
                                         }
                                         break;
-                                    case "skyplot-gui":
-                                        NamespacedKey skyKey = new NamespacedKey(plugin, "skyplot-type");
-                                        String pageType = fData.get(skyKey, PersistentDataType.STRING);
-                                        switch (pageType.toLowerCase()) {
-                                            case "main":
-                                                switch (event.getSlot()) {
-                                                    case 13:
-                                                        break;
-                                                    case 20:
-                                                        skyPlot.skyPlotGUI(player, "expand", 1);
-                                                        break;
-                                                    case 24:
-                                                        skyPlot.skyPlotGUI(player, "other", 1);
-                                                        break;
-                                                    case 31:
-                                                        skyPlot.skyPlotGUI(player, "settings", 1);
-                                                        break;
-                                                }
-                                                break;
-                                            case "settings":
-                                                if (event.getSlot() == 11) {
-                                                    skyPlot.skyPlotGUI(player, "banned", 1);
-                                                } else if (event.getSlot() == 15) {
-                                                    skyPlot.setVisit(player);
-                                                    skyPlot.skyPlotGUI(player, "settings", 1);
-                                                } else if (event.getSlot() == 22) {
-                                                    skyPlot.skyPlotGUI(player, "main", 1);
-                                                }
-                                                break;
-                                            case "expand":
-                                                clickedItem = event.getClickedInventory().getItem(event.getSlot());
-                                                RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
-                                                RegionManager regions = container.get(BukkitAdapter.adapt(player.getWorld()));
-                                                ApplicableRegionSet regionList = regions.getApplicableRegions(BlockVector3.at(player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ()));
-                                                ProtectedRegion region = regionList.getRegions().iterator().next();
-                                                if (clickedItem.getType().equals(Material.PLAYER_HEAD)) {
-                                                    switch (event.getSlot()) { // Default Size = 14 x 24 x 14
-                                                        case 10: // increase to 20 x 30 x 20
-                                                            ProtectedRegion newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(3, -3, -3), region.getMaximumPoint().add(-3, 3, 3));
-                                                            newRegion.copyFrom(region);
-                                                            regions.removeRegion(region.getId());
-                                                            regions.addRegion(newRegion);
-                                                            break;
-                                                        case 11: // increase by 30 x 40 x 30
-                                                            newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
-                                                            newRegion.copyFrom(region);
-                                                            regions.removeRegion(region.getId());
-                                                            regions.addRegion(newRegion);
-                                                            break;
-                                                        case 12: // increase by 6
-                                                            newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
-                                                            newRegion.copyFrom(region);
-                                                            regions.removeRegion(region.getId());
-                                                            regions.addRegion(newRegion);
-                                                            break;
-                                                        case 13: // increase by 8
-                                                            newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
-                                                            newRegion.copyFrom(region);
-                                                            regions.removeRegion(region.getId());
-                                                            regions.addRegion(newRegion);
-                                                            break;
-                                                        case 14: // increase by 10
-                                                            newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
-                                                            newRegion.copyFrom(region);
-                                                            regions.removeRegion(region.getId());
-                                                            regions.addRegion(newRegion);
-                                                            break;
-                                                        case 15: // increase by 12
-                                                            newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
-                                                            newRegion.copyFrom(region);
-                                                            regions.removeRegion(region.getId());
-                                                            regions.addRegion(newRegion);
-                                                            break;
-                                                        case 16: // increase by 14
-                                                            newRegion = new ProtectedCuboidRegion(region.getId(), region.getMaximumPoint().add(1, -1, -1), region.getMaximumPoint().add(-1, 1, 1));
-                                                            newRegion.copyFrom(region);
-                                                            regions.removeRegion(region.getId());
-                                                            regions.addRegion(newRegion);
-                                                            break;
-                                                    }
-                                                }
-                                                break;
-                                            case "banned":
-                                                break;
-                                            case "other":
-                                                if (event.getClickedInventory().getItem(event.getSlot()) != null) {
-                                                    ItemStack clickItem = event.getClickedInventory().getItem(event.getSlot());
-                                                    PersistentDataContainer clickData = clickItem.getPersistentDataContainer();
-
-                                                    if (clickItem.getType().equals(Material.PLAYER_HEAD)) {
-                                                        NamespacedKey isleKey = new NamespacedKey(plugin, "skyplot-owner");
-                                                        String isleOwner = clickData.get(isleKey, PersistentDataType.STRING);
-                                                        Location loc = skyPlot.getIsleLoc(isleOwner);
-                                                        player.teleportAsync(loc);
-
-                                                    } else if (event.getSlot() == 48 && clickItem.getType().equals(Material.PAPER)) {
-                                                        skyPlot.skyPlotGUI(player, "main", page - 1);
-                                                    } else if (event.getSlot() == 49) {
-                                                        skyPlot.skyPlotGUI(player, "main", 1);
-                                                    } else if (event.getSlot() == 50 && clickItem.getType().equals(Material.PAPER)) {
-                                                        skyPlot.skyPlotGUI(player, "main", page + 1);
-                                                    }
-                                                }
-                                                break;
-                                        }
-
-                                        break;
                                     case "daily-reward":
                                         if (event.getClickedInventory().getItem(event.getSlot()).getType().equals(Material.MINECART)) {
                                             player.sendMessage(Component.text("You've already collected the daily reward!", NamedTextColor.RED));
@@ -1431,7 +1183,6 @@ public class InventoryClick implements Listener {
                                             int highestStreak = 0;
                                             int totalCollected = 0;
                                             String lastColl = "";
-
                                             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT current_streak, highest_streak, total_collected, last_collected FROM dailies WHERE user_id = ?")) {
                                                 ps.setString(1, player.getUniqueId().toString());
                                                 ResultSet rs = ps.executeQuery();
