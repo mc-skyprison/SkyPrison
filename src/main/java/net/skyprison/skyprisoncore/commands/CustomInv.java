@@ -94,10 +94,11 @@ public class CustomInv {
     }
 
 
-    public void createCategory(String category, String display) {
-        try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO gui_inventories (id, display) VALUES (?, ?)")) {
+    public void createCategory(String category, String display, String colour) {
+        try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO gui_inventories (id, display, colour) VALUES (?, ?, ?)")) {
             ps.setString(1, category);
             ps.setString(2, display);
+            ps.setString(3, colour);
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

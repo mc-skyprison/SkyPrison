@@ -33,8 +33,46 @@ public class Greg {
             case "fire-resistance" -> item = Greg.getPotion(plugin, "Potion of Fire Resistance", "fire_resistance", false, amount);
             case "instant-health" -> item = Greg.getPotion(plugin, "Potion of Healing", "instant_heal", false, amount);
             case "instant-damage" -> item = Greg.getPotion(plugin, "Splash Potion of Harming", "instant_damage", true, amount);
+            case "release-papers" -> item = Greg.getReleasePapers(plugin, amount);
+            case "fake-release-papers" -> item = Greg.getFakeReleasePapers(plugin, amount);
         }
         return item;
+    }
+    public static ItemStack getReleasePapers(SkyPrisonCore plugin, int amount) {
+        ItemStack voucher = new ItemStack(Material.PAPER, amount);
+        ItemMeta vMeta = voucher.getItemMeta();
+        vMeta.displayName(Component.text( "Release Papers", TextColor.fromHexString("#ffd700"), TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+        ArrayList<Component> lore = new ArrayList<>();
+        lore.add(Component.text("The release of this prisoner has been requested", NamedTextColor.GRAY));
+        lore.add(Component.text("~Signed, The Warden", NamedTextColor.GRAY));
+        lore.add(Component.text("                  ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
+        lore.add(Component.text("Give this to the jailor to get out of jail.", NamedTextColor.GRAY));
+        vMeta.addEnchant(Enchantment.PROTECTION_FALL, 1, true);
+        vMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        vMeta.lore(lore);
+        PersistentDataContainer vouchData = vMeta.getPersistentDataContainer();
+        NamespacedKey key = new NamespacedKey(plugin, "greg");
+        vouchData.set(key, PersistentDataType.STRING, "release-papers");
+        voucher.setItemMeta(vMeta);
+        return voucher;
+    }
+    public static ItemStack getFakeReleasePapers(SkyPrisonCore plugin, int amount) {
+        ItemStack voucher = new ItemStack(Material.PAPER, amount);
+        ItemMeta vMeta = voucher.getItemMeta();
+        vMeta.displayName(Component.text( "Toetaly Legit Realease Paperrs", TextColor.fromHexString("#ffd700"), TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+        ArrayList<Component> lore = new ArrayList<>();
+        lore.add(Component.text("The realease of this prisonar have ben requesteed", NamedTextColor.GRAY));
+        lore.add(Component.text("Signed, Wardenn", NamedTextColor.GRAY));
+        lore.add(Component.text("                  ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
+        lore.add(Component.text("Give this to the jailor to get out of jail.", NamedTextColor.GRAY));
+        vMeta.addEnchant(Enchantment.PROTECTION_FALL, 1, true);
+        vMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        vMeta.lore(lore);
+        PersistentDataContainer vouchData = vMeta.getPersistentDataContainer();
+        NamespacedKey key = new NamespacedKey(plugin, "greg");
+        vouchData.set(key, PersistentDataType.STRING, "fake-release-papers");
+        voucher.setItemMeta(vMeta);
+        return voucher;
     }
     public static ItemStack getGrease(SkyPrisonCore plugin, int amount) {
         ItemStack voucher = new ItemStack(Material.GREEN_DYE, amount);

@@ -34,23 +34,31 @@ public class JailTimer extends TimerTask {
     private final RegionManager regions = container.get(BukkitAdapter.adapt(world));
     private final Location loc = new Location(world, 0.5, 134, 16.5, -180, 0);
     private final Location leaveLoc = new Location(world, 0.5, 135, 0.5);
-    private final long timeLeft;
-    private final String reason;
-    private final BossBar timeBar;
-    private int i = 0;
+    private long timeLeft;
+    public final BossBar timeBar;
     private float progress;
+    private long totalTime;
+    public final int logsId;
+    public long timeServed;
     private final Component prefix = Component.text("Time Left", TextColor.fromHexString("#939292")).append(Component.text(" » ", NamedTextColor.DARK_GRAY, TextDecoration.BOLD));
-    public JailTimer(DatabaseHook db, Player player, long timeLeft, String reason) {
+
+    public void increaseTime(Long millis) {
+        timeLeft += millis;
+        totalTime += millis;
+    }
+
+    public JailTimer(DatabaseHook db, Player player, long timeLeft, int logsId, long totalTime) {
         this.db = db;
         this.player = player;
+        this.logsId = logsId;
         this.timeLeft = timeLeft + System.currentTimeMillis();
-        this.reason = reason;
+        this.totalTime = totalTime;
         this.pUUID = player.getUniqueId();
         this.progress = ((300 - ((float) TimeUnit.MILLISECONDS.toSeconds(timeLeft))) / 300);
         long currTime = System.currentTimeMillis();
         long timeTill = timeLeft - currTime;
-        int minutes = (int) Math.floor((timeTill % (1000.0 * 60.0 * 60.0)) / (1000.0 * 60.0));
-        int seconds = (int) Math.floor((timeTill % (1000.0 * 60.0)) / 1000.0);
+        int minutes = (int) Math.round((timeTill % (1000.0 * 60.0 * 60.0)) / (1000.0 * 60.0));
+        int seconds = (int) Math.round((timeTill % (1000.0 * 60.0)) / 1000.0);
         Component title = Component.text("Time Left: ", NamedTextColor.GRAY);
         if (minutes != 0.0) {
             title = title.append(Component.text(minutes, NamedTextColor.YELLOW)).append(Component.text(" min", NamedTextColor.GOLD))
@@ -66,6 +74,7 @@ public class JailTimer extends TimerTask {
         long currTime = System.currentTimeMillis();
         if(timeLeft > currTime) {
             long timeTill = timeLeft - currTime;
+            timeServed = totalTime - timeTill;
             if(player != null && player.isOnline()) {
                 if(player.getWorld() != world) {
                     player.teleportAsync(loc);
@@ -77,7 +86,7 @@ public class JailTimer extends TimerTask {
                         player.teleportAsync(loc);
                 }
                 int minutes = (int) Math.floor((timeTill % (1000.0 * 60.0 * 60.0)) / (1000.0 * 60.0));
-                int seconds = (int) Math.floor((timeTill % (1000.0 * 60.0)) / 1000.0);
+                int seconds = (int) Math.round((timeTill % (1000.0 * 60.0)) / 1000.0);
                 Component title = prefix;
                 if (minutes != 0.0) {
                     title = title.append(Component.text(minutes, TextColor.fromHexString("#e23857"))).append(Component.text(" min", TextColor.fromHexString("#939292")))
@@ -86,18 +95,14 @@ public class JailTimer extends TimerTask {
                     title = title.append(Component.text(seconds, TextColor.fromHexString("#e23857"))).append(Component.text(" sec", TextColor.fromHexString("#939292")));
                 }
                 timeBar.name(title);
-                if(i % 3 == 0 && progress <= 1.0) {
-                    progress += 0.01;
-                    timeBar.progress(progress);
-                }
+                progress = (float) timeServed / totalTime;
+                timeBar.progress(progress);
             } else {
                 this.cancel();
                 SkyPrisonCore.currentlyJailed.remove(pUUID);
-                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET jail_status = ?, jail_reason = ?, jail_time_left = ? WHERE user_id = ?")) {
-                    ps.setInt(1, 1);
-                    ps.setString(2, reason);
-                    ps.setLong(3, timeTill);
-                    ps.setString(4, pUUID.toString());
+                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE logs_jail SET length_served = ? WHERE id = ?")) {
+                    ps.setLong(1, timeServed);
+                    ps.setInt(2, logsId);
                     ps.executeUpdate();
                 } catch (SQLException e) {
                     e.printStackTrace();
@@ -108,13 +113,14 @@ public class JailTimer extends TimerTask {
             player.teleportAsync(leaveLoc);
             timeBar.removeViewer(player);
             SkyPrisonCore.currentlyJailed.remove(pUUID);
-            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET jail_amount = jail_amount + 1 WHERE user_id = ?")) {
-                ps.setString(1, pUUID.toString());
+            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE logs_jail SET active = ?, time_finished = ?, length_served = length_total WHERE id = ?")) {
+                ps.setInt(1, 0);
+                ps.setLong(2, currTime);
+                ps.setInt(3, logsId);
                 ps.executeUpdate();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
         }
-        i++;
     }
 }

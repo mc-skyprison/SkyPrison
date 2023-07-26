@@ -12,8 +12,11 @@ import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.items.Greg;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -26,18 +29,15 @@ public class Placeholders extends PlaceholderExpansion {
 	private final SkyPrisonCore plugin;
 	private final DailyMissions dailyMissions;
 	private final DatabaseHook db;
-
 	public Placeholders(SkyPrisonCore plugin, DailyMissions dailyMissions, DatabaseHook db) {
 		this.plugin = plugin;
 		this.dailyMissions = dailyMissions;
 		this.db = db;
 	}
-
 	@Override
 	public boolean persist(){
 		return true;
 	}
-
 	@Override
 	public boolean canRegister(){
 		return true;
@@ -126,10 +126,24 @@ public class Placeholders extends PlaceholderExpansion {
 		}
 	}
 
+	private int getBribeAmount(Player player) {
+		int amount = 0;
+		if (player.hasPermission("group.end")) {
+			amount = 50000;
+		} else if (player.hasPermission("group.hell")) {
+			amount = 25000;
+		} else if (player.hasPermission("group.free")) {
+			amount = 10000;
+		} else if (player.hasPermission("group.nether")) {
+			amount = 1000;
+		} else if (player.hasPermission("group.default")) {
+			amount = 250;
+		}
+		return amount;
+	}
 
 	@Override
 	public String onPlaceholderRequest(Player player, @NotNull String identifier){
-
 		if(player == null) {
 			return "";
 		}
@@ -160,7 +174,59 @@ public class Placeholders extends PlaceholderExpansion {
 			}
 		}
 
+		if(identifier.equalsIgnoreCase("get_bribe_cooldown")) {
+			int cooldown = 0;
+			if(plugin.bribeCooldown.containsKey(player.getUniqueId())) {
+				long bribeCool = plugin.bribeCooldown.get(player.getUniqueId());
+				if(bribeCool > System.currentTimeMillis()) {
+					cooldown = 1;
+				}
+			}
+			return String.valueOf(cooldown);
+		}
 
+		if(identifier.equalsIgnoreCase("bribe_amount")) {
+			return String.valueOf(getBribeAmount(player));
+		}
+
+		if(identifier.equalsIgnoreCase("bribe_amount_formatted")) {
+			return String.valueOf(plugin.formatNumber(getBribeAmount(player)));
+		}
+
+		if(identifier.equalsIgnoreCase("is_jailed")) {
+			int jailed = 0;
+			try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id FROM logs_jail WHERE target_id = ? AND active = 1")) {
+				ps.setString(1, player.getUniqueId().toString());
+				ResultSet rs = ps.executeQuery();
+				if (rs.next()) {
+					jailed = 1;
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+			return String.valueOf(jailed);
+		}
+
+		if(identifier.equalsIgnoreCase("can_afford_bribe")) {
+			CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
+			return String.valueOf(user.hasMoney((double) getBribeAmount(player)) ? 1 : 0);
+		}
+
+
+		if(identifier.equalsIgnoreCase("has_release_papers")) {
+			ItemStack realPapers = Greg.getReleasePapers(plugin, 1);
+			PlayerInventory pInv = player.getInventory();
+
+			return String.valueOf(pInv.containsAtLeast(realPapers, 1) ? 1 : 0);
+		}
+
+		if(identifier.equalsIgnoreCase("has_fake_release_papers")) {
+			ItemStack fakePapers = Greg.getFakeReleasePapers(plugin, 1);
+			PlayerInventory pInv = player.getInventory();
+
+			return String.valueOf(pInv.containsAtLeast(fakePapers, 1) ? 1 : 0);
+		}
 
 		if(identifier.equalsIgnoreCase("daily_total_collected")) {
 			int totalColl = 0;

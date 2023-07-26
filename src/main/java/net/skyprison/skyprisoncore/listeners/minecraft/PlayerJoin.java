@@ -230,26 +230,37 @@ public class PlayerJoin implements Listener {
             }
 
             int tag_id = 0;
-            int jailStatus = 0;
-            long jailTime = 0;
-            String jailReason = "";
             try(Connection conn = db.getConnection();
-                PreparedStatement ps = conn.prepareStatement("SELECT blocks_mined, tokens, active_tag, jail_status, jail_time_left, jail_reason FROM users WHERE user_id = ?")) {
+                PreparedStatement ps = conn.prepareStatement("SELECT blocks_mined, tokens, active_tag FROM users WHERE user_id = ?")) {
                 ps.setString(1, player.getUniqueId().toString());
                 ResultSet rs = ps.executeQuery();
-                while(rs.next()) {
+                if (rs.next()) {
                     plugin.blockBreaks.put(player.getUniqueId(), rs.getInt(1));
                     plugin.tokensData.put(player.getUniqueId(), rs.getInt(2));
                     tag_id = rs.getInt(3);
-                    jailStatus = rs.getInt(4);
-                    jailTime = rs.getLong(5);
-                    jailReason = rs.getString(6);
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-            if(jailStatus == 1) {
-                SkyPrisonCore.setJail(Bukkit.getConsoleSender(), player, jailReason, jailTime);
+
+
+            long jailTime = 0;
+            String jailReason = "";
+            try(Connection conn = db.getConnection();
+                PreparedStatement ps = conn.prepareStatement("SELECT reason, length_total, length_served FROM logs_jail WHERE target_id = ? AND active = 1")) {
+                ps.setString(1, player.getUniqueId().toString());
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    jailReason = rs.getString(1);
+                    jailTime = rs.getLong(2) - rs.getLong(3);
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+
+            if(jailTime != 0) {
+                SkyPrisonCore.setJail(Bukkit.getConsoleSender(), player, jailReason, jailTime, false);
             }
 
             if(!plugin.userTags.containsKey(player.getUniqueId())) {
@@ -259,7 +270,7 @@ public class PlayerJoin implements Listener {
                     try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tags_display, tags_effect FROM tags WHERE tags_id = ?")) {
                         ps.setInt(1, tag_id);
                         ResultSet rs = ps.executeQuery();
-                        while(rs.next()) {
+                        if (rs.next()) {
                             tagsDisplay = rs.getString(1);
                             tagsEffect = rs.getString(2);
                         }
