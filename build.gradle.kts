@@ -53,8 +53,8 @@ dependencies {
     compileOnly("dev.esophose:playerparticles:8.3")
     compileOnly("com.github.Realizedd.Duels:duels-api:3.5.1")
     compileOnly("com.wolfyscript.wolfyutilities:wolfyutilities:3.16.1.0")
+    compileOnly("com.vexsoftware:nuvotifier-universal:2.7.2")
     compileOnly("com.wolfyscript.customcrafting:customcrafting-spigot:3.16.3.3")
-
     // Jars
     compileOnly(fileTree("libs") { include("*.jar")})
 }

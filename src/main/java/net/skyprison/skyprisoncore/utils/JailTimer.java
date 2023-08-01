@@ -41,12 +41,10 @@ public class JailTimer extends TimerTask {
     public final int logsId;
     public long timeServed;
     private final Component prefix = Component.text("Time Left", TextColor.fromHexString("#939292")).append(Component.text(" » ", NamedTextColor.DARK_GRAY, TextDecoration.BOLD));
-
     public void increaseTime(Long millis) {
         timeLeft += millis;
         totalTime += millis;
     }
-
     public JailTimer(DatabaseHook db, Player player, long timeLeft, int logsId, long totalTime) {
         this.db = db;
         this.player = player;

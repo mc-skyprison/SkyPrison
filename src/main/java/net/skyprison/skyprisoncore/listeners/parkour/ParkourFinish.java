@@ -13,12 +13,10 @@ import java.util.List;
 public class ParkourFinish implements Listener {
     private final SkyPrisonCore plugin;
     private final DailyMissions dm;
-
     public ParkourFinish(SkyPrisonCore plugin, DailyMissions dm) {
         this.plugin = plugin;
         this.dm = dm;
     }
-
     @EventHandler
     public void onParkourFinish(ParkourFinishEvent event) {
         Player player = event.getPlayer();

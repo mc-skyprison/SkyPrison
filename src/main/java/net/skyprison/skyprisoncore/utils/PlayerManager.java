@@ -16,13 +16,19 @@ public class PlayerManager {
             if (rs.next()) {
                 try {
                     return UUID.fromString(rs.getString(1));
-                } catch (IllegalArgumentException ignored) {
-                    return null;
-                }
+                } catch (IllegalArgumentException ignored) {}
             }
-        } catch (SQLException ignored) {
-            return null;
-        }
+        } catch (SQLException ignored) {}
+        return null;
+    }
+    public static String getPlayerName(UUID pUUID) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT current_name FROM users WHERE user_id = ?")) {
+            ps.setString(1, pUUID.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString(1);
+            }
+        } catch (SQLException ignored) {}
         return null;
     }
 }

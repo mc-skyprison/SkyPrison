@@ -73,6 +73,7 @@ import net.skyprison.skyprisoncore.listeners.excellentcrates.CrateObtainReward;
 import net.skyprison.skyprisoncore.listeners.mcmmo.McMMOLevelUp;
 import net.skyprison.skyprisoncore.listeners.mcmmo.McMMOPartyChat;
 import net.skyprison.skyprisoncore.listeners.minecraft.*;
+import net.skyprison.skyprisoncore.listeners.nuvotifier.Votifier;
 import net.skyprison.skyprisoncore.listeners.parkour.ParkourFinish;
 import net.skyprison.skyprisoncore.listeners.pvpmanager.PlayerTag;
 import net.skyprison.skyprisoncore.listeners.pvpmanager.PlayerTogglePvP;
@@ -118,6 +119,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -1130,6 +1133,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EnchantItem(this), this);
         pm.registerEvents(new PrepareItemEnchant(this), this);
         pm.registerEvents(new PlayerItemConsume(this), this);
+        pm.registerEvents(new Votifier(this, db), this);
 
         pm.registerEvents(new AsyncChat(this, discApi, getDatabase(), new Tags(this, getDatabase()), new ItemLore(this)), this);
         pm.registerEvents(new PlayerQuit(this, getDatabase(), discApi, dailyMissions), this);
@@ -1489,6 +1493,149 @@ public class SkyPrisonCore extends JavaPlugin {
             )
             .build();
 
+    public int getVoteParty() {
+        int votes = 0;
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) % 50 FROM votes")) {
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                votes = rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return votes;
+    }
+
+    public int getVoteTokens(UUID pUUID) {
+        int tokens = 25;
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) FROM votes WHERE user_id = ?")) {
+            ps.setString(1, pUUID.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                int votes = rs.getInt(1);
+                if(votes == 1) {
+                    tokens = -1;
+                } else if(votes >= 1050) {
+                    tokens = 100;
+                } else {
+                    if (votes <= 150) {
+                        tokens += votes / 6;
+                    } else {
+                        tokens += 25 + (votes - 150) / 18;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tokens;
+    }
+
+    public void onAllSites(UUID pUUID) {
+        long startOfToday = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS).toInstant().toEpochMilli();
+        long endOfToday = startOfToday + 24*60*60*1000 - 1;
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "SELECT COUNT(id) FROM votes WHERE user_id = ? AND time >= ? AND time <= ?"
+             )
+        ) {
+            ps.setString(1, pUUID.toString());
+            ps.setLong(2, startOfToday);
+            ps.setLong(3, endOfToday);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                int votes = rs.getInt(1);
+                if(votes == 6) {
+                    Player player = Bukkit.getPlayer(pUUID);
+                    Component voteMsg = Component.text("Vote", NamedTextColor.DARK_GREEN, TextDecoration.BOLD).append(Component.text("  » ", NamedTextColor.DARK_GRAY))
+                            .append(Component.text(" You've voted on 6 sites today, and have therefore received a Vote Key!", NamedTextColor.AQUA));
+                    String playerName = player != null ? player.getName() : PlayerManager.getPlayerName(pUUID);
+                    asConsole("crate key give " + playerName + " crate_vote 1");
+                    if(player != null) {
+                        player.sendMessage(voteMsg);
+                    } else {
+                        createNotification("vote-all", null, pUUID.toString(), voteMsg, null, true);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void checkVoteMilestones(UUID pUUID) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) FROM votes WHERE user_id = ?")) {
+            ps.setString(1, pUUID.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                int votes  = rs.getInt(1);
+                Component reward = null;
+                String playerName = PlayerManager.getPlayerName(pUUID);
+                if(playerName != null) {
+                    switch (votes) {
+                        case 100 -> {
+                            reward = Component.text("White Sheep Disguise", NamedTextColor.WHITE, TextDecoration.BOLD);
+                            asConsole("lp user " + playerName + " permission set libsdisguises.disguise.sheep");
+                        }
+                        case 200 -> {
+                            reward = Component.text("Yellow Sheep Disguise", NamedTextColor.YELLOW, TextDecoration.BOLD);
+                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.yellow");
+                            asConsole("lp user " + playerName + " permission set ibsdisguises.disguise.sheep.setcolor");
+                        }
+                        case 300 -> {
+                            reward = Component.text("Green Sheep Disguise", NamedTextColor.DARK_GREEN, TextDecoration.BOLD);
+                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.green");
+                        }
+                        case 400 -> {
+                            reward = Component.text("Red Sheep Disguise", NamedTextColor.RED, TextDecoration.BOLD);
+                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.red");
+                        }
+                        case 500 -> {
+                            reward = Component.text("Blue Sheep Disguise & Voter Tag", NamedTextColor.DARK_AQUA, TextDecoration.BOLD);
+                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.blue");
+                        }
+                        case 750 -> {
+                            reward = Component.text("Black Sheep Disguise", NamedTextColor.DARK_GRAY, TextDecoration.BOLD);
+                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.black");
+                        }
+                        case 1000 -> {
+                            reward = Component.text("Pink Sheep Disguise & Voter Tag", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD);
+                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.pink");
+                        }
+                        case 1250 -> {
+                            reward = Component.text("Sheep Pet", NamedTextColor.YELLOW, TextDecoration.BOLD);
+                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.pink");
+                        }
+                        case 1500 -> {
+                            reward = Component.text("Coloured Sheep Pet & Voter Tag", NamedTextColor.YELLOW, TextDecoration.BOLD);
+                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.yellow");
+                        }
+                        case 1750 -> {
+                            reward = Component.text("Rainbow Sheep Pet", NamedTextColor.YELLOW, TextDecoration.BOLD);
+                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.yellow");
+                        }
+                        case 2000 -> {
+                            reward = Component.text("Rainbow Sheep Disguise", NamedTextColor.YELLOW, TextDecoration.BOLD);
+                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.yellow");
+                        }
+                    }
+                    if (reward != null) {
+                        Component milestoneMsg = Component.text("Vote", NamedTextColor.DARK_GREEN, TextDecoration.BOLD)
+                                .append(Component.text("  » ", NamedTextColor.DARK_GRAY)).append(Component.text(playerName, NamedTextColor.GREEN))
+                                .append(Component.text(" has voted ", NamedTextColor.AQUA)).append(Component.text(votes, NamedTextColor.YELLOW))
+                                .append(Component.text(" times and received ", NamedTextColor.AQUA)).append(reward);
+                        getServer().sendMessage(milestoneMsg);
+
+                        if (Bukkit.getPlayer(pUUID) == null) {
+                            createNotification("vote-milestone", null, pUUID.toString(), milestoneMsg, null, true);
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     public void tellConsole(Component message){
         Bukkit.getConsoleSender().sendMessage(message);
