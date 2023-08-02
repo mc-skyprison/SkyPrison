@@ -68,7 +68,7 @@ public class ClaimMembers implements CustomInventory {
 
         int toRemove = 28 * (page - 1);
         if(toRemove != 0) {
-            membersToShow = membersToShow.subList(toRemove, membersToShow.size()-1);
+            membersToShow = membersToShow.subList(toRemove, membersToShow.size());
         }
         Iterator<UUID> memberUUIDs = membersToShow.iterator();
         int finalPage = page;

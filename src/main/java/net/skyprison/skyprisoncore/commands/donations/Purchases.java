@@ -77,7 +77,7 @@ public class Purchases implements CommandExecutor {
 
 			int toDelete = 10 * (page - 1);
 			if (toDelete != 0) {
-				donations = donations.subList(toDelete, donations.size() - 1);
+				donations = donations.subList(toDelete, donations.size());
 			}
 
 			Component msg = Component.empty();

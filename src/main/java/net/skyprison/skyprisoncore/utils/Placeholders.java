@@ -148,6 +148,19 @@ public class Placeholders extends PlaceholderExpansion {
 			return "";
 		}
 
+		if(identifier.equalsIgnoreCase("vote_tokens")) {
+			return String.valueOf(plugin.getVoteTokens(player.getUniqueId()));
+		}
+
+		if(identifier.equalsIgnoreCase("vote_amount")) {
+			return String.valueOf(plugin.getVoteAmount(player.getUniqueId()));
+		}
+
+		if(identifier.equalsIgnoreCase("vote_party")) {
+			return String.valueOf(plugin.getVoteParty());
+		}
+
+
 		if(identifier.equalsIgnoreCase("daily_highest_streak")) {
 			int highestStreak = 0;
 			try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT highest_streak FROM dailies WHERE user_id = ?")) {

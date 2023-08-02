@@ -84,7 +84,7 @@ public class ClaimFlags implements CustomInventory {
 
         int toRemove = 28 * (page - 1);
         if(toRemove != 0) {
-            flags = flags.subList(toRemove, flags.size()-1);
+            flags = flags.subList(toRemove, flags.size());
         }
 
         Iterator<AvailableFlags> flagIterate = flags.iterator();

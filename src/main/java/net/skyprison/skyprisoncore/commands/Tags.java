@@ -41,7 +41,7 @@ public class Tags implements CommandExecutor {
     }
 
     public void openGUI(Player player, Integer page) {
-        ArrayList<List<Object>> tags = new ArrayList<>();
+        List<List<Object>> tags = new ArrayList<>();
 
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tags_id, tags_display, tags_lore, tags_effect, tags_permission FROM tags")) {
             ResultSet rs = ps.executeQuery();
@@ -64,7 +64,7 @@ public class Tags implements CommandExecutor {
 
         int toRemove = 45 * (page - 1);
         if(toRemove != 0) {
-            tags = (ArrayList<List<Object>>) tags.subList(toRemove, tags.size()-1);
+            tags = tags.subList(toRemove, tags.size());
         }
 
         Inventory bounties = Bukkit.createInventory(null, 54, Component.text("Tags | Page " + page, NamedTextColor.RED));
@@ -362,7 +362,7 @@ public class Tags implements CommandExecutor {
     }
 
     public void openEditGUI(Player player, Integer page) {
-        ArrayList<List<Object>> tags = new ArrayList<>();
+        List<List<Object>> tags = new ArrayList<>();
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tags_id, tags_display, tags_lore, tags_effect FROM tags")) {
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
@@ -376,7 +376,7 @@ public class Tags implements CommandExecutor {
 
         int toRemove = 45 * (page - 1);
         if(toRemove != 0) {
-            tags = (ArrayList<List<Object>>) tags.subList(toRemove, tags.size()-1);
+            tags = tags.subList(toRemove, tags.size());
         }
 
         Inventory bounties = Bukkit.createInventory(null, 54, Component.text("Tags | Page " + page));

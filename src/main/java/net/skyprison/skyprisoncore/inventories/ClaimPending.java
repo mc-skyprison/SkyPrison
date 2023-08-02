@@ -65,7 +65,7 @@ public class ClaimPending implements CustomInventory {
 
         int toRemove = 28 * (page - 1);
         if(toRemove != 0) {
-            pendingToShow = pendingToShow.subList(toRemove, pendingToShow.size()-1);
+            pendingToShow = pendingToShow.subList(toRemove, pendingToShow.size());
         }
         Iterator<Integer> pendingNotifs = pendingToShow.iterator();
         int finalPage = page;

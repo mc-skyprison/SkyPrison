@@ -113,6 +113,7 @@ import org.javacord.api.interaction.SlashCommandOptionType;
 import org.jetbrains.annotations.NotNull;
 import org.mariadb.jdbc.Statement;
 
+import java.io.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -303,15 +304,26 @@ public class SkyPrisonCore extends JavaPlugin {
             getLogger().info("Placeholders registered");
         }
 
-        Timer timer = new Timer();
-        Calendar date = Calendar.getInstance();
-        date.add(Calendar.DAY_OF_YEAR, 1);
-        date.set(Calendar.HOUR, 0);
-        date.set(Calendar.MINUTE, 1);
-        date.set(Calendar.SECOND, 0);
-        date.set(Calendar.MILLISECOND, 0);
+        Timer dayTimer = new Timer();
+        Calendar tommorow = Calendar.getInstance();
+        tommorow.add(Calendar.DAY_OF_YEAR, 1);
+        tommorow.set(Calendar.HOUR, 0);
+        tommorow.set(Calendar.MINUTE, 1);
+        tommorow.set(Calendar.SECOND, 0);
+        tommorow.set(Calendar.MILLISECOND, 0);
+        dayTimer.schedule(new NextDayTask(this, getDatabase()), tommorow.getTime());
 
-        timer.schedule(new NextDayTask(this, getDatabase()), date.getTime());
+        Timer monthTimer = new Timer();
+        Calendar nextMonth = Calendar.getInstance();
+        nextMonth.add(Calendar.MONTH, 1);
+        nextMonth.set(Calendar.DAY_OF_MONTH, 1);
+        nextMonth.set(Calendar.HOUR, 0);
+        nextMonth.set(Calendar.MINUTE, 1);
+        nextMonth.set(Calendar.SECOND, 0);
+        nextMonth.set(Calendar.MILLISECOND, 0);
+
+
+        monthTimer.schedule(new MonthlyTask(this, getDatabase()), nextMonth.getTime());
 
         new BukkitRunnable() {
             @Override
@@ -1028,6 +1040,105 @@ public class SkyPrisonCore extends JavaPlugin {
                         }
                     }
                 }));
+        Command.Builder<CommandSender> vote = this.manager.commandBuilder("vote")
+                .permission("skyprisoncore.command.vote")
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    Component msg = Component.text("Vote for our server!", NamedTextColor.DARK_RED, TextDecoration.BOLD);
+                    msg = msg.appendNewline();
+                    msg = msg.append(Component.text("Planet Minecraft", NamedTextColor.RED, TextDecoration.BOLD).hoverEvent(HoverEvent
+                                    .showText(Component.text("Click Here to vote on PlanetMinecraft", NamedTextColor.AQUA)))
+                            .clickEvent(ClickEvent.openUrl("https://www.planetminecraft.com/server/sky-prison/vote/")));
+                    msg = msg.appendNewline();
+                    msg = msg.append(Component.text("Minecraft Serverlist", NamedTextColor.RED, TextDecoration.BOLD).hoverEvent(HoverEvent
+                                    .showText(Component.text("Click Here to vote on Minecraft Serverlist", NamedTextColor.AQUA)))
+                            .clickEvent(ClickEvent.openUrl("https://minecraft-server-list.com/server/473461/vote/")));
+                    msg = msg.appendNewline();
+                    msg = msg.append(Component.text("Minecraft Servers", NamedTextColor.RED, TextDecoration.BOLD).hoverEvent(HoverEvent
+                                    .showText(Component.text("Click Here to vote on Minecraft Servers", NamedTextColor.AQUA)))
+                            .clickEvent(ClickEvent.openUrl("https://minecraftservers.org/vote/457013")));
+                    msg = msg.appendNewline();
+                    msg = msg.append(Component.text("TopG", NamedTextColor.RED, TextDecoration.BOLD).hoverEvent(HoverEvent
+                                    .showText(Component.text("Click Here to vote on TopG", NamedTextColor.AQUA)))
+                            .clickEvent(ClickEvent.openUrl("https://topg.org/Minecraft/in-471006")));
+                    msg = msg.appendNewline();
+                    msg = msg.append(Component.text("Minecraft Buzz", NamedTextColor.RED, TextDecoration.BOLD).hoverEvent(HoverEvent
+                                    .showText(Component.text("Click Here to vote on Minecraft Buzz", NamedTextColor.AQUA)))
+                            .clickEvent(ClickEvent.openUrl("https://minecraft.buzz/vote/1142")));
+                    msg = msg.appendNewline();
+                    msg = msg.append(Component.text("Minecraft MP", NamedTextColor.RED, TextDecoration.BOLD).hoverEvent(HoverEvent
+                                    .showText(Component.text("Click Here to vote on Minecraft MP", NamedTextColor.AQUA)))
+                            .clickEvent(ClickEvent.openUrl("https://minecraft-mp.com/server/279527/vote/")));
+                    sender.sendMessage(msg);
+                });
+        this.manager.command(vote);
+
+        this.manager.command(vote.literal("history")
+                .permission("skyprisoncore.command.vote.history")
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    if(sender instanceof Player player) {
+                        Bukkit.getScheduler().runTask(this, () -> player.openInventory(new VoteHistory(this, db, player.getUniqueId()).getInventory()));
+                    }
+                }));
+
+        this.manager.command(vote.literal("history")
+                .permission("skyprisoncore.command.vote.history.others")
+                .argument(StringArgument.optional("player"))
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    if(sender instanceof Player player) {
+                        String playerName = c.getOrDefault("player", player.getName());
+                        UUID pUUID = PlayerManager.getPlayerId(playerName);
+                        if (pUUID != null) {
+                            Bukkit.getScheduler().runTask(this, () -> player.openInventory(new VoteHistory(this, db, pUUID).getInventory()));
+                        }
+                    }
+                }));
+
+        this.manager.command(this.manager.commandBuilder("votetest")
+                .permission("skyprisoncore.command.votetest")
+                .handler(c -> {
+                    new MonthlyTask(this, db).run();
+                }));
+        this.manager.command(this.manager.commandBuilder("votefix")
+                .permission("skyprisoncore.command.votefix")
+                .handler(c -> {
+                    try {
+                        String sql = "INSERT INTO votes (user_id, time, service, address, tokens) VALUES (?, ?, ?, ?, ?)";
+                        FileInputStream fstream = new FileInputStream(this.getDataFolder()+ File.separator + "user_votes.txt");
+                        long currTime = System.currentTimeMillis();
+                        try (BufferedReader br = new BufferedReader(new InputStreamReader(fstream)); Connection conn = db.getConnection();
+                             PreparedStatement ps = conn.prepareStatement(sql)) {
+                            ps.setLong(2, currTime);
+                            ps.setString(3, "Unknown");
+                            ps.setString(4, "Unknown");
+                            ps.setInt(5, 0);
+                            String line;
+                            while ((line = br.readLine()) != null) {
+                                System.out.println(line);
+                                String[] parts = line.split(";");
+                                if (parts.length == 2) {
+                                    String userId = parts[0];
+                                    int totalVotes = Integer.parseInt(parts[1]);
+                                    for (int i = 0; i < totalVotes; i++) {
+                                        ps.setString(1, userId);
+                                        ps.addBatch();
+                                        if (i % 100 == 0) {
+                                            ps.executeBatch();
+                                        }
+                                    }
+                                    ps.executeBatch();
+                                }
+                            }
+                            System.out.println("DONE!");
+                        } catch (IOException | SQLException e) {
+                            e.printStackTrace();
+                        }
+                    } catch (FileNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                }));
 
         Objects.requireNonNull(getCommand("tokens")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
@@ -1505,7 +1616,6 @@ public class SkyPrisonCore extends JavaPlugin {
         }
         return votes;
     }
-
     public int getVoteTokens(UUID pUUID) {
         int tokens = 25;
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) FROM votes WHERE user_id = ?")) {
@@ -1530,15 +1640,24 @@ public class SkyPrisonCore extends JavaPlugin {
         }
         return tokens;
     }
-
+    public int getVoteAmount(UUID pUUID) {
+        int votes = 0;
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) FROM votes WHERE user_id = ?")) {
+            ps.setString(1, pUUID.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                votes = rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return votes;
+    }
     public void onAllSites(UUID pUUID) {
         long startOfToday = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS).toInstant().toEpochMilli();
         long endOfToday = startOfToday + 24*60*60*1000 - 1;
         try (Connection conn = db.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "SELECT COUNT(id) FROM votes WHERE user_id = ? AND time >= ? AND time <= ?"
-             )
-        ) {
+             PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) FROM votes WHERE user_id = ? AND time >= ? AND time <= ?")) {
             ps.setString(1, pUUID.toString());
             ps.setLong(2, startOfToday);
             ps.setLong(3, endOfToday);
@@ -1593,6 +1712,7 @@ public class SkyPrisonCore extends JavaPlugin {
                         case 500 -> {
                             reward = Component.text("Blue Sheep Disguise & Voter Tag", NamedTextColor.DARK_AQUA, TextDecoration.BOLD);
                             asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.blue");
+                            asConsole("lp user " + playerName + " permission set skyprisoncore.tag.55");
                         }
                         case 750 -> {
                             reward = Component.text("Black Sheep Disguise", NamedTextColor.DARK_GRAY, TextDecoration.BOLD);
@@ -1601,18 +1721,24 @@ public class SkyPrisonCore extends JavaPlugin {
                         case 1000 -> {
                             reward = Component.text("Pink Sheep Disguise & Voter Tag", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD);
                             asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.pink");
+                            asConsole("lp user " + playerName + " permission set skyprisoncore.tag.84");
                         }
                         case 1250 -> {
                             reward = Component.text("Sheep Pet", NamedTextColor.YELLOW, TextDecoration.BOLD);
-                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.pink");
+                            asConsole("lp user " + playerName + " permission set pet.type.sheep");
                         }
                         case 1500 -> {
-                            reward = Component.text("Coloured Sheep Pet & Voter Tag", NamedTextColor.YELLOW, TextDecoration.BOLD);
-                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.yellow");
+                            reward = Component.text("Sheep Pet Customization & Voter Tag", NamedTextColor.YELLOW, TextDecoration.BOLD);
+                            asConsole("lp user " + playerName + " permission set skyprisoncore.tag.85");
+                            asConsole("lp user " + playerName + " permission set pet.type.sheep.data.baby");
+                            asConsole("lp user " + playerName + " permission set pet.type.sheep.data.color");
+                            asConsole("lp user " + playerName + " permission set pet.type.sheep.data.frozen");
+                            asConsole("lp user " + playerName + " permission set pet.type.sheep.data.sheared");
+                            asConsole("lp user " + playerName + " permission set pet.type.sheep.data.silent");
                         }
                         case 1750 -> {
                             reward = Component.text("Rainbow Sheep Pet", NamedTextColor.YELLOW, TextDecoration.BOLD);
-                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.yellow");
+                            asConsole("lp user " + playerName + " permission set pet.type.sheep.data.rainbow");
                         }
                         case 2000 -> {
                             reward = Component.text("Rainbow Sheep Disguise", NamedTextColor.YELLOW, TextDecoration.BOLD);

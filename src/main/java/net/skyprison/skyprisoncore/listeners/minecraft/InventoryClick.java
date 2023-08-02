@@ -960,6 +960,23 @@ public class InventoryClick implements Listener {
                             }
                         }
                     }
+                } else if(customInv instanceof VoteHistory inv) {
+                    if(currItem != null) {
+                        int slot = event.getRawSlot();
+                        switch (slot) {
+                            case 49 -> inv.updateSort();
+                            case 45 -> {
+                                if (currItem.getType().equals(Material.PAPER)) {
+                                    inv.updatePage(-1);
+                                }
+                            }
+                            case 53 -> {
+                                if (currItem.getType().equals(Material.PAPER)) {
+                                    inv.updatePage(1);
+                                }
+                            }
+                        }
+                    }
                 }
             } else {
                 CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);

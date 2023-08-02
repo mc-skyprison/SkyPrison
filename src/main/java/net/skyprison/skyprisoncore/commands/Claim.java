@@ -698,7 +698,7 @@ public class Claim implements CommandExecutor {
 
             int todelete = 10 * (page - 1);
             if (todelete != 0) {
-                claimsToShow = claimsToShow.subList(todelete, claimsToShow.size() - 1);
+                claimsToShow = claimsToShow.subList(todelete, claimsToShow.size());
             }
             int i = 0;
 
@@ -781,7 +781,7 @@ public class Claim implements CommandExecutor {
 
             int todelete = 10 * (page - 1);
             if (todelete != 0) {
-                claimsToShow = claimsToShow.subList(todelete, claimsToShow.size() - 1);
+                claimsToShow = claimsToShow.subList(todelete, claimsToShow.size());
             }
             int i = 0;
 

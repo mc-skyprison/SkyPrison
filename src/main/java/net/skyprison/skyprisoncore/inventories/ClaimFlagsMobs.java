@@ -98,7 +98,7 @@ public class ClaimFlagsMobs implements CustomInventory {
         }
         int toRemove = 36 * (page - 1);
         if(toRemove != 0) {
-            mobs = mobs.subList(toRemove, mobs.size()-1);
+            mobs = mobs.subList(toRemove, mobs.size());
         }
 
         Iterator<EntityType> mobsIterate = mobs.iterator();

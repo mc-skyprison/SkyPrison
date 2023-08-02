@@ -86,7 +86,7 @@ public class NewsMessages implements CustomInventory {
 
         int toRemove = 28 * (page - 1);
         if(toRemove != 0) {
-            newsToShow = newsToShow.subList(toRemove, newsToShow.size()-1);
+            newsToShow = newsToShow.subList(toRemove, newsToShow.size());
         }
         Iterator<Integer> newsIterator = newsToShow.iterator();
 
