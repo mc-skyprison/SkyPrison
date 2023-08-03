@@ -30,7 +30,6 @@ public class ClaimMembers implements CustomInventory {
     private final HashMap<UUID, String> members;
     private final int page;
     private final DatabaseHook db;
-
     public ClaimMembers(SkyPrisonCore plugin, DatabaseHook db, String claimName, HashMap<UUID, String> members, String category, int page) {
         this.db = db;
         this.claimName = claimName;
@@ -58,11 +57,9 @@ public class ClaimMembers implements CustomInventory {
         prevPage.setItemMeta(prevMeta);
 
         int totalPages = (int) Math.ceil((double) members.size() / 28);
-
         if(page > totalPages) {
             page = 1;
         }
-
         List<UUID> membersToShow = new ArrayList<>(members.keySet());
         if(!category.isEmpty()) membersToShow.removeIf(member -> !members.get(member).equalsIgnoreCase(category));
 

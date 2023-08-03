@@ -371,14 +371,12 @@ public class Tags implements CommandExecutor {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
         double totalPages = Math.ceil(tags.size() / 45.0);
 
         int toRemove = 45 * (page - 1);
         if(toRemove != 0) {
             tags = tags.subList(toRemove, tags.size());
         }
-
         Inventory bounties = Bukkit.createInventory(null, 54, Component.text("Tags | Page " + page));
         int j = 0;
         for (List<Object> tag : tags) {  // id, display, lore, effect

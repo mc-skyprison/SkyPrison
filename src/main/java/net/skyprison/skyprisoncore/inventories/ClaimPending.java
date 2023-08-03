@@ -18,14 +18,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class ClaimPending implements CustomInventory {
-
     private final Inventory inventory;
     private final String category;
     private final HashMap<String, HashMap<String, Object>> claimIds;
-
-
     private final int page;
-
     public ClaimPending(SkyPrisonCore plugin, HashMap<String, HashMap<String, Object>> claimIds, String category, int page) {
         this.claimIds = claimIds;
         this.category = category;

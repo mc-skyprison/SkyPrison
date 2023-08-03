@@ -5,12 +5,13 @@ import com.vexsoftware.votifier.model.VotifierEvent;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.economy.Tokens;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
-import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.mariadb.jdbc.Statement;
@@ -58,30 +59,45 @@ public class Votifier implements Listener {
             }
             if(id != -1) {
                 int tokens = plugin.getVoteTokens(pUUID);
-                Component voteMsg = Component.text("Vote", NamedTextColor.DARK_GREEN, TextDecoration.BOLD)
-                        .append(Component.text("  » ", NamedTextColor.DARK_GRAY));
-                Component everyoneMsg = voteMsg.append(Component.text(playerName, NamedTextColor.RED, TextDecoration.BOLD)).append(Component.text(" voted and received ", NamedTextColor.GREEN))
-                        .append(Component.text(tokens, NamedTextColor.YELLOW, TextDecoration.BOLD)).append(Component.text(" tokens!", NamedTextColor.GREEN));
+                Component noBold = Component.text("");
+                Component voteMsg = noBold.append(Component.text("Vote", TextColor.fromHexString("#37a452"), TextDecoration.BOLD)).append(Component.text(" » ", NamedTextColor.DARK_GRAY));
+                Component everyoneMsg = voteMsg.append(Component.text(playerName, TextColor.fromHexString("#e02957"), TextDecoration.BOLD))
+                        .append(Component.text(" voted and received ", TextColor.fromHexString("#0fff87")))
+                        .append(Component.text(tokens + " Tokens", TextColor.fromHexString("#e02957"), TextDecoration.BOLD))
+                        .append(Component.text("! ", TextColor.fromHexString("#0fff87"), TextDecoration.BOLD))
+                        .append(Component.text("/Vote", TextColor.fromHexString("#2db4e1"), TextDecoration.BOLD));
+                Component playerMsg = voteMsg.append(Component.text("You have received ", TextColor.fromHexString("#0fff87")))
+                        .append(Component.text(tokens + " Tokens", TextColor.fromHexString("#e02957"), TextDecoration.BOLD))
+                        .append(Component.text("! ", TextColor.fromHexString("#0fff87"), TextDecoration.BOLD));
                 if(tokens == -1) {
                     tokens = 50;
-                    everyoneMsg = voteMsg.append(Component.text(playerName, NamedTextColor.RED, TextDecoration.BOLD)).append(Component.text(" voted for the first time and received ", NamedTextColor.GREEN))
-                            .append(Component.text(tokens, NamedTextColor.YELLOW, TextDecoration.BOLD)).append(Component.text(" tokens!", NamedTextColor.GREEN));
+                    everyoneMsg = voteMsg.append(Component.text(playerName, TextColor.fromHexString("#e02957"), TextDecoration.BOLD))
+                            .append(Component.text(" voted for the first time and received ", TextColor.fromHexString("#0fff87")))
+                            .append(Component.text(tokens + " Tokens", TextColor.fromHexString("#e02957"), TextDecoration.BOLD))
+                            .append(Component.text("!", TextColor.fromHexString("#0fff87"), TextDecoration.BOLD))
+                            .append(Component.text("/Vote", TextColor.fromHexString("#2db4e1"), TextDecoration.BOLD));
                 }
                 new Tokens(plugin, db).addTokens(pUUID, tokens, "voting", serviceName);
-                Audience receivers =  Bukkit.getServer();
+                Player player = plugin.getServer().getPlayer(pUUID);
+                Audience receivers =  player != null ? plugin.getServer().filterAudience(audience -> !audience.equals(player)) : plugin.getServer();
                 receivers.sendMessage(everyoneMsg);
+
+                if (player != null) {
+                    player.sendMessage(playerMsg);
+                } else {
+                    plugin.createNotification("vote", String.valueOf(id), pUUID.toString(), playerMsg, null, true);
+                }
+
+                plugin.checkVoteMilestones(pUUID);
+                plugin.onAllSites(pUUID);
+
                 if(plugin.getVoteParty() == 0) {
-                    Component partyMsg = voteMsg.append(Component.text("Vote Party has been reached! Everyone online gets ", NamedTextColor.DARK_AQUA))
-                            .append(Component.text("3", NamedTextColor.YELLOW, TextDecoration.BOLD)).append(Component.text(" Vote Keys!", NamedTextColor.DARK_AQUA));
+                    Component partyMsg = Component.text("Vote Party has been hit! Everyone online gets ", TextColor.fromHexString("#2db4e1"))
+                            .append(Component.text("3 Vote Keys", TextColor.fromHexString("#e02957"), TextDecoration.BOLD))
+                            .append(Component.text("!", TextColor.fromHexString("#2db4e1"), TextDecoration.BOLD));
                     receivers.sendMessage(partyMsg);
                     plugin.asConsole("crates key give * crate_vote 3");
                 }
-                plugin.checkVoteMilestones(pUUID);
-
-                if (Bukkit.getPlayer(pUUID) == null) {
-                    plugin.createNotification("vote", String.valueOf(id), pUUID.toString(), everyoneMsg, null, true);
-                }
-                plugin.onAllSites(pUUID);
             } else {
                 plugin.getLogger().warning("Failed to get vote ID from vote made by " + playerName + " on site " + serviceName + "!");
             }

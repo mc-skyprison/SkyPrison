@@ -81,14 +81,11 @@ public class ClaimFlags implements CustomInventory {
         if(page > totalPages) {
             page = 1;
         }
-
         int toRemove = 28 * (page - 1);
         if(toRemove != 0) {
             flags = flags.subList(toRemove, flags.size());
         }
-
         Iterator<AvailableFlags> flagIterate = flags.iterator();
-
         for(int i = 0; i < this.inventory.getSize();i++) {
             if (i == 47 && page != 1) {
                 this.inventory.setItem(i, prevPage);

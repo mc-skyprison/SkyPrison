@@ -28,6 +28,7 @@ import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
 import net.skyprison.skyprisoncore.inventories.*;
 import net.skyprison.skyprisoncore.items.Vouchers;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.PlayerManager;
 import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.*;
@@ -45,6 +46,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
@@ -121,14 +123,12 @@ public class InventoryClick implements Listener {
             }
         }
     }
-
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if(event.getWhoClicked() instanceof Player player && event.getRawSlot() >= 0) {
             if (event.getClickedInventory() instanceof PlayerInventory) {
                 InvStickFix(player);
             }
-
             if(event.getInventory().getHolder(false) instanceof CustomInventory customInv) {
                 ItemStack currItem = event.getCurrentItem();
                 ItemStack cursor = event.getCursor();
@@ -973,6 +973,92 @@ public class InventoryClick implements Listener {
                             case 53 -> {
                                 if (currItem.getType().equals(Material.PAPER)) {
                                     inv.updatePage(1);
+                                }
+                            }
+                        }
+                    }
+                } else if(customInv instanceof MailBoxSettings inv) {
+                    if(currItem != null) {
+                        int slot = event.getRawSlot();
+                        switch (slot) {
+                            case 10 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("mailbox-rename", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new mailbox name in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current mailbox name to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getName())));
+                            }
+                            case 12 -> player.openInventory(new MailboxMembers(plugin, db, inv.isOwner(), inv.getMailBox(), 1).getInventory());
+                            case 14 -> {
+                                if (inv.isOwner()) {
+                                    if(!inv.pickupMailbox()) {
+                                        player.sendMessage(Component.text("Mailbox must be empty to be able to be picked up!", NamedTextColor.RED));
+                                    }
+                                }
+                            }
+                            case 16 -> {
+                                if (inv.isOwner()) {
+                                    player.closeInventory();
+                                    plugin.deleteMailbox.add(player.getUniqueId());
+                                    Component msg = Component.text("Are you sure you want to delete this mailbox?", NamedTextColor.GRAY)
+                                            .append(Component.text("\nDELETE MAILBOX", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                                if (plugin.deleteMailbox.contains(player.getUniqueId())) {
+                                                    inv.deleteMailBox();
+                                                    plugin.deleteMailbox.remove(player.getUniqueId());
+                                                    player.sendMessage(Component.text("Mailbox has been deleted", NamedTextColor.GRAY));
+                                                }
+                                            })))
+                                            .append(Component.text("     "))
+                                            .append(Component.text("CANCEL", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                                plugin.deleteMailbox.remove(player.getUniqueId());
+                                                audience.sendMessage(Component.text("Mailbox deletion cancelled!", NamedTextColor.GRAY));
+                                                player.openInventory(inv.getInventory());
+                                            })));
+                                    player.sendMessage(msg);
+                                }
+                            }
+                        }
+                    }
+                } else if(customInv instanceof MailboxMembers inv) {
+                    if(currItem != null) {
+                        int slot = event.getRawSlot();
+                        if(slot == 49 && inv.isOwner()) {
+                            plugin.chatLock.put(player.getUniqueId(), Arrays.asList("mailbox-invite", inv));
+                            player.closeInventory();
+                            player.sendMessage(Component.text("Type player to invite in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW));
+                        } else if(currItem.getType().equals(Material.PLAYER_HEAD) && inv.isOwner()) {
+                            OfflinePlayer member = ((SkullMeta) currItem.getItemMeta()).getOwningPlayer();
+                            if(member != null) {
+                                UUID memberId = member.getUniqueId();
+                                String memberName = PlayerManager.getPlayerName(memberId);
+                                if(memberName != null) {
+                                    player.closeInventory();
+                                    plugin.kickMemberMailbox.add(player.getUniqueId());
+                                    Component msg = Component.text("Are you sure you want to kick ", NamedTextColor.GRAY)
+                                            .append(Component.text(memberName, NamedTextColor.GRAY, TextDecoration.BOLD)).append(Component.text(" from this mailbox?", NamedTextColor.GRAY))
+                                            .append(Component.text("\nKICK MEMBER", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                                if (plugin.kickMemberMailbox.contains(player.getUniqueId())) {
+                                                    inv.kickMember(memberId);
+                                                    plugin.kickMemberMailbox.remove(player.getUniqueId());
+                                                    player.sendMessage(Component.text(memberName + " has been kicked from the mailbox!", NamedTextColor.GRAY));
+                                                    Component kickMsg = Component.text("You've been kicked from the mailbox ", NamedTextColor.RED)
+                                                            .append(Component.text(inv.getName(), NamedTextColor.RED, TextDecoration.BOLD))
+                                                            .append(Component.text("You've been kicked from the mailbox ", NamedTextColor.RED));
+                                                    Player memberOnline = member.getPlayer();
+                                                    if(memberOnline != null) {
+                                                        memberOnline.sendMessage(kickMsg);
+                                                    } else {
+                                                        plugin.createNotification("mailbox-kicked", null, memberId.toString(), kickMsg, null, true);
+                                                    }
+                                                }
+                                            })))
+                                            .append(Component.text("     "))
+                                            .append(Component.text("CANCEL", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                                plugin.kickMemberMailbox.remove(player.getUniqueId());
+                                                audience.sendMessage(Component.text("Mailbox member kicking cancelled!", NamedTextColor.GRAY));
+                                                player.openInventory(inv.getInventory());
+                                            })));
+                                    player.sendMessage(msg);
                                 }
                             }
                         }

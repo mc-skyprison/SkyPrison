@@ -8,6 +8,7 @@ import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -17,7 +18,7 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class VoteHistory implements CustomInventory {
+public class MailHistory implements CustomInventory {
     private final List<ItemStack> votes = new ArrayList<>();
     private final Inventory inventory;
     private int page = 1;
@@ -64,15 +65,21 @@ public class VoteHistory implements CustomInventory {
         }
     }
 
-    public VoteHistory(SkyPrisonCore plugin, DatabaseHook db, UUID pUUID) {
+    public MailHistory(SkyPrisonCore plugin, DatabaseHook db, UUID pUUID) {
         this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Vote History", NamedTextColor.RED));
 
         blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        blackPane.editMeta(meta -> meta.displayName(Component.text(" ")));
+        ItemMeta blackMeta = blackPane.getItemMeta();
+        blackMeta.displayName(Component.text(" "));
+        blackPane.setItemMeta(blackMeta);
         nextPage = new ItemStack(Material.PAPER);
-        nextPage.editMeta(meta -> meta.displayName(Component.text("Next Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)));
+        ItemMeta nextMeta = nextPage.getItemMeta();
+        nextMeta.displayName(Component.text("Next Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+        nextPage.setItemMeta(nextMeta);
         prevPage = new ItemStack(Material.PAPER);
-        prevPage.editMeta(meta -> meta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)));
+        ItemMeta prevMeta = prevPage.getItemMeta();
+        prevMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+        prevPage.setItemMeta(prevMeta);
 
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT time, service, tokens FROM votes WHERE user_id = ? ORDER BY time ASC")) {
             ps.setString(1, pUUID.toString());
@@ -96,7 +103,9 @@ public class VoteHistory implements CustomInventory {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
         totalPages = (int) Math.ceil((double) votes.size() / 45);
+
         for (int i = 45; i < 54; i++) {
             inventory.setItem(i, blackPane);
         }

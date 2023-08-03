@@ -65,11 +65,18 @@ public class BlockBreak implements Listener {
             }
         }
 
+        Block block = event.getBlock();
+        if(block.getWorld().getName().equalsIgnoreCase("world_free") && block.getType().equals(Material.CHEST)) {
+            int mailBox =  plugin.getMailBox(block);
+            if(mailBox != -1) {
+                event.setCancelled(true);
+                return;
+            }
+        }
 
         if(player.getGameMode().equals(GameMode.SURVIVAL)) {
-            Block b = event.getBlock();
-            Location loc = b.getLocation();
-            Material bType = b.getType();
+            Location loc = block.getLocation();
+            Material bType = block.getType();
 
             if (!event.isCancelled()) {
                 if (loc.getWorld().getName().equalsIgnoreCase("world_event")) {
@@ -85,7 +92,7 @@ public class BlockBreak implements Listener {
                         ItemStack snowblock = new ItemStack(Material.SNOW_BLOCK, 1);
                         loc.getWorld().dropItem(cob, snowblock);
                     } else if (bType.equals(Material.PLAYER_HEAD) || bType.equals(Material.PLAYER_WALL_HEAD)) {
-                        if (plugin.bombLocs.contains(b.getLocation())) {
+                        if (plugin.bombLocs.contains(loc)) {
                             event.setCancelled(true);
                         }
                     }
@@ -105,9 +112,9 @@ public class BlockBreak implements Listener {
                 }
             } else {
                 if (loc.getWorld().getName().equalsIgnoreCase("world_prison")) {
-                    boolean notCell = AdvancedRegionMarket.getInstance().getRegionManager().getRegionsByLocation(b.getLocation()).isEmpty();
+                    boolean notCell = AdvancedRegionMarket.getInstance().getRegionManager().getRegionsByLocation(loc).isEmpty();
                     if (bType.equals(Material.SUGAR_CANE) && notCell) {
-                        if (b.getRelative(BlockFace.DOWN, 1).getType().equals(Material.SUGAR_CANE))
+                        if (block.getRelative(BlockFace.DOWN, 1).getType().equals(Material.SUGAR_CANE))
                             event.setCancelled(false);
                     } else if (bType.equals(Material.TALL_GRASS) || bType.equals(Material.GRASS) || bType.equals(Material.LARGE_FERN) || bType.equals(Material.FERN)) {
                         List<Location> shinyLocs = plugin.shinyGrass;
@@ -129,10 +136,10 @@ public class BlockBreak implements Listener {
                             }
                         }
                     } else if (bType.equals(Material.CACTUS)) {
-                        if (b.getRelative(BlockFace.DOWN, 1).getType().equals(Material.CACTUS))
+                        if (block.getRelative(BlockFace.DOWN, 1).getType().equals(Material.CACTUS))
                             event.setCancelled(false);
                     } else if (bType.equals(Material.BAMBOO)) {
-                        if (b.getRelative(BlockFace.DOWN, 1).getType().equals(Material.BAMBOO))
+                        if (block.getRelative(BlockFace.DOWN, 1).getType().equals(Material.BAMBOO))
                             event.setCancelled(false);
                     } else if (bType.equals(Material.BIRCH_LOG)) {
                         if (item.hasItemMeta() && item.getPersistentDataContainer().has(new NamespacedKey(plugin, "treefeller")) && !player.hasMetadata("treefeller-stop-looping") && !player.isSneaking() && notCell) {
@@ -144,7 +151,7 @@ public class BlockBreak implements Listener {
                             int i = 0;
                             while (birch) {
                                 if (birchDown) {
-                                    Block nBlock = b.getRelative(BlockFace.UP, i++);
+                                    Block nBlock = block.getRelative(BlockFace.UP, i++);
                                     if (nBlock.getType().equals(Material.BIRCH_LOG)) {
                                         blocks.add(nBlock);
                                     } else {
@@ -152,7 +159,7 @@ public class BlockBreak implements Listener {
                                         i = 0;
                                     }
                                 } else {
-                                    Block nBlock = b.getRelative(BlockFace.DOWN, i++);
+                                    Block nBlock = block.getRelative(BlockFace.DOWN, i++);
                                     if (nBlock.getType().equals(Material.BIRCH_LOG)) {
                                         blocks.add(nBlock);
                                     } else if(nBlock.isSolid()) {
@@ -178,11 +185,11 @@ public class BlockBreak implements Listener {
                             }.runTaskLater(plugin, 20L * cooldown);
                         } else if(notCell) {
                             event.setCancelled(false);
-                            if(!b.getRelative(BlockFace.DOWN, 1).getType().equals(Material.BIRCH_LOG) && b.getRelative(BlockFace.DOWN, 1).isSolid()) {
+                            if(!block.getRelative(BlockFace.DOWN, 1).getType().equals(Material.BIRCH_LOG) && block.getRelative(BlockFace.DOWN, 1).isSolid()) {
                                 new BukkitRunnable() {
                                     @Override
                                     public void run() {
-                                        b.setType(Material.BIRCH_SAPLING);
+                                        block.setType(Material.BIRCH_SAPLING);
                                     }
                                 }.runTaskLater(plugin, 5);
                             }
@@ -197,7 +204,7 @@ public class BlockBreak implements Listener {
                     if (missSplit[0].equalsIgnoreCase("break")) {
                         switch (missSplit[1].toLowerCase()) {
                             case "any" -> {
-                                if (!(b.getBlockData() instanceof Ageable)) {
+                                if (!(block.getBlockData() instanceof Ageable)) {
                                     dm.updatePlayerMission(player, mission);
                                 }
                             }
@@ -210,7 +217,7 @@ public class BlockBreak implements Listener {
                     } else if (missSplit[0].equalsIgnoreCase("harvest")) {
                         switch (missSplit[1].toLowerCase()) {
                             case "any" -> {
-                                if (b.getBlockData() instanceof Ageable) {
+                                if (block.getBlockData() instanceof Ageable) {
                                     dm.updatePlayerMission(player, mission);
                                 }
                             }

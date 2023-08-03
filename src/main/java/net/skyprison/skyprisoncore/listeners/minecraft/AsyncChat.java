@@ -12,6 +12,7 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -23,10 +24,9 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.Claim;
 import net.skyprison.skyprisoncore.commands.ItemLore;
 import net.skyprison.skyprisoncore.commands.Tags;
-import net.skyprison.skyprisoncore.inventories.ClaimFlags;
-import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
-import net.skyprison.skyprisoncore.inventories.NewsMessageEdit;
+import net.skyprison.skyprisoncore.inventories.*;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.PlayerManager;
 import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -48,6 +48,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -464,6 +465,75 @@ public class AsyncChat implements Listener {
                                     player.openInventory(inv.getInventory());
                                 } else {
                                     player.sendMessage(Component.text("max uses must be a number! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
+                            }
+                        }
+                        case "mailbox-rename" -> {
+                            MailBoxSettings inv = (MailBoxSettings) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                if(inv.setName(msg)) {
+                                    player.openInventory(inv.getInventory());
+                                } else {
+                                    player.sendMessage(Component.text("A mailbox with that name already exists!", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
+                            }
+                        }
+                        case "mailbox-invite" -> {
+                            MailboxMembers inv = (MailboxMembers) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                UUID invitedId = PlayerManager.getPlayerId(msg);
+                                if(invitedId != null) {
+                                    if(!inv.isMember(invitedId)) {
+                                        Player invited = plugin.getServer().getPlayer(invitedId);
+                                        if (invited != null) {
+                                            Component inviteMsg = Component.text("You have been invited to join the mailbox ", NamedTextColor.GRAY)
+                                                    .append(Component.text(inv.getName(), NamedTextColor.GRAY, TextDecoration.BOLD)).append(Component.text("!", NamedTextColor.GRAY))
+                                                    .append(Component.text("\nACCEPT INVITE", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                                        if (plugin.inviteMailBox.contains(player.getUniqueId())) {
+                                                            inv.addMember(invitedId);
+                                                            plugin.inviteMailBox.remove(player.getUniqueId());
+                                                            audience.sendMessage(Component.text("Successfully accepted mailbox invite!", NamedTextColor.GRAY));
+                                                            Component playerMsg = Component.text(invited.getName() + " accepted to join the mailbox ", NamedTextColor.GRAY)
+                                                                    .append(Component.text(inv.getName(), NamedTextColor.GRAY, TextDecoration.BOLD));
+
+                                                            if (player.isOnline()) {
+                                                                player.sendMessage(playerMsg);
+                                                            } else {
+                                                                plugin.createNotification("mailbox-invite-accepted", null, player.getUniqueId().toString(), playerMsg, null, true);
+                                                            }
+                                                        }
+                                                    })))
+                                                    .append(Component.text("     "))
+                                                    .append(Component.text("DECLINE INVITE", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                                        plugin.inviteMailBox.remove(player.getUniqueId());
+                                                        audience.sendMessage(Component.text("Successfully declined mailbox invite!", NamedTextColor.GRAY));
+                                                        Component inviteDecline = Component.text(invited.getName() + " declined your invite to join the mailbox ", NamedTextColor.GRAY)
+                                                                .append(Component.text(inv.getName(), NamedTextColor.GRAY, TextDecoration.BOLD));
+                                                        if (player.isOnline()) {
+                                                            player.sendMessage(inviteDecline);
+                                                        } else {
+                                                            plugin.createNotification("mailbox-invite-declined", null, player.getUniqueId().toString(), inviteDecline, null, true);
+                                                        }
+                                                    })));
+                                            invited.sendMessage(inviteMsg);
+                                            player.sendMessage(Component.text("Successfully sent invite!", NamedTextColor.GREEN));
+                                            player.openInventory(inv.getInventory());
+                                        } else {
+                                            player.sendMessage(Component.text("Player isn't online! Cancelling..", NamedTextColor.RED));
+                                            player.openInventory(inv.getInventory());
+                                        }
+                                    } else {
+                                        player.sendMessage(Component.text("Player is already a member! Cancelling..", NamedTextColor.RED));
+                                        player.openInventory(inv.getInventory());
+                                    }
+                                } else {
+                                    player.sendMessage(Component.text("Player doesn't exist! Try again..", NamedTextColor.RED));
                                     removeChatLock = false;
                                 }
                             } else {

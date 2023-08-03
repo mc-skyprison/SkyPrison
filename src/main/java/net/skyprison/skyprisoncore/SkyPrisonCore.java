@@ -56,10 +56,7 @@ import net.skyprison.skyprisoncore.commands.guard.*;
 import net.skyprison.skyprisoncore.commands.secrets.SecretFound;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
 import net.skyprison.skyprisoncore.inventories.*;
-import net.skyprison.skyprisoncore.items.BlacksmithEnd;
-import net.skyprison.skyprisoncore.items.Greg;
-import net.skyprison.skyprisoncore.items.TreeFeller;
-import net.skyprison.skyprisoncore.items.Vouchers;
+import net.skyprison.skyprisoncore.items.*;
 import net.skyprison.skyprisoncore.listeners.advancedregionmarket.UnsellRegion;
 import net.skyprison.skyprisoncore.listeners.brewery.BrewDrink;
 import net.skyprison.skyprisoncore.listeners.cmi.CMIPlayerTeleportRequest;
@@ -142,6 +139,9 @@ public class SkyPrisonCore extends JavaPlugin {
     public Map<UUID, Integer> blockBreaks = new HashMap<>();
     public List<UUID> newsMessageChanges = new ArrayList<>();
     public List<UUID> customItemChanges = new ArrayList<>();
+    public List<UUID> deleteMailbox = new ArrayList<>();
+    public List<UUID> kickMemberMailbox = new ArrayList<>();
+    public List<UUID> inviteMailBox = new ArrayList<>();
     public List<UUID> deleteClaim = new ArrayList<>();
     public List<UUID> transferClaim = new ArrayList<>();
     public HashMap<UUID, String> stickyChat = new HashMap<>();
@@ -772,6 +772,13 @@ public class SkyPrisonCore extends JavaPlugin {
             e.printStackTrace();
         }
     }
+    
+    private void giveItem(Player player, ItemStack item) {
+        HashMap<Integer, ItemStack> didntFit = player.getInventory().addItem(item);
+        for(ItemStack dropItem : didntFit.values()) {
+            player.getWorld().dropItemNaturally(player.getLocation(), dropItem).setOwner(player.getUniqueId());
+        }
+    }
 
     public void registerCommands() {
         manager.command(
@@ -803,7 +810,7 @@ public class SkyPrisonCore extends JavaPlugin {
                         } else {
                             treeItem = TreeFeller.getUpgradeItem(this, type, amount);
                         }
-                        player.getInventory().addItem(treeItem);
+                        giveItem(player, treeItem);
                         c.getSender().sendMessage(Component.text("Successfully sent!"));
                     }
                 }));
@@ -843,7 +850,7 @@ public class SkyPrisonCore extends JavaPlugin {
                             final int amount = c.get("amount");
                             ItemStack voucherItem = Vouchers.getVoucherFromType(this, voucherType, amount);
                             if(voucherItem != null) {
-                                player.getInventory().addItem(voucherItem);
+                                giveItem(player, voucherItem);
                                 c.getSender().sendMessage(Component.text("Successfully sent!"));
                             }
                         }));
@@ -865,11 +872,33 @@ public class SkyPrisonCore extends JavaPlugin {
                     if(gregOptions.contains(type.toLowerCase())) {
                         ItemStack item = Greg.getItemFromType(this, type, amount);
                         if (item != null) {
-                            player.getInventory().addItem(item);
+                            giveItem(player, item);
                             c.getSender().sendMessage(Component.text("Successfully sent!"));
                         }
                     }
                 }));
+        Command.Builder<CommandSender> postOffice = this.manager.commandBuilder("postoffice")
+                .permission("skyprisoncore.command.postoffice");
+        List<String> postOfficeOptions = List.of("mailbox");
+        this.manager.command(postOffice.literal("give")
+                .permission("skyprisoncore.command.postoffice.give")
+                .argument(PlayerArgument.of("player"))
+                .argument(StringArgument.<CommandSender>builder("type")
+                        .withSuggestionsProvider((commandSenderCommandContext, s) -> postOfficeOptions))
+                .argument(IntegerArgument.of("amount"))
+                .handler(c -> {
+                    final Player player = c.get("player");
+                    final String type = c.get("type");
+                    final int amount = c.get("amount");
+                    if(postOfficeOptions.contains(type.toLowerCase())) {
+                        ItemStack item = PostOffice.getItemFromType(this, type, amount);
+                        if (item != null) {
+                            giveItem(player, item);
+                            c.getSender().sendMessage(Component.text("Successfully sent!"));
+                        }
+                    }
+                }));
+
 
         Command.Builder<CommandSender> endSmith = this.manager.commandBuilder("endsmith")
                 .permission("skyprisoncore.command.endsmith");
@@ -887,7 +916,7 @@ public class SkyPrisonCore extends JavaPlugin {
                     if(endSmithOptions.contains(type.toLowerCase())) {
                         ItemStack item = BlacksmithEnd.getItemFromType(this, type, "", amount);
                         if (item != null) {
-                            player.getInventory().addItem(item);
+                            giveItem(player, item);
                             c.getSender().sendMessage(Component.text("Successfully sent!"));
                         }
                     }
@@ -906,7 +935,7 @@ public class SkyPrisonCore extends JavaPlugin {
                     if(templateOptions.contains(type.toLowerCase())) {
                         ItemStack item = BlacksmithEnd.getItemFromType(this, "upgrade-template", type, amount);
                         if (item != null) {
-                            player.getInventory().addItem(item);
+                            giveItem(player, item);
                             c.getSender().sendMessage(Component.text("Successfully sent!"));
                         }
                     }
@@ -1092,14 +1121,20 @@ public class SkyPrisonCore extends JavaPlugin {
                         UUID pUUID = PlayerManager.getPlayerId(playerName);
                         if (pUUID != null) {
                             Bukkit.getScheduler().runTask(this, () -> player.openInventory(new VoteHistory(this, db, pUUID).getInventory()));
+                        } else {
+                            sender.sendMessage(Component.text("Specified player doesn't exist!"));
                         }
+                    } else {
+                        sender.sendMessage(Component.text("Can only be used by a player!"));
                     }
                 }));
-
-        this.manager.command(this.manager.commandBuilder("votetest")
-                .permission("skyprisoncore.command.votetest")
+        this.manager.command(this.manager.commandBuilder("stellraw")
+                .permission("skyprisoncore.command.stellraw")
+                .argument(StringArgument.greedy("message"))
                 .handler(c -> {
-                    new MonthlyTask(this, db).run();
+                    String msg = c.get("message");
+                    Component fMsg = getParsedString(c.getSender(), "chat", msg);
+                    getServer().sendMessage(fMsg);
                 }));
         this.manager.command(this.manager.commandBuilder("votefix")
                 .permission("skyprisoncore.command.votefix")
@@ -1199,7 +1234,7 @@ public class SkyPrisonCore extends JavaPlugin {
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new BlockBreak(this, dailyMissions, particles), this);
         pm.registerEvents(new BlockDamage(this, getDatabase(), dailyMissions), this);
-        pm.registerEvents(new BlockPlace(this, dailyMissions), this);
+        pm.registerEvents(new BlockPlace(this, dailyMissions, db), this);
         pm.registerEvents(new BrewDrink(getDatabase()), this);
         pm.registerEvents(new CMIPlayerTeleportRequest(getDatabase()), this);
         pm.registerEvents(new CMIUserBalanceChange(this), this);
@@ -1214,7 +1249,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new LeavesDecay(), this);
         pm.registerEvents(new McMMOLevelUp(this), this);
         pm.registerEvents(new PlayerChangedWorld(), this);
-        pm.registerEvents(new PlayerInteract(this), this);
+        pm.registerEvents(new PlayerInteract(this, db), this);
         pm.registerEvents(new PlayerMove(this), this);
         pm.registerEvents(new PlayerPostRespawn(), this);
         pm.registerEvents(new PlayerTag(this), this);
@@ -1603,7 +1638,21 @@ public class SkyPrisonCore extends JavaPlugin {
                     .build()
             )
             .build();
-
+    public int getMailBox(Block b) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id FROM mail_boxes WHERE x = ? AND y = ? AND z = ? AND world = ?")) {
+            ps.setInt(1, b.getX());
+            ps.setInt(2, b.getY());
+            ps.setInt(3, b.getZ());
+            ps.setString(4, b.getWorld().getName());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
     public int getVoteParty() {
         int votes = 0;
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) % 50 FROM votes")) {
