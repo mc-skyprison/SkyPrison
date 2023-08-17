@@ -77,12 +77,12 @@ public class VoteHistory implements CustomInventory {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT time, service, tokens FROM votes WHERE user_id = ? ORDER BY time ASC")) {
             ps.setString(1, pUUID.toString());
             ResultSet rs = ps.executeQuery();
-            SimpleDateFormat DateFor = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+            SimpleDateFormat dateFor = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
             while (rs.next()) {
                 Date date = new Date(rs.getLong(1));
                 String service = rs.getString(2);
                 int tokens = rs.getInt(3);
-                String name = DateFor.format(date);
+                String name = dateFor.format(date);
                 ItemStack item = new ItemStack(Material.CHERRY_SIGN);
                 item.editMeta(meta -> {
                     meta.displayName(Component.text(name, NamedTextColor.GOLD, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));

@@ -19,7 +19,9 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
+import net.luckperms.api.model.user.UserManager;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.Claim;
 import net.skyprison.skyprisoncore.commands.ItemLore;
@@ -45,10 +47,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -485,7 +485,7 @@ public class AsyncChat implements Listener {
                             }
                         }
                         case "mailbox-invite" -> {
-                            MailboxMembers inv = (MailboxMembers) chatLock.get(1);
+                            MailBoxMembers inv = (MailBoxMembers) chatLock.get(1);
                             if(!msg.equalsIgnoreCase("cancel")) {
                                 UUID invitedId = PlayerManager.getPlayerId(msg);
                                 if(invitedId != null) {
@@ -531,6 +531,46 @@ public class AsyncChat implements Listener {
                                     } else {
                                         player.sendMessage(Component.text("Player is already a member! Cancelling..", NamedTextColor.RED));
                                         player.openInventory(inv.getInventory());
+                                    }
+                                } else {
+                                    player.sendMessage(Component.text("Player doesn't exist! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
+                            }
+                        }
+                        case "mailbox-sendto" -> {
+                            MailBoxSend inv = (MailBoxSend) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                UUID pUUID = PlayerManager.getPlayerId(msg);
+                                if(pUUID != null) {
+                                    String name = PlayerManager.getPlayerName(pUUID);
+                                    if(inv.alreadySending(pUUID)) {
+                                        inv.removeSendTo(pUUID);
+                                        player.sendMessage(Component.text("Removed " + name + " from send list!", NamedTextColor.GREEN));
+                                        player.openInventory(inv.getInventory());
+                                    } else {
+                                        if(inv.getSendingType()) {
+                                            LuckPerms luckAPI = LuckPermsProvider.get();
+                                            UserManager userManager = luckAPI.getUserManager();
+                                            CompletableFuture<User> userFuture = userManager.loadUser(pUUID);
+                                            userFuture.thenAcceptAsync(user -> {
+                                                Collection<Group> inheritedGroups = user.getInheritedGroups(user.getQueryOptions());
+                                                if (inheritedGroups.stream().anyMatch(group -> group.getName().equalsIgnoreCase("free"))) {
+                                                    inv.addSendTo(pUUID, name);
+                                                    player.sendMessage(Component.text("Added " + name + " to send list!", NamedTextColor.GREEN));
+                                                    plugin.getServer().getScheduler().runTask(plugin, () -> player.openInventory(inv.getInventory()));
+                                                } else {
+                                                    player.sendMessage(Component.text("Player doesn't have the free rank! Cancelling..", NamedTextColor.RED));
+                                                    plugin.getServer().getScheduler().runTask(plugin, () -> player.openInventory(inv.getInventory()));
+                                                }
+                                            });
+                                        } else {
+                                            inv.addSendTo(pUUID, name);
+                                            player.sendMessage(Component.text("Added " + name + " to send list!", NamedTextColor.GREEN));
+                                            plugin.getServer().getScheduler().runTask(plugin, () -> player.openInventory(inv.getInventory()));
+                                        }
                                     }
                                 } else {
                                     player.sendMessage(Component.text("Player doesn't exist! Try again..", NamedTextColor.RED));

@@ -9,7 +9,6 @@ import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -32,6 +31,7 @@ public class MailBoxSettings implements CustomInventory {
     private String name;
     private final boolean isOwner;
     private final Player player;
+    private Location loc;
 
     public void updateInventory() {
         ItemStack nameItem = new ItemStack(Material.OAK_SIGN);
@@ -56,11 +56,12 @@ public class MailBoxSettings implements CustomInventory {
         this.isOwner = isOwner;
         this.player = player;
 
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT name FROM mail_boxes WHERE id = ?")) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT name, x, y, z, world FROM mail_boxes WHERE id = ?")) {
             ps.setInt(1, mailBox);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 this.name = rs.getString(1);
+                this.loc = new Location(plugin.getServer().getWorld(rs.getString(5)), rs.getInt(2), rs.getInt(3), rs.getInt(4));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -121,7 +122,6 @@ public class MailBoxSettings implements CustomInventory {
             }
         }
     }
-
     @Override
     public ClickBehavior defaultClickBehavior() {
         return ClickBehavior.DISABLE_ALL;
@@ -146,58 +146,42 @@ public class MailBoxSettings implements CustomInventory {
             ps.setString(1, name);
             ps.setInt(2, mailBox);
             ps.executeUpdate();
-            updateInventory();
             this.name = name;
+            updateInventory();
             return true;
         } catch (SQLException ignored) {
             return false;
         }
     }
-    public boolean pickupMailbox() {
-        Location loc = null;
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT x, y, z, world FROM mail_boxes WHERE id = ?")) {
-            ps.setInt(1, mailBox);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                loc = new Location(plugin.getServer().getWorld(rs.getString(4)), rs.getInt(1), rs.getInt(2), rs.getInt(3));
-            }
+    public void pickupMailbox() {
+        ItemStack box = PostOffice.getMailBox(plugin, 1);
+        box.editMeta(meta -> {
+            NamespacedKey key = new NamespacedKey(plugin, "mailbox");
+            List<Component> lore = meta.lore();
+            lore.add(Component.empty());
+            lore.add(Component.text("Mailbox Saved: ", NamedTextColor.GRAY).append(Component.text(name, NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false));
+            meta.lore(lore);
+            meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, mailBox);
+        });
+        HashMap<Integer, ItemStack> didntFit = player.getInventory().addItem(box);
+        for (ItemStack item : didntFit.values()) {
+            player.getWorld().dropItemNaturally(player.getLocation(), item).setOwner(player.getUniqueId());
+        }
+        try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE mail_boxes SET is_placed = ? WHERE id = ?")) {
+            ps.setInt(1, 0);
+            ps.setInt(2, mailBox);
+            ps.executeUpdate();
+            loc.getBlock().setType(Material.AIR);
+            player.closeInventory();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        if(loc != null) {
-            Chest chest = (Chest) loc.getBlock();
-            if(chest.getInventory().isEmpty()) {
-                ItemStack box = PostOffice.getMailBox(plugin, 1);
-                box.editMeta(meta -> {
-                    NamespacedKey key = new NamespacedKey(plugin, "mailbox");
-                    List<Component> lore = meta.lore();
-                    lore.add(Component.empty());
-                    lore.add(Component.text("Mailbox Saved: ", NamedTextColor.GRAY).append(Component.text(name, NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false));
-                    meta.lore(lore);
-                    meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, mailBox);
-                });
-                HashMap<Integer, ItemStack> didntFit = player.getInventory().addItem(box);
-                for (ItemStack item : didntFit.values()) {
-                    player.getWorld().dropItemNaturally(player.getLocation(), item).setOwner(player.getUniqueId());
-                }
-                try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE mail_boxes SET is_placed = ? WHERE id = ?")) {
-                    ps.setInt(1, 0);
-                    ps.setInt(2, mailBox);
-                    ps.executeUpdate();
-                    updateInventory();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-                player.closeInventory();
-                return true;
-            }
-        }
-        return false;
     }
     public void deleteMailBox() {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM mail_boxes WHERE id = ?")) {
             ps.setInt(1, mailBox);
             ps.executeUpdate();
+            loc.getBlock().setType(Material.AIR);
         } catch (SQLException e) {
             e.printStackTrace();
         }

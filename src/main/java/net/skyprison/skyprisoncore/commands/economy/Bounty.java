@@ -200,7 +200,7 @@ public class Bounty implements CommandExecutor {
 													}
 												}
 												bountiedPlayer.sendMessage(prefix.append(Component.text(player.getName() + " has increased the bounty on you!", NamedTextColor.YELLOW)));
-												Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money take " + player.getName() + " " + plugin.formatNumber(bountyPrize));
+												Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi money take " + player.getName() + " " + plugin.formatNumber(bountyPrize));
 												cooldownManager.setCooldown(player.getUniqueId(), System.currentTimeMillis());
 
 												try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE bounties SET prize = prize + ?, bountied_by = ? WHERE user_id = ?")) {
@@ -220,7 +220,7 @@ public class Bounty implements CommandExecutor {
 													}
 												}
 												bountiedPlayer.sendMessage(prefix.append(Component.text(player.getName() + " has put a bounty on you!", NamedTextColor.YELLOW)));
-												Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money take " + player.getName() + " " + bountyPrize);
+												Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi money take " + player.getName() + " " + bountyPrize);
 												cooldownManager.setCooldown(player.getUniqueId(), System.currentTimeMillis());
 
 												try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO bounties (user_id, prize, bountied_by) VALUES (?, ?, ?)")) {

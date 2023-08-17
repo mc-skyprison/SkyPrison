@@ -547,7 +547,7 @@ public class Tokens implements CommandExecutor {
             if(page != 1)
                 transList = trans.subList(((page-1) * 45), trans.size());
             // Date ; remove/receive ; amount ; type ; what bought if tokenshop
-            SimpleDateFormat DateFor = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+            SimpleDateFormat dateFor = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
             for(Iterator<String> iterator = transList.iterator(); iterator.hasNext();) {
                 if(b == 45)
@@ -557,7 +557,7 @@ public class Tokens implements CommandExecutor {
                 String[] val = iterator.next().split(";");
 
                 Date date = new Date(Long.parseLong(val[0]));
-                String name = DateFor.format(date);
+                String name = dateFor.format(date);
 
                 moneyMeta.displayName(Component.text(name, NamedTextColor.GOLD, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
                 ArrayList<Component> lore = new ArrayList<>();

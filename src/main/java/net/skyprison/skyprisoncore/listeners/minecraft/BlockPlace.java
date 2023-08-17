@@ -34,10 +34,7 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -241,20 +238,38 @@ public class BlockPlace implements Listener {
                             chest.setType(Chest.Type.SINGLE);
                             block.setBlockData(chest);
                             if (mailBox == -1) {
-                                try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO mail_boxes (name, owner_id, x, y, z, world, is_placed) VALUES (?, ?, ?, ?, ?, ?)")) {
+                                int mailId = -1;
+                                try (Connection conn = db.getConnection(); PreparedStatement ps =
+                                        conn.prepareStatement("INSERT INTO mail_boxes (name, owner_id, x, y, z, world, is_placed) VALUES (?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
                                     ps.setString(1, player.getName() + "-" + new Random().nextInt(99999) + 10000);
-                                    ps.setInt(2, block.getX());
-                                    ps.setInt(3, block.getY());
-                                    ps.setInt(4, block.getZ());
-                                    ps.setString(5, worldName);
-                                    ps.setInt(6, 1);
+                                    ps.setString(2, player.getUniqueId().toString());
+                                    ps.setInt(3, block.getX());
+                                    ps.setInt(4, block.getY());
+                                    ps.setInt(5, block.getZ());
+                                    ps.setString(6, worldName);
+                                    ps.setInt(7, 1);
                                     ps.executeUpdate();
                                     player.sendMessage(Component.text("Mailbox successfully created! Left click the mailbox to bring up the settings menu.", NamedTextColor.GREEN));
+
+                                    ResultSet rs = ps.getGeneratedKeys();
+                                    if (rs.next()) {
+                                        mailId = rs.getInt(1);
+                                    }
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                }
+                                try (Connection conn = db.getConnection(); PreparedStatement ps =
+                                        conn.prepareStatement("INSERT INTO mail_boxes_users (mailbox_id, user_id, preferred) VALUES (?, ?, ?)")) {
+                                    ps.setInt(1, mailId);
+                                    ps.setString(2, player.getUniqueId().toString());
+                                    ps.setInt(3, 0);
+                                    ps.executeUpdate();
                                 } catch (SQLException e) {
                                     e.printStackTrace();
                                 }
                             } else {
-                                try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE mail_boxes SET x = ?, y = ?, z = ?, world = ?, is_placed =? WHERE id = ?")) {
+                                try (Connection conn = db.getConnection(); PreparedStatement ps =
+                                        conn.prepareStatement("UPDATE mail_boxes SET x = ?, y = ?, z = ?, world = ?, is_placed =? WHERE id = ?")) {
                                     ps.setInt(1, block.getX());
                                     ps.setInt(2, block.getY());
                                     ps.setInt(3, block.getZ());
@@ -277,18 +292,19 @@ public class BlockPlace implements Listener {
                     }
                 }
             } else if(worldName.equalsIgnoreCase("world_free") && block.getType().equals(Material.CHEST)) {
-                Chest chest = (Chest) block.getBlockData();
-                if(!chest.getType().equals(Chest.Type.SINGLE)) {
-                    DoubleChest doubleChest = (DoubleChest) block;
-                    InventoryHolder right = doubleChest.getRightSide();
-                    InventoryHolder left = doubleChest.getLeftSide();
-                    Location loc = chest.getType().equals(Chest.Type.LEFT) && right != null ? right.getInventory().getLocation()
-                            : chest.getType().equals(Chest.Type.RIGHT) && left != null ? left.getInventory().getLocation() : null;
+                org.bukkit.block.Chest chest = (org.bukkit.block.Chest) block.getState();
+                InventoryHolder holder = chest.getInventory().getHolder();
+                if(holder instanceof DoubleChest doubleChest) {
+                    Location bLoc = block.getLocation();
+                    Location left = doubleChest.getLeftSide().getInventory().getLocation();
+                    Location right = doubleChest.getRightSide().getInventory().getLocation();
+                    Location loc = bLoc == left ? right : bLoc == right ? left : null;
                     if(loc != null) {
                         Block b = loc.getBlock();
                         if(plugin.getMailBox(b) != -1) {
-                            chest.setType(Chest.Type.SINGLE);
-                            block.setBlockData(chest);
+                            Chest chestData = (Chest) block.getBlockData();
+                            chestData.setType(Chest.Type.SINGLE);
+                            block.setBlockData(chestData);
                         }
                     }
                 }

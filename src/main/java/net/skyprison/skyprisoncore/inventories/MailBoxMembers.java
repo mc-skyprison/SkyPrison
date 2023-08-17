@@ -1,5 +1,6 @@
 package net.skyprison.skyprisoncore.inventories;
 
+import me.arcaniax.hdb.api.HeadDatabaseAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -19,10 +20,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
-public class MailboxMembers implements CustomInventory {
+public class MailBoxMembers implements CustomInventory {
     private final List<ItemStack> members = new ArrayList<>();
     private final Inventory inventory;
-    private int page = 1;
+    private int page;
     private final DatabaseHook db;
     private final int mailBox;
     private String name = "";
@@ -38,8 +39,8 @@ public class MailboxMembers implements CustomInventory {
             this.page = 1;
         }
         for(int i = 0; i < 45; i++) inventory.setItem(i, null);
-        inventory.setItem(45, this.page == 1 ? blackPane : prevPage);
-        inventory.setItem(53, totalPages < 2 || this.page == totalPages ? blackPane : nextPage);
+        inventory.setItem(47, this.page == 1 ? blackPane : prevPage);
+        inventory.setItem(51, totalPages < 2 || this.page == totalPages ? blackPane : nextPage);
         List<ItemStack> membersToShow = new ArrayList<>(members);
         int toRemove = 45 * (this.page - 1);
         if(toRemove != 0) {
@@ -52,7 +53,7 @@ public class MailboxMembers implements CustomInventory {
             }
         }
     }
-    public MailboxMembers(SkyPrisonCore plugin, DatabaseHook db, boolean isOwner, int mailBox, int page) {
+    public MailBoxMembers(SkyPrisonCore plugin, DatabaseHook db, boolean isOwner, int mailBox, int page) {
         this.mailBox = mailBox;
         this.isOwner = isOwner;
         this.db = db;
@@ -115,7 +116,13 @@ public class MailboxMembers implements CustomInventory {
                 ItemStack inviteMember = new ItemStack(Material.OAK_SIGN);
                 inviteMember.editMeta(meta -> meta.displayName(Component.text("Invite Player to Mailbox", NamedTextColor.GREEN,
                         TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false)));
-                inventory.setItem(i, blackPane);
+                inventory.setItem(i, inviteMember);
+            } else if(i == 45) {
+                HeadDatabaseAPI hAPI = new HeadDatabaseAPI();
+                ItemStack back = hAPI.getItemHead("10306");
+                back.editMeta(meta -> meta.displayName(Component.text("Back to Settings", NamedTextColor.GREEN,
+                        TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false)));
+                inventory.setItem(i, back);
             } else inventory.setItem(i, blackPane);
         }
         updatePage(0);
@@ -143,7 +150,7 @@ public class MailboxMembers implements CustomInventory {
         return false;
     }
     public void addMember(UUID memberId) {
-        try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO mail_box_users (mailbox_id, user_id, preferred) VALUES (?, ?, ?)")) {
+        try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO mail_boxes_users (mailbox_id, user_id, preferred) VALUES (?, ?, ?)")) {
             ps.setInt(1, mailBox);
             ps.setString(2, memberId.toString());
             ps.setInt(3, 0);
@@ -173,5 +180,8 @@ public class MailboxMembers implements CustomInventory {
     }
     public String getName() {
         return this.name;
+    }
+    public int getMailBox() {
+        return this.mailBox;
     }
 }

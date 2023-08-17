@@ -5,7 +5,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.inventories.MailBoxSettings;
+import net.skyprison.skyprisoncore.inventories.MailBox;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -69,15 +69,17 @@ public class PlayerInteract implements Listener {
         Block block = event.getClickedBlock();
         Player player = event.getPlayer();
         Action action = event.getAction();
-
-        if(block != null && block.getWorld().getName().equalsIgnoreCase("world_free") && action.equals(Action.LEFT_CLICK_BLOCK)
+        if(block != null && block.getWorld().getName().equalsIgnoreCase("world_free") && (action.equals(Action.LEFT_CLICK_BLOCK) || action.equals(Action.RIGHT_CLICK_BLOCK))
         && block.getType().equals(Material.CHEST)) {
             int mailBox =  plugin.getMailBox(block);
             if(mailBox != -1) {
                 if(isMember(player, mailBox)) {
-                    player.openInventory(new MailBoxSettings(plugin, db, mailBox, isOwner(player, mailBox), player).getInventory());
-                    return;
+                    player.openInventory(new MailBox(plugin, db, player, isOwner(player, mailBox), mailBox, 1).getInventory());
+                } else {
+                    player.sendMessage(Component.text("You are not a member of this mailbox!", NamedTextColor.RED));
                 }
+                event.setCancelled(true);
+                return;
             }
         }
         if(item != null && item.hasItemMeta() && Objects.equals(event.getHand(), EquipmentSlot.HAND)

@@ -35,7 +35,7 @@ public class RemoveItalics implements CommandExecutor {
 			ItemMeta iMeta = item.getItemMeta();
 			iMeta.displayName(newName);
 			item.setItemMeta(iMeta);
-			plugin.asConsole("money take " + player.getName() + " " + 50000);
+			plugin.asConsole("cmi money take " + player.getName() + " " + 50000);
 			player.sendMessage(Component.text("Successfully removed italics from item name!", NamedTextColor.GREEN));
 		} else {
 			player.sendMessage(Component.text("Item no longer in your inventory! Cancelling...", NamedTextColor.RED));

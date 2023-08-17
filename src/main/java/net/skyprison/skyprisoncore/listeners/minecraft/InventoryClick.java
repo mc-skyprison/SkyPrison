@@ -23,7 +23,10 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.*;
-import net.skyprison.skyprisoncore.commands.economy.*;
+import net.skyprison.skyprisoncore.commands.economy.Bounty;
+import net.skyprison.skyprisoncore.commands.economy.BuyBack;
+import net.skyprison.skyprisoncore.commands.economy.EconomyCheck;
+import net.skyprison.skyprisoncore.commands.economy.MoneyHistory;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
 import net.skyprison.skyprisoncore.inventories.*;
 import net.skyprison.skyprisoncore.items.Vouchers;
@@ -58,11 +61,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class InventoryClick implements Listener {
     private final SkyPrisonCore plugin;
     private final EconomyCheck econCheck;
-    private final DropChest chestDrop;
     private final Bounty bounty;
     private final SecretsGUI secretsGUI;
     private final Daily daily;
@@ -74,12 +77,11 @@ public class InventoryClick implements Listener {
     private final PlayerParticlesAPI particles;
     private final CustomRecipes customRecipes;
 
-    public InventoryClick(SkyPrisonCore plugin, EconomyCheck econCheck, DropChest dropChest, Bounty bounty,
+    public InventoryClick(SkyPrisonCore plugin, EconomyCheck econCheck, Bounty bounty,
                           SecretsGUI secretsGUI, Daily daily, MoneyHistory moneyHistory,
                           BuyBack buyBack, SkyPlot skyPlot, DatabaseHook db, Tags tag, PlayerParticlesAPI particles, CustomRecipes customRecipes) {
         this.plugin = plugin;
         this.econCheck = econCheck;
-        this.chestDrop = dropChest;
         this.bounty = bounty;
         this.secretsGUI = secretsGUI;
         this.daily = daily;
@@ -128,10 +130,20 @@ public class InventoryClick implements Listener {
         if(event.getWhoClicked() instanceof Player player && event.getRawSlot() >= 0) {
             if (event.getClickedInventory() instanceof PlayerInventory) {
                 InvStickFix(player);
+                ItemStack currItem = event.getCurrentItem();
+                if(currItem != null && currItem.getType().equals(Material.WRITABLE_BOOK)) {
+                    if(plugin.writingMail.containsKey(player.getUniqueId())) {
+                        ItemStack book = plugin.writingMail.get(player.getUniqueId()).getBook();
+                        if(currItem.equals(book)) {
+                            event.setCancelled(true);
+                        }
+                    }
+                }
             }
             if(event.getInventory().getHolder(false) instanceof CustomInventory customInv) {
                 ItemStack currItem = event.getCurrentItem();
                 ItemStack cursor = event.getCursor();
+                boolean isPaper = currItem != null && currItem.getType().equals(Material.PAPER);
                 switch (customInv.defaultClickBehavior()) {
                     case DISABLE_ALL, ENABLE_SPECIFIC -> event.setCancelled(true);
                 }
@@ -145,7 +157,7 @@ public class InventoryClick implements Listener {
                         Material clickedMat = event.getCurrentItem().getType();
                         switch (event.getSlot()) {
                             case 47 -> {
-                                if (clickedMat.equals(Material.PAPER)) {
+                                if (isPaper) {
                                     player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage() - 1).getInventory());
                                 }
                             }
@@ -160,7 +172,7 @@ public class InventoryClick implements Listener {
                                 }
                             }
                             case 51 -> {
-                                if (clickedMat.equals(Material.PAPER)) {
+                                if (isPaper) {
                                     player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage() + 1).getInventory());
                                 }
                             }
@@ -238,7 +250,7 @@ public class InventoryClick implements Listener {
                                 }
                             }
                             case 47 -> {
-                                if (clickedMat.equals(Material.PAPER)) {
+                                if (isPaper) {
                                     player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getIsAllowed(), inv.getCategory(), inv.getPage() - 1).getInventory());
                                 }
                             }
@@ -268,7 +280,7 @@ public class InventoryClick implements Listener {
                                 }
                             }
                             case 51 -> {
-                                if (clickedMat.equals(Material.PAPER)) {
+                                if (isPaper) {
                                     player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getIsAllowed(), inv.getCategory(), inv.getPage() + 1).getInventory());
                                 }
                             }
@@ -305,7 +317,7 @@ public class InventoryClick implements Listener {
                         Material clickedMat = event.getCurrentItem().getType();
                         switch (event.getSlot()) {
                             case 47 -> {
-                                if (clickedMat.equals(Material.PAPER)) {
+                                if (isPaper) {
                                     player.openInventory(new ClaimMembers(plugin, inv.getDatabase(), inv.getClaimName(), inv.getMembers(), inv.getCategory(), inv.getPage() - 1).getInventory());
                                 }
                             }
@@ -315,7 +327,7 @@ public class InventoryClick implements Listener {
                                 }
                             }
                             case 51 -> {
-                                if (clickedMat.equals(Material.PAPER)) {
+                                if (isPaper) {
                                     player.openInventory(new ClaimMembers(plugin, inv.getDatabase(), inv.getClaimName(), inv.getMembers(), inv.getCategory(), inv.getPage() + 1).getInventory());
                                 }
                             }
@@ -326,7 +338,7 @@ public class InventoryClick implements Listener {
                         Material clickedMat = event.getCurrentItem().getType();
                         switch (event.getSlot()) {
                             case 47 -> {
-                                if (clickedMat.equals(Material.PAPER)) {
+                                if (isPaper) {
                                     player.openInventory(new ClaimPending(plugin, inv.getClaimIds(), inv.getCategory(), inv.getPage() - 1).getInventory());
                                 }
                             }
@@ -336,7 +348,7 @@ public class InventoryClick implements Listener {
                                 }
                             }
                             case 51 -> {
-                                if (clickedMat.equals(Material.PAPER)) {
+                                if (isPaper) {
                                     player.openInventory(new ClaimPending(plugin, inv.getClaimIds(), inv.getCategory(), inv.getPage() + 1).getInventory());
                                 }
                             }
@@ -347,12 +359,12 @@ public class InventoryClick implements Listener {
                         Material clickedMat = event.getCurrentItem().getType();
                         switch (event.getSlot()) {
                             case 47 -> {
-                                if (clickedMat.equals(Material.PAPER)) {
+                                if (isPaper) {
                                     player.openInventory(new NewsMessages(plugin, inv.getDatabase(), inv.getCanEdit(),inv.getPage() - 1).getInventory());
                                 }
                             }
                             case 51 -> {
-                                if (clickedMat.equals(Material.PAPER)) {
+                                if (isPaper) {
                                     player.openInventory(new NewsMessages(plugin, inv.getDatabase(), inv.getCanEdit(),inv.getPage() + 1).getInventory());
                                 }
                             }
@@ -656,7 +668,7 @@ public class InventoryClick implements Listener {
                                         }
 
                                         if(removeMoney) {
-                                            plugin.asConsole("money take " + player.getName() + " " + moneyCost);
+                                            plugin.asConsole("cmi money take " + player.getName() + " " + moneyCost);
                                         }
                                         if(removeTokens) {
                                             plugin.tokens.removeTokens(player.getUniqueId(), tokenCost, inv.getCategory(), clickedMat.toString());
@@ -966,12 +978,12 @@ public class InventoryClick implements Listener {
                         switch (slot) {
                             case 49 -> inv.updateSort();
                             case 45 -> {
-                                if (currItem.getType().equals(Material.PAPER)) {
+                                if (isPaper) {
                                     inv.updatePage(-1);
                                 }
                             }
                             case 53 -> {
-                                if (currItem.getType().equals(Material.PAPER)) {
+                                if (isPaper) {
                                     inv.updatePage(1);
                                 }
                             }
@@ -988,12 +1000,10 @@ public class InventoryClick implements Listener {
                                         .hoverEvent(HoverEvent.showText(Component.text("Click to paste current mailbox name to chat", NamedTextColor.GRAY)))
                                         .clickEvent(ClickEvent.suggestCommand(inv.getName())));
                             }
-                            case 12 -> player.openInventory(new MailboxMembers(plugin, db, inv.isOwner(), inv.getMailBox(), 1).getInventory());
+                            case 12 -> player.openInventory(new MailBoxMembers(plugin, db, inv.isOwner(), inv.getMailBox(), 1).getInventory());
                             case 14 -> {
                                 if (inv.isOwner()) {
-                                    if(!inv.pickupMailbox()) {
-                                        player.sendMessage(Component.text("Mailbox must be empty to be able to be picked up!", NamedTextColor.RED));
-                                    }
+                                    inv.pickupMailbox();
                                 }
                             }
                             case 16 -> {
@@ -1019,7 +1029,7 @@ public class InventoryClick implements Listener {
                             }
                         }
                     }
-                } else if(customInv instanceof MailboxMembers inv) {
+                } else if(customInv instanceof MailBoxMembers inv) {
                     if(currItem != null) {
                         int slot = event.getRawSlot();
                         if(slot == 49 && inv.isOwner()) {
@@ -1035,27 +1045,183 @@ public class InventoryClick implements Listener {
                                     player.closeInventory();
                                     plugin.kickMemberMailbox.add(player.getUniqueId());
                                     Component msg = Component.text("Are you sure you want to kick ", NamedTextColor.GRAY)
-                                            .append(Component.text(memberName, NamedTextColor.GRAY, TextDecoration.BOLD)).append(Component.text(" from this mailbox?", NamedTextColor.GRAY))
-                                            .append(Component.text("\nKICK MEMBER", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
-                                                if (plugin.kickMemberMailbox.contains(player.getUniqueId())) {
-                                                    inv.kickMember(memberId);
-                                                    plugin.kickMemberMailbox.remove(player.getUniqueId());
-                                                    player.sendMessage(Component.text(memberName + " has been kicked from the mailbox!", NamedTextColor.GRAY));
-                                                    Component kickMsg = Component.text("You've been kicked from the mailbox ", NamedTextColor.RED)
-                                                            .append(Component.text(inv.getName(), NamedTextColor.RED, TextDecoration.BOLD))
-                                                            .append(Component.text("You've been kicked from the mailbox ", NamedTextColor.RED));
-                                                    Player memberOnline = member.getPlayer();
-                                                    if(memberOnline != null) {
-                                                        memberOnline.sendMessage(kickMsg);
-                                                    } else {
-                                                        plugin.createNotification("mailbox-kicked", null, memberId.toString(), kickMsg, null, true);
-                                                    }
+                                        .append(Component.text(memberName, NamedTextColor.GRAY, TextDecoration.BOLD)).append(Component.text(" from this mailbox?", NamedTextColor.GRAY))
+                                        .append(Component.text("\nKICK MEMBER", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            if (plugin.kickMemberMailbox.contains(player.getUniqueId())) {
+                                                inv.kickMember(memberId);
+                                                plugin.kickMemberMailbox.remove(player.getUniqueId());
+                                                player.sendMessage(Component.text(memberName + " has been kicked from the mailbox!", NamedTextColor.GRAY));
+                                                Component kickMsg = Component.text("You've been kicked from the mailbox ", NamedTextColor.RED)
+                                                    .append(Component.text(inv.getName(), NamedTextColor.RED, TextDecoration.BOLD))
+                                                    .append(Component.text("You've been kicked from the mailbox ", NamedTextColor.RED));
+                                                Player memberOnline = member.getPlayer();
+                                                if(memberOnline != null) {
+                                                    memberOnline.sendMessage(kickMsg);
+                                                } else {
+                                                    plugin.createNotification("mailbox-kicked", null, memberId.toString(), kickMsg, null, true);
+                                                }
+                                            }
+                                        })))
+                                        .append(Component.text("     "))
+                                        .append(Component.text("CANCEL", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            plugin.kickMemberMailbox.remove(player.getUniqueId());
+                                            audience.sendMessage(Component.text("Mailbox member kicking cancelled!", NamedTextColor.GRAY));
+                                            player.openInventory(inv.getInventory());
+                                        })));
+                                    player.sendMessage(msg);
+                                }
+                            }
+                        } else if(slot == 47) {
+                            inv.updatePage(-1);
+                        } else if(slot == 51) {
+                            inv.updatePage(1);
+                        } else if(slot == 45) {
+                            player.openInventory(new MailBoxSettings(plugin, db, inv.getMailBox(), inv.isOwner(), player).getInventory());
+                        }
+                    }
+                } else if(customInv instanceof MailBox inv) {
+                    int clickedSlot = event.getRawSlot();
+                    if(event.getClickedInventory() instanceof PlayerInventory) {
+                        event.setCancelled(event.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY));
+                    } else {
+                        if(clickedSlot < 45) {
+                            InventoryAction invAction = event.getAction();
+                            if(currItem != null && invAction.equals(InventoryAction.PICKUP_ALL)) {
+                                event.setCurrentItem(inv.getMailItem(currItem));
+                                event.setCancelled(false);
+                            }
+                        } else {
+                            if(currItem != null) {
+                                switch (clickedSlot) {
+                                    case 45 -> {
+                                        if (isPaper) inv.updatePage(-1);
+                                    }
+                                    case 53 -> {
+                                        if (isPaper) inv.updatePage(1);
+                                    }
+                                    case 48 -> {
+                                        if (!currItem.getType().equals(Material.BLACK_STAINED_GLASS_PANE)) {
+                                            player.openInventory(new MailBoxSettings(plugin, db, inv.getMailBox(), inv.isOwner(), player).getInventory());
+                                        }
+                                    }
+                                    case 50 -> {
+                                        if(!plugin.writingMail.containsKey(player.getUniqueId())) {
+                                            if(plugin.mailSend.containsKey(player.getUniqueId())) {
+                                                player.openInventory(plugin.mailSend.get(player.getUniqueId()).getInventory());
+                                            } else {
+                                                player.openInventory(new MailBoxSend(plugin, db, player, true).getInventory());
+                                            }
+                                        } else {
+                                            player.sendMessage(Component.text("You can't send another mail while you're currently writing one!", NamedTextColor.RED));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if(customInv instanceof MailBoxSend inv) {
+                    int clickedSlot = event.getRawSlot();
+                    if(event.getClickedInventory() instanceof PlayerInventory) {
+                        event.setCancelled(event.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY));
+                    } else {
+                        if(currItem == null && clickedSlot != 10) {
+                            event.setCancelled(true);
+                        } else {
+                            switch (clickedSlot) {
+                                case 10 -> {
+                                    if(inv.getSendingType()) {
+                                        if(cursor != null && inv.isBlacklistedItem(cursor.getType())) {
+                                            player.sendMessage(Component.text("You can't send this item!", NamedTextColor.RED));
+                                            event.setCancelled(true);
+                                        } else {
+                                            event.setCancelled(false);
+                                            inv.updateCost();
+                                        }
+                                    }
+                                }
+                                case 12 -> {
+                                    if(inv.getCanSendItems()) {
+                                        if(inv.getSendingType() && inv.getSendItem() != null) {
+                                            HashMap<Integer, ItemStack> didntFit = player.getInventory().addItem(inv.getSendItem());
+                                            for (ItemStack dropItem : didntFit.values()) {
+                                                player.getWorld().dropItemNaturally(player.getLocation(), dropItem).setOwner(player.getUniqueId());
+                                            }
+                                        }
+                                        inv.toggleSendingItem();
+                                    }
+                                }
+                                case 13 -> {
+                                    boolean canAdd = true;
+                                    if(inv.getSendingType()) {
+                                        if(inv.getSendToSize() >= 1) canAdd = false;
+                                    } else if(inv.getSendToSize() >= 5) canAdd = false;
+                                    if(canAdd) {
+                                        plugin.chatLock.put(player.getUniqueId(), Arrays.asList("mailbox-sendto", inv));
+                                        player.closeInventory();
+                                        player.sendMessage(Component.text("Type a player to send the mail to in chat: " +
+                                                "(Type 'cancel' to cancel & type player's name again to remove)", NamedTextColor.YELLOW));
+                                    } else {
+                                        player.sendMessage(Component.text("You've reached the limit of players you can send this mail to!", NamedTextColor.RED));
+                                    }
+                                }
+                                case 14 -> {
+                                    if(inv.getSendToSize() > 0) {
+                                        player.closeInventory();
+                                        if (inv.getSendingType()) {
+                                            if (inv.canAfford()) {
+                                                plugin.asConsole("cmi money take " + player.getName() + " " + inv.getCost());
+                                                inv.sendMail(inv.getSendItem());
+                                            } else {
+                                                player.sendMessage(Component.text("You don't have enough money to send this mail!", NamedTextColor.RED));
+                                            }
+                                        } else {
+                                            PlayerInventory pInv = player.getInventory();
+                                            if(pInv.containsAtLeast(new ItemStack(Material.WRITABLE_BOOK), 1)) {
+                                                plugin.writingMail.put(player.getUniqueId(), inv);
+                                                HashMap<Integer, ItemStack> notRemoved = pInv.removeItemAnySlot(new ItemStack(Material.WRITABLE_BOOK));
+                                                if(notRemoved.isEmpty()) {
+                                                    ItemStack book = new ItemStack(Material.WRITABLE_BOOK);
+                                                    book.editMeta(meta -> {
+                                                        meta.displayName(Component.text("Mail", NamedTextColor.GOLD));
+                                                        List<Component> lore = new ArrayList<>();
+                                                        lore.add(Component.text("Will be sent to:", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+                                                        inv.getSendTo().forEach((uuid, name) -> lore.add(Component.text(name, NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)));
+                                                        meta.lore(lore);
+                                                        NamespacedKey key = new NamespacedKey(plugin, "mail-book");
+                                                        meta.getPersistentDataContainer().set(key, PersistentDataType.LONG, System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(10));
+                                                    });
+                                                    inv.saveBook(book);
+                                                    inv.saveOffHand(pInv.getItemInOffHand());
+                                                    pInv.setItemInOffHand(book);
+                                                    inv.startTimer();
+                                                    player.sendMessage(Component.text("Write your message in the book and then sign it to send the mail.", NamedTextColor.YELLOW)
+                                                            .append(Component.text("\nNOTICE: Book will be deleted in 10 minutes!", NamedTextColor.RED)));
+                                                } else {
+                                                    player.sendMessage(Component.text("You need to have a book and quill in your inventory to send this mail!", NamedTextColor.RED));
+                                                }
+                                            } else {
+                                                player.sendMessage(Component.text("You need to have a book and quill in your inventory to send this mail!", NamedTextColor.RED));
+                                            }
+                                        }
+                                    } else {
+                                        player.sendMessage(Component.text("You need to add at least one player to send this mail to!", NamedTextColor.RED));
+                                    }
+                                }
+                                case 16 -> {
+                                    player.closeInventory();
+                                    plugin.cancelMailSendConfirm.add(player.getUniqueId());
+                                    Component msg = Component.text("Are you sure you want to delete the mail progress?", NamedTextColor.GRAY)
+                                            .append(Component.text("\nDELETE MAIL PROGRESS", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                                if (plugin.cancelMailSendConfirm.contains(player.getUniqueId())) {
+                                                    plugin.cancelMailSendConfirm.remove(player.getUniqueId());
+                                                    inv.cancelMail();
+                                                    player.sendMessage(Component.text("In progress mail has been deleted!", NamedTextColor.GRAY));
                                                 }
                                             })))
                                             .append(Component.text("     "))
                                             .append(Component.text("CANCEL", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
-                                                plugin.kickMemberMailbox.remove(player.getUniqueId());
-                                                audience.sendMessage(Component.text("Mailbox member kicking cancelled!", NamedTextColor.GRAY));
+                                                plugin.cancelMailSendConfirm.remove(player.getUniqueId());
+                                                audience.sendMessage(Component.text("Mail progress deletion cancelled!", NamedTextColor.GRAY));
                                                 player.openInventory(inv.getInventory());
                                             })));
                                     player.sendMessage(msg);
@@ -1096,39 +1262,6 @@ public class InventoryClick implements Listener {
                             if (clickCheck == 1) {
                                 event.setCancelled(true);
                                 switch (Objects.requireNonNull(guiType)) {
-                                    case "bartender-grass":
-                                        File f = new File(plugin.getDataFolder() + File.separator + "bartender.yml");
-                                        FileConfiguration yamlf = YamlConfiguration.loadConfiguration(f);
-                                        ItemStack alc = event.getCurrentItem();
-                                        ItemMeta alcMeta = Objects.requireNonNull(alc).getItemMeta();
-                                        PersistentDataContainer alcData = alcMeta.getPersistentDataContainer();
-                                        NamespacedKey alcKey = new NamespacedKey(plugin, "alc-type");
-                                        if (alcData.has(alcKey, PersistentDataType.STRING)) {
-                                            String alcType = alcData.get(alcKey, PersistentDataType.STRING);
-                                            int price = yamlf.getInt("grass." + alcType + ".price");
-                                            if (user.getBalance() >= price) {
-                                                if (user.getInventory().getFreeSlots() != 0) {
-                                                    if (!alc.getType().equals(Material.MILK_BUCKET)) {
-                                                        int quality = yamlf.getInt("grass." + alcType + ".quality");
-                                                        String type = yamlf.getString("grass." + alcType + ".type");
-                                                        player.sendMessage(Component.text("Bartender", TextColor.fromHexString("#00ff00"), TextDecoration.BOLD)
-                                                                .append(Component.text(" » ", NamedTextColor.DARK_GRAY)).append(Component.text("You bought " + type + "!", NamedTextColor.YELLOW)));
-                                                        plugin.asConsole("brew create " + type + " " + quality + " " + player.getName());
-                                                    } else {
-                                                        player.sendMessage(Component.text("Bartender", TextColor.fromHexString("#00ff00"))
-                                                                .append(Component.text(" » ", NamedTextColor.DARK_GRAY)).append(Component.text("You bought Milk!", NamedTextColor.YELLOW)));
-                                                        plugin.asConsole("give " + player.getName() + " milk_bucket");
-                                                    }
-                                                    plugin.asConsole("money take " + player.getName() + " " + price);
-                                                    // Bartender.openGUI(player, "bartender-grass");
-                                                } else {
-                                                    player.sendMessage(Component.text("You do not have enough space in your inventory!", NamedTextColor.RED));
-                                                }
-                                            } else {
-                                                player.sendMessage(Component.text("You do not have enough money!", NamedTextColor.RED));
-                                            }
-                                        }
-                                        break;
                                     case "buyback":
                                         NamespacedKey typeKey = new NamespacedKey(plugin, "sold-type");
                                         ItemStack buyItem = event.getCurrentItem();
@@ -1151,7 +1284,7 @@ public class InventoryClick implements Listener {
                                                             ps.setInt(1, buyId);
                                                             ps.executeUpdate();
                                                             plugin.asConsole("give " + player.getName() + " " + itemType + " " + itemAmount);
-                                                            plugin.asConsole("money take " + player.getName() + " " + itemPrice);
+                                                            plugin.asConsole("cmi money take " + player.getName() + " " + itemPrice);
                                                             buyBack.openGUI(player);
                                                         } catch (SQLException e) {
                                                             e.printStackTrace();
@@ -1671,22 +1804,6 @@ public class InventoryClick implements Listener {
                         }
                     }
                 }
-                String[] dropChest = ChatColor.stripColor(event.getView().getTitle()).split(" ");
-                if (dropChest[0].equalsIgnoreCase("Drop") && dropChest[1].equalsIgnoreCase("Party")) {
-                    if (event.getCurrentItem() != null) {
-                        event.setCancelled(true);
-                        if (event.getCurrentItem().getType() == Material.PAPER) {
-                            if (event.getSlot() == 46) {
-                                int page = Integer.parseInt(dropChest[4]) - 1;
-                                chestDrop.openGUI((Player) event.getWhoClicked(), page);
-                            } else if (event.getSlot() == 52) {
-                                int page = Integer.parseInt(dropChest[4]) + 1;
-                                chestDrop.openGUI((Player) event.getWhoClicked(), page);
-                            }
-                        }
-                    }
-                }
-
                 if (ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("Referral List")) {
                     if (event.getCurrentItem() != null) {
                         event.setCancelled(true);

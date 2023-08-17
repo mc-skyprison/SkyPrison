@@ -140,7 +140,9 @@ public class SkyPrisonCore extends JavaPlugin {
     public List<UUID> newsMessageChanges = new ArrayList<>();
     public List<UUID> customItemChanges = new ArrayList<>();
     public List<UUID> deleteMailbox = new ArrayList<>();
+    public List<UUID> cancelMailSendConfirm = new ArrayList<>();
     public List<UUID> kickMemberMailbox = new ArrayList<>();
+    public HashMap<UUID, MailBoxSend> writingMail = new HashMap<>();
     public List<UUID> inviteMailBox = new ArrayList<>();
     public List<UUID> deleteClaim = new ArrayList<>();
     public List<UUID> transferClaim = new ArrayList<>();
@@ -159,6 +161,7 @@ public class SkyPrisonCore extends JavaPlugin {
     public Timer spongeTimer = new Timer();
     public HashMap<UUID, HashMap<Integer, DatabaseInventoryEdit>> itemEditing = new HashMap<>();
     public HashMap<UUID, HashMap<Integer, NewsMessageEdit>> newsEditing = new HashMap<>();
+    public HashMap<UUID, MailBoxSend> mailSend = new HashMap<>();
     public static DatabaseHook db;
     public static StateFlag FLY;
     public static StringFlag EFFECTS;
@@ -772,8 +775,8 @@ public class SkyPrisonCore extends JavaPlugin {
             e.printStackTrace();
         }
     }
-    
-    private void giveItem(Player player, ItemStack item) {
+
+    public void giveItem(Player player, ItemStack item) {
         HashMap<Integer, ItemStack> didntFit = player.getInventory().addItem(item);
         for(ItemStack dropItem : didntFit.values()) {
             player.getWorld().dropItemNaturally(player.getLocation(), dropItem).setOwner(player.getUniqueId());
@@ -1184,7 +1187,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("econcheck")).setExecutor(new EconomyCheck(this));
         Objects.requireNonNull(getCommand("permshop")).setExecutor(new PermShop());
         Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, getDatabase()));
-        Objects.requireNonNull(getCommand("dropchest")).setExecutor(new DropChest(this));
         Objects.requireNonNull(getCommand("dontsell")).setExecutor(new DontSell(getDatabase()));
         Objects.requireNonNull(getCommand("secretfound")).setExecutor(new SecretFound(this, dailyMissions, getDatabase()));
         Objects.requireNonNull(getCommand("rewards")).setExecutor(new SecretsGUI(this, getDatabase()));
@@ -1229,7 +1231,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("s")).setExecutor(new Staff(new ChatUtils(this, discApi)));
     }
 
-
     public void registerEvents() {
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new BlockBreak(this, dailyMissions, particles), this);
@@ -1241,8 +1242,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EntityDamageByEntity(this), this);
         pm.registerEvents(new EntityDeath(this, new Safezone(this), getDatabase(), dailyMissions), this);
         pm.registerEvents(new EntityPickupItem(this), this);
-        pm.registerEvents(new EntityRemoveFromWorld(this), this);
-        pm.registerEvents(new InventoryClick(this, new EconomyCheck(this), new DropChest(this), new Bounty(getDatabase(), this),
+        pm.registerEvents(new InventoryClick(this, new EconomyCheck(this), new Bounty(getDatabase(), this),
                 new SecretsGUI(this, getDatabase()), new Daily(this, getDatabase()), new MoneyHistory(this),
                 new BuyBack(this, getDatabase()), new SkyPlot(this), getDatabase(), new Tags(this, getDatabase()), particles, new CustomRecipes(this)), this);
         pm.registerEvents(new InventoryOpen(this), this);

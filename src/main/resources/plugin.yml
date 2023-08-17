@@ -1,9 +1,9 @@
-name: SkyPrisonCore
+name: $name
 authors: [DrakePork, Redhelmet8]
-description: All the Custom Stuffs for SkyPrison
-version: 7.0.0
+description: $description
+version: $version
 main: net.skyprison.skyprisoncore.SkyPrisonCore
-api-version: 1.18
+api-version: "$apiVersion"
 website: https://skyprison.net/
 depend: [WorldGuard, WorldEdit, PlaceholderAPI, CMI, Parkour, ShopGUIPlus, CoreProtect, PvPManager, AdvancedRegionMarket, CustomCrafting]
 commands:
@@ -92,11 +92,6 @@ commands:
   #
   # GUI Commands
   #
-  dropchest:
-    description: DropChest Commands
-    usage: /<command>
-    permission: skyprisoncore.command.dropchest
-    permission-message: §4Error:§c You do not have permission to execute this command...
   rewards:
     description: Opens the secrets GUI
     usage: /<command>
@@ -371,8 +366,6 @@ permissions:
     description: Gives access to /secrets
   skyprisoncore.command.secrets:
     description: Gives access to /secrets
-  skyprisoncore.command.dropchest:
-    description: Gives access to /dropchest
   #
   # Bounty Permissions
   #

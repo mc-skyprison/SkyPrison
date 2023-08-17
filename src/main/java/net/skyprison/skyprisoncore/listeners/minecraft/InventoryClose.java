@@ -1,9 +1,6 @@
 package net.skyprison.skyprisoncore.listeners.minecraft;
 
-import net.skyprison.skyprisoncore.inventories.BlacksmithTrimmer;
-import net.skyprison.skyprisoncore.inventories.CustomInventory;
-import net.skyprison.skyprisoncore.inventories.EndBlacksmithUpgrade;
-import net.skyprison.skyprisoncore.inventories.GrassBlacksmithUpgrade;
+import net.skyprison.skyprisoncore.inventories.*;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.HumanEntity;
@@ -42,6 +39,11 @@ public class InventoryClose implements Listener {
                 inv.cancelTimer();
                 returnItems(event.getPlayer(), inv.getInventory().getItem(10), inv.getInventory().getItem(11), inv.getInventory().getItem(12),
                         inv.getInventory().getItem(13), inv.getInventory().getItem(14));
+            } else if (customInv instanceof MailBoxSend inv) {
+                if(inv.getSendingType()) {
+                    returnItems(event.getPlayer(), inv.getInventory().getItem(10));
+                    inv.getInventory().setItem(10, null);
+                }
             }
         }
     }

@@ -38,8 +38,8 @@ public class CMIUserBalanceChange implements Listener {
                     PrintWriter pData = new PrintWriter(fData);
 
                     Date date = new Date();
-                    SimpleDateFormat DateFor = new SimpleDateFormat("yyyy/MM/dd hh:mm:ss");
-                    String stringDate = DateFor.format(date);
+                    SimpleDateFormat dateFor = new SimpleDateFormat("yyyy/MM/dd hh:mm:ss");
+                    String stringDate = dateFor.format(date);
                     double amount = event.getTo() - event.getFrom();
                     if (event.getActionType().equalsIgnoreCase("withdraw")) {
                         amount = event.getFrom() - event.getTo();

@@ -8,7 +8,7 @@ plugins {
 
 group = "net.skyprison"
 version = "7.0.0"
-description = "SkyPrisonCore"
+description = "Core plugin for SkyPrison"
 
 
 repositories {
@@ -62,6 +62,22 @@ dependencies {
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
+}
+
+tasks {
+    processResources {
+        filteringCharset = Charsets.UTF_8.name()
+        val props = mapOf(
+                "name" to project.name,
+                "version" to project.version,
+                "description" to project.description,
+                "apiVersion" to "1.20"
+        )
+        inputs.properties(props)
+        filesMatching("plugin.yml") {
+            expand(props)
+        }
+    }
 }
 
 tasks.withType<JavaCompile> {

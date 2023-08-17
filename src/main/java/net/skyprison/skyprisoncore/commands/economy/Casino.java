@@ -55,7 +55,7 @@ public class Casino implements CommandExecutor {
                 long cooldown = casinoCools.get(args[1]);
                 if (cooldown < System.currentTimeMillis()) {
                     if (user.getBalance() >= Integer.parseInt(args[2])) {
-                        plugin.asConsole("money take " + player.getName() + " " + args[2]);
+                        plugin.asConsole("cmi money take " + player.getName() + " " + args[2]);
                         plugin.asConsole("crates key give " + player.getName() + " " + args[1] + " 1");
                         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE casino_cooldowns SET casino_cooldown = ? WHERE user_id = ? AND casino_name = ?")) {
                             ps.setLong(1, nCooldown);
@@ -88,7 +88,7 @@ public class Casino implements CommandExecutor {
                 }
             } else {
                 if (user.getBalance() >= Integer.parseInt(args[2])) {
-                    plugin.asConsole("money take " + player.getName() + " " + args[2]);
+                    plugin.asConsole("cmi money take " + player.getName() + " " + args[2]);
                     plugin.asConsole("crates key give " + player.getName() + " " + args[1] + " 1");
 
                     try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO casino_cooldowns (user_id, casino_name, casino_cooldown) VALUES (?, ?, ?)")) {
@@ -103,7 +103,7 @@ public class Casino implements CommandExecutor {
             }
         } else {
             if (user.getBalance() >= Integer.parseInt(args[2])) {
-                plugin.asConsole("money take " + player.getName() + " " + args[2]);
+                plugin.asConsole("cmi money take " + player.getName() + " " + args[2]);
                 plugin.asConsole("crates key give " + player.getName() + " " + args[1] + " 1");
 
                 try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO casino_cooldowns (user_id, casino_name, casino_cooldown) VALUES (?, ?, ?)")) {
