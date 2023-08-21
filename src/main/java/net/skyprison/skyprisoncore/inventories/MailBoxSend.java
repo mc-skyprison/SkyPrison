@@ -193,27 +193,6 @@ public class MailBoxSend implements CustomInventory {
         sendTo.remove(pUUID);
         updateSendTo();
     }
-    public boolean mailBoxHasSpace(int mailBox) {
-        int unopenedMails = 0;
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) FROM mails WHERE mailbox_id = ?")) {
-            ps.setInt(1, mailBox);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                unopenedMails = rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return unopenedMails < 45;
-    }
-    public int getMailBoxWithSpace(List<Integer> mailBoxes) {
-        for(int mailBox : mailBoxes) {
-            if(mailBoxHasSpace(mailBox)) {
-                return mailBox;
-            }
-        }
-        return -1;
-    }
     public List<Integer> removeNotPlacedBoxes(List<Integer> mailBoxes) {
         List<Integer> mailBoxesToRemove = new ArrayList<>();
         for(int mailBox : mailBoxes) {
@@ -233,46 +212,47 @@ public class MailBoxSend implements CustomInventory {
         mailBoxes.removeAll(mailBoxesToRemove);
         return mailBoxes;
     }
-    public int getMailBox() {
+    public int getMailBox(UUID pUUID) {
         List<Integer> mailBoxes = new ArrayList<>();
-        int preferred = -1;
-        int mailBox;
+        int mailBox = -1;
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT mailbox_id, preferred FROM mail_boxes_users WHERE user_id = ?")) {
-            ps.setString(1, player.getUniqueId().toString());
+            ps.setString(1, pUUID.toString());
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 int mailBoxId = rs.getInt(1);
+                mailBoxes.add(mailBoxId);
                 int pref = rs.getInt(2);
                 if(pref == 1) {
-                    preferred = mailBoxId;
-                } else {
-                    mailBoxes.add(mailBoxId);
+                    mailBox = mailBoxId;
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        mailBoxes = removeNotPlacedBoxes(mailBoxes);
 
-        if(preferred != -1 && mailBoxHasSpace(preferred)) {
-            mailBox = preferred;
-        } else {
-            mailBox = getMailBoxWithSpace(mailBoxes);
+        if(removeNotPlacedBoxes(new ArrayList<>(List.of(mailBox))).isEmpty()) {
+            if(!mailBoxes.isEmpty()) {
+                mailBoxes = removeNotPlacedBoxes(mailBoxes);
+                if(!mailBoxes.isEmpty()) {
+                    mailBox = mailBoxes.get(0);
+                } else mailBox = -1;
+            } else mailBox = -1;
         }
+
         return mailBox;
     }
 
     public void sendMail(ItemStack itemToSend) {
         plugin.mailSend.remove(player.getUniqueId());
         sendTo.forEach((uuid, name) -> {
-            int mailBox = getMailBox();
+            int mailBox = getMailBox(uuid);
             try (Connection conn = db.getConnection(); PreparedStatement ps =
                     conn.prepareStatement("INSERT INTO mails (sender_id, receiver_id, item, cost, mailbox_id, sent_at, collected) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
                 ps.setString(1, player.getUniqueId().toString());
                 ps.setString(2, uuid.toString());
                 ps.setBytes(3, itemToSend.serializeAsBytes());
                 ps.setInt(4, getCost());
-                ps.setInt(5, mailBox != -1 ? mailBox : null);
+                ps.setInt(5, mailBox);
                 ps.setLong(6, System.currentTimeMillis());
                 ps.setInt(7, 0);
                 ps.executeUpdate();
@@ -280,10 +260,35 @@ public class MailBoxSend implements CustomInventory {
                 e.printStackTrace();
             }
         });
+        cancelTimer();
         player.sendMessage(Component.text("Mail sent to ", NamedTextColor.YELLOW).append(Component.text(String.join(", ", sendTo.values()), NamedTextColor.GOLD)));
     }
     public int getCost() {
-        return 0;
+        int cost = 0;
+        if(getSendingType()) {
+            ItemStack item = getSendItem();
+            if(item != null) {
+                cost = 50;
+                int amount = item.getAmount();
+                cost = cost * amount;
+                Material type = item.getType();
+                if(MaterialTags.DIAMOND_TOOLS.isTagged(type)) {
+                    cost = cost * 10;
+                } else if(MaterialTags.IRON_TOOLS.isTagged(type)) {
+                    cost = cost * 5;
+                } else if(getExpensiveMaterials().contains(type)) {
+                    cost = cost * 4;
+                }
+            }
+        }
+        return cost;
+    }
+
+    public List<Material> getExpensiveMaterials() {
+        List<Material> mats = new ArrayList<>(List.of(Material.NETHER_STAR, Material.EXPERIENCE_BOTTLE, Material.ENCHANTING_TABLE, Material.ENCHANTED_GOLDEN_APPLE, Material.GOLDEN_APPLE,
+                Material.ENCHANTED_BOOK, Material.TOTEM_OF_UNDYING, Material.BEACON, Material.HOPPER, Material.HOPPER_MINECART, Material.BELL));
+        mats.addAll(MaterialTags.MUSIC_DISCS.getValues());
+        return mats;
     }
 
     public boolean alreadySending(UUID pUUID) {
@@ -296,9 +301,13 @@ public class MailBoxSend implements CustomInventory {
     public void cancelMail() {
         plugin.mailSend.remove(player.getUniqueId());
         if(getSendingType() && getSendItem() != null) {
-            HashMap<Integer, ItemStack> didntFit = player.getInventory().addItem(getSendItem());
-            for (ItemStack dropItem : didntFit.values()) {
-                player.getWorld().dropItemNaturally(player.getLocation(), dropItem).setOwner(player.getUniqueId());
+            if(player.isOnline()) {
+                HashMap<Integer, ItemStack> didntFit = player.getInventory().addItem(getSendItem());
+                for (ItemStack dropItem : didntFit.values()) {
+                    player.getWorld().dropItemNaturally(player.getLocation(), dropItem).setOwner(player.getUniqueId());
+                }
+            } else {
+                SkyPrisonCore.scheduleForOnline(player.getUniqueId().toString(), "mail-item", Base64.getEncoder().encodeToString(getSendItem().serializeAsBytes()));
             }
         }
     }
@@ -307,7 +316,9 @@ public class MailBoxSend implements CustomInventory {
         return MaterialTags.ARMOR.isTagged(type) || MaterialTags.ARROWS.isTagged(type) || MaterialTags.SWORDS.isTagged(type) || MaterialTags.INFESTED_BLOCKS.isTagged(type)
                 || MaterialTags.SKULLS.isTagged(type) || MaterialTags.SPAWN_EGGS.isTagged(type) || MaterialTags.BUCKETS.isTagged(type) || MaterialTags.FISH_BUCKETS.isTagged(type)
                 || MaterialTags.BOWS.isTagged(type) || type.equals(Material.TNT) || type.equals(Material.TNT_MINECART) || type.equals(Material.FIRE_CHARGE)
-                || type.equals(Material.FLINT_AND_STEEL) || MaterialTags.RAW_FISH.isTagged(type) || MaterialTags.COOKED_FISH.isTagged(type);
+                || type.equals(Material.FLINT_AND_STEEL) || MaterialTags.RAW_FISH.isTagged(type) || MaterialTags.COOKED_FISH.isTagged(type) || type.equals(Material.SHULKER_BOX)
+                || type.equals(Material.BLAZE_ROD) || type.equals(Material.BLAZE_POWDER) || type.equals(Material.END_CRYSTAL) || type.equals(Material.ELYTRA)
+                || type.equals(Material.SPAWNER);
     }
 
     public void toggleSendingItem() {
@@ -331,9 +342,6 @@ public class MailBoxSend implements CustomInventory {
     public int getSendToSize() {
         return this.sendTo.size();
     }
-    public ItemStack getBook() {
-        return this.book;
-    }
     public ItemStack getOffHand() {
         return this.offHand;
     }
@@ -352,10 +360,15 @@ public class MailBoxSend implements CustomInventory {
             public void run() {
                 if(player != null) {
                     PlayerInventory pInv = player.getInventory();
-                    if (pInv.getItemInOffHand().getPersistentDataContainer().has(key)) {
+                    if (pInv.getItemInOffHand().hasItemMeta() && pInv.getItemInOffHand().getPersistentDataContainer().has(key)) {
                         long time = book.getPersistentDataContainer().get(key, PersistentDataType.LONG);
                         if (System.currentTimeMillis() >= time) {
-                            pInv.setItemInOffHand(getOffHand());
+                            if(player.isOnline()) {
+                                pInv.setItemInOffHand(getOffHand());
+                                pInv.addItem(new ItemStack(Material.WRITABLE_BOOK, getSendToSize()));
+                            } else {
+                                SkyPrisonCore.scheduleForOnline(player.getUniqueId().toString(), "mail-offhand", Base64.getEncoder().encodeToString(getOffHand().serializeAsBytes()));
+                            }
                             cancelTimer();
                         }
                     } else cancelTimer();

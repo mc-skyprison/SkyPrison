@@ -1177,6 +1177,34 @@ public class SkyPrisonCore extends JavaPlugin {
                         throw new RuntimeException(e);
                     }
                 }));
+        Command.Builder<CommandSender> mail = this.manager.commandBuilder("mail")
+                .permission("skyprisoncore.command.mail");
+        this.manager.command(mail.literal("history")
+                .permission("skyprisoncore.command.mail.history")
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    if(sender instanceof Player player) {
+                        Bukkit.getScheduler().runTask(this, () -> player.openInventory(new MailHistory(this, db, player.getUniqueId()).getInventory()));
+                    }
+                }));
+
+        this.manager.command(mail.literal("history")
+                .permission("skyprisoncore.command.mail.history.others")
+                .argument(StringArgument.optional("player"))
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    if(sender instanceof Player player) {
+                        String playerName = c.getOrDefault("player", player.getName());
+                        UUID pUUID = PlayerManager.getPlayerId(playerName);
+                        if (pUUID != null) {
+                            Bukkit.getScheduler().runTask(this, () -> player.openInventory(new MailHistory(this, db, pUUID).getInventory()));
+                        } else {
+                            sender.sendMessage(Component.text("Specified player doesn't exist!"));
+                        }
+                    } else {
+                        sender.sendMessage(Component.text("Can only be used by a player!"));
+                    }
+                }));
 
         Objects.requireNonNull(getCommand("tokens")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
@@ -1280,6 +1308,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PrepareItemEnchant(this), this);
         pm.registerEvents(new PlayerItemConsume(this), this);
         pm.registerEvents(new Votifier(this, db), this);
+        pm.registerEvents(new PlayerSwapHandItems(this), this);
 
         pm.registerEvents(new AsyncChat(this, discApi, getDatabase(), new Tags(this, getDatabase()), new ItemLore(this)), this);
         pm.registerEvents(new PlayerQuit(this, getDatabase(), discApi, dailyMissions), this);
@@ -1501,6 +1530,7 @@ public class SkyPrisonCore extends JavaPlugin {
     }
 
 
+
     public static void scheduleForOnline(String pUUID, String type, String content) {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO schedule_online (user_id, type, content) VALUES (?, ?, ?)")) {
             ps.setString(1, pUUID);
@@ -1653,6 +1683,21 @@ public class SkyPrisonCore extends JavaPlugin {
         }
         return -1;
     }
+
+    public String getMailBoxName(int id) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT name FROM mail_boxes WHERE id = ?")) {
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
     public int getVoteParty() {
         int votes = 0;
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) % 50 FROM votes")) {

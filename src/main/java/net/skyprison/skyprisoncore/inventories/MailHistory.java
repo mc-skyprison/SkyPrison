@@ -5,6 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -19,7 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class MailHistory implements CustomInventory {
-    private final List<ItemStack> votes = new ArrayList<>();
+    private final List<ItemStack> mails = new ArrayList<>();
     private final Inventory inventory;
     private int page = 1;
     private final int totalPages;
@@ -30,10 +31,10 @@ public class MailHistory implements CustomInventory {
 
     public void updateSort() {
         this.sort = !this.sort;
-        Collections.reverse(votes);
+        Collections.reverse(mails);
         ItemStack sortItem = new ItemStack(Material.CLOCK);
         sortItem.editMeta(meta -> {
-            meta.displayName(Component.text("Sort Transactions", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
+            meta.displayName(Component.text("Sort Mails", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
             ArrayList<Component> lore = new ArrayList<>();
             lore.add(Component.text("Current Sort: ", NamedTextColor.GOLD)
                     .append(Component.text(sort ? "Oldest -> Newest" : "Newest -> Oldest", NamedTextColor.YELLOW, TextDecoration.BOLD))
@@ -52,21 +53,21 @@ public class MailHistory implements CustomInventory {
         for(int i = 0; i < 45; i++) inventory.setItem(i, null);
         inventory.setItem(45, this.page == 1 ? blackPane : prevPage);
         inventory.setItem(53, totalPages < 2 || this.page == totalPages ? blackPane : nextPage);
-        List<ItemStack> votesToShow = new ArrayList<>(votes);
+        List<ItemStack> mailsToShow = new ArrayList<>(mails);
         int toRemove = 45 * (this.page - 1);
         if(toRemove != 0) {
-            votesToShow = votesToShow.subList(toRemove, votesToShow.size());
+            mailsToShow = mailsToShow.subList(toRemove, mailsToShow.size());
         }
-        Iterator<ItemStack> votesIterator = votesToShow.iterator();
+        Iterator<ItemStack> mailsIterator = mailsToShow.iterator();
         for(int i = 0; i < 45; i++) {
-            if(votesIterator.hasNext()) {
-                inventory.setItem(i, votesIterator.next());
+            if(mailsIterator.hasNext()) {
+                inventory.setItem(i, mailsIterator.next());
             }
         }
     }
 
     public MailHistory(SkyPrisonCore plugin, DatabaseHook db, UUID pUUID) {
-        this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Vote History", NamedTextColor.RED));
+        this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Mail History", NamedTextColor.RED));
 
         blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         ItemMeta blackMeta = blackPane.getItemMeta();
@@ -81,30 +82,41 @@ public class MailHistory implements CustomInventory {
         prevMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
         prevPage.setItemMeta(prevMeta);
 
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT time, service, tokens FROM votes WHERE user_id = ? ORDER BY time ASC")) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                "SELECT sender_id, item, cost, mailbox_id, sent_at FROM mails WHERE receiver_id = ? AND collected = 1 ORDER BY sent_at ASC")) {
             ps.setString(1, pUUID.toString());
             ResultSet rs = ps.executeQuery();
             SimpleDateFormat dateFor = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
             while (rs.next()) {
-                Date date = new Date(rs.getLong(1));
-                String service = rs.getString(2);
-                int tokens = rs.getInt(3);
-                String name = dateFor.format(date);
-                ItemStack item = new ItemStack(Material.CHERRY_SIGN);
+                UUID sender = UUID.fromString(rs.getString(1));
+                ItemStack item = ItemStack.deserializeBytes(rs.getBytes(2));
+                int cost = rs.getInt(3);
+                int mailBox = rs.getInt(4);
+                String date = dateFor.format(new Date(rs.getLong(5)));
                 item.editMeta(meta -> {
-                    meta.displayName(Component.text(name, NamedTextColor.GOLD, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                    meta.displayName(Component.text(date, NamedTextColor.GOLD, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
                     ArrayList<Component> lore = new ArrayList<>();
-                    lore.add(Component.text("Site: ", NamedTextColor.GRAY).append(Component.text(service, NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false));
-                    lore.add(Component.text("Tokens: ", NamedTextColor.GRAY).append(Component.text(tokens, NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false));
+                    lore.add(Component.text("Mailbox: ", NamedTextColor.GRAY).append(Component.text(plugin.getMailBoxName(mailBox), NamedTextColor.WHITE))
+                            .decoration(TextDecoration.ITALIC, false));
+                    lore.add(Component.text("Sent by: ", NamedTextColor.GRAY).append(Component.text(Objects.requireNonNullElse(PlayerManager.getPlayerName(sender),
+                                    "COULDN'T GET NAME"), NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false));
+                    if(cost != 0) {
+                        lore.add(Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(cost), NamedTextColor.WHITE))
+                                .decoration(TextDecoration.ITALIC, false));
+                    }
+                    if(item.getType().equals(Material.WRITTEN_BOOK)) {
+                        lore.add(Component.empty());
+                        lore.add(Component.text("CLICK TO READ", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                    }
                     meta.lore(lore);
                 });
-                votes.add(item);
+                mails.add(item);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        totalPages = (int) Math.ceil((double) votes.size() / 45);
+        totalPages = (int) Math.ceil((double) mails.size() / 45);
 
         for (int i = 45; i < 54; i++) {
             inventory.setItem(i, blackPane);

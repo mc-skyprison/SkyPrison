@@ -492,12 +492,13 @@ public class AsyncChat implements Listener {
                                     if(!inv.isMember(invitedId)) {
                                         Player invited = plugin.getServer().getPlayer(invitedId);
                                         if (invited != null) {
+                                            plugin.inviteMailBox.add(invitedId);
                                             Component inviteMsg = Component.text("You have been invited to join the mailbox ", NamedTextColor.GRAY)
                                                     .append(Component.text(inv.getName(), NamedTextColor.GRAY, TextDecoration.BOLD)).append(Component.text("!", NamedTextColor.GRAY))
                                                     .append(Component.text("\nACCEPT INVITE", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
-                                                        if (plugin.inviteMailBox.contains(player.getUniqueId())) {
+                                                        if (plugin.inviteMailBox.contains(invitedId)) {
                                                             inv.addMember(invitedId);
-                                                            plugin.inviteMailBox.remove(player.getUniqueId());
+                                                            plugin.inviteMailBox.remove(invitedId);
                                                             audience.sendMessage(Component.text("Successfully accepted mailbox invite!", NamedTextColor.GRAY));
                                                             Component playerMsg = Component.text(invited.getName() + " accepted to join the mailbox ", NamedTextColor.GRAY)
                                                                     .append(Component.text(inv.getName(), NamedTextColor.GRAY, TextDecoration.BOLD));
@@ -511,14 +512,16 @@ public class AsyncChat implements Listener {
                                                     })))
                                                     .append(Component.text("     "))
                                                     .append(Component.text("DECLINE INVITE", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
-                                                        plugin.inviteMailBox.remove(player.getUniqueId());
-                                                        audience.sendMessage(Component.text("Successfully declined mailbox invite!", NamedTextColor.GRAY));
-                                                        Component inviteDecline = Component.text(invited.getName() + " declined your invite to join the mailbox ", NamedTextColor.GRAY)
-                                                                .append(Component.text(inv.getName(), NamedTextColor.GRAY, TextDecoration.BOLD));
-                                                        if (player.isOnline()) {
-                                                            player.sendMessage(inviteDecline);
-                                                        } else {
-                                                            plugin.createNotification("mailbox-invite-declined", null, player.getUniqueId().toString(), inviteDecline, null, true);
+                                                        if (plugin.inviteMailBox.contains(invitedId)) {
+                                                            plugin.inviteMailBox.remove(invitedId);
+                                                            audience.sendMessage(Component.text("Successfully declined mailbox invite!", NamedTextColor.GRAY));
+                                                            Component inviteDecline = Component.text(invited.getName() + " declined your invite to join the mailbox ", NamedTextColor.GRAY)
+                                                                    .append(Component.text(inv.getName(), NamedTextColor.GRAY, TextDecoration.BOLD));
+                                                            if (player.isOnline()) {
+                                                                player.sendMessage(inviteDecline);
+                                                            } else {
+                                                                plugin.createNotification("mailbox-invite-declined", null, player.getUniqueId().toString(), inviteDecline, null, true);
+                                                            }
                                                         }
                                                     })));
                                             invited.sendMessage(inviteMsg);
@@ -545,32 +548,37 @@ public class AsyncChat implements Listener {
                             if(!msg.equalsIgnoreCase("cancel")) {
                                 UUID pUUID = PlayerManager.getPlayerId(msg);
                                 if(pUUID != null) {
-                                    String name = PlayerManager.getPlayerName(pUUID);
-                                    if(inv.alreadySending(pUUID)) {
-                                        inv.removeSendTo(pUUID);
-                                        player.sendMessage(Component.text("Removed " + name + " from send list!", NamedTextColor.GREEN));
-                                        player.openInventory(inv.getInventory());
-                                    } else {
-                                        if(inv.getSendingType()) {
-                                            LuckPerms luckAPI = LuckPermsProvider.get();
-                                            UserManager userManager = luckAPI.getUserManager();
-                                            CompletableFuture<User> userFuture = userManager.loadUser(pUUID);
-                                            userFuture.thenAcceptAsync(user -> {
-                                                Collection<Group> inheritedGroups = user.getInheritedGroups(user.getQueryOptions());
-                                                if (inheritedGroups.stream().anyMatch(group -> group.getName().equalsIgnoreCase("free"))) {
-                                                    inv.addSendTo(pUUID, name);
-                                                    player.sendMessage(Component.text("Added " + name + " to send list!", NamedTextColor.GREEN));
-                                                    plugin.getServer().getScheduler().runTask(plugin, () -> player.openInventory(inv.getInventory()));
-                                                } else {
-                                                    player.sendMessage(Component.text("Player doesn't have the free rank! Cancelling..", NamedTextColor.RED));
-                                                    plugin.getServer().getScheduler().runTask(plugin, () -> player.openInventory(inv.getInventory()));
-                                                }
-                                            });
+                                    if(!player.getUniqueId().equals(pUUID)) {
+                                        String name = PlayerManager.getPlayerName(pUUID);
+                                        if (inv.alreadySending(pUUID)) {
+                                            inv.removeSendTo(pUUID);
+                                            player.sendMessage(Component.text("Removed " + name + " from send list!", NamedTextColor.GREEN));
+                                            player.openInventory(inv.getInventory());
                                         } else {
-                                            inv.addSendTo(pUUID, name);
-                                            player.sendMessage(Component.text("Added " + name + " to send list!", NamedTextColor.GREEN));
-                                            plugin.getServer().getScheduler().runTask(plugin, () -> player.openInventory(inv.getInventory()));
+                                            if (inv.getSendingType()) {
+                                                LuckPerms luckAPI = LuckPermsProvider.get();
+                                                UserManager userManager = luckAPI.getUserManager();
+                                                CompletableFuture<User> userFuture = userManager.loadUser(pUUID);
+                                                userFuture.thenAcceptAsync(user -> {
+                                                    Collection<Group> inheritedGroups = user.getInheritedGroups(user.getQueryOptions());
+                                                    if (inheritedGroups.stream().anyMatch(group -> group.getName().equalsIgnoreCase("free"))) {
+                                                        inv.addSendTo(pUUID, name);
+                                                        player.sendMessage(Component.text("Added " + name + " to send list!", NamedTextColor.GREEN));
+                                                        plugin.getServer().getScheduler().runTask(plugin, () -> player.openInventory(inv.getInventory()));
+                                                    } else {
+                                                        player.sendMessage(Component.text("Player doesn't have the free rank! Cancelling..", NamedTextColor.RED));
+                                                        plugin.getServer().getScheduler().runTask(plugin, () -> player.openInventory(inv.getInventory()));
+                                                    }
+                                                });
+                                            } else {
+                                                inv.addSendTo(pUUID, name);
+                                                player.sendMessage(Component.text("Added " + name + " to send list!", NamedTextColor.GREEN));
+                                                plugin.getServer().getScheduler().runTask(plugin, () -> player.openInventory(inv.getInventory()));
+                                            }
                                         }
+                                    } else {
+                                        player.sendMessage(Component.text("You can't send mail to yourself! Cancelling..", NamedTextColor.RED));
+                                        player.openInventory(inv.getInventory());
                                     }
                                 } else {
                                     player.sendMessage(Component.text("Player doesn't exist! Try again..", NamedTextColor.RED));

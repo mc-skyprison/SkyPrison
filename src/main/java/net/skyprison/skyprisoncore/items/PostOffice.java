@@ -28,7 +28,7 @@ public class PostOffice {
             lore.add(Component.text("Can be placed in Free", NamedTextColor.GRAY));
             meta.lore(lore);
             NamespacedKey key = new NamespacedKey(plugin, "mailbox");
-            meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, -1);
+            meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, -2);
         });
         return mailBox;
     }

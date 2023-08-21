@@ -18,6 +18,7 @@ import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.DoubleChest;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.entity.Display;
@@ -237,19 +238,27 @@ public class BlockPlace implements Listener {
                             Chest chest = (Chest) block.getBlockData();
                             chest.setType(Chest.Type.SINGLE);
                             block.setBlockData(chest);
-                            if (mailBox == -1) {
-                                int mailId = -1;
-                                try (Connection conn = db.getConnection(); PreparedStatement ps =
-                                        conn.prepareStatement("INSERT INTO mail_boxes (name, owner_id, x, y, z, world, is_placed) VALUES (?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
-                                    ps.setString(1, player.getName() + "-" + new Random().nextInt(99999) + 10000);
+                            BlockFace chestFace = chest.getFacing();
+                            Location disLoc = block.getLocation().toCenterLocation().add(chestFace.getModX()*0.5, 0.5, chestFace.getModZ()*0.5);
+                            if (mailBox == -2) {
+                                int mailId = -2;
+                                String name = player.getName() + "-" + new Random().nextInt(99999) + 10000;
+                                TextDisplay boxDisplay = (TextDisplay) world.spawnEntity(disLoc, EntityType.TEXT_DISPLAY);
+                                boxDisplay.text(Component.text("Mailbox " + name, NamedTextColor.YELLOW));
+                                boxDisplay.setBillboard(Display.Billboard.CENTER);
+                                try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO mail_boxes " +
+                                        "(name, owner_id, x, y, z, world, is_placed, display_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+                                    ps.setString(1, name);
                                     ps.setString(2, player.getUniqueId().toString());
                                     ps.setInt(3, block.getX());
                                     ps.setInt(4, block.getY());
                                     ps.setInt(5, block.getZ());
                                     ps.setString(6, worldName);
                                     ps.setInt(7, 1);
+                                    ps.setString(8, boxDisplay.getUniqueId().toString());
                                     ps.executeUpdate();
-                                    player.sendMessage(Component.text("Mailbox successfully created! Left click the mailbox to bring up the settings menu.", NamedTextColor.GREEN));
+                                    player.sendMessage(Component.text(
+                                            "Mailbox has been created!", NamedTextColor.GREEN));
 
                                     ResultSet rs = ps.getGeneratedKeys();
                                     if (rs.next()) {
@@ -268,16 +277,20 @@ public class BlockPlace implements Listener {
                                     e.printStackTrace();
                                 }
                             } else {
+                                TextDisplay boxDisplay = (TextDisplay) world.spawnEntity(disLoc, EntityType.TEXT_DISPLAY);
+                                boxDisplay.text(Component.text("Mailbox " + plugin.getMailBoxName(mailBox), NamedTextColor.YELLOW));
+                                boxDisplay.setBillboard(Display.Billboard.CENTER);
                                 try (Connection conn = db.getConnection(); PreparedStatement ps =
-                                        conn.prepareStatement("UPDATE mail_boxes SET x = ?, y = ?, z = ?, world = ?, is_placed =? WHERE id = ?")) {
+                                        conn.prepareStatement("UPDATE mail_boxes SET x = ?, y = ?, z = ?, world = ?, is_placed = ?, display_text = ? WHERE id = ?")) {
                                     ps.setInt(1, block.getX());
                                     ps.setInt(2, block.getY());
                                     ps.setInt(3, block.getZ());
                                     ps.setString(4, worldName);
                                     ps.setInt(5, 1);
-                                    ps.setInt(6, mailBox);
+                                    ps.setString(6, boxDisplay.getUniqueId().toString());
+                                    ps.setInt(7, mailBox);
                                     ps.executeUpdate();
-                                    player.sendMessage(Component.text("Successfully updated mailbox location!", NamedTextColor.GREEN));
+                                    player.sendMessage(Component.text("Mailbox location has been changed!", NamedTextColor.GREEN));
                                 } catch (SQLException e) {
                                     e.printStackTrace();
                                 }

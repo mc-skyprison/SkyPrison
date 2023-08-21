@@ -1,6 +1,7 @@
 package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.inventories.MailBoxSend;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
@@ -34,6 +35,11 @@ public class PlayerQuit implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             Player player = event.getPlayer();
+
+            if(plugin.mailSend.containsKey(player.getUniqueId())) {
+                MailBoxSend inv = plugin.mailSend.get(player.getUniqueId());
+                inv.cancelMail();
+            }
 
             if(discApi != null) {
                 EmbedBuilder embedJoin = new EmbedBuilder()

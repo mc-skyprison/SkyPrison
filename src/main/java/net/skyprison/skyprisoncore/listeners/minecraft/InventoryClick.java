@@ -42,6 +42,7 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -130,12 +131,21 @@ public class InventoryClick implements Listener {
         if(event.getWhoClicked() instanceof Player player && event.getRawSlot() >= 0) {
             if (event.getClickedInventory() instanceof PlayerInventory) {
                 InvStickFix(player);
-                ItemStack currItem = event.getCurrentItem();
-                if(currItem != null && currItem.getType().equals(Material.WRITABLE_BOOK)) {
-                    if(plugin.writingMail.containsKey(player.getUniqueId())) {
-                        ItemStack book = plugin.writingMail.get(player.getUniqueId()).getBook();
-                        if(currItem.equals(book)) {
-                            event.setCancelled(true);
+
+                if(plugin.writingMail.containsKey(player.getUniqueId())) {
+                    ItemStack currItem = event.getCurrentItem();
+                    ItemStack offHand = player.getInventory().getItemInOffHand();
+                    boolean isBook = (currItem != null && currItem.getType().equals(Material.WRITABLE_BOOK)) || (offHand.getType().equals(Material.WRITABLE_BOOK));
+                    if(isBook) {
+                        NamespacedKey key = new NamespacedKey(plugin, "mail-book");
+                        if(event.getClick().equals(ClickType.SWAP_OFFHAND)) {
+                            if(offHand.getPersistentDataContainer().has(key)) {
+                                event.setCancelled(true);
+                            }
+                        } else if(currItem != null) {
+                            if(currItem.hasItemMeta() && currItem.getPersistentDataContainer().has(key)) {
+                                event.setCancelled(true);
+                            }
                         }
                     }
                 }
@@ -158,22 +168,26 @@ public class InventoryClick implements Listener {
                         switch (event.getSlot()) {
                             case 47 -> {
                                 if (isPaper) {
-                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage() - 1).getInventory());
+                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(),
+                                            inv.getCanEdit(), inv.getCategory(), inv.getPage() - 1).getInventory());
                                 }
                             }
                             case 48 -> {
                                 if (clickedMat.equals(Material.WRITABLE_BOOK)) {
-                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getNextCategory(inv.getCategory()), 1).getInventory());
+                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(),
+                                            inv.getCanEdit(), inv.getNextCategory(inv.getCategory()), 1).getInventory());
                                 }
                             }
                             case 50 -> {
                                 if (clickedMat.equals(Material.ZOMBIE_SPAWN_EGG)) {
-                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), true, "", 1).getInventory());
+                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(),
+                                            inv.getCanEdit(), true, "", 1).getInventory());
                                 }
                             }
                             case 51 -> {
                                 if (isPaper) {
-                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage() + 1).getInventory());
+                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(),
+                                            inv.getCanEdit(), inv.getCategory(), inv.getPage() + 1).getInventory());
                                 }
                             }
                             default -> {
@@ -195,30 +209,38 @@ public class InventoryClick implements Listener {
                                                         flags.forEach(wgFlag -> region.setFlag((StateFlag) wgFlag, null));
                                                     }
                                                     player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
-                                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()).getInventory());
+                                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(),
+                                                            inv.getCanEdit(), inv.getCategory(), inv.getPage()).getInventory());
                                                 } else if(flags.get(0) instanceof StringFlag stringFlag) {
-                                                    plugin.chatLock.put(player.getUniqueId(), Arrays.asList(flag, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
+                                                    plugin.chatLock.put(player.getUniqueId(), Arrays.asList(flag, inv.getClaimId(),
+                                                            inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
                                                     player.closeInventory();
                                                     if(!stringFlag.equals(Flags.TIME_LOCK)) {
                                                         player.sendMessage(prefix.append(Component.text("Enter the new "
-                                                                        + WordUtils.capitalize(stringFlag.getName().replace("-", " ")), TextColor.fromHexString("#20df80"))));
+                                                                        + WordUtils.capitalize(stringFlag.getName().replace("-", " ")),
+                                                                TextColor.fromHexString("#20df80"))));
                                                     } else {
                                                         player.sendMessage(prefix.append(Component.text("Enter the time you want in 24:00 hour time (Enter null to unset)",
                                                                 TextColor.fromHexString("#20df80"))));
                                                     }
                                                 } else if(flags.get(0) instanceof RegistryFlag<?>) {
-                                                    plugin.chatLock.put(player.getUniqueId(), Arrays.asList(flag, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
+                                                    plugin.chatLock.put(player.getUniqueId(), Arrays.asList(flag, inv.getClaimId(),
+                                                            inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
                                                     player.closeInventory();
-                                                    player.sendMessage(Component.text("Enter the weather you want (Available types are 'Clear', 'Rain', 'Thunder', Enter null to unset)",
+                                                    player.sendMessage(Component.text("Enter the weather you want (Available types are 'Clear', 'Rain', 'Thunder', " +
+                                                                    "Enter null to unset)",
                                                             TextColor.fromHexString("#20df80")));
                                                 }
                                             } else {
                                                 if(flags.get(0) instanceof StateFlag) {
-                                                    flags.forEach(wgFlag -> region.setFlag((StateFlag) wgFlag, flag.getNotSet().isEmpty() ? StateFlag.State.DENY : StateFlag.State.ALLOW));
+                                                    flags.forEach(wgFlag -> region.setFlag((StateFlag) wgFlag, flag.getNotSet().isEmpty() ?
+                                                            StateFlag.State.DENY : StateFlag.State.ALLOW));
                                                     player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
-                                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()).getInventory());
+                                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(),
+                                                            inv.getCanEdit(), inv.getCategory(), inv.getPage()).getInventory());
                                                 } else if(flags.get(0) instanceof StringFlag stringFlag) {
-                                                    plugin.chatLock.put(player.getUniqueId(), Arrays.asList(flag, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
+                                                    plugin.chatLock.put(player.getUniqueId(), Arrays.asList(flag, inv.getClaimId(),
+                                                            inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
                                                     player.closeInventory();
                                                     if(!stringFlag.equals(Flags.TIME_LOCK)) {
                                                         player.sendMessage(prefix.append(Component.text("Enter the new "
@@ -228,7 +250,8 @@ public class InventoryClick implements Listener {
                                                                 TextColor.fromHexString("#20df80"))));
                                                     }
                                                 } else if(flags.get(0) instanceof RegistryFlag<?>) {
-                                                    plugin.chatLock.put(player.getUniqueId(), Arrays.asList(flag, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
+                                                    plugin.chatLock.put(player.getUniqueId(), Arrays.asList(flag, inv.getClaimId(),
+                                                            inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
                                                     player.closeInventory();
                                                     player.sendMessage(Component.text("Enter the weather you want (Available types are 'Clear', 'Rain', 'Thunder'",
                                                             TextColor.fromHexString("#20df80")));
@@ -251,7 +274,8 @@ public class InventoryClick implements Listener {
                             }
                             case 47 -> {
                                 if (isPaper) {
-                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getIsAllowed(), inv.getCategory(), inv.getPage() - 1).getInventory());
+                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(),
+                                            inv.getIsAllowed(), inv.getCategory(), inv.getPage() - 1).getInventory());
                                 }
                             }
                             case 48 -> {
@@ -268,20 +292,24 @@ public class InventoryClick implements Listener {
                                             }
                                         }
                                     }
-                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getIsAllowed(), inv.getCategory(), inv.getPage()).getInventory());
+                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(),
+                                            inv.getIsAllowed(), inv.getCategory(), inv.getPage()).getInventory());
                                 }
                             }
                             case 49 -> {
                                 if(clickedMat.equals(Material.LIME_CONCRETE)) {
-                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), false, inv.getCategory(), inv.getPage()).getInventory());
+                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(),
+                                            false, inv.getCategory(), inv.getPage()).getInventory());
                                 } else if(clickedMat.equals(Material.RED_CONCRETE)) {
-                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), true, inv.getCategory(), inv.getPage()).getInventory());
+                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(),
+                                            true, inv.getCategory(), inv.getPage()).getInventory());
 
                                 }
                             }
                             case 51 -> {
                                 if (isPaper) {
-                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getIsAllowed(), inv.getCategory(), inv.getPage() + 1).getInventory());
+                                    player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(),
+                                            inv.getIsAllowed(), inv.getCategory(), inv.getPage() + 1).getInventory());
                                 }
                             }
                             default -> {
@@ -304,7 +332,8 @@ public class InventoryClick implements Listener {
                                                 }
                                                 region.setFlag(Flags.DENY_SPAWN, deniedMobs);
                                                 player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
-                                                player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getIsAllowed(), inv.getCategory(), inv.getPage()).getInventory());
+                                                player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(),
+                                                        inv.getCanEdit(), inv.getIsAllowed(), inv.getCategory(), inv.getPage()).getInventory());
                                             }
                                         }
                                     }
@@ -318,17 +347,20 @@ public class InventoryClick implements Listener {
                         switch (event.getSlot()) {
                             case 47 -> {
                                 if (isPaper) {
-                                    player.openInventory(new ClaimMembers(plugin, inv.getDatabase(), inv.getClaimName(), inv.getMembers(), inv.getCategory(), inv.getPage() - 1).getInventory());
+                                    player.openInventory(new ClaimMembers(plugin, inv.getDatabase(), inv.getClaimName(), inv.getMembers(),
+                                            inv.getCategory(), inv.getPage() - 1).getInventory());
                                 }
                             }
                             case 49 -> {
                                 if (clickedMat.equals(Material.WRITABLE_BOOK)) {
-                                    player.openInventory(new ClaimMembers(plugin, inv.getDatabase(), inv.getClaimName(), inv.getMembers(), inv.getNextCategory(inv.getCategory()), 1).getInventory());
+                                    player.openInventory(new ClaimMembers(plugin, inv.getDatabase(), inv.getClaimName(), inv.getMembers(),
+                                            inv.getNextCategory(inv.getCategory()), 1).getInventory());
                                 }
                             }
                             case 51 -> {
                                 if (isPaper) {
-                                    player.openInventory(new ClaimMembers(plugin, inv.getDatabase(), inv.getClaimName(), inv.getMembers(), inv.getCategory(), inv.getPage() + 1).getInventory());
+                                    player.openInventory(new ClaimMembers(plugin, inv.getDatabase(), inv.getClaimName(), inv.getMembers(),
+                                            inv.getCategory(), inv.getPage() + 1).getInventory());
                                 }
                             }
                         }
@@ -482,7 +514,8 @@ public class InventoryClick implements Listener {
                                         .clickEvent(ClickEvent.suggestCommand(inv.getTitle()))
                                         .appendNewline().append(MiniMessage.miniMessage().deserialize("<gray>Format: <gold><b>yyyy/MM/dd (Ex: 2023/01/24)")));
                             }
-                            case PLAYER_HEAD -> player.openInventory(new NewsMessages(plugin, db, player.hasPermission("skyprisoncore.command.news.edit"), 1).getInventory());
+                            case PLAYER_HEAD -> player.openInventory(new NewsMessages(plugin, db, player.hasPermission("skyprisoncore.command.news.edit"), 1)
+                                    .getInventory());
                             case RED_CONCRETE -> {
                                 player.closeInventory();
                                 plugin.newsMessageChanges.add(player.getUniqueId());
@@ -500,7 +533,8 @@ public class InventoryClick implements Listener {
                                                     e.printStackTrace();
                                                 }
                                                 audience.sendMessage(Component.text("News message has been deleted!", NamedTextColor.RED));
-                                                player.openInventory(new NewsMessages(plugin, db, player.hasPermission("skyprisoncore.command.news.edit"), 1).getInventory());
+                                                player.openInventory(new NewsMessages(plugin, db, player.hasPermission("skyprisoncore.command.news.edit"), 1)
+                                                        .getInventory());
                                             }
                                         })))
                                         .append(Component.text("     "))
@@ -522,7 +556,8 @@ public class InventoryClick implements Listener {
                                                 newsEdits.remove(inv.getNewsMessage());
                                                 plugin.newsEditing.put(player.getUniqueId(), newsEdits);
                                                 audience.sendMessage(Component.text("Changes have been discarded!", NamedTextColor.RED));
-                                                player.openInventory(new NewsMessages(plugin, db, player.hasPermission("skyprisoncore.command.news.edit"), 1).getInventory());
+                                                player.openInventory(new NewsMessages(plugin, db, player.hasPermission("skyprisoncore.command.news.edit"), 1)
+                                                        .getInventory());
                                             }
                                         })))
                                         .append(Component.text("     "))
@@ -545,7 +580,8 @@ public class InventoryClick implements Listener {
                                                     newsEdits.remove(inv.getNewsMessage());
                                                     plugin.newsEditing.put(player.getUniqueId(), newsEdits);
                                                     audience.sendMessage(Component.text("News message has been saved!", NamedTextColor.GREEN));
-                                                    player.openInventory(new NewsMessages(plugin, db, player.hasPermission("skyprisoncore.command.news.edit"), 1).getInventory());
+                                                    player.openInventory(new NewsMessages(plugin, db, player.hasPermission("skyprisoncore.command.news.edit"), 1)
+                                                            .getInventory());
                                                 } else {
                                                     audience.sendMessage(Component.text("Something went wrong when saving! Cancelling..", NamedTextColor.RED));
                                                     player.openInventory(inv.getInventory());
@@ -580,9 +616,11 @@ public class InventoryClick implements Listener {
                                 boolean useVouchers = ((int) item.get("price_voucher") != 0 && !item.get("price_voucher_type").toString().equalsIgnoreCase("none"));
 
                                 if (event.isShiftClick() && inv.getCanEdit() && !(useMoney && useTokens && useVouchers)) {
-                                    player.openInventory(new DatabaseInventoryEdit(plugin, db, player.getUniqueId(), (int) item.get("id"), event.getSlot(), inv.getCategory()).getInventory());
+                                    player.openInventory(new DatabaseInventoryEdit(plugin, db, player.getUniqueId(), (int) item.get("id"), event.getSlot(),
+                                            inv.getCategory()).getInventory());
                                 } else if (event.isShiftClick() && event.isLeftClick() && inv.getCanEdit() && (useMoney && useTokens && useVouchers)) {
-                                    player.openInventory(new DatabaseInventoryEdit(plugin, db, player.getUniqueId(), (int) item.get("id"), event.getSlot(), inv.getCategory()).getInventory());
+                                    player.openInventory(new DatabaseInventoryEdit(plugin, db, player.getUniqueId(), (int) item.get("id"), event.getSlot(),
+                                            inv.getCategory()).getInventory());
                                 } else {
                                     boolean runCommands = true;
 
@@ -742,7 +780,8 @@ public class InventoryClick implements Listener {
                             case 19 -> {
                                 plugin.chatLock.put(player.getUniqueId(), Arrays.asList("item-commands", inv));
                                 player.closeInventory();
-                                player.sendMessage(Component.text("Type the command to add in chat: (Type 'cancel' to cancel, Type command number to remove existing one)", NamedTextColor.YELLOW));
+                                player.sendMessage(Component.text("Type the command to add in chat: (Type 'cancel' to cancel, Type command number to remove existing one)",
+                                        NamedTextColor.YELLOW));
                             }
                             case 20 -> {
                                 plugin.chatLock.put(player.getUniqueId(), Arrays.asList("item-max-uses", inv));
@@ -788,7 +827,8 @@ public class InventoryClick implements Listener {
                                                     HashMap<Integer, DatabaseInventoryEdit> itemEdits = plugin.itemEditing.get(player.getUniqueId());
                                                     itemEdits.remove(inv.getItemId());
                                                     plugin.itemEditing.put(player.getUniqueId(), itemEdits);
-                                                    try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM gui_items WHERE id = ?")) {
+                                                    try (Connection conn = db.getConnection(); PreparedStatement ps =
+                                                            conn.prepareStatement("DELETE FROM gui_items WHERE id = ?")) {
                                                         ps.setInt(1, inv.getItemId());
                                                         ps.executeUpdate();
                                                     } catch (SQLException e) {
@@ -796,7 +836,8 @@ public class InventoryClick implements Listener {
                                                     }
                                                     audience.sendMessage(Component.text("Item has been deleted!", NamedTextColor.RED));
                                                     player.openInventory(new DatabaseInventory(plugin, db, player,
-                                                            player.hasPermission("skyprisoncore.inventories." + inv.getCategory() + ".editing"), inv.getCategory()).getInventory());
+                                                            player.hasPermission("skyprisoncore.inventories." + inv.getCategory() + ".editing"), inv.getCategory())
+                                                            .getInventory());
                                                 }
                                             })))
                                             .append(Component.text("     "))
@@ -844,7 +885,8 @@ public class InventoryClick implements Listener {
                                                     plugin.itemEditing.put(player.getUniqueId(), itemEdits);
                                                     audience.sendMessage(Component.text("Item has been saved!", NamedTextColor.GREEN));
                                                     player.openInventory(new DatabaseInventory(plugin, db, player,
-                                                            player.hasPermission("skyprisoncore.inventories." + inv.getCategory() + ".editing"), inv.getCategory()).getInventory());
+                                                            player.hasPermission("skyprisoncore.inventories." + inv.getCategory() + ".editing"),
+                                                            inv.getCategory()).getInventory());
                                                 } else {
                                                     audience.sendMessage(Component.text("Something went wrong when saving! Cancelling..", NamedTextColor.RED));
                                                     player.openInventory(inv.getInventory());
@@ -989,16 +1031,41 @@ public class InventoryClick implements Listener {
                             }
                         }
                     }
+                } else if(customInv instanceof MailHistory inv) {
+                    if(currItem != null) {
+                        int slot = event.getRawSlot();
+                        if(slot >= 0 && slot < 45) {
+                            if(currItem.getType().equals(Material.WRITTEN_BOOK)) {
+                                player.openBook(currItem);
+                            }
+                        } else {
+                            switch (slot) {
+                                case 49 -> inv.updateSort();
+                                case 45 -> {
+                                    if (isPaper) {
+                                        inv.updatePage(-1);
+                                    }
+                                }
+                                case 53 -> {
+                                    if (isPaper) {
+                                        inv.updatePage(1);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 } else if(customInv instanceof MailBoxSettings inv) {
                     if(currItem != null) {
                         int slot = event.getRawSlot();
                         switch (slot) {
                             case 10 -> {
-                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("mailbox-rename", inv));
-                                player.closeInventory();
-                                player.sendMessage(Component.text("Type new mailbox name in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
-                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current mailbox name to chat", NamedTextColor.GRAY)))
-                                        .clickEvent(ClickEvent.suggestCommand(inv.getName())));
+                                if(inv.isOwner()) {
+                                    plugin.chatLock.put(player.getUniqueId(), Arrays.asList("mailbox-rename", inv));
+                                    player.closeInventory();
+                                    player.sendMessage(Component.text("Type new mailbox name in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                            .hoverEvent(HoverEvent.showText(Component.text("Click to paste current mailbox name to chat", NamedTextColor.GRAY)))
+                                            .clickEvent(ClickEvent.suggestCommand(inv.getName())));
+                                }
                             }
                             case 12 -> player.openInventory(new MailBoxMembers(plugin, db, inv.isOwner(), inv.getMailBox(), 1).getInventory());
                             case 14 -> {
@@ -1036,24 +1103,24 @@ public class InventoryClick implements Listener {
                             plugin.chatLock.put(player.getUniqueId(), Arrays.asList("mailbox-invite", inv));
                             player.closeInventory();
                             player.sendMessage(Component.text("Type player to invite in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW));
-                        } else if(currItem.getType().equals(Material.PLAYER_HEAD) && inv.isOwner()) {
+                        } else if(currItem.getType().equals(Material.PLAYER_HEAD) && inv.isOwner() && slot >= 0 && slot < 45) {
                             OfflinePlayer member = ((SkullMeta) currItem.getItemMeta()).getOwningPlayer();
                             if(member != null) {
                                 UUID memberId = member.getUniqueId();
                                 String memberName = PlayerManager.getPlayerName(memberId);
-                                if(memberName != null) {
+                                if(memberName != null && !memberId.equals(player.getUniqueId())) {
                                     player.closeInventory();
                                     plugin.kickMemberMailbox.add(player.getUniqueId());
                                     Component msg = Component.text("Are you sure you want to kick ", NamedTextColor.GRAY)
-                                        .append(Component.text(memberName, NamedTextColor.GRAY, TextDecoration.BOLD)).append(Component.text(" from this mailbox?", NamedTextColor.GRAY))
+                                        .append(Component.text(memberName, NamedTextColor.GRAY, TextDecoration.BOLD)).append(Component.text(" from this mailbox?",
+                                                    NamedTextColor.GRAY))
                                         .append(Component.text("\nKICK MEMBER", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
                                             if (plugin.kickMemberMailbox.contains(player.getUniqueId())) {
                                                 inv.kickMember(memberId);
                                                 plugin.kickMemberMailbox.remove(player.getUniqueId());
                                                 player.sendMessage(Component.text(memberName + " has been kicked from the mailbox!", NamedTextColor.GRAY));
                                                 Component kickMsg = Component.text("You've been kicked from the mailbox ", NamedTextColor.RED)
-                                                    .append(Component.text(inv.getName(), NamedTextColor.RED, TextDecoration.BOLD))
-                                                    .append(Component.text("You've been kicked from the mailbox ", NamedTextColor.RED));
+                                                    .append(Component.text(inv.getName(), NamedTextColor.RED, TextDecoration.BOLD));
                                                 Player memberOnline = member.getPlayer();
                                                 if(memberOnline != null) {
                                                     memberOnline.sendMessage(kickMsg);
@@ -1064,9 +1131,11 @@ public class InventoryClick implements Listener {
                                         })))
                                         .append(Component.text("     "))
                                         .append(Component.text("CANCEL", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
-                                            plugin.kickMemberMailbox.remove(player.getUniqueId());
-                                            audience.sendMessage(Component.text("Mailbox member kicking cancelled!", NamedTextColor.GRAY));
-                                            player.openInventory(inv.getInventory());
+                                            if (plugin.kickMemberMailbox.contains(player.getUniqueId())) {
+                                                plugin.kickMemberMailbox.remove(player.getUniqueId());
+                                                audience.sendMessage(Component.text("Mailbox member kicking cancelled!", NamedTextColor.GRAY));
+                                                player.openInventory(inv.getInventory());
+                                            }
                                         })));
                                     player.sendMessage(msg);
                                 }
@@ -1104,6 +1173,11 @@ public class InventoryClick implements Listener {
                                             player.openInventory(new MailBoxSettings(plugin, db, inv.getMailBox(), inv.isOwner(), player).getInventory());
                                         }
                                     }
+                                    case 49 -> {
+                                        if(currItem.getType().equals(Material.RED_CONCRETE)) {
+                                            inv.setPreferred(true);
+                                        }
+                                    }
                                     case 50 -> {
                                         if(!plugin.writingMail.containsKey(player.getUniqueId())) {
                                             if(plugin.mailSend.containsKey(player.getUniqueId())) {
@@ -1134,8 +1208,8 @@ public class InventoryClick implements Listener {
                                             player.sendMessage(Component.text("You can't send this item!", NamedTextColor.RED));
                                             event.setCancelled(true);
                                         } else {
+                                            plugin.getServer().getScheduler().runTask(plugin, inv::updateCost);
                                             event.setCancelled(false);
-                                            inv.updateCost();
                                         }
                                     }
                                 }
@@ -1161,7 +1235,14 @@ public class InventoryClick implements Listener {
                                         player.sendMessage(Component.text("Type a player to send the mail to in chat: " +
                                                 "(Type 'cancel' to cancel & type player's name again to remove)", NamedTextColor.YELLOW));
                                     } else {
-                                        player.sendMessage(Component.text("You've reached the limit of players you can send this mail to!", NamedTextColor.RED));
+                                        if(inv.getSendingType()) {
+                                            UUID receiver = inv.getSendTo().keySet().stream().toList().get(0);
+                                            String name = inv.getSendTo().get(receiver);
+                                            inv.removeSendTo(receiver);
+                                            player.sendMessage(Component.text("Removed " + name + " from send list!", NamedTextColor.GREEN));
+                                        } else {
+                                            player.sendMessage(Component.text("You've reached the limit of players you can send this mail to!", NamedTextColor.RED));
+                                        }
                                     }
                                 }
                                 case 14 -> {
@@ -1176,31 +1257,42 @@ public class InventoryClick implements Listener {
                                             }
                                         } else {
                                             PlayerInventory pInv = player.getInventory();
-                                            if(pInv.containsAtLeast(new ItemStack(Material.WRITABLE_BOOK), 1)) {
+                                            if(pInv.containsAtLeast(new ItemStack(Material.WRITABLE_BOOK), inv.getSendToSize())) {
                                                 plugin.writingMail.put(player.getUniqueId(), inv);
-                                                HashMap<Integer, ItemStack> notRemoved = pInv.removeItemAnySlot(new ItemStack(Material.WRITABLE_BOOK));
+                                                HashMap<Integer, ItemStack> notRemoved = pInv.removeItemAnySlot(new ItemStack(Material.WRITABLE_BOOK, inv.getSendToSize()));
                                                 if(notRemoved.isEmpty()) {
                                                     ItemStack book = new ItemStack(Material.WRITABLE_BOOK);
                                                     book.editMeta(meta -> {
-                                                        meta.displayName(Component.text("Mail", NamedTextColor.GOLD));
+                                                        meta.displayName(Component.text("Mail", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
                                                         List<Component> lore = new ArrayList<>();
-                                                        lore.add(Component.text("Will be sent to:", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                                                        inv.getSendTo().forEach((uuid, name) -> lore.add(Component.text(name, NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)));
+                                                        lore.add(Component.text("Will be sent to:", NamedTextColor.YELLOW)
+                                                                .decoration(TextDecoration.ITALIC, false));
+                                                        inv.getSendTo().forEach((uuid, name) -> lore.add(Component.text(name, NamedTextColor.GRAY)
+                                                                .decoration(TextDecoration.ITALIC, false)));
                                                         meta.lore(lore);
                                                         NamespacedKey key = new NamespacedKey(plugin, "mail-book");
-                                                        meta.getPersistentDataContainer().set(key, PersistentDataType.LONG, System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(10));
+                                                        meta.getPersistentDataContainer().set(key, PersistentDataType.LONG,
+                                                                System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(10));
                                                     });
                                                     inv.saveBook(book);
                                                     inv.saveOffHand(pInv.getItemInOffHand());
                                                     pInv.setItemInOffHand(book);
                                                     inv.startTimer();
-                                                    player.sendMessage(Component.text("Write your message in the book and then sign it to send the mail.", NamedTextColor.YELLOW)
+                                                    player.sendMessage(Component.text("Write your message in the book and then sign it to send the mail.",
+                                                                    NamedTextColor.YELLOW)
                                                             .append(Component.text("\nNOTICE: Book will be deleted in 10 minutes!", NamedTextColor.RED)));
                                                 } else {
-                                                    player.sendMessage(Component.text("You need to have a book and quill in your inventory to send this mail!", NamedTextColor.RED));
+                                                    player.sendMessage(Component.text("You need a book and quill for each player " +
+                                                            "you're sending the mail to! You need ", NamedTextColor.RED)
+                                                            .append(Component.text(notRemoved.size(), NamedTextColor.RED, TextDecoration.BOLD))
+                                                            .append(Component.text(" more Book & Quill(s)!", NamedTextColor.RED)));
                                                 }
                                             } else {
-                                                player.sendMessage(Component.text("You need to have a book and quill in your inventory to send this mail!", NamedTextColor.RED));
+                                                int need = inv.getSendToSize() - pInv.all(Material.WRITABLE_BOOK).size();
+                                                player.sendMessage(Component.text("You need a book and quill for each player " +
+                                                                "you're sending the mail to! You need ", NamedTextColor.RED)
+                                                        .append(Component.text(need, NamedTextColor.RED, TextDecoration.BOLD))
+                                                        .append(Component.text(" more Book & Quill(s)!", NamedTextColor.RED)));
                                             }
                                         }
                                     } else {
@@ -1211,7 +1303,8 @@ public class InventoryClick implements Listener {
                                     player.closeInventory();
                                     plugin.cancelMailSendConfirm.add(player.getUniqueId());
                                     Component msg = Component.text("Are you sure you want to delete the mail progress?", NamedTextColor.GRAY)
-                                            .append(Component.text("\nDELETE MAIL PROGRESS", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            .append(Component.text("\nDELETE MAIL PROGRESS", NamedTextColor.GREEN, TextDecoration.BOLD)
+                                            .clickEvent(ClickEvent.callback(audience -> {
                                                 if (plugin.cancelMailSendConfirm.contains(player.getUniqueId())) {
                                                     plugin.cancelMailSendConfirm.remove(player.getUniqueId());
                                                     inv.cancelMail();
@@ -1280,7 +1373,8 @@ public class InventoryClick implements Listener {
                                                         NamespacedKey posKey = new NamespacedKey(plugin, "sold-id");
                                                         int buyId = buyData.get(posKey, PersistentDataType.INTEGER);
 
-                                                        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM recent_sells WHERE recent_id = ?")) {
+                                                        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                                                                "DELETE FROM recent_sells WHERE recent_id = ?")) {
                                                             ps.setInt(1, buyId);
                                                             ps.executeUpdate();
                                                             plugin.asConsole("give " + player.getName() + " " + itemType + " " + itemAmount);
@@ -1419,7 +1513,8 @@ public class InventoryClick implements Listener {
                                             int highestStreak = 0;
                                             int totalCollected = 0;
                                             String lastColl = "";
-                                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT current_streak, highest_streak, total_collected, last_collected FROM dailies WHERE user_id = ?")) {
+                                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                                                    "SELECT current_streak, highest_streak, total_collected, last_collected FROM dailies WHERE user_id = ?")) {
                                                 ps.setString(1, player.getUniqueId().toString());
                                                 ResultSet rs = ps.executeQuery();
                                                 while (rs.next()) {
@@ -1456,7 +1551,8 @@ public class InventoryClick implements Listener {
 
                                             if (!lastColl.isEmpty()) {
                                                 if (currStreak >= highestStreak) {
-                                                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE dailies SET current_streak = ?, highest_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?")) {
+                                                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE dailies " +
+                                                            "SET current_streak = ?, highest_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?")) {
                                                         ps.setInt(1, nCurrStreak);
                                                         ps.setInt(2, nCurrStreak);
                                                         ps.setString(3, currDate);
@@ -1467,7 +1563,8 @@ public class InventoryClick implements Listener {
                                                         e.printStackTrace();
                                                     }
                                                 } else {
-                                                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE dailies SET current_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?")) {
+                                                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE dailies " +
+                                                            "SET current_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?")) {
                                                         ps.setInt(1, nCurrStreak);
                                                         ps.setString(2, currDate);
                                                         ps.setInt(3, nTotalCollected);
@@ -1478,7 +1575,8 @@ public class InventoryClick implements Listener {
                                                     }
                                                 }
                                             } else {
-                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO dailies (user_id, current_streak, total_collected, highest_streak, last_collected) VALUES (?, ?, ?, ?, ?)")) {
+                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO dailies " +
+                                                        "(user_id, current_streak, total_collected, highest_streak, last_collected) VALUES (?, ?, ?, ?, ?)")) {
                                                     ps.setString(1, user.getUniqueId().toString());
                                                     ps.setInt(2, nCurrStreak);
                                                     ps.setInt(3, nTotalCollected);
@@ -1506,7 +1604,8 @@ public class InventoryClick implements Listener {
                                                 double z = plotData.get(plotKey2, PersistentDataType.DOUBLE);
                                                 World world = Bukkit.getWorld(plotData.get(plotKey3, PersistentDataType.STRING));
                                                 Location loc = new Location(world, x, y, z);
-                                                if (player.getWorld().getName().equalsIgnoreCase("world_skycity") || player.hasPermission("cmi.command.tpa.warmupbypass")) {
+                                                if (player.getWorld().getName().equalsIgnoreCase("world_skycity")
+                                                        || player.hasPermission("cmi.command.tpa.warmupbypass")) {
                                                     player.teleportAsync(loc);
                                                     player.sendMessage(Component.text("Teleported to plot!", NamedTextColor.GREEN));
                                                 } else {
@@ -1533,7 +1632,8 @@ public class InventoryClick implements Listener {
                                                 String tagsDisplay = "";
                                                 String tagsEffect = "";
 
-                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tags_display, tags_effect FROM tags WHERE tags_id = ?")) {
+                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                                                        "SELECT tags_display, tags_effect FROM tags WHERE tags_id = ?")) {
                                                     ps.setInt(1, tag_id);
                                                     ResultSet rs = ps.executeQuery();
                                                     while (rs.next()) {
@@ -1549,7 +1649,8 @@ public class InventoryClick implements Listener {
                                                     particles.addActivePlayerParticle(player, ParticleEffect.CLOUD, ParticleStyle.fromInternalName(tagsEffect));
                                                 }
 
-                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET active_tag = ? WHERE user_id = ?")) {
+                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                                                        "UPDATE users SET active_tag = ? WHERE user_id = ?")) {
                                                     ps.setInt(1, tag_id);
                                                     ps.setString(2, user.getUniqueId().toString());
                                                     ps.executeUpdate();
@@ -1558,14 +1659,16 @@ public class InventoryClick implements Listener {
                                                 }
 
                                                 plugin.userTags.put(player.getUniqueId(), tagsDisplay);
-                                                player.sendMessage(Component.text("Selected Tag: ", NamedTextColor.GREEN).append(MiniMessage.miniMessage().deserialize(tagsDisplay)));
+                                                player.sendMessage(Component.text("Selected Tag: ", NamedTextColor.GREEN)
+                                                        .append(MiniMessage.miniMessage().deserialize(tagsDisplay)));
                                                 tag.openGUI(player, page);
                                             } else if (event.getSlot() == 46 && clickItem.getType().equals(Material.PAPER)) {
                                                 tag.openGUI(player, page - 1);
                                             } else if (event.getSlot() == 49 && clickItem.getType().equals(Material.BARRIER)) {
                                                 plugin.userTags.remove(player.getUniqueId());
                                                 particles.resetActivePlayerParticles(player);
-                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET active_tag = ? WHERE user_id = ?")) {
+                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                                                        "UPDATE users SET active_tag = ? WHERE user_id = ?")) {
                                                     ps.setInt(1, 0);
                                                     ps.setString(2, user.getUniqueId().toString());
                                                     ps.executeUpdate();
@@ -1623,7 +1726,8 @@ public class InventoryClick implements Listener {
                                                         .append(Component.text("\nType the tag effect (Type null to cancel)", NamedTextColor.GREEN)));
                                             } else if (event.getSlot() == 17) {
                                                 tag.openEditGUI(player, page);
-                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM tags WHERE tags_id = ?")) {
+                                                try(Connection conn = db.getConnection(); PreparedStatement ps =
+                                                        conn.prepareStatement("DELETE FROM tags WHERE tags_id = ?")) {
                                                     ps.setInt(1, tag_id);
                                                     ps.executeUpdate();
                                                     player.sendMessage(Component.text("Successfully deleted tag!", NamedTextColor.GREEN));
@@ -1711,7 +1815,8 @@ public class InventoryClick implements Listener {
                                                         .append(Component.text("\nAvailable Effects Above", NamedTextColor.GOLD))
                                                         .append(Component.text("\nType the tag effect (Type null to cancel)", NamedTextColor.GREEN)));
                                             } else if (event.getSlot() == 22) {
-                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO tags (tags_display, tags_lore, tags_effect) VALUES (?, ?, ?)")) {
+                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                                                        "INSERT INTO tags (tags_display, tags_lore, tags_effect) VALUES (?, ?, ?)")) {
                                                     ps.setString(1, display);
                                                     ps.setString(2, lore);
                                                     ps.setString(3, effect);
@@ -1772,14 +1877,16 @@ public class InventoryClick implements Listener {
                                     if (container.has(key, PersistentDataType.STRING)) {
                                         foundValue = container.get(key, PersistentDataType.STRING);
                                         if (Objects.requireNonNull(rData.getString(foundValue + ".reward-type")).equalsIgnoreCase("tokens")) {
-                                            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE rewards_data SET reward_collected = ? WHERE user_id = ? AND reward_name = ?")) {
+                                            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                                                    "UPDATE rewards_data SET reward_collected = ? WHERE user_id = ? AND reward_name = ?")) {
                                                 ps.setInt(1, 1);
                                                 ps.setString(2, player.getUniqueId().toString());
                                                 ps.setString(3, foundValue);
                                                 ps.executeUpdate();
                                                 int tokenAmount = rData.getInt(foundValue + ".reward");
                                                 plugin.tokens.addTokens(player.getUniqueId(), tokenAmount, "Secret Region Found", foundValue);
-                                                player.sendMessage(Component.text("Secrets", TextColor.fromHexString("#e9e962")).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
+                                                player.sendMessage(Component.text("Secrets", TextColor.fromHexString("#e9e962"))
+                                                        .append(Component.text(" » ", NamedTextColor.DARK_GRAY))
                                                         .append(Component.text("You received " + tokenAmount + " tokens!", TextColor.fromHexString("#68e43e"))));
                                                 secretsGUI.openGUI(player, "rewards");
                                             } catch (SQLException e) {

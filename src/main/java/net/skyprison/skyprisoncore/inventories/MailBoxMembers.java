@@ -84,21 +84,20 @@ public class MailBoxMembers implements CustomInventory {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 UUID memberId = UUID.fromString(rs.getString(1));
-                if(ownerId != null && !ownerId.equals(memberId)) {
-                    ItemStack item = new ItemStack(Material.PLAYER_HEAD);
-                    item.editMeta(SkullMeta.class, meta -> {
-                        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> meta.setOwningPlayer(plugin.getServer().getOfflinePlayer(memberId)));
-                        meta.displayName(Component.text(Objects.requireNonNullElse(PlayerManager.getPlayerName(memberId), "ERROR"),
-                                NamedTextColor.YELLOW, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
-                        if(isOwner) {
-                            List<Component> lore = new ArrayList<>();
-                            lore.add(Component.empty());
-                            lore.add(Component.text("Remove Member from Mailbox", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
-                            meta.lore(lore);
-                        }
-                    });
-                    members.add(item);
-                }
+                ItemStack item = new ItemStack(Material.PLAYER_HEAD);
+                UUID finalOwnerId = ownerId;
+                item.editMeta(SkullMeta.class, meta -> {
+                    meta.setOwningPlayer(plugin.getServer().getOfflinePlayer(memberId));
+                    meta.displayName(Component.text(Objects.requireNonNullElse(PlayerManager.getPlayerName(memberId), "ERROR"),
+                            NamedTextColor.YELLOW, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                    if(isOwner && !memberId.equals(finalOwnerId)) {
+                        List<Component> lore = new ArrayList<>();
+                        lore.add(Component.empty());
+                        lore.add(Component.text("Remove Member from Mailbox", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                        meta.lore(lore);
+                    }
+                });
+                members.add(item);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -130,7 +129,7 @@ public class MailBoxMembers implements CustomInventory {
     public void kickMember(UUID memberId) {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM mail_boxes_users WHERE mailbox_id = ? AND user_id = ?")) {
             ps.setInt(1, mailBox);
-            ps.setString(1, memberId.toString());
+            ps.setString(2, memberId.toString());
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

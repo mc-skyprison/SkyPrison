@@ -35,6 +35,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.ItemStack;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 
@@ -43,9 +44,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class PlayerJoin implements Listener {
 
@@ -112,6 +112,15 @@ public class PlayerJoin implements Listener {
                     player.customName(content);
                 } else if(type.equalsIgnoreCase("purchase-total-check")) {
                     DonorAdd.checkTotal(player, Double.parseDouble(rs.getString(2)));
+                } else if(type.equalsIgnoreCase("mail-item")) {
+                    ItemStack item = ItemStack.deserializeBytes(Base64.getDecoder().decode(rs.getString(2)));
+                    HashMap<Integer, ItemStack> didntFit = player.getInventory().addItem(item);
+                    for (ItemStack dropItem : didntFit.values()) {
+                        player.getWorld().dropItemNaturally(player.getLocation(), dropItem).setOwner(player.getUniqueId());
+                    }
+                } else if(type.equalsIgnoreCase("mail-offhand")) {
+                    ItemStack item = ItemStack.deserializeBytes(Base64.getDecoder().decode(rs.getString(2)));
+                    player.getInventory().setItemInOffHand(item);
                 }
             }
         } catch (SQLException e) {

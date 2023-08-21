@@ -26,10 +26,13 @@ public class PlayerEditBook implements Listener {
         if(event.isSigning() && plugin.writingMail.containsKey(player.getUniqueId())) {
             ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
             book.setItemMeta(event.getNewBookMeta());
+            book.editMeta(meta -> {
+               meta.lore(null);
+               meta.displayName(null);
+            });
             MailBoxSend inv = plugin.writingMail.get(player.getUniqueId());
+            plugin.getServer().getScheduler().runTask(plugin, () -> player.getInventory().setItemInOffHand(inv.getOffHand()));
             inv.sendMail(book);
-            plugin.writingMail.remove(player.getUniqueId());
-            player.getInventory().setItemInOffHand(inv.getOffHand());
         }
         BookMeta bookMeta = event.getNewBookMeta();
         List<Component> pages = bookMeta.pages();

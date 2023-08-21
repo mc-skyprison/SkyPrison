@@ -10,6 +10,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.TextDisplay;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -22,6 +23,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 public class MailBoxSettings implements CustomInventory {
     private final Inventory inventory;
@@ -32,6 +34,7 @@ public class MailBoxSettings implements CustomInventory {
     private final boolean isOwner;
     private final Player player;
     private Location loc;
+    private final TextDisplay boxDisplay;
 
     public void updateInventory() {
         ItemStack nameItem = new ItemStack(Material.OAK_SIGN);
@@ -56,17 +59,20 @@ public class MailBoxSettings implements CustomInventory {
         this.isOwner = isOwner;
         this.player = player;
 
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT name, x, y, z, world FROM mail_boxes WHERE id = ?")) {
+        TextDisplay tempDisplay = null;
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT name, x, y, z, world, display_text FROM mail_boxes WHERE id = ?")) {
             ps.setInt(1, mailBox);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 this.name = rs.getString(1);
                 this.loc = new Location(plugin.getServer().getWorld(rs.getString(5)), rs.getInt(2), rs.getInt(3), rs.getInt(4));
+                tempDisplay = (TextDisplay) player.getWorld().getEntity(UUID.fromString(rs.getString(6)));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
+        this.boxDisplay = tempDisplay;
         ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         blackPane.editMeta(meta -> meta.displayName(Component.text(" ")));
 
@@ -147,6 +153,7 @@ public class MailBoxSettings implements CustomInventory {
             ps.setInt(2, mailBox);
             ps.executeUpdate();
             this.name = name;
+            boxDisplay.text(Component.text("Mailbox " + name, NamedTextColor.YELLOW));
             updateInventory();
             return true;
         } catch (SQLException ignored) {
@@ -172,6 +179,7 @@ public class MailBoxSettings implements CustomInventory {
             ps.setInt(2, mailBox);
             ps.executeUpdate();
             loc.getBlock().setType(Material.AIR);
+            boxDisplay.remove();
             player.closeInventory();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -182,6 +190,7 @@ public class MailBoxSettings implements CustomInventory {
             ps.setInt(1, mailBox);
             ps.executeUpdate();
             loc.getBlock().setType(Material.AIR);
+            boxDisplay.remove();
         } catch (SQLException e) {
             e.printStackTrace();
         }
