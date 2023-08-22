@@ -1247,9 +1247,9 @@ public class InventoryClick implements Listener {
                                 }
                                 case 14 -> {
                                     if(inv.getSendToSize() > 0) {
-                                        player.closeInventory();
                                         if (inv.getSendingType()) {
                                             if (inv.canAfford()) {
+                                                player.closeInventory();
                                                 plugin.asConsole("cmi money take " + player.getName() + " " + inv.getCost());
                                                 inv.sendMail(inv.getSendItem());
                                             } else {
@@ -1261,6 +1261,7 @@ public class InventoryClick implements Listener {
                                                 plugin.writingMail.put(player.getUniqueId(), inv);
                                                 HashMap<Integer, ItemStack> notRemoved = pInv.removeItemAnySlot(new ItemStack(Material.WRITABLE_BOOK, inv.getSendToSize()));
                                                 if(notRemoved.isEmpty()) {
+                                                    player.closeInventory();
                                                     ItemStack book = new ItemStack(Material.WRITABLE_BOOK);
                                                     book.editMeta(meta -> {
                                                         meta.displayName(Component.text("Mail", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));

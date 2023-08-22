@@ -1185,9 +1185,10 @@ public class SkyPrisonCore extends JavaPlugin {
                     CommandSender sender = c.getSender();
                     if(sender instanceof Player player) {
                         Bukkit.getScheduler().runTask(this, () -> player.openInventory(new MailHistory(this, db, player.getUniqueId()).getInventory()));
+                    } else {
+                        sender.sendMessage(Component.text("Can only be used by a player!"));
                     }
                 }));
-
         this.manager.command(mail.literal("history")
                 .permission("skyprisoncore.command.mail.history.others")
                 .argument(StringArgument.optional("player"))
@@ -1203,6 +1204,37 @@ public class SkyPrisonCore extends JavaPlugin {
                         }
                     } else {
                         sender.sendMessage(Component.text("Can only be used by a player!"));
+                    }
+                }));
+        this.manager.command(mail.literal("send")
+                .permission("skyprisoncore.command.mail.send")
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    if(sender instanceof Player player) {
+                        Bukkit.getScheduler().runTask(this, () -> player.openInventory(new MailBoxSend(this, db, player,
+                                player.hasPermission("skyprisoncore.command.mail.send.items")).getInventory()));
+                    } else {
+                        sender.sendMessage(Component.text("Can only be used by a player!"));
+                    }
+                }));
+        this.manager.command(mail.literal("open")
+                .permission("skyprisoncore.command.mail.open")
+                .argument(IntegerArgument.of("mailbox-id"))
+                .argument(PlayerArgument.optional("player"))
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    Player player = c.getOrDefault("player", sender instanceof Player ? (Player) sender : null);
+                    if(player != null) {
+                        int mailBoxId = c.get("mailbox-id");
+                        String mailBox = getMailBoxName(mailBoxId);
+                        if(mailBox != null && !mailBox.isEmpty()) {
+                            Bukkit.getScheduler().runTask(this, () -> player.openInventory(
+                                    new MailBox(this, db, player, isOwner(player, mailBoxId), mailBoxId, 1).getInventory()));
+                        } else {
+                            sender.sendMessage(Component.text("No mailbox found with that id!", NamedTextColor.RED));
+                        }
+                    } else {
+                        sender.sendMessage(Component.text("Incorrect Usage! /mail open <id> <player>"));
                     }
                 }));
 
@@ -1360,6 +1392,20 @@ public class SkyPrisonCore extends JavaPlugin {
                 }
             });
         }
+    }
+
+    public static boolean isOwner(Player player, int mailBox) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT owner_id FROM mail_boxes WHERE id = ?")) {
+            ps.setInt(1, mailBox);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                UUID ownerId = UUID.fromString(rs.getString(1));
+                return player.getUniqueId().equals(ownerId);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public static @NotNull TagResolver papiTag(final @NotNull Player player) {

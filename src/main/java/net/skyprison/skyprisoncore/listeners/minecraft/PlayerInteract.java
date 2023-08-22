@@ -49,19 +49,6 @@ public class PlayerInteract implements Listener {
         }
         return false;
     }
-    public boolean isOwner(Player player, int mailBox) {
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT owner_id FROM mail_boxes WHERE id = ?")) {
-            ps.setInt(1, mailBox);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                UUID ownerId = UUID.fromString(rs.getString(1));
-                return player.getUniqueId().equals(ownerId);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
 
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
@@ -74,7 +61,7 @@ public class PlayerInteract implements Listener {
             int mailBox =  plugin.getMailBox(block);
             if(mailBox != -1) {
                 if(isMember(player, mailBox)) {
-                    player.openInventory(new MailBox(plugin, db, player, isOwner(player, mailBox), mailBox, 1).getInventory());
+                    player.openInventory(new MailBox(plugin, db, player, SkyPrisonCore.isOwner(player, mailBox), mailBox, 1).getInventory());
                 } else {
                     player.sendMessage(Component.text("You are not a member of this mailbox!", NamedTextColor.RED));
                 }
