@@ -24,7 +24,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class MailBox implements CustomInventory {
-    private final HashMap<Integer, List<ItemStack>> mails = new HashMap<>();
+    private final LinkedHashMap<Integer, List<ItemStack>> mails = new LinkedHashMap<>();
     private final Inventory inventory;
     private int page;
     private final DatabaseHook db;
@@ -115,7 +115,7 @@ public class MailBox implements CustomInventory {
                 pref = 1;
             }
             try (Connection conn = db.getConnection(); PreparedStatement ps =
-                    conn.prepareStatement("SELECT id, sender_id, receiver_id, item, sent_at FROM mails WHERE mailbox_id = -1 AND collected = 0 AND receiver_id = ? ORDER BY id DESC")) {
+                    conn.prepareStatement("SELECT id, sender_id, receiver_id, item, sent_at FROM mails WHERE mailbox_id = -1 AND collected = 0 AND receiver_id = ? ORDER BY sent_at DESC")) {
                 ps.setString(1, player.getUniqueId().toString());
                 ResultSet rs = ps.executeQuery();
                 while (rs.next()) {
@@ -123,6 +123,7 @@ public class MailBox implements CustomInventory {
                     String sender = rs.getString(2);
                     String receiver = rs.getString(3);
                     Date sentAt = new Date(rs.getLong(5));
+                    System.out.println(dateFor.format(sentAt));
                     List<ItemStack> mailItems = new ArrayList<>();
                     ItemStack mail = ItemStack.deserializeBytes(rs.getBytes(4));
                     ItemStack displayMail = mail.clone();
@@ -148,7 +149,7 @@ public class MailBox implements CustomInventory {
             }
         } else {
             try (Connection conn = db.getConnection(); PreparedStatement ps =
-                    conn.prepareStatement("SELECT id, sender_id, receiver_id, item, sent_at FROM mails WHERE mailbox_id = ? AND collected = 0 ORDER BY id DESC")) {
+                    conn.prepareStatement("SELECT id, sender_id, receiver_id, item, sent_at FROM mails WHERE mailbox_id = ? AND collected = 0 ORDER BY sent_at DESC")) {
                 ps.setInt(1, mailBox);
                 ResultSet rs = ps.executeQuery();
                 while (rs.next()) {
@@ -156,6 +157,7 @@ public class MailBox implements CustomInventory {
                     String sender = rs.getString(2);
                     String receiver = rs.getString(3);
                     Date sentAt = new Date(rs.getLong(5));
+                    System.out.println(dateFor.format(sentAt));
                     List<ItemStack> mailItems = new ArrayList<>();
                     ItemStack mail = ItemStack.deserializeBytes(rs.getBytes(4));
                     ItemStack displayMail = mail.clone();

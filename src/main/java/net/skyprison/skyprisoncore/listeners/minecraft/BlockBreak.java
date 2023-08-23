@@ -10,6 +10,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
+import net.skyprison.skyprisoncore.utils.Mail;
 import net.skyprison.skyprisoncore.utils.RandomReward;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -67,7 +68,7 @@ public class BlockBreak implements Listener {
 
         Block block = event.getBlock();
         if(block.getWorld().getName().equalsIgnoreCase("world_free") && block.getType().equals(Material.CHEST)) {
-            int mailBox =  plugin.getMailBox(block);
+            int mailBox = Mail.getMailBox(block);
             if(mailBox != -1) {
                 event.setCancelled(true);
                 return;

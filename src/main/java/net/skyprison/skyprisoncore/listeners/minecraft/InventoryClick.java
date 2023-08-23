@@ -1075,24 +1075,33 @@ public class InventoryClick implements Listener {
                             }
                             case 16 -> {
                                 if (inv.isOwner()) {
-                                    player.closeInventory();
-                                    plugin.deleteMailbox.add(player.getUniqueId());
-                                    Component msg = Component.text("Are you sure you want to delete this mailbox?", NamedTextColor.GRAY)
-                                            .append(Component.text("\nDELETE MAILBOX", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
-                                                if (plugin.deleteMailbox.contains(player.getUniqueId())) {
-                                                    inv.deleteMailBox();
-                                                    plugin.deleteMailbox.remove(player.getUniqueId());
-                                                    player.sendMessage(Component.text("Mailbox has been deleted", NamedTextColor.GRAY));
-                                                }
-                                            })))
-                                            .append(Component.text("     "))
-                                            .append(Component.text("CANCEL", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
-                                                plugin.deleteMailbox.remove(player.getUniqueId());
-                                                audience.sendMessage(Component.text("Mailbox deletion cancelled!", NamedTextColor.GRAY));
-                                                player.openInventory(inv.getInventory());
-                                            })));
-                                    player.sendMessage(msg);
+                                    if(inv.isNoMail()) {
+                                        player.closeInventory();
+                                        plugin.deleteMailbox.add(player.getUniqueId());
+                                        Component msg = Component.text("Are you sure you want to delete this mailbox?", NamedTextColor.GRAY)
+                                                .append(Component.text("\nDELETE MAILBOX", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                                    if (plugin.deleteMailbox.contains(player.getUniqueId())) {
+                                                        inv.deleteMailBox();
+                                                        plugin.deleteMailbox.remove(player.getUniqueId());
+                                                        player.sendMessage(Component.text("Mailbox has been deleted", NamedTextColor.GRAY));
+                                                    }
+                                                })))
+                                                .append(Component.text("     "))
+                                                .append(Component.text("CANCEL", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                                    if (plugin.deleteMailbox.contains(player.getUniqueId())) {
+                                                        plugin.deleteMailbox.remove(player.getUniqueId());
+                                                        audience.sendMessage(Component.text("Mailbox deletion cancelled!", NamedTextColor.GRAY));
+                                                        player.openInventory(inv.getInventory());
+                                                    }
+                                                })));
+                                        player.sendMessage(msg);
+                                    } else {
+                                        player.sendMessage(Component.text("You can't delete a mailbox with mail in it!", NamedTextColor.RED));
+                                    }
                                 }
+                            }
+                            case 18 -> {
+                                player.openInventory(new MailBox(plugin, db, player, inv.isOwner(), inv.getMailBox(), 1).getInventory());
                             }
                         }
                     }
@@ -1181,7 +1190,9 @@ public class InventoryClick implements Listener {
                                     case 50 -> {
                                         if(!plugin.writingMail.containsKey(player.getUniqueId())) {
                                             if(plugin.mailSend.containsKey(player.getUniqueId())) {
-                                                player.openInventory(plugin.mailSend.get(player.getUniqueId()).getInventory());
+                                                MailBoxSend mailSend = plugin.mailSend.get(player.getUniqueId());
+                                                if(!mailSend.getCanSendItems()) mailSend.setCanSendItems(true);
+                                                player.openInventory(mailSend.getInventory());
                                             } else {
                                                 player.openInventory(new MailBoxSend(plugin, db, player, true).getInventory());
                                             }

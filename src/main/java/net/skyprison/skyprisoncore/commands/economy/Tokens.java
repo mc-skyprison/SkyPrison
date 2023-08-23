@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.inventories.DatabaseInventory;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
@@ -118,7 +119,7 @@ public class Tokens implements CommandExecutor {
                     .append(Component.text("was removed from your balance", NamedTextColor.GRAY))));
         } else {
             int tokens = getTokens(pUUID);
-            
+
             tokens -= amount;
             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET tokens = ? WHERE user_id = ?")) {
                 ps.setInt(1, Math.max(tokens, 0));
@@ -900,15 +901,13 @@ public class Tokens implements CommandExecutor {
                             sender.sendMessage(Component.text("Incorrect Usage! /tokens balance <player>", NamedTextColor.RED));
                         }
                     }
-/*                    case "shop" -> { // /tokens shop (page)
+                    case "shop" -> { // /tokens shop (page)
                         if(sender instanceof Player player) {
-                            int page = 1;
-                            if(args.length > 1 && plugin.isInt(args[1])) page = Integer.parseInt(args[1]);
-                            player.openInventory(new DatabaseInventory(plugin, db, player, player.hasPermission("skyprisoncore.inventories." + args[0] + ".editing"), args[0]).getInventory());
+                            player.openInventory(new DatabaseInventory(plugin, db, player, player.hasPermission("skyprisoncore.inventories.tokenshop.editing"), "tokenshop").getInventory());
                         } else {
                             sender.sendMessage(Component.text("This command can only be used in game!", NamedTextColor.RED));
                         }
-                    }*/
+                    }
                     case "top" -> Bukkit.dispatchCommand(sender, "lb tokens");
                 }
             } else {

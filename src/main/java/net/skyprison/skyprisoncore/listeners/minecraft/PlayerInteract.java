@@ -7,6 +7,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.MailBox;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.Mail;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
@@ -27,7 +28,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
-import java.util.UUID;
 
 public class PlayerInteract implements Listener {
     private final SkyPrisonCore plugin;
@@ -58,7 +58,7 @@ public class PlayerInteract implements Listener {
         Action action = event.getAction();
         if(block != null && block.getWorld().getName().equalsIgnoreCase("world_free") && (action.equals(Action.LEFT_CLICK_BLOCK) || action.equals(Action.RIGHT_CLICK_BLOCK))
         && block.getType().equals(Material.CHEST)) {
-            int mailBox =  plugin.getMailBox(block);
+            int mailBox = Mail.getMailBox(block);
             if(mailBox != -1) {
                 if(isMember(player, mailBox)) {
                     player.openInventory(new MailBox(plugin, db, player, SkyPrisonCore.isOwner(player, mailBox), mailBox, 1).getInventory());

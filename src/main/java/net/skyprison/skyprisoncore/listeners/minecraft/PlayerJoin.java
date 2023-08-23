@@ -27,6 +27,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.donations.DonorAdd;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.Mail;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -90,12 +91,6 @@ public class PlayerJoin implements Listener {
             }
         }
 
-        Component messages = Component.text("");
-        messages = messages.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
-                .append(Component.text(" Messages ", TextColor.fromHexString("#0fc3ff"), TextDecoration.BOLD))
-                .append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
-        messages = messages.append(Component.text("\nYou've received some messages while you were offline!", NamedTextColor.GRAY));
-
         List<String> ids = new ArrayList<>();
         boolean hasSchedules = false;
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT type, content FROM schedule_online WHERE user_id = ?")) {
@@ -136,12 +131,16 @@ public class PlayerJoin implements Listener {
             }
         }
 
+        Component messages = Component.text("");
+        messages = messages.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
+                .append(Component.text(" Messages ", TextColor.fromHexString("#0fc3ff"), TextDecoration.BOLD))
+                .append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
+        messages = messages.append(Component.text("\nYou've received some messages while you were offline!", NamedTextColor.GRAY));
 
-
+        int i = 1;
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id, message FROM notifications WHERE user_id = ?")) {
             ps.setString(1, player.getUniqueId().toString());
             ResultSet rs = ps.executeQuery();
-            int i = 1;
             while(rs.next()) {
                 messages = messages.append(Component.newline().appendNewline().append(Component.text(i + ".", NamedTextColor.GRAY, TextDecoration.BOLD))
                         .appendNewline().append(GsonComponentSerializer.gson().deserialize(rs.getString(2))));
@@ -157,8 +156,8 @@ public class PlayerJoin implements Listener {
         if(!ids.isEmpty()) {
             try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM notifications WHERE delete_on_view = ? AND id IN " + plugin.getQuestionMarks(ids))) {
                 ps.setInt(1, 1);
-                for (int i = 0; i < ids.size(); i++) {
-                    ps.setString(i + 2, ids.get(i));
+                for (int b = 0; b < ids.size(); b++) {
+                    ps.setString(b + 2, ids.get(b));
                 }
                 ps.executeUpdate();
             } catch (SQLException e) {
@@ -167,6 +166,17 @@ public class PlayerJoin implements Listener {
 
             messages = messages.appendNewline();
             player.sendMessage(messages);
+        }
+
+        List<String> mails = Mail.getBoxesWithMail(player);
+        if(!mails.isEmpty()) {
+            for(String mail : mails) {
+                boolean postOffice = mail.equalsIgnoreCase("post office");
+                messages = messages.append(Component.newline().appendNewline().append(Component.text(i + ".", NamedTextColor.GRAY, TextDecoration.BOLD))
+                        .appendNewline().append(Component.text(postOffice ? "Someone has sent you mail! Collect it at the Post Office in SkyCity."
+                                        : "Someone has sent mail to the mailbox ", NamedTextColor.GREEN)).append(Component.text(postOffice ? "" : mail, NamedTextColor.GREEN, TextDecoration.BOLD)));
+                i++;
+            }
         }
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {

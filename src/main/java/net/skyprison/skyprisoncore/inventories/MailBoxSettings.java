@@ -1,5 +1,6 @@
 package net.skyprison.skyprisoncore.inventories;
 
+import me.arcaniax.hdb.api.HeadDatabaseAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -81,7 +82,7 @@ public class MailBoxSettings implements CustomInventory {
 
         for(int i = 0; i < 27; i++) {
             switch (i) {
-                case 0,8,9,17,18,26 -> inventory.setItem(i, redPane);
+                case 0,8,9,17,26 -> inventory.setItem(i, redPane);
                 case 1,2,3,4,5,6,7,19,20,21,22,23,24,25 -> inventory.setItem(i, blackPane);
                 case 10 -> {
                     ItemStack nameItem = new ItemStack(Material.OAK_SIGN);
@@ -124,6 +125,13 @@ public class MailBoxSettings implements CustomInventory {
                                 .decoration(TextDecoration.ITALIC, false)));
                         inventory.setItem(i, delete);
                     }
+                }
+                case 18 -> {
+                    HeadDatabaseAPI hAPI = new HeadDatabaseAPI();
+                    ItemStack back = hAPI.getItemHead("10306");
+                    back.editMeta(meta -> meta.displayName(Component.text("Back to Settings", NamedTextColor.GREEN,
+                            TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false)));
+                    inventory.setItem(i, back);
                 }
             }
         }
@@ -185,12 +193,39 @@ public class MailBoxSettings implements CustomInventory {
             e.printStackTrace();
         }
     }
-    public void deleteMailBox() {
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM mail_boxes WHERE id = ?")) {
+    public boolean isNoMail() {
+        try (Connection conn = db.getConnection(); PreparedStatement ps =
+                conn.prepareStatement("SELECT id FROM mails WHERE mailbox_id = ? AND collected = 0")) {
             ps.setInt(1, mailBox);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return false;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
+
+    public void deleteMailBox() {
+        try (Connection conn = db.getConnection(); PreparedStatement ps =
+                conn.prepareStatement("UPDATE mail_boxes SET x = ?, y = ?, z = ?, world = ?, is_placed = ?, display_text = ? WHERE id = ?")) {
+            ps.setInt(1, 0);
+            ps.setInt(2, 0);
+            ps.setInt(3, 0);
+            ps.setString(4, "world_event");
+            ps.setInt(5, 0);
+            ps.setString(6, null);
+            ps.setInt(7, mailBox);
             ps.executeUpdate();
             loc.getBlock().setType(Material.AIR);
             boxDisplay.remove();
+            try(Connection sConn = db.getConnection(); PreparedStatement sPs = sConn.prepareStatement("DELETE FROM mail_boxes_users WHERE mailbox_id = ?")) {
+                sPs.setInt(1, mailBox);
+                sPs.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }

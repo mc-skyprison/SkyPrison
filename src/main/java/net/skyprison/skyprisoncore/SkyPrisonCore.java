@@ -1226,7 +1226,7 @@ public class SkyPrisonCore extends JavaPlugin {
                     Player player = c.getOrDefault("player", sender instanceof Player ? (Player) sender : null);
                     if(player != null) {
                         int mailBoxId = c.get("mailbox-id");
-                        String mailBox = getMailBoxName(mailBoxId);
+                        String mailBox = Mail.getMailBoxName(mailBoxId);
                         if(mailBox != null && !mailBox.isEmpty()) {
                             Bukkit.getScheduler().runTask(this, () -> player.openInventory(
                                     new MailBox(this, db, player, isOwner(player, mailBoxId), mailBoxId, 1).getInventory()));
@@ -1714,36 +1714,6 @@ public class SkyPrisonCore extends JavaPlugin {
                     .build()
             )
             .build();
-    public int getMailBox(Block b) {
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id FROM mail_boxes WHERE x = ? AND y = ? AND z = ? AND world = ?")) {
-            ps.setInt(1, b.getX());
-            ps.setInt(2, b.getY());
-            ps.setInt(3, b.getZ());
-            ps.setString(4, b.getWorld().getName());
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return -1;
-    }
-
-    public String getMailBoxName(int id) {
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT name FROM mail_boxes WHERE id = ?")) {
-            ps.setInt(1, id);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getString(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-
     public int getVoteParty() {
         int votes = 0;
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) % 50 FROM votes")) {

@@ -9,6 +9,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.Mail;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -31,7 +32,7 @@ public class MailBoxSend implements CustomInventory {
     private final Timer timer = new Timer();
     private final DatabaseHook db;
     private final Player player;
-    private final boolean canSendItems;
+    private boolean canSendItems;
     private final HashMap<UUID, String> sendTo = new HashMap<>();
     private boolean sendingItem = false;
     private final ItemStack sendItem;
@@ -66,6 +67,8 @@ public class MailBoxSend implements CustomInventory {
         if(sendingItem) {
             inventory.setItem(1, sendItem);
             inventory.setItem(10, null);
+            sendTo.clear();
+            updateSendTo();
         } else {
             inventory.setItem(1, blackPane);
             inventory.setItem(10, blackPane);
@@ -122,21 +125,6 @@ public class MailBoxSend implements CustomInventory {
             switch (i) {
                 case 0,8,9,17,18,26 -> inventory.setItem(i, redPane);
                 case 1, 2, 3, 4, 5, 6, 7, 11, 19, 20, 21, 22, 23, 24, 25, 10 -> inventory.setItem(i, blackPane);
-                case 12 -> {
-                    if(canSendItems) {
-                        ItemStack toggleSend = new ItemStack(Material.PAPER);
-                        toggleSend.editMeta(meta -> {
-                            meta.displayName(Component.text("Toggle Sending Type", NamedTextColor.YELLOW, TextDecoration.BOLD)
-                                    .decoration(TextDecoration.ITALIC, false));
-                            List<Component> lore = new ArrayList<>();
-                            lore.add(Component.text("Currently: ", NamedTextColor.GRAY)
-                                    .append(Component.text(sendingItem ? "SENDING ITEM" : "SENDING MESSAGE", NamedTextColor.WHITE, TextDecoration.BOLD))
-                                    .decoration(TextDecoration.ITALIC, false));
-                            meta.lore(lore);
-                        });
-                        inventory.setItem(i, toggleSend);
-                    }
-                }
                 case 13 -> {
                     ItemStack addReceiver = new ItemStack(Material.PLAYER_HEAD);
                     addReceiver.editMeta(meta -> {
@@ -166,7 +154,9 @@ public class MailBoxSend implements CustomInventory {
             }
         }
         updateSendTo();
-        updateSendType();
+        if(canSendItems) {
+            updateSendType();
+        }
         plugin.mailSend.put(player.getUniqueId(), this);
     }
     @Override
@@ -246,6 +236,7 @@ public class MailBoxSend implements CustomInventory {
         plugin.mailSend.remove(player.getUniqueId());
         sendTo.forEach((uuid, name) -> {
             int mailBox = getMailBox(uuid);
+            String mailBoxName = Mail.getMailBoxName(mailBox);
             try (Connection conn = db.getConnection(); PreparedStatement ps =
                     conn.prepareStatement("INSERT INTO mails (sender_id, receiver_id, item, cost, mailbox_id, sent_at, collected) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
                 ps.setString(1, player.getUniqueId().toString());
@@ -256,6 +247,12 @@ public class MailBoxSend implements CustomInventory {
                 ps.setLong(6, System.currentTimeMillis());
                 ps.setInt(7, 0);
                 ps.executeUpdate();
+                Player receiver = plugin.getServer().getPlayer(uuid);
+                if(receiver != null) {
+                    receiver.sendMessage(Component.text(player.getName(), NamedTextColor.GOLD).append(Component.text(" has sent you mail! Check your ", NamedTextColor.YELLOW))
+                            .append(Component.text(Objects.requireNonNullElse(mailBoxName, "COULDN'T GET MAILBOX NAME"), NamedTextColor.GOLD))
+                            .append(Component.text(" mailbox to collect it!", NamedTextColor.YELLOW)));
+                }
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -319,6 +316,12 @@ public class MailBoxSend implements CustomInventory {
                 || type.equals(Material.FLINT_AND_STEEL) || MaterialTags.RAW_FISH.isTagged(type) || MaterialTags.COOKED_FISH.isTagged(type) || type.equals(Material.SHULKER_BOX)
                 || type.equals(Material.BLAZE_ROD) || type.equals(Material.BLAZE_POWDER) || type.equals(Material.END_CRYSTAL) || type.equals(Material.ELYTRA)
                 || type.equals(Material.SPAWNER);
+    }
+
+    public void setCanSendItems(boolean newCanSendItems) {
+        this.canSendItems = newCanSendItems;
+        if(canSendItems) updateSendType();
+        else inventory.setItem(12, null);
     }
 
     public void toggleSendingItem() {

@@ -5,6 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.Mail;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
@@ -96,7 +97,11 @@ public class MailHistory implements CustomInventory {
                 item.editMeta(meta -> {
                     meta.displayName(Component.text(date, NamedTextColor.GOLD, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
                     ArrayList<Component> lore = new ArrayList<>();
-                    lore.add(Component.text("Mailbox: ", NamedTextColor.GRAY).append(Component.text(plugin.getMailBoxName(mailBox), NamedTextColor.WHITE))
+                    if(item.getType().equals(Material.WRITTEN_BOOK)) {
+                        lore.add(Component.text("                         ", NamedTextColor.DARK_GRAY, TextDecoration.STRIKETHROUGH));
+                    }
+                    lore.add(Component.text("Mailbox: ", NamedTextColor.GRAY).append(Component.text(Objects.requireNonNullElse(
+                            Mail.getMailBoxName(mailBox), "COULDN'T GET MAILBOX NAME!"), NamedTextColor.WHITE))
                             .decoration(TextDecoration.ITALIC, false));
                     lore.add(Component.text("Sent by: ", NamedTextColor.GRAY).append(Component.text(Objects.requireNonNullElse(PlayerManager.getPlayerName(sender),
                                     "COULDN'T GET NAME"), NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false));
