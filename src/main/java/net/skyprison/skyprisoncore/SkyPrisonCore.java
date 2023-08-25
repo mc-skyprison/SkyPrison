@@ -1820,7 +1820,7 @@ public class SkyPrisonCore extends JavaPlugin {
                             asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.red");
                         }
                         case 500 -> {
-                            reward = Component.text("Blue Sheep Disguise & Voter Tag", NamedTextColor.DARK_AQUA, TextDecoration.BOLD);
+                            reward = Component.text("Blue Sheep Disguise & Novice Voter Tag", NamedTextColor.DARK_AQUA, TextDecoration.BOLD);
                             asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.blue");
                             asConsole("lp user " + playerName + " permission set skyprisoncore.tag.55");
                         }
@@ -1829,7 +1829,7 @@ public class SkyPrisonCore extends JavaPlugin {
                             asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.black");
                         }
                         case 1000 -> {
-                            reward = Component.text("Pink Sheep Disguise & Voter Tag", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD);
+                            reward = Component.text("Pink Sheep Disguise & Top Voter Tag", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD);
                             asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.pink");
                             asConsole("lp user " + playerName + " permission set skyprisoncore.tag.84");
                         }
@@ -1838,7 +1838,7 @@ public class SkyPrisonCore extends JavaPlugin {
                             asConsole("lp user " + playerName + " permission set pet.type.sheep");
                         }
                         case 1500 -> {
-                            reward = Component.text("Sheep Pet Customization & Voter Tag", NamedTextColor.YELLOW, TextDecoration.BOLD);
+                            reward = Component.text("Sheep Pet Customization & Elite Voter Tag", NamedTextColor.YELLOW, TextDecoration.BOLD);
                             asConsole("lp user " + playerName + " permission set skyprisoncore.tag.85");
                             asConsole("lp user " + playerName + " permission set pet.type.sheep.data.baby");
                             asConsole("lp user " + playerName + " permission set pet.type.sheep.data.color");
