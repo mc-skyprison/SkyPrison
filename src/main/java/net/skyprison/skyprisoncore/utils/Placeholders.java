@@ -187,6 +187,11 @@ public class Placeholders extends PlaceholderExpansion {
 			}
 		}
 
+		if(identifier.equalsIgnoreCase("mailbox_amount")) {
+			return String.valueOf(Mail.getMailboxAmount(player.getUniqueId()));
+		}
+
+
 		if(identifier.equalsIgnoreCase("get_bribe_cooldown")) {
 			int cooldown = 0;
 			if(plugin.bribeCooldown.containsKey(player.getUniqueId())) {

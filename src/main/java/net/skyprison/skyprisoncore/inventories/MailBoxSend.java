@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -226,7 +225,7 @@ public class MailBoxSend implements CustomInventory {
                 } else if(MaterialTags.IRON_TOOLS.isTagged(type)) {
                     cost = cost * 5;
                 } else if(getExpensiveMaterials().contains(type)) {
-                    cost = cost * 4;
+                    cost = cost * 15;
                 }
             }
         }

@@ -168,7 +168,7 @@ public class PlayerJoin implements Listener {
             player.sendMessage(messages);
         }
 
-        List<String> mails = Mail.getBoxesWithMail(player);
+        List<String> mails = Mail.getBoxesWithMail(player.getUniqueId());
         if(!mails.isEmpty()) {
             for(String mail : mails) {
                 boolean postOffice = mail.equalsIgnoreCase("post office");

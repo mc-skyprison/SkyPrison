@@ -218,8 +218,8 @@ public class MailBoxSettings implements CustomInventory {
             ps.setString(4, null);
             ps.setInt(5, 0);
             ps.setString(6, null);
-            ps.setInt(7, mailBox);
-            ps.setInt(8, 1);
+            ps.setInt(7, 1);
+            ps.setInt(8, mailBox);
             ps.executeUpdate();
             loc.getBlock().setType(Material.AIR);
             boxDisplay.remove();

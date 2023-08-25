@@ -1001,8 +1001,6 @@ public class SkyPrisonCore extends JavaPlugin {
                     }
                 }));
 
-
-
         this.manager.command(this.manager.commandBuilder("bartender")
                 .permission("skyprisoncore.command.bartender")
                 .argument(PlayerArgument.optional("player"))
@@ -1238,6 +1236,20 @@ public class SkyPrisonCore extends JavaPlugin {
                     }
                 }));
 
+        this.manager.command(mail.literal("expand")
+                .permission("skyprisoncore.command.mail.expand")
+                .argument(PlayerArgument.of("player"))
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    Player player = c.get("player");
+                    if(player.hasPermission("skyprisoncore.mailboxes.amount.2")) {
+                        Bukkit.getScheduler().runTask(this, () -> asConsole("lp user " + player.getName() + " permission set skyprisoncore.mailboxes.amount.3"));
+                    } else if(player.hasPermission("skyprisoncore.mailboxes.amount.1")) {
+                        Bukkit.getScheduler().runTask(this, () -> asConsole("lp user " + player.getName() + " permission set skyprisoncore.mailboxes.amount.2"));
+                    } else {
+                        sender.sendMessage(Component.text("Player already has the maximum amount of mailboxes!", NamedTextColor.RED));
+                    }
+                }));
         Objects.requireNonNull(getCommand("tokens")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("tokens")).setTabCompleter(new TabCompleter());
@@ -1831,7 +1843,7 @@ public class SkyPrisonCore extends JavaPlugin {
                         case 1000 -> {
                             reward = Component.text("Pink Sheep Disguise & Top Voter Tag", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD);
                             asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.pink");
-                            asConsole("lp user " + playerName + " permission set skyprisoncore.tag.84");
+                            asConsole("lp user " + playerName + " permission set skyprisoncore.tag.56");
                         }
                         case 1250 -> {
                             reward = Component.text("Sheep Pet", NamedTextColor.YELLOW, TextDecoration.BOLD);
@@ -1839,7 +1851,7 @@ public class SkyPrisonCore extends JavaPlugin {
                         }
                         case 1500 -> {
                             reward = Component.text("Sheep Pet Customization & Elite Voter Tag", NamedTextColor.YELLOW, TextDecoration.BOLD);
-                            asConsole("lp user " + playerName + " permission set skyprisoncore.tag.85");
+                            asConsole("lp user " + playerName + " permission set skyprisoncore.tag.87");
                             asConsole("lp user " + playerName + " permission set pet.type.sheep.data.baby");
                             asConsole("lp user " + playerName + " permission set pet.type.sheep.data.color");
                             asConsole("lp user " + playerName + " permission set pet.type.sheep.data.frozen");

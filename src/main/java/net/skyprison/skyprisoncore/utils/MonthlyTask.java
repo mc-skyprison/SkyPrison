@@ -52,7 +52,7 @@ public class MonthlyTask extends TimerTask {
                     if(playerName != null) {
                         if(i == 1) {
                             topVoter = playerName;
-                            plugin.asConsole("lp user " + playerName + " permission set skyprisoncore.tag.56");
+                            plugin.asConsole("lp user " + playerName + " permission set skyprisoncore.tag.85");
                         }
                         new Tokens(plugin, db).addTokens(pUUID, 200, "monthly-top-voter", String.valueOf(i));
                         topVote = topVote.appendNewline().append(Component.text(i + ". ", NamedTextColor.GRAY, TextDecoration.BOLD))
@@ -67,7 +67,7 @@ public class MonthlyTask extends TimerTask {
                                 .append(Component.text("200 Tokens", NamedTextColor.RED, TextDecoration.BOLD));
                         if(i == 1) {
                             voterMsg = voterMsg.append(Component.text(" and ", NamedTextColor.GRAY, TextDecoration.BOLD))
-                                    .append(Component.text("Top Voter Tag", NamedTextColor.RED, TextDecoration.BOLD))
+                                    .append(Component.text("Voter Legend Tag", NamedTextColor.RED, TextDecoration.BOLD))
                                     .append(Component.text("!", NamedTextColor.GRAY, TextDecoration.BOLD));
                         } else {
                             voterMsg = voterMsg.append(Component.text("!", NamedTextColor.GRAY, TextDecoration.BOLD));
@@ -83,7 +83,7 @@ public class MonthlyTask extends TimerTask {
             topVote = topVote.appendNewline().appendNewline().append(Component.text("They have been awarded", NamedTextColor.GRAY))
                     .append(Component.text(" 200 Tokens ", NamedTextColor.RED, TextDecoration.BOLD)).append(Component.text(" and ", NamedTextColor.GRAY))
                     .append(Component.text(topVoter, NamedTextColor.RED, TextDecoration.BOLD)).append(Component.text(" has been awarded ", NamedTextColor.GRAY))
-                    .append(Component.text("Top Voter Tag", NamedTextColor.RED, TextDecoration.BOLD)).append(Component.text("!", NamedTextColor.GRAY));
+                    .append(Component.text("Voter Legend Tag", NamedTextColor.RED, TextDecoration.BOLD)).append(Component.text("!", NamedTextColor.GRAY));
             plugin.getServer().sendMessage(topVote);
         } catch (SQLException e) {
             e.printStackTrace();
