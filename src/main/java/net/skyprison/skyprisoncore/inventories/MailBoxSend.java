@@ -183,59 +183,11 @@ public class MailBoxSend implements CustomInventory {
         sendTo.remove(pUUID);
         updateSendTo();
     }
-    public List<Integer> removeNotPlacedBoxes(List<Integer> mailBoxes) {
-        List<Integer> mailBoxesToRemove = new ArrayList<>();
-        for(int mailBox : mailBoxes) {
-            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT is_placed FROM mail_boxes WHERE id = ?")) {
-                ps.setInt(1, mailBox);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) {
-                    int isPlaced = rs.getInt(1);
-                    if(isPlaced == 0) {
-                        mailBoxesToRemove.add(mailBox);
-                    }
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-        mailBoxes.removeAll(mailBoxesToRemove);
-        return mailBoxes;
-    }
-    public int getMailBox(UUID pUUID) {
-        List<Integer> mailBoxes = new ArrayList<>();
-        int mailBox = -1;
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT mailbox_id, preferred FROM mail_boxes_users WHERE user_id = ?")) {
-            ps.setString(1, pUUID.toString());
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                int mailBoxId = rs.getInt(1);
-                mailBoxes.add(mailBoxId);
-                int pref = rs.getInt(2);
-                if(pref == 1) {
-                    mailBox = mailBoxId;
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        if(removeNotPlacedBoxes(new ArrayList<>(List.of(mailBox))).isEmpty()) {
-            if(!mailBoxes.isEmpty()) {
-                mailBoxes = removeNotPlacedBoxes(mailBoxes);
-                if(!mailBoxes.isEmpty()) {
-                    mailBox = mailBoxes.get(0);
-                } else mailBox = -1;
-            } else mailBox = -1;
-        }
-
-        return mailBox;
-    }
 
     public void sendMail(ItemStack itemToSend) {
         plugin.mailSend.remove(player.getUniqueId());
         sendTo.forEach((uuid, name) -> {
-            int mailBox = getMailBox(uuid);
+            int mailBox = Mail.getValidMailBox(uuid);
             String mailBoxName = Mail.getMailBoxName(mailBox);
             try (Connection conn = db.getConnection(); PreparedStatement ps =
                     conn.prepareStatement("INSERT INTO mails (sender_id, receiver_id, item, cost, mailbox_id, sent_at, collected) VALUES (?, ?, ?, ?, ?, ?, ?)")) {

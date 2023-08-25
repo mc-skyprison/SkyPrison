@@ -51,20 +51,6 @@ public class BlockPlace implements Listener {
         this.db = db;
     }
 
-    public int getMailboxAmount(Player player) {
-        int mailBoxes = 0;
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) FROM mail_boxes WHERE owner_id = ?")) {
-            ps.setString(1, player.getUniqueId().toString());
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                mailBoxes = rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return mailBoxes;
-    }
-
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
         Player player = event.getPlayer();
@@ -233,68 +219,66 @@ public class BlockPlace implements Listener {
                     }
                 } else if(pers.has(mailKey)) {
                     if(worldName.equalsIgnoreCase("world_free")) {
-                        int amount = getMailboxAmount(player);
-                        if(player.hasPermission("skyprisoncore.mailboxes.amount." + amount)) {
-                            int mailBox = pers.get(mailKey, PersistentDataType.INTEGER);
-                            Chest chest = (Chest) block.getBlockData();
-                            chest.setType(Chest.Type.SINGLE);
-                            block.setBlockData(chest);
-                            BlockFace chestFace = chest.getFacing();
-                            Location disLoc = block.getLocation().toCenterLocation().add(chestFace.getModX()*0.5, 0.5, chestFace.getModZ()*0.5);
-                            if (mailBox == -2) {
-                                int mailId = -2;
-                                String name = player.getName() + "-" + new Random().nextInt(99999) + 10000;
-                                TextDisplay boxDisplay = (TextDisplay) world.spawnEntity(disLoc, EntityType.TEXT_DISPLAY);
-                                boxDisplay.text(Component.text("Mailbox " + name, NamedTextColor.YELLOW));
-                                boxDisplay.setBillboard(Display.Billboard.CENTER);
-                                try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO mail_boxes " +
-                                        "(name, owner_id, x, y, z, world, is_placed, display_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
-                                    ps.setString(1, name);
-                                    ps.setString(2, player.getUniqueId().toString());
-                                    ps.setInt(3, block.getX());
-                                    ps.setInt(4, block.getY());
-                                    ps.setInt(5, block.getZ());
-                                    ps.setString(6, worldName);
-                                    ps.setInt(7, 1);
-                                    ps.setString(8, boxDisplay.getUniqueId().toString());
-                                    ps.executeUpdate();
-                                    player.sendMessage(Component.text(
-                                            "Mailbox has been created!", NamedTextColor.GREEN));
+                        int amount = Mail.getMailboxAmount(player.getUniqueId());
+                        int existAmount = amount - 1;
+                        int mailBox = pers.get(mailKey, PersistentDataType.INTEGER);
+                        Chest chest = (Chest) block.getBlockData();
+                        chest.setType(Chest.Type.SINGLE);
+                        block.setBlockData(chest);
+                        BlockFace chestFace = chest.getFacing();
+                        Location disLoc = block.getLocation().toCenterLocation().add(chestFace.getModX()*0.25, 0.75, chestFace.getModZ()*0.25);
+                        if(mailBox == -2 && player.hasPermission("skyprisoncore.mailboxes.amount." + amount)) {
+                            int mailId = -2;
+                            String name = player.getName() + "-" + new Random().nextInt(99999) + 10000;
+                            TextDisplay boxDisplay = (TextDisplay) world.spawnEntity(disLoc, EntityType.TEXT_DISPLAY);
+                            boxDisplay.text(Component.text("Mailbox " + name, NamedTextColor.YELLOW));
+                            boxDisplay.setBillboard(Display.Billboard.CENTER);
+                            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO mail_boxes " +
+                                    "(name, owner_id, x, y, z, world, display_text) VALUES (?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+                                ps.setString(1, name);
+                                ps.setString(2, player.getUniqueId().toString());
+                                ps.setInt(3, block.getX());
+                                ps.setInt(4, block.getY());
+                                ps.setInt(5, block.getZ());
+                                ps.setString(6, worldName);
+                                ps.setString(7, boxDisplay.getUniqueId().toString());
+                                ps.executeUpdate();
+                                player.sendMessage(Component.text(
+                                        "Mailbox has been created!", NamedTextColor.GREEN));
 
-                                    ResultSet rs = ps.getGeneratedKeys();
-                                    if (rs.next()) {
-                                        mailId = rs.getInt(1);
-                                    }
-                                } catch (SQLException e) {
-                                    e.printStackTrace();
+                                ResultSet rs = ps.getGeneratedKeys();
+                                if (rs.next()) {
+                                    mailId = rs.getInt(1);
                                 }
-                                try (Connection conn = db.getConnection(); PreparedStatement ps =
-                                        conn.prepareStatement("INSERT INTO mail_boxes_users (mailbox_id, user_id, preferred) VALUES (?, ?, ?)")) {
-                                    ps.setInt(1, mailId);
-                                    ps.setString(2, player.getUniqueId().toString());
-                                    ps.setInt(3, 0);
-                                    ps.executeUpdate();
-                                } catch (SQLException e) {
-                                    e.printStackTrace();
-                                }
-                            } else {
-                                TextDisplay boxDisplay = (TextDisplay) world.spawnEntity(disLoc, EntityType.TEXT_DISPLAY);
-                                boxDisplay.text(Component.text("Mailbox " + Mail.getMailBoxName(mailBox), NamedTextColor.YELLOW));
-                                boxDisplay.setBillboard(Display.Billboard.CENTER);
-                                try (Connection conn = db.getConnection(); PreparedStatement ps =
-                                        conn.prepareStatement("UPDATE mail_boxes SET x = ?, y = ?, z = ?, world = ?, is_placed = ?, display_text = ? WHERE id = ?")) {
-                                    ps.setInt(1, block.getX());
-                                    ps.setInt(2, block.getY());
-                                    ps.setInt(3, block.getZ());
-                                    ps.setString(4, worldName);
-                                    ps.setInt(5, 1);
-                                    ps.setString(6, boxDisplay.getUniqueId().toString());
-                                    ps.setInt(7, mailBox);
-                                    ps.executeUpdate();
-                                    player.sendMessage(Component.text("Mailbox location has been changed!", NamedTextColor.GREEN));
-                                } catch (SQLException e) {
-                                    e.printStackTrace();
-                                }
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                            }
+                            try (Connection conn = db.getConnection(); PreparedStatement ps =
+                                    conn.prepareStatement("INSERT INTO mail_boxes_users (mailbox_id, user_id, preferred) VALUES (?, ?, ?)")) {
+                                ps.setInt(1, mailId);
+                                ps.setString(2, player.getUniqueId().toString());
+                                ps.setInt(3, 0);
+                                ps.executeUpdate();
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                            }
+                        } else if(mailBox != -2 && player.hasPermission("skyprisoncore.mailboxes.amount." + existAmount)) {
+                            TextDisplay boxDisplay = (TextDisplay) world.spawnEntity(disLoc, EntityType.TEXT_DISPLAY);
+                            boxDisplay.text(Component.text("Mailbox " + Mail.getMailBoxName(mailBox), NamedTextColor.YELLOW));
+                            boxDisplay.setBillboard(Display.Billboard.CENTER);
+                            try (Connection conn = db.getConnection(); PreparedStatement ps =
+                                    conn.prepareStatement("UPDATE mail_boxes SET x = ?, y = ?, z = ?, world = ?, is_placed = ?, display_text = ? WHERE id = ?")) {
+                                ps.setInt(1, block.getX());
+                                ps.setInt(2, block.getY());
+                                ps.setInt(3, block.getZ());
+                                ps.setString(4, worldName);
+                                ps.setInt(5, 1);
+                                ps.setString(6, boxDisplay.getUniqueId().toString());
+                                ps.setInt(7, mailBox);
+                                ps.executeUpdate();
+                                player.sendMessage(Component.text("Mailbox location has been changed!", NamedTextColor.GREEN));
+                            } catch (SQLException e) {
+                                e.printStackTrace();
                             }
                         } else {
                             player.sendMessage(Component.text("You've reached the maximum number of mailboxes you can have!", NamedTextColor.RED));

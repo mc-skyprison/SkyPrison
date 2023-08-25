@@ -474,10 +474,15 @@ public class AsyncChat implements Listener {
                         case "mailbox-rename" -> {
                             MailBoxSettings inv = (MailBoxSettings) chatLock.get(1);
                             if(!msg.equalsIgnoreCase("cancel")) {
-                                if(inv.setName(msg)) {
-                                    player.openInventory(inv.getInventory());
+                                if(msg.length() <= 20) {
+                                    if (inv.setName(msg)) {
+                                        player.openInventory(inv.getInventory());
+                                    } else {
+                                        player.sendMessage(Component.text("A mailbox with that name already exists!", NamedTextColor.RED));
+                                        removeChatLock = false;
+                                    }
                                 } else {
-                                    player.sendMessage(Component.text("A mailbox with that name already exists!", NamedTextColor.RED));
+                                    player.sendMessage(Component.text("Mailbox name can't be more than 20 characters! Try again..", NamedTextColor.RED));
                                     removeChatLock = false;
                                 }
                             } else {

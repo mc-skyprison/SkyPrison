@@ -7,6 +7,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.items.PostOffice;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.Mail;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -17,10 +18,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -156,15 +154,19 @@ public class MailBoxSettings implements CustomInventory {
         return this.isOwner;
     }
     public boolean setName(String name) {
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE mail_boxes SET name = ? WHERE id = ?")) {
-            ps.setString(1, name);
-            ps.setInt(2, mailBox);
-            ps.executeUpdate();
-            this.name = name;
-            boxDisplay.text(Component.text("Mailbox " + name, NamedTextColor.YELLOW));
-            updateInventory();
-            return true;
-        } catch (SQLException ignored) {
+        if(Mail.getMailBoxByName(name) == -2) {
+            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE mail_boxes SET name = ? WHERE id = ?")) {
+                ps.setString(1, name);
+                ps.setInt(2, mailBox);
+                ps.executeUpdate();
+                this.name = name;
+                boxDisplay.text(Component.text("Mailbox " + name, NamedTextColor.YELLOW));
+                updateInventory();
+                return true;
+            } catch (SQLException ignored) {
+                return false;
+            }
+        } else {
             return false;
         }
     }
@@ -209,14 +211,15 @@ public class MailBoxSettings implements CustomInventory {
 
     public void deleteMailBox() {
         try (Connection conn = db.getConnection(); PreparedStatement ps =
-                conn.prepareStatement("UPDATE mail_boxes SET x = ?, y = ?, z = ?, world = ?, is_placed = ?, display_text = ? WHERE id = ?")) {
-            ps.setInt(1, 0);
-            ps.setInt(2, 0);
-            ps.setInt(3, 0);
-            ps.setString(4, "world_event");
+                conn.prepareStatement("UPDATE mail_boxes SET x = ?, y = ?, z = ?, world = ?, is_placed = ?, display_text = ?, deleted = ? WHERE id = ?")) {
+            ps.setNull(1, Types.INTEGER);
+            ps.setNull(2, Types.INTEGER);
+            ps.setNull(3, Types.INTEGER);
+            ps.setString(4, null);
             ps.setInt(5, 0);
             ps.setString(6, null);
             ps.setInt(7, mailBox);
+            ps.setInt(8, 1);
             ps.executeUpdate();
             loc.getBlock().setType(Material.AIR);
             boxDisplay.remove();
