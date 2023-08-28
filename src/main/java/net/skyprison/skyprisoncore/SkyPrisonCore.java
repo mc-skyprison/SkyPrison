@@ -4,7 +4,6 @@ import cloud.commandframework.Command;
 import cloud.commandframework.CommandTree;
 import cloud.commandframework.arguments.standard.IntegerArgument;
 import cloud.commandframework.arguments.standard.StringArgument;
-import cloud.commandframework.bukkit.BukkitCommandManager;
 import cloud.commandframework.bukkit.CloudBukkitCapabilities;
 import cloud.commandframework.bukkit.parsers.PlayerArgument;
 import cloud.commandframework.execution.AsynchronousCommandExecutionCoordinator;
@@ -51,7 +50,6 @@ import net.skyprison.skyprisoncore.commands.guard.*;
 import net.skyprison.skyprisoncore.commands.secrets.SecretFound;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
 import net.skyprison.skyprisoncore.inventories.*;
-import net.skyprison.skyprisoncore.inventories.Referral;
 import net.skyprison.skyprisoncore.items.*;
 import net.skyprison.skyprisoncore.listeners.advancedregionmarket.UnsellRegion;
 import net.skyprison.skyprisoncore.listeners.brewery.BrewDrink;
@@ -113,8 +111,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -1249,65 +1245,69 @@ public class SkyPrisonCore extends JavaPlugin {
 
         Command.Builder<CommandSender> referral = this.manager.commandBuilder("referral", "ref")
                 .permission("skyprisoncore.command.referral")
-                .argument(PlayerArgument.optional("player"))
+                .argument(StringArgument.optional("player"))
                 .handler(c -> {
                     CommandSender sender = c.getSender();
-                    if(sender instanceof Player player){
-                        Player refPlayer = c.getOrDefault("player", null);
-                        if (refPlayer != null) {
-                            long playtime = TimeUnit.MILLISECONDS.toHours(user.getTotalPlayTime());
-
-                            boolean hasReferred = false;
-                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT * FROM referrals WHERE referred_by = ?")) {
-                                ps.setString(1, player.getUniqueId().toString());
-                                ResultSet rs = ps.executeQuery();
-                                if(rs.next()) {
-                                    hasReferred = true;
+                    if(sender instanceof Player player) {
+                        String playerName = c.getOrDefault("player", null);
+                        if (playerName != null) {
+                            UUID pUUID = PlayerManager.getPlayerId(playerName);
+                            if(pUUID != null) {
+                                boolean hasReferred = false;
+                                try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT * FROM referrals WHERE referred_by = ?")) {
+                                    ps.setString(1, player.getUniqueId().toString());
+                                    ResultSet rs = ps.executeQuery();
+                                    if (rs.next()) {
+                                        hasReferred = true;
+                                    }
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
                                 }
-                            } catch (SQLException e) {
-                                e.printStackTrace();
-                            }
-
-                            if(!hasReferred) {
-                                if(playtime >= 1 && playtime < 24) { // Checks that the player has played more than an hour on the server but less than 24 hours.
-                                    if(CMI.getInstance().getPlayerManager().getUser(args[0]) != null) {
-                                        CMIUser reffedPlayer = CMI.getInstance().getPlayerManager().getUser(args[0]);
-                                        if(!user.getLastIp().equalsIgnoreCase(reffedPlayer.getLastIp())) {
-                                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO referrals (user_id, referred_by, refer_date) VALUES (?, ?, ?)")) {
-                                                ps.setString(1, reffedPlayer.getUniqueId().toString());
-                                                ps.setString(2, player.getUniqueId().toString());
-                                                ps.setLong(3, System.currentTimeMillis());
-                                                ps.executeUpdate();
-                                            } catch (SQLException e) {
-                                                e.printStackTrace();
-                                            }
-                                            Component beenReffed = Component.text(player.getName(), NamedTextColor.AQUA).append(Component.text(" has referred you! You have received ", NamedTextColor.DARK_AQUA))
-                                                    .append(Component.text("250", NamedTextColor.YELLOW)).append(Component.text(" tokens!", NamedTextColor.DARK_AQUA));
-                                            if(reffedPlayer.isOnline()) {
-                                                reffedPlayer.getPlayer().sendMessage(beenReffed);
+                                if (!hasReferred) {
+                                    CMIUser user = CMI.getInstance().getPlayerManager().getUser(player.getUniqueId());
+                                    long playtime = TimeUnit.MILLISECONDS.toHours(user.getTotalPlayTime());
+                                    if (playtime >= 1 && playtime < 24) { // Checks that the player has played more than an hour on the server but less than 24 hours.
+                                        CMIUser reffedPlayer = CMI.getInstance().getPlayerManager().getUser(pUUID);
+                                        if (reffedPlayer != null) {
+                                            if (!user.getLastIp().equalsIgnoreCase(reffedPlayer.getLastIp())) {
+                                                try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO referrals (user_id, referred_by, refer_date) VALUES (?, ?, ?)")) {
+                                                    ps.setString(1, reffedPlayer.getUniqueId().toString());
+                                                    ps.setString(2, player.getUniqueId().toString());
+                                                    ps.setLong(3, System.currentTimeMillis());
+                                                    ps.executeUpdate();
+                                                } catch (SQLException e) {
+                                                    e.printStackTrace();
+                                                }
+                                                Component beenReffed = Component.text(player.getName(), NamedTextColor.AQUA).append(Component.text(" has referred you! You have received ", NamedTextColor.DARK_AQUA))
+                                                        .append(Component.text("250", NamedTextColor.YELLOW)).append(Component.text(" tokens!", NamedTextColor.DARK_AQUA));
+                                                if (reffedPlayer.isOnline()) {
+                                                    reffedPlayer.getPlayer().sendMessage(beenReffed);
+                                                } else {
+                                                    Notifications.createNotification("referred", player.getName(), reffedPlayer.getUniqueId().toString(), beenReffed, null, true);
+                                                }
+                                                player.sendMessage(Component.text("You sucessfully referred ", NamedTextColor.DARK_AQUA)
+                                                        .append(Component.text(reffedPlayer.getName(), NamedTextColor.AQUA)).append(Component.text(" and have received ", NamedTextColor.DARK_AQUA))
+                                                        .append(Component.text("50", NamedTextColor.GOLD)).append(Component.text(" tokens!", NamedTextColor.DARK_AQUA)));
+                                                tokens.addTokens(reffedPlayer.getUniqueId(), 250, "Referred Someone", player.getName());
+                                                tokens.addTokens(player.getUniqueId(), 50, "Was Referred", reffedPlayer.getName());
                                             } else {
-                                                Notifications.createNotification("referred", player.getName(), reffedPlayer.getUniqueId().toString(), beenReffed, null, true);
+                                                player.sendMessage(Component.text("/referral <player>", NamedTextColor.RED));
                                             }
-                                            player.sendMessage(Component.text("You sucessfully referred ", NamedTextColor.DARK_AQUA)
-                                                    .append(Component.text(reffedPlayer.getName(), NamedTextColor.AQUA)).append(Component.text(" and have received ", NamedTextColor.DARK_AQUA))
-                                                    .append(Component.text("50", NamedTextColor.GOLD)).append(Component.text(" tokens!", NamedTextColor.DARK_AQUA)));
-                                            plugin.tokens.addTokens(reffedPlayer.getUniqueId(), 250, "Referred Someone", player.getName());
-                                            plugin.tokens.addTokens(player.getUniqueId(), 50, "Was Referred", reffedPlayer.getName());
                                         } else {
                                             player.sendMessage(Component.text("/referral <player>", NamedTextColor.RED));
                                         }
                                     } else {
-                                        player.sendMessage(Component.text("/referral <player>", NamedTextColor.RED));
+                                        if (playtime < 1) {
+                                            player.sendMessage(Component.text("You need to play 1 hour to be able to refer someone!", NamedTextColor.RED));
+                                        } else {
+                                            player.sendMessage(Component.text("You have played too long to refer anyone!", NamedTextColor.RED));
+                                        }
                                     }
                                 } else {
-                                    if(playtime < 1) {
-                                        player.sendMessage(Component.text("You need to play 1 hour to be able to refer someone!", NamedTextColor.RED));
-                                    } else {
-                                        player.sendMessage(Component.text("You have played too long to refer anyone!", NamedTextColor.RED));
-                                    }
+                                    player.sendMessage(Component.text("You have already referred someone!", NamedTextColor.RED));
                                 }
                             } else {
-                                player.sendMessage(Component.text("You have already referred someone!", NamedTextColor.RED));
+                                player.sendMessage(Component.text("Specified player doesn't exist!", NamedTextColor.RED));
                             }
                         } else {
                             c.getSender().sendMessage(Component.text("If a player referred you to our server, you can do \n/referral <player> to give them some tokens!", NamedTextColor.GREEN));

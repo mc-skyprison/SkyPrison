@@ -643,7 +643,7 @@ public class Tokens implements CommandExecutor {
                     case "add" -> {
                         if (sender.hasPermission("skyprisoncore.command.tokens.admin")) {
                             if (args.length > 2) {
-                                UUID pUUID = PlayerManager.playerExists(args[1]);
+                                UUID pUUID = PlayerManager.getPlayerId(args[1]);
                                 if (pUUID != null) {
                                     if (plugin.isInt(args[2])) {
                                         if (Integer.parseInt(args[2]) >= 0) {
@@ -680,7 +680,7 @@ public class Tokens implements CommandExecutor {
                     case "remove" -> {
                         if (sender.hasPermission("skyprisoncore.command.tokens.admin")) {
                             if (args.length > 2) {
-                                UUID pUUID = PlayerManager.playerExists(args[1]);
+                                UUID pUUID = PlayerManager.getPlayerId(args[1]);
                                 if (pUUID != null) {
                                     if (plugin.isInt(args[2])) {
                                         int amount = Integer.parseInt(args[2]);
@@ -721,7 +721,7 @@ public class Tokens implements CommandExecutor {
                                 openHistoryGUI(player, false, 1, 1, player.getUniqueId().toString());
                             } else if (args.length == 2) {
                                 if (player.hasPermission("skyprisoncore.command.tokens.admin")) {
-                                    UUID pUUID = PlayerManager.playerExists(args[1]);
+                                    UUID pUUID = PlayerManager.getPlayerId(args[1]);
                                     if (pUUID != null) {
                                         openHistoryGUI(player, false, 1, 1, pUUID.toString());
                                     } else {
@@ -746,7 +746,7 @@ public class Tokens implements CommandExecutor {
 
                                 ArrayList<String> tokenLogs = new ArrayList<>();
                                 if (args.length > 1) {
-                                    UUID pUUID = PlayerManager.playerExists(args[1]);
+                                    UUID pUUID = PlayerManager.getPlayerId(args[1]);
                                     if (pUUID != null) {
                                         try {
                                             FileInputStream fstream = new FileInputStream(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions" + File.separator + pUUID + ".log");
@@ -826,7 +826,7 @@ public class Tokens implements CommandExecutor {
                     case "set" -> {
                         if (sender.hasPermission("skyprisoncore.command.tokens.admin")) {
                             if (args.length > 2) {
-                                UUID pUUID = PlayerManager.playerExists(args[1]);
+                                UUID pUUID = PlayerManager.getPlayerId(args[1]);
                                 if (pUUID != null) {
                                     if (plugin.isInt(args[2])) {
                                         if (Integer.parseInt(args[2]) >= 0) {
@@ -882,7 +882,7 @@ public class Tokens implements CommandExecutor {
                     }
                     case "balance", "bal" -> {
                         if (args.length > 1) {
-                            UUID pUUID = PlayerManager.playerExists(args[1]);
+                            UUID pUUID = PlayerManager.getPlayerId(args[1]);
                             if (pUUID != null) {
                                 if (plugin.tokensData.containsKey(pUUID)) {
                                     sender.sendMessage(prefix.append(Component.text(args[1] + "'s balance is ", NamedTextColor.GRAY)
