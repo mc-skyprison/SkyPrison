@@ -49,7 +49,7 @@ public class IgnoreTeleport implements CommandExecutor {
 					if (!ignoredPlayers.isEmpty()) {
 						ArrayList<String> ignoredNames = new ArrayList<>();
 
-						try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT current_name FROM users WHERE user_id IN " + plugin.getQuestionMarks(ignoredPlayers))) {
+						try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT current_name FROM users WHERE user_id IN " + SkyPrisonCore.getQuestionMarks(ignoredPlayers))) {
 							for (int i = 0; i < ignoredPlayers.size(); i++) {
 								ps.setString(i + 1, ignoredPlayers.get(i));
 							}

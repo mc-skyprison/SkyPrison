@@ -10,6 +10,7 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.kyori.adventure.util.Index;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.Notifications;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -22,8 +23,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
-
-import static net.skyprison.skyprisoncore.SkyPrisonCore.scheduleForOnline;
 
 public class NameColour implements CommandExecutor { // /namecolour <coloured name> (player)
     private final SkyPrisonCore plugin;
@@ -110,8 +109,8 @@ public class NameColour implements CommandExecutor { // /namecolour <coloured na
                             player.customName(null);
                             player.sendMessage(colourChange);
                         } else {
-                            plugin.createNotification("namecolour-update", null, pUUID, colourChange, null, true);
-                            scheduleForOnline(pUUID, "namecolour", "remove");
+                            Notifications.createNotification("namecolour-update", null, pUUID, colourChange, null, true);
+                            Notifications.scheduleForOnline(pUUID, "namecolour", "remove");
                         }
                     }
                     sender.sendMessage(Component.text("Successfully removed the name color", TextColor.fromHexString("#87fdd2")));
@@ -134,8 +133,8 @@ public class NameColour implements CommandExecutor { // /namecolour <coloured na
                                     player.customName(nickName);
                                     player.sendMessage(colourChange);
                                 } else {
-                                    plugin.createNotification("namecolour-update", null, pUUID, colourChange, null, true);
-                                    scheduleForOnline(pUUID, "namecolour", GsonComponentSerializer.gson().serialize(nickName));
+                                    Notifications.createNotification("namecolour-update", null, pUUID, colourChange, null, true);
+                                    Notifications.scheduleForOnline(pUUID, "namecolour", GsonComponentSerializer.gson().serialize(nickName));
                                 }
                             }
                             sender.sendMessage(Component.text("Successfully changed the name color to ", TextColor.fromHexString("#87fdd2")).append(nickName));
@@ -169,8 +168,8 @@ public class NameColour implements CommandExecutor { // /namecolour <coloured na
                                 player.customName(nickName);
                                 player.sendMessage(colourChange);
                             } else {
-                                plugin.createNotification("namecolour-update", null, pUUID, colourChange, null, true);
-                                scheduleForOnline(pUUID, "namecolour", GsonComponentSerializer.gson().serialize(nickName));
+                                Notifications.createNotification("namecolour-update", null, pUUID, colourChange, null, true);
+                                Notifications.scheduleForOnline(pUUID, "namecolour", GsonComponentSerializer.gson().serialize(nickName));
                             }
                         }
                         sender.sendMessage(Component.text("Successfully changed the name color to ", TextColor.fromHexString("#87fdd2")).append(nickName));

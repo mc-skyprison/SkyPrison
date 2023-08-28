@@ -28,6 +28,7 @@ import net.skyprison.skyprisoncore.commands.ItemLore;
 import net.skyprison.skyprisoncore.commands.Tags;
 import net.skyprison.skyprisoncore.inventories.*;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.Notifications;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
 import org.bukkit.Bukkit;
@@ -511,7 +512,7 @@ public class AsyncChat implements Listener {
                                                             if (player.isOnline()) {
                                                                 player.sendMessage(playerMsg);
                                                             } else {
-                                                                plugin.createNotification("mailbox-invite-accepted", null, player.getUniqueId().toString(), playerMsg, null, true);
+                                                                Notifications.createNotification("mailbox-invite-accepted", null, player.getUniqueId().toString(), playerMsg, null, true);
                                                             }
                                                         }
                                                     })))
@@ -525,7 +526,7 @@ public class AsyncChat implements Listener {
                                                             if (player.isOnline()) {
                                                                 player.sendMessage(inviteDecline);
                                                             } else {
-                                                                plugin.createNotification("mailbox-invite-declined", null, player.getUniqueId().toString(), inviteDecline, null, true);
+                                                                Notifications.createNotification("mailbox-invite-declined", null, player.getUniqueId().toString(), inviteDecline, null, true);
                                                             }
                                                         }
                                                     })));

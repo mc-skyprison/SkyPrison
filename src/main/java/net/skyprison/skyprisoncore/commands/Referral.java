@@ -7,6 +7,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.Notifications;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -34,58 +35,6 @@ public class Referral implements CommandExecutor {
 	public Referral(SkyPrisonCore plugin, DatabaseHook db) {
 		this.plugin = plugin;
 		this.db = db;
-	}
-
-	public void openGUI(Player player) {
-		HashMap<String, String> reffedBy = new HashMap<>();
-		HashMap<String, String> reffedName = new HashMap<>();
-		try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT referred_by, refer_date FROM referrals WHERE user_id = ?")) {
-			ps.setString(1, player.getUniqueId().toString());
-			ResultSet rs = ps.executeQuery();
-			while(rs.next()) {
-				reffedBy.put(rs.getString(1), rs.getString(2));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		List<String> reffedIds = reffedBy.keySet().stream().toList();
-		try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id, current_name FROM users WHERE user_id IN " + plugin.getQuestionMarks(reffedIds))) {
-			for (int i = 0; i < reffedIds.size(); i++) {
-				ps.setString(i + 1, reffedIds.get(i));
-			}
-			ResultSet rs = ps.executeQuery();
-			while (rs.next()) {
-				reffedName.put(rs.getString(1), rs.getString(2));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-
-		Inventory referred = Bukkit.createInventory(null, 54, Component.text("Referral List", NamedTextColor.RED));
-		int i = 0;
-		for (String reffedPlayer : reffedBy.keySet()) {
-			ArrayList<Component> lore = new ArrayList<>();
-			ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-			SkullMeta meta = (SkullMeta) head.getItemMeta();
-			meta.setOwningPlayer(Bukkit.getOfflinePlayer(UUID.fromString(reffedPlayer)));
-			meta.displayName(Component.text(reffedName.get(reffedPlayer), NamedTextColor.YELLOW, TextDecoration.BOLD)
-					.decoration(TextDecoration.ITALIC, false));
-
-			DateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-			Calendar calendar = Calendar.getInstance();
-			calendar.setTimeInMillis(Long.parseLong(reffedBy.get(reffedPlayer)));
-			lore.add(Component.text("Referred you on: " + df.format(calendar.getTime()), NamedTextColor.YELLOW)
-					.decoration(TextDecoration.ITALIC, false));
-			meta.lore(lore);
-			head.setItemMeta(meta);
-			referred.setItem(i, head);
-			i++;
-		}
-		ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-		for (int b = 45; b < 54; b++) {
-			referred.setItem(b, pane);
-		}
-		player.openInventory(referred);
 	}
 
 	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
@@ -128,7 +77,7 @@ public class Referral implements CommandExecutor {
 									if(reffedPlayer.isOnline()) {
 										reffedPlayer.getPlayer().sendMessage(beenReffed);
 									} else {
-										plugin.createNotification("referred", player.getName(), reffedPlayer.getUniqueId().toString(), beenReffed, null, true);
+										Notifications.createNotification("referred", player.getName(), reffedPlayer.getUniqueId().toString(), beenReffed, null, true);
 									}
 									player.sendMessage(Component.text("You sucessfully referred ", NamedTextColor.DARK_AQUA)
 											.append(Component.text(reffedPlayer.getName(), NamedTextColor.AQUA)).append(Component.text(" and have received ", NamedTextColor.DARK_AQUA))

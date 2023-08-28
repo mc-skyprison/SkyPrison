@@ -31,4 +31,16 @@ public class PlayerManager {
         } catch (SQLException ignored) {}
         return null;
     }
+    public static UUID playerExists(String name) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id FROM users WHERE current_name = ?")) {
+            ps.setString(1, name);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return UUID.fromString(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }

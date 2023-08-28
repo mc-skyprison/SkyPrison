@@ -2,6 +2,7 @@ package net.skyprison.skyprisoncore.commands.donations;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.Notifications;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -82,7 +83,7 @@ public class DonorAdd implements CommandExecutor {
 				if(player != null) {
 					checkTotal(player, totalDonor);
 				} else {
-					SkyPrisonCore.scheduleForOnline(user.toString(), "purchase-total-check", String.valueOf(totalDonor));
+					Notifications.scheduleForOnline(user.toString(), "purchase-total-check", String.valueOf(totalDonor));
 				}
 			}
 		}

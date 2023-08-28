@@ -34,6 +34,7 @@ import net.skyprison.skyprisoncore.inventories.ClaimFlags;
 import net.skyprison.skyprisoncore.inventories.ClaimMembers;
 import net.skyprison.skyprisoncore.inventories.ClaimPending;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.Notifications;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -83,7 +84,7 @@ public class Claim implements CommandExecutor {
     public HashMap<String, UUID> getClaimOwners(List<String> claimIds) {
         HashMap<String, UUID> userUUIDs = new HashMap<>();
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT claim_id, user_id FROM claims_members WHERE claim_id IN "
-                + plugin.getQuestionMarks(claimIds) + " AND user_rank = ?")) {
+                + SkyPrisonCore.getQuestionMarks(claimIds) + " AND user_rank = ?")) {
             int i;
             for (i = 0; i < claimIds.size(); i++) {
                 ps.setString(i + 1, claimIds.get(i));
@@ -102,7 +103,7 @@ public class Claim implements CommandExecutor {
         HashMap<String, HashMap<String, Object>> claimInfos = new HashMap<>();
         if(claimIds.isEmpty()) return claimInfos;
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT claim_id, claim_name, parent_id, world, blocks_used FROM claims WHERE claim_id IN "
-                + plugin.getQuestionMarks(claimIds))) {
+                + SkyPrisonCore.getQuestionMarks(claimIds))) {
             for (int i = 0; i < claimIds.size(); i++) {
                 ps.setString(i + 1, claimIds.get(i));
             }
@@ -136,7 +137,7 @@ public class Claim implements CommandExecutor {
         List<String> playerIds = new ArrayList<>();
         players.forEach(i -> playerIds.add(i.getUniqueId().toString()));
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT claim_name, claim_id FROM claims WHERE claim_id IN (SELECT claim_id FROM claims_members WHERE user_id IN "
-                + plugin.getQuestionMarks(playerIds) + " AND user_rank IN " + plugin.getQuestionMarks(ranks) + ")")) {
+                + SkyPrisonCore.getQuestionMarks(playerIds) + " AND user_rank IN " + SkyPrisonCore.getQuestionMarks(ranks) + ")")) {
             int b = 0;
             for (int i = 0; i < playerIds.size() + ranks.size(); i++) {
                 if(i < playerIds.size()) {
@@ -182,7 +183,7 @@ public class Claim implements CommandExecutor {
         List<String> playerIds = new ArrayList<>();
         players.forEach(i -> playerIds.add(i.getUniqueId().toString()));
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id, claim_blocks, claim_blocks_used FROM users WHERE user_id IN "
-                + plugin.getQuestionMarks(playerIds))) {
+                + SkyPrisonCore.getQuestionMarks(playerIds))) {
             for (int i = 0; i < playerIds.size(); i++) {
                 ps.setString(i + 1, playerIds.get(i));
             }
@@ -301,7 +302,7 @@ public class Claim implements CommandExecutor {
                     Player tPlayer = targetPlayer.getPlayer();
                     Objects.requireNonNull(tPlayer).sendMessage(targetMsg);
                 } else {
-                    plugin.createNotification("claim-delete", null, targetPlayer.getUniqueId().toString(), targetMsg, null, true);
+                    Notifications.createNotification("claim-delete", null, targetPlayer.getUniqueId().toString(), targetMsg, null, true);
                 }
             }
         } else {
@@ -1002,7 +1003,7 @@ public class Claim implements CommandExecutor {
                 .append(Component.text("\nACCEPT INVITE", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.runCommand("/claim accept invite " + notifId)))
                 .append(Component.text("     "))
                 .append(Component.text("DECLINE INVITE", NamedTextColor.RED, TextDecoration.BOLD).clickEvent(ClickEvent.runCommand("/claim decline invite " + notifId)));
-        plugin.createNotification("claim-invite", claimId, iUser.getOfflinePlayer().toString(), msg, notifId, false);
+        Notifications.createNotification("claim-invite", claimId, iUser.getOfflinePlayer().toString(), msg, notifId, false);
 
 
         if (iUser.isOnline()) {
@@ -1014,11 +1015,11 @@ public class Claim implements CommandExecutor {
     }
 
     public void inviteDecline(Player player, String claimId, String notifId) {
-        if(!plugin.hasNotification(notifId, player).isEmpty()) {
+        if(!Notifications.hasNotification(notifId, player).isEmpty()) {
             String claimName = (String) getClaimData(Collections.singletonList(claimId)).get(claimId).get("name");
             HashMap<UUID, String> toNotify = getClaimUsers(Collections.singletonList(claimId), Arrays.asList("owner", "co-owner")).get(claimId);
 
-            plugin.deleteNotification(notifId);
+            Notifications.deleteNotification(notifId);
 
             player.sendMessage(prefix.append(Component.text("You've successfully declined the invite to join the claim ", TextColor.fromHexString("#20df80"))
                     .append(Component.text(claimName, TextColor.fromHexString("#20df80"), TextDecoration.BOLD))));
@@ -1032,14 +1033,14 @@ public class Claim implements CommandExecutor {
                 if (oPlayer.isOnline()) {
                     Objects.requireNonNull(oPlayer.getPlayer()).sendMessage(msg);
                 } else {
-                    plugin.createNotification("claim-invite-declined", claimId, pUUID.toString(), msg, null, true);
+                    Notifications.createNotification("claim-invite-declined", claimId, pUUID.toString(), msg, null, true);
                 }
             }
         }
     }
 
     public void inviteAccept(Player player, String claimId, String notifId) {
-        if(!plugin.hasNotification(notifId, player).isEmpty()) {
+        if(!Notifications.hasNotification(notifId, player).isEmpty()) {
             HashMap<String, Object> claimData = getClaimData(Collections.singletonList(claimId)).get(claimId);
             final RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
             final RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld((String) claimData.get("world")))));
@@ -1048,7 +1049,7 @@ public class Claim implements CommandExecutor {
             String claimName = (String) claimData.get("name");
             HashMap<UUID, String> toNotify = getClaimUsers(Collections.singletonList(claimId), Arrays.asList("owner", "co-owner")).get(claimId);
 
-            plugin.deleteNotification(notifId);
+            Notifications.deleteNotification(notifId);
 
 
             try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO claims_members (user_id, claim_id, user_rank) VALUES (?, ?, ?)")) {
@@ -1072,7 +1073,7 @@ public class Claim implements CommandExecutor {
                 if (oPlayer.isOnline()) {
                     Objects.requireNonNull(oPlayer.getPlayer()).sendMessage(msg);
                 } else {
-                    plugin.createNotification("claim-invite-accepted", claimId, pUUID.toString(), msg, null, true);
+                    Notifications.createNotification("claim-invite-accepted", claimId, pUUID.toString(), msg, null, true);
                 }
             }
         }
@@ -1129,7 +1130,7 @@ public class Claim implements CommandExecutor {
         if(kickedPlayer.isOnline()) {
             kickedPlayer.getPlayer().sendMessage(msg);
         } else {
-            plugin.createNotification("claim-kick", claimId, kickedPlayer.getUniqueId().toString(), msg, null, true);
+            Notifications.createNotification("claim-kick", claimId, kickedPlayer.getUniqueId().toString(), msg, null, true);
         }
     }
 
@@ -1157,7 +1158,7 @@ public class Claim implements CommandExecutor {
         if(promotedPlayer.isOnline()) {
             promotedPlayer.getPlayer().sendMessage(msg);
         } else {
-            plugin.createNotification("claim-promote", claimId, promotedPlayer.getUniqueId().toString(), msg, null, true);
+            Notifications.createNotification("claim-promote", claimId, promotedPlayer.getUniqueId().toString(), msg, null, true);
         }
     }
 
@@ -1184,7 +1185,7 @@ public class Claim implements CommandExecutor {
         if(demotedPlayer.isOnline()) {
             demotedPlayer.getPlayer().sendMessage(msg);
         } else {
-            plugin.createNotification("claim-demote", claimId, demotedPlayer.getUniqueId().toString(), msg, null, true);
+            Notifications.createNotification("claim-demote", claimId, demotedPlayer.getUniqueId().toString(), msg, null, true);
         }
     }
 
@@ -1224,7 +1225,7 @@ public class Claim implements CommandExecutor {
                 } else {
                     executorPlayer.sendMessage(prefix.append(Component.text("Successfully created transfer request! " + transferPlayer.getName() + " will receive the request when they log on. ", TextColor.fromHexString("#20df80"))));
                 }
-                plugin.createNotification("claim-transfer", claimId, transferPlayer.getUniqueId().toString(), msg, notifId, false);
+                Notifications.createNotification("claim-transfer", claimId, transferPlayer.getUniqueId().toString(), msg, notifId, false);
             } else {
                 executorPlayer.sendMessage(prefix.append(Component.text(transferPlayer.getName(), NamedTextColor.RED, TextDecoration.BOLD)
                         .append(Component.text(" doesn't have enough claim blocks!", NamedTextColor.RED))));
@@ -1236,8 +1237,8 @@ public class Claim implements CommandExecutor {
     }
 
     public void transferDecline(Player transferPlayer, String claimId, String notifId) {
-        if(!plugin.hasNotification(notifId, transferPlayer).isEmpty()) {
-            plugin.deleteNotification(notifId);
+        if(!Notifications.hasNotification(notifId, transferPlayer).isEmpty()) {
+            Notifications.deleteNotification(notifId);
 
             String claimName = (String) getClaimData(Collections.singletonList(claimId)).get(claimId).get("name");
 
@@ -1253,14 +1254,14 @@ public class Claim implements CommandExecutor {
             if (Bukkit.getPlayer(owner) != null) {
                 Objects.requireNonNull(Bukkit.getPlayer(owner)).sendMessage(msg);
             } else {
-                plugin.createNotification("claim-transfer-declined", claimId, owner.toString(), msg, null, true);
+                Notifications.createNotification("claim-transfer-declined", claimId, owner.toString(), msg, null, true);
             }
         }
     }
 
     public void transferAccept(Player transferPlayer, String claimId, String notifId) {
-        if(!plugin.hasNotification(notifId, transferPlayer).isEmpty()) {
-            plugin.deleteNotification(notifId);
+        if(!Notifications.hasNotification(notifId, transferPlayer).isEmpty()) {
+            Notifications.deleteNotification(notifId);
             HashMap<String, HashMap<String, Object>> claims = getClaimData(Collections.singletonList(claimId));
             if (!claims.isEmpty()) {
                 HashMap<String, Object> claimData = getClaimData(Collections.singletonList(claimId)).get(claimId);
@@ -1385,7 +1386,7 @@ public class Claim implements CommandExecutor {
                     if (Bukkit.getPlayer(owner) != null) {
                         Objects.requireNonNull(Bukkit.getPlayer(owner)).sendMessage(msg);
                     } else {
-                        plugin.createNotification("claim-transfer-accepted", claimId, owner.toString(), msg, null, true);
+                        Notifications.createNotification("claim-transfer-accepted", claimId, owner.toString(), msg, null, true);
                     }
                 } else {
                     transferPlayer.sendMessage(prefix.append(Component.text("You don't have enough claim blocks for this claim transfer! Cancelling transfer..", NamedTextColor.RED)));
@@ -1432,7 +1433,7 @@ public class Claim implements CommandExecutor {
         if(claimIds != null) {
             if(!claimIds.isEmpty()) {
                 try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT claim_id, user_id, user_rank FROM claims_members WHERE claim_id IN "
-                        + plugin.getQuestionMarks(claimIds) + " AND user_rank IN " + plugin.getQuestionMarks(ranks))) {
+                        + SkyPrisonCore.getQuestionMarks(claimIds) + " AND user_rank IN " + SkyPrisonCore.getQuestionMarks(ranks))) {
                     int b = 0;
                     for (int i = 0; i < claimIds.size() + ranks.size(); i++) {
                         if(i < claimIds.size()) {
@@ -1456,7 +1457,7 @@ public class Claim implements CommandExecutor {
                 }
             } else {
                 try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT claim_id, user_id, user_rank FROM claims_members WHERE user_rank IN "
-                        + plugin.getQuestionMarks(ranks))) {
+                        + SkyPrisonCore.getQuestionMarks(ranks))) {
                     for (int i = 0; i < claimIds.size() + ranks.size(); i++) {
                         ps.setString(i + 1, ranks.get(i));
                     }
@@ -1490,7 +1491,7 @@ public class Claim implements CommandExecutor {
         List<String> playerIds = new ArrayList<>();
         players.forEach(i -> playerIds.add(i.getUniqueId().toString()));
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id, claim_id, user_rank FROM claims_members WHERE user_id IN "
-                + plugin.getQuestionMarks(playerIds) + " AND user_rank IN " + plugin.getQuestionMarks(ranks))) {
+                + SkyPrisonCore.getQuestionMarks(playerIds) + " AND user_rank IN " + SkyPrisonCore.getQuestionMarks(ranks))) {
             int b = 0;
             for (int i = 0; i < playerIds.size() + ranks.size(); i++) {
                 if(i < playerIds.size()) {
@@ -1528,7 +1529,7 @@ public class Claim implements CommandExecutor {
         players.forEach(i -> playerIds.add(i.getUniqueId().toString()));
         if(!claimIds.isEmpty()) {
             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id, claim_id, user_rank FROM claims_members WHERE user_id IN "
-                    + plugin.getQuestionMarks(playerIds) + " AND claim_id IN " + plugin.getQuestionMarks(claimIds) + " AND user_rank IN " + plugin.getQuestionMarks(ranks))) {
+                    + SkyPrisonCore.getQuestionMarks(playerIds) + " AND claim_id IN " + SkyPrisonCore.getQuestionMarks(claimIds) + " AND user_rank IN " + SkyPrisonCore.getQuestionMarks(ranks))) {
                 int b = 0;
                 int x = 0;
                 for (int i = 0; i < playerIds.size() + claimIds.size() + ranks.size(); i++) {
@@ -1567,7 +1568,7 @@ public class Claim implements CommandExecutor {
                     if (!regionIds.isEmpty()) {
                         if(!getLocationRegardless) {
                             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id, claim_id, user_rank FROM claims_members WHERE user_id IN "
-                                    + plugin.getQuestionMarks(playerIds) + " AND claim_id IN " + plugin.getQuestionMarks(regionIds) + " AND user_rank IN " + plugin.getQuestionMarks(ranks))) {
+                                    + SkyPrisonCore.getQuestionMarks(playerIds) + " AND claim_id IN " + SkyPrisonCore.getQuestionMarks(regionIds) + " AND user_rank IN " + SkyPrisonCore.getQuestionMarks(ranks))) {
                                 int b = 0;
                                 int x = 0;
                                 for (int i = 0; i < playerIds.size() + regionIds.size() + ranks.size(); i++) {
@@ -1841,7 +1842,7 @@ public class Claim implements CommandExecutor {
                                     claimIds = new ArrayList<>(userClaims.keySet());
                                     claimIds.removeAll(alreadyMember.keySet());
                                     if (!claimIds.isEmpty()) {
-                                        List<String> alreadyInvited = plugin.hasNotifications("claim-invite", claimIds, iUser.getOfflinePlayer());
+                                        List<String> alreadyInvited = Notifications.hasNotifications("claim-invite", claimIds, iUser.getOfflinePlayer());
                                         claimIds.removeAll(alreadyInvited);
                                         if(!claimIds.isEmpty()) {
                                             if (claimIds.size() == 1) {
@@ -2234,7 +2235,7 @@ public class Claim implements CommandExecutor {
                                                 if(tUser.isOnline()) {
                                                     tUser.getPlayer().sendMessage(msg);
                                                 } else {
-                                                    plugin.createNotification("claim-give", null, tUser.getUniqueId().toString(), msg, null, true);
+                                                    Notifications.createNotification("claim-give", null, tUser.getUniqueId().toString(), msg, null, true);
                                                 }
                                             } else {
                                                 player.sendMessage(prefix.append(Component.text("Incorrect Usage! /claim blocks give <player> <amount>", NamedTextColor.RED)));
@@ -2277,7 +2278,7 @@ public class Claim implements CommandExecutor {
                                                         if (tUser.isOnline()) {
                                                             tUser.getPlayer().sendMessage(msg);
                                                         } else {
-                                                            plugin.createNotification("claim-set", null, tUser.getUniqueId().toString(), msg, null, true);
+                                                            Notifications.createNotification("claim-set", null, tUser.getUniqueId().toString(), msg, null, true);
                                                         }
                                                     } else {
                                                         player.sendMessage(prefix.append(Component.text("This would put the player's total blocks below their used blocks!", NamedTextColor.RED)));
@@ -2325,7 +2326,7 @@ public class Claim implements CommandExecutor {
                                                     if(tUser.isOnline()) {
                                                         tUser.getPlayer().sendMessage(msg);
                                                     } else {
-                                                        plugin.createNotification("claim-take", null, tUser.getUniqueId().toString(), msg, null, true);
+                                                        Notifications.createNotification("claim-take", null, tUser.getUniqueId().toString(), msg, null, true);
                                                     }
                                                 } else {
                                                     player.sendMessage(prefix.append(Component.text("Player doesn't have enough claim blocks!", NamedTextColor.RED)));
@@ -2501,7 +2502,7 @@ public class Claim implements CommandExecutor {
                     default -> {
                         if (args.length > 1) { // /claim accept invite <id>
                             if(args.length == 3) {
-                                String claimId = plugin.hasNotification(args[2], player);
+                                String claimId = Notifications.hasNotification(args[2], player);
                                 if(!claimId.isEmpty()) {
                                     boolean state = args[0].equalsIgnoreCase("accept");
                                     switch (args[1].toLowerCase()) {

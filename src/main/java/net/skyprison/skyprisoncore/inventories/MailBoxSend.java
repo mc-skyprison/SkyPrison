@@ -10,6 +10,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.Mail;
+import net.skyprison.skyprisoncore.utils.Notifications;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -255,7 +256,7 @@ public class MailBoxSend implements CustomInventory {
                     player.getWorld().dropItemNaturally(player.getLocation(), dropItem).setOwner(player.getUniqueId());
                 }
             } else {
-                SkyPrisonCore.scheduleForOnline(player.getUniqueId().toString(), "mail-item", Base64.getEncoder().encodeToString(getSendItem().serializeAsBytes()));
+                Notifications.scheduleForOnline(player.getUniqueId().toString(), "mail-item", Base64.getEncoder().encodeToString(getSendItem().serializeAsBytes()));
             }
         }
     }
@@ -321,7 +322,7 @@ public class MailBoxSend implements CustomInventory {
                                 pInv.setItemInOffHand(getOffHand());
                                 pInv.addItem(new ItemStack(Material.WRITABLE_BOOK, getSendToSize()));
                             } else {
-                                SkyPrisonCore.scheduleForOnline(player.getUniqueId().toString(), "mail-offhand", Base64.getEncoder().encodeToString(getOffHand().serializeAsBytes()));
+                                Notifications.scheduleForOnline(player.getUniqueId().toString(), "mail-offhand", Base64.getEncoder().encodeToString(getOffHand().serializeAsBytes()));
                             }
                             cancelTimer();
                         }

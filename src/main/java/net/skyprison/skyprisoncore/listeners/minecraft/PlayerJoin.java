@@ -154,7 +154,7 @@ public class PlayerJoin implements Listener {
         }
 
         if(!ids.isEmpty()) {
-            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM notifications WHERE delete_on_view = ? AND id IN " + plugin.getQuestionMarks(ids))) {
+            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM notifications WHERE delete_on_view = ? AND id IN " + SkyPrisonCore.getQuestionMarks(ids))) {
                 ps.setInt(1, 1);
                 for (int b = 0; b < ids.size(); b++) {
                     ps.setString(b + 2, ids.get(b));

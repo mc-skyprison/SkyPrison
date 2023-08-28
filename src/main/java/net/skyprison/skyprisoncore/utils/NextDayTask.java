@@ -46,7 +46,7 @@ public class NextDayTask extends TimerTask {
             e.printStackTrace();
         }
         if(!dailyPlayers.isEmpty()) {
-            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE dailies SET current_streak = 0 WHERE user_id IN " + plugin.getQuestionMarks(dailyPlayers))) {
+            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE dailies SET current_streak = 0 WHERE user_id IN " + SkyPrisonCore.getQuestionMarks(dailyPlayers))) {
                 for (int i = 0; i < dailyPlayers.size(); i++) {
                     ps.setString(i + 1, dailyPlayers.get(i));
                 }
@@ -89,7 +89,7 @@ public class NextDayTask extends TimerTask {
                 }
             }
 
-            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM daily_missions WHERE mission_id IN " + plugin.getQuestionMarks(oldMissions.stream().map(Functions.toStringFunction()).collect(Collectors.toList())))) {
+            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM daily_missions WHERE mission_id IN " + SkyPrisonCore.getQuestionMarks(oldMissions.stream().map(Functions.toStringFunction()).collect(Collectors.toList())))) {
                 for (int i = 0; i < oldMissions.size(); i++) {
                     ps.setInt(i + 1, oldMissions.get(i));
                 }

@@ -10,6 +10,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.economy.Tokens;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.Notifications;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -58,7 +59,7 @@ public class Votifier implements Listener {
                 e.printStackTrace();
             }
             if(id != -1) {
-                int tokens = plugin.getVoteTokens(pUUID);
+                int tokens = net.skyprison.skyprisoncore.utils.Vote.getVoteTokens(pUUID);
                 Component noBold = Component.text("");
                 Component voteMsg = noBold.append(Component.text("Vote", TextColor.fromHexString("#37a452"), TextDecoration.BOLD)).append(Component.text(" » ", NamedTextColor.DARK_GRAY));
                 Component everyoneMsg = voteMsg.append(Component.text(playerName, TextColor.fromHexString("#e02957"), TextDecoration.BOLD))
@@ -85,13 +86,13 @@ public class Votifier implements Listener {
                 if (player != null) {
                     player.sendMessage(playerMsg);
                 } else {
-                    plugin.createNotification("vote", String.valueOf(id), pUUID.toString(), playerMsg, null, true);
+                    Notifications.createNotification("vote", String.valueOf(id), pUUID.toString(), playerMsg, null, true);
                 }
 
-                plugin.checkVoteMilestones(pUUID);
-                plugin.onAllSites(pUUID);
+                net.skyprison.skyprisoncore.utils.Vote.checkVoteMilestones(pUUID);
+                net.skyprison.skyprisoncore.utils.Vote.onAllSites(pUUID);
 
-                if(plugin.getVoteParty() == 0) {
+                if(net.skyprison.skyprisoncore.utils.Vote.getVoteParty() == 0) {
                     Component partyMsg = Component.text("Vote Party has been hit! Everyone online gets ", TextColor.fromHexString("#2db4e1"))
                             .append(Component.text("3 Vote Keys", TextColor.fromHexString("#e02957"), TextDecoration.BOLD))
                             .append(Component.text("!", TextColor.fromHexString("#2db4e1"), TextDecoration.BOLD));

@@ -58,11 +58,11 @@ public class Mail {
     }
     public static boolean isMailBoxDeleted(int mailBox) {
         boolean deleted = false;
-        try (Connection sConn = db.getConnection(); PreparedStatement sPs = sConn.prepareStatement("SELECT deleted FROM mail_boxes WHERE id = ?")) {
-            sPs.setInt(1, mailBox);
-            ResultSet sRs = sPs.executeQuery();
-            if (sRs.next()) {
-                deleted = sRs.getInt(1) == 1;
+        try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT deleted FROM mail_boxes WHERE id = ?")) {
+            ps.setInt(1, mailBox);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                deleted = rs.getInt(1) == 1;
             }
         } catch (SQLException e) {
             e.printStackTrace();

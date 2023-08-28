@@ -149,15 +149,15 @@ public class Placeholders extends PlaceholderExpansion {
 		}
 
 		if(identifier.equalsIgnoreCase("vote_tokens")) {
-			return String.valueOf(plugin.getVoteTokens(player.getUniqueId()));
+			return String.valueOf(Vote.getVoteTokens(player.getUniqueId()));
 		}
 
 		if(identifier.equalsIgnoreCase("vote_amount")) {
-			return String.valueOf(plugin.getVoteAmount(player.getUniqueId()));
+			return String.valueOf(Vote.getVoteAmount(player.getUniqueId()));
 		}
 
 		if(identifier.equalsIgnoreCase("vote_party")) {
-			return String.valueOf(plugin.getVoteParty());
+			return String.valueOf(Vote.getVoteParty());
 		}
 
 

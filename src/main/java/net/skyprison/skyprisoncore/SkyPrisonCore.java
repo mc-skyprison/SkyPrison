@@ -39,15 +39,10 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.Tag;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags;
-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.skyprison.skyprisoncore.commands.*;
-import net.skyprison.skyprisoncore.commands.chats.Admin;
-import net.skyprison.skyprisoncore.commands.chats.Build;
-import net.skyprison.skyprisoncore.commands.chats.Guard;
-import net.skyprison.skyprisoncore.commands.chats.Staff;
 import net.skyprison.skyprisoncore.commands.discord.Discord;
 import net.skyprison.skyprisoncore.commands.donations.DonorAdd;
 import net.skyprison.skyprisoncore.commands.donations.Purchases;
@@ -56,6 +51,7 @@ import net.skyprison.skyprisoncore.commands.guard.*;
 import net.skyprison.skyprisoncore.commands.secrets.SecretFound;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
 import net.skyprison.skyprisoncore.inventories.*;
+import net.skyprison.skyprisoncore.inventories.Referral;
 import net.skyprison.skyprisoncore.items.*;
 import net.skyprison.skyprisoncore.listeners.advancedregionmarket.UnsellRegion;
 import net.skyprison.skyprisoncore.listeners.brewery.BrewDrink;
@@ -175,7 +171,7 @@ public class SkyPrisonCore extends JavaPlugin {
     private final ScheduledExecutorService dailyExecutor = Executors.newSingleThreadScheduledExecutor();
     public static HashMap<UUID, JailTimer> currentlyJailed = new HashMap<>();
     public HashMap<Audience, Audience> lastMessaged = new HashMap<>();
-    private BukkitCommandManager<CommandSender> manager;
+    private PaperCommandManager<CommandSender> manager;
     private MinecraftHelp<CommandSender> minecraftHelp;
     private CommandConfirmationManager<CommandSender> confirmationManager;
     public final HashMap<UUID, Long> bribeCooldown = new HashMap<>();
@@ -1250,6 +1246,108 @@ public class SkyPrisonCore extends JavaPlugin {
                         sender.sendMessage(Component.text("Player already has the maximum amount of mailboxes!", NamedTextColor.RED));
                     }
                 }));
+
+        Command.Builder<CommandSender> referral = this.manager.commandBuilder("referral", "ref")
+                .permission("skyprisoncore.command.referral")
+                .argument(PlayerArgument.optional("player"))
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    if(sender instanceof Player player){
+                        Player refPlayer = c.getOrDefault("player", null);
+                        if (refPlayer != null) {
+                            long playtime = TimeUnit.MILLISECONDS.toHours(user.getTotalPlayTime());
+
+                            boolean hasReferred = false;
+                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT * FROM referrals WHERE referred_by = ?")) {
+                                ps.setString(1, player.getUniqueId().toString());
+                                ResultSet rs = ps.executeQuery();
+                                if(rs.next()) {
+                                    hasReferred = true;
+                                }
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                            }
+
+                            if(!hasReferred) {
+                                if(playtime >= 1 && playtime < 24) { // Checks that the player has played more than an hour on the server but less than 24 hours.
+                                    if(CMI.getInstance().getPlayerManager().getUser(args[0]) != null) {
+                                        CMIUser reffedPlayer = CMI.getInstance().getPlayerManager().getUser(args[0]);
+                                        if(!user.getLastIp().equalsIgnoreCase(reffedPlayer.getLastIp())) {
+                                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO referrals (user_id, referred_by, refer_date) VALUES (?, ?, ?)")) {
+                                                ps.setString(1, reffedPlayer.getUniqueId().toString());
+                                                ps.setString(2, player.getUniqueId().toString());
+                                                ps.setLong(3, System.currentTimeMillis());
+                                                ps.executeUpdate();
+                                            } catch (SQLException e) {
+                                                e.printStackTrace();
+                                            }
+                                            Component beenReffed = Component.text(player.getName(), NamedTextColor.AQUA).append(Component.text(" has referred you! You have received ", NamedTextColor.DARK_AQUA))
+                                                    .append(Component.text("250", NamedTextColor.YELLOW)).append(Component.text(" tokens!", NamedTextColor.DARK_AQUA));
+                                            if(reffedPlayer.isOnline()) {
+                                                reffedPlayer.getPlayer().sendMessage(beenReffed);
+                                            } else {
+                                                Notifications.createNotification("referred", player.getName(), reffedPlayer.getUniqueId().toString(), beenReffed, null, true);
+                                            }
+                                            player.sendMessage(Component.text("You sucessfully referred ", NamedTextColor.DARK_AQUA)
+                                                    .append(Component.text(reffedPlayer.getName(), NamedTextColor.AQUA)).append(Component.text(" and have received ", NamedTextColor.DARK_AQUA))
+                                                    .append(Component.text("50", NamedTextColor.GOLD)).append(Component.text(" tokens!", NamedTextColor.DARK_AQUA)));
+                                            plugin.tokens.addTokens(reffedPlayer.getUniqueId(), 250, "Referred Someone", player.getName());
+                                            plugin.tokens.addTokens(player.getUniqueId(), 50, "Was Referred", reffedPlayer.getName());
+                                        } else {
+                                            player.sendMessage(Component.text("/referral <player>", NamedTextColor.RED));
+                                        }
+                                    } else {
+                                        player.sendMessage(Component.text("/referral <player>", NamedTextColor.RED));
+                                    }
+                                } else {
+                                    if(playtime < 1) {
+                                        player.sendMessage(Component.text("You need to play 1 hour to be able to refer someone!", NamedTextColor.RED));
+                                    } else {
+                                        player.sendMessage(Component.text("You have played too long to refer anyone!", NamedTextColor.RED));
+                                    }
+                                }
+                            } else {
+                                player.sendMessage(Component.text("You have already referred someone!", NamedTextColor.RED));
+                            }
+                        } else {
+                            c.getSender().sendMessage(Component.text("If a player referred you to our server, you can do \n/referral <player> to give them some tokens!", NamedTextColor.GREEN));
+                        }
+                    } else {
+                        sender.sendMessage(Component.text("Can only be used by a player!", NamedTextColor.RED));
+                    }
+                });
+        this.manager.command(referral.literal("help")
+                .permission("skyprisoncore.command.referral.help")
+                .handler(c -> c.getSender().sendMessage(Component.text("If a player referred you to our server, you can do \n/referral <player> to give them some tokens!", NamedTextColor.GREEN))));
+        this.manager.command(referral.literal("history", "list")
+                .permission("skyprisoncore.command.referral.history")
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    if(sender instanceof Player player) {
+                        Bukkit.getScheduler().runTask(this, () -> player.openInventory(new Referral(this, db, player).getInventory()));
+                    } else {
+                        sender.sendMessage(Component.text("Can only be used by a player!"));
+                    }
+                }));
+        this.manager.command(referral.literal("history", "list")
+                .permission("skyprisoncore.command.referral.history.others")
+                .argument(StringArgument.optional("player"))
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    if(sender instanceof Player player) {
+                        String playerName = c.getOrDefault("player", player.getName());
+                        UUID pUUID = PlayerManager.getPlayerId(playerName);
+                        if (pUUID != null) {
+                            Bukkit.getScheduler().runTask(this, () -> player.openInventory(new Referral(this, db, player).getInventory()));
+                        } else {
+                            sender.sendMessage(Component.text("Specified player doesn't exist!"));
+                        }
+                    } else {
+                        sender.sendMessage(Component.text("Can only be used by a player!"));
+                    }
+                }));
+        new Chats(this, this.manager, discApi);
+
         Objects.requireNonNull(getCommand("tokens")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("tokens")).setTabCompleter(new TabCompleter());
@@ -1295,12 +1393,7 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("namecolour")).setExecutor(new NameColour(this, getDatabase()));
         Objects.requireNonNull(getCommand("news")).setExecutor(new News(this, getDatabase()));
 
-        Objects.requireNonNull(getCommand("referral")).setExecutor(new Referral(this, getDatabase()));
         Objects.requireNonNull(getCommand("discord")).setExecutor(new Discord(this, getDatabase(), discApi));
-        Objects.requireNonNull(getCommand("g")).setExecutor(new Guard(new ChatUtils(this, discApi)));
-        Objects.requireNonNull(getCommand("b")).setExecutor(new Build(new ChatUtils(this, discApi)));
-        Objects.requireNonNull(getCommand("a")).setExecutor(new Admin(new ChatUtils(this, discApi)));
-        Objects.requireNonNull(getCommand("s")).setExecutor(new Staff(new ChatUtils(this, discApi)));
     }
 
     public void registerEvents() {
@@ -1527,114 +1620,6 @@ public class SkyPrisonCore extends JavaPlugin {
         player.sendMessage(msg);
     }
 
-    public String hasNotification(String id, OfflinePlayer player) {
-        String notification = "";
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT extra_data FROM notifications WHERE id = ? AND user_id = ?")) {
-            ps.setString(1, id);
-            ps.setString(2, player.getUniqueId().toString());
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                notification = rs.getString(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return notification;
-    }
-
-    public HashMap<Integer, List<String>> getNotificationsFromExtra(List<String> extraData) {
-        HashMap<Integer, List<String>> notifications = new HashMap<>();
-        if(extraData.isEmpty()) return notifications;
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT type, extra_data, user_id FROM notifications WHERE extra_data IN " + getQuestionMarks(extraData))) {
-            for (int i = 0; i < extraData.size(); i++) {
-                ps.setString(i + 1, extraData.get(i));
-            }
-            ResultSet rs = ps.executeQuery();
-            int i = 0;
-            while (rs.next()) {
-                List<String> data = new ArrayList<>();
-                data.add(rs.getString(1)); // type
-                data.add(rs.getString(2)); // data
-                data.add(rs.getString(3)); // uuid
-                notifications.put(i, data);
-                i++;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return notifications;
-    }
-
-
-    public List<String> hasNotifications(String type, List<String> extraData, OfflinePlayer player) {
-        List<String> notifications = new ArrayList<>();
-        if(extraData.isEmpty()) return notifications;
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT extra_data FROM notifications WHERE type = ? AND user_id = ? AND extra_data IN "
-                + getQuestionMarks(extraData))) {
-            ps.setString(1, type);
-            ps.setString(2, player.getUniqueId().toString());
-
-            for (int i = 0; i < extraData.size(); i++) {
-                ps.setString(i + 3, extraData.get(i));
-            }
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                notifications.add(rs.getString(1));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return notifications;
-    }
-
-
-
-    public static void scheduleForOnline(String pUUID, String type, String content) {
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO schedule_online (user_id, type, content) VALUES (?, ?, ?)")) {
-            ps.setString(1, pUUID);
-            ps.setString(2, type);
-            ps.setString(3, content);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void createNotification(String type, String extraData, String pUUID, Component msg, String id, boolean deleteOnView) {
-        if(id == null || id.isEmpty()) id = UUID.randomUUID().toString();
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO notifications (id, type, extra_data, user_id, message, delete_on_view) VALUES (?, ?, ?, ?, ?, ?)")) {
-            ps.setString(1, id);
-            ps.setString(2, type);
-            ps.setString(3, extraData);
-            ps.setString(4, pUUID);
-            ps.setString(5, GsonComponentSerializer.gson().serialize(msg));
-            ps.setInt(6, deleteOnView ? 1 : 0);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void deleteNotification(String id) {
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM notifications WHERE id = ?")) {
-            ps.setString(1, id);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void deleteNotification(String type, String extraData, OfflinePlayer player) {
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM notifications WHERE extra_data = ? AND user_id = ? AND type = ?")) {
-            ps.setString(1, extraData);
-            ps.setString(2, player.getUniqueId().toString());
-            ps.setString(3, type);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
     public String ticksToTime(int ticks) { // 500 -> 24:00
         String time = String.valueOf(ticks / 1000.0);
         String[] split = time.split("\\.");
@@ -1697,21 +1682,7 @@ public class SkyPrisonCore extends JavaPlugin {
         }
     }
 
-
-    public UUID getPlayer(String name) {
-        try(Connection conn = getDatabase().getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id FROM users WHERE current_name = ?")) {
-            ps.setString(1, name);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return UUID.fromString(rs.getString(1));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public String getQuestionMarks(List<String> list) {
+    public static String getQuestionMarks(List<String> list) {
         if(!list.isEmpty()) {
             return "(" + list.stream().map(id -> "?").collect(Collectors.joining(",")) + ")";
         } else {
@@ -1726,169 +1697,10 @@ public class SkyPrisonCore extends JavaPlugin {
                     .build()
             )
             .build();
-    public int getVoteParty() {
-        int votes = 0;
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) % 50 FROM votes")) {
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                votes = rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return votes;
-    }
-    public int getVoteTokens(UUID pUUID) {
-        int tokens = 25;
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) FROM votes WHERE user_id = ?")) {
-            ps.setString(1, pUUID.toString());
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                int votes = rs.getInt(1);
-                if(votes == 1) {
-                    tokens = -1;
-                } else if(votes >= 1050) {
-                    tokens = 100;
-                } else {
-                    if (votes <= 150) {
-                        tokens += votes / 6;
-                    } else {
-                        tokens += 25 + (votes - 150) / 18;
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return tokens;
-    }
-    public int getVoteAmount(UUID pUUID) {
-        int votes = 0;
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) FROM votes WHERE user_id = ?")) {
-            ps.setString(1, pUUID.toString());
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                votes = rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return votes;
-    }
-    public void onAllSites(UUID pUUID) {
-        long startOfToday = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS).toInstant().toEpochMilli();
-        long endOfToday = startOfToday + 24*60*60*1000 - 1;
-        try (Connection conn = db.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) FROM votes WHERE user_id = ? AND time >= ? AND time <= ?")) {
-            ps.setString(1, pUUID.toString());
-            ps.setLong(2, startOfToday);
-            ps.setLong(3, endOfToday);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                int votes = rs.getInt(1);
-                if(votes == 6) {
-                    Player player = Bukkit.getPlayer(pUUID);
-                    Component voteMsg = Component.text("Vote", NamedTextColor.DARK_GREEN, TextDecoration.BOLD).append(Component.text("  » ", NamedTextColor.DARK_GRAY))
-                            .append(Component.text(" You've voted on 6 sites today, and have therefore received a Vote Key!", NamedTextColor.AQUA));
-                    String playerName = player != null ? player.getName() : PlayerManager.getPlayerName(pUUID);
-                    asConsole("crate key give " + playerName + " crate_vote 1");
-                    if(player != null) {
-                        player.sendMessage(voteMsg);
-                    } else {
-                        createNotification("vote-all", null, pUUID.toString(), voteMsg, null, true);
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void checkVoteMilestones(UUID pUUID) {
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) FROM votes WHERE user_id = ?")) {
-            ps.setString(1, pUUID.toString());
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                int votes  = rs.getInt(1);
-                Component reward = null;
-                String playerName = PlayerManager.getPlayerName(pUUID);
-                if(playerName != null) {
-                    switch (votes) {
-                        case 100 -> {
-                            reward = Component.text("White Sheep Disguise", NamedTextColor.WHITE, TextDecoration.BOLD);
-                            asConsole("lp user " + playerName + " permission set libsdisguises.disguise.sheep");
-                        }
-                        case 200 -> {
-                            reward = Component.text("Yellow Sheep Disguise", NamedTextColor.YELLOW, TextDecoration.BOLD);
-                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.yellow");
-                            asConsole("lp user " + playerName + " permission set ibsdisguises.disguise.sheep.setcolor");
-                        }
-                        case 300 -> {
-                            reward = Component.text("Green Sheep Disguise", NamedTextColor.DARK_GREEN, TextDecoration.BOLD);
-                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.green");
-                        }
-                        case 400 -> {
-                            reward = Component.text("Red Sheep Disguise", NamedTextColor.RED, TextDecoration.BOLD);
-                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.red");
-                        }
-                        case 500 -> {
-                            reward = Component.text("Blue Sheep Disguise & Novice Voter Tag", NamedTextColor.DARK_AQUA, TextDecoration.BOLD);
-                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.blue");
-                            asConsole("lp user " + playerName + " permission set skyprisoncore.tag.55");
-                        }
-                        case 750 -> {
-                            reward = Component.text("Black Sheep Disguise", NamedTextColor.DARK_GRAY, TextDecoration.BOLD);
-                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.black");
-                        }
-                        case 1000 -> {
-                            reward = Component.text("Pink Sheep Disguise & Top Voter Tag", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD);
-                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.pink");
-                            asConsole("lp user " + playerName + " permission set skyprisoncore.tag.56");
-                        }
-                        case 1250 -> {
-                            reward = Component.text("Sheep Pet", NamedTextColor.YELLOW, TextDecoration.BOLD);
-                            asConsole("lp user " + playerName + " permission set pet.type.sheep");
-                        }
-                        case 1500 -> {
-                            reward = Component.text("Sheep Pet Customization & Elite Voter Tag", NamedTextColor.YELLOW, TextDecoration.BOLD);
-                            asConsole("lp user " + playerName + " permission set skyprisoncore.tag.87");
-                            asConsole("lp user " + playerName + " permission set pet.type.sheep.data.baby");
-                            asConsole("lp user " + playerName + " permission set pet.type.sheep.data.color");
-                            asConsole("lp user " + playerName + " permission set pet.type.sheep.data.frozen");
-                            asConsole("lp user " + playerName + " permission set pet.type.sheep.data.sheared");
-                            asConsole("lp user " + playerName + " permission set pet.type.sheep.data.silent");
-                        }
-                        case 1750 -> {
-                            reward = Component.text("Rainbow Sheep Pet", NamedTextColor.YELLOW, TextDecoration.BOLD);
-                            asConsole("lp user " + playerName + " permission set pet.type.sheep.data.rainbow");
-                        }
-                        case 2000 -> {
-                            reward = Component.text("Rainbow Sheep Disguise", NamedTextColor.YELLOW, TextDecoration.BOLD);
-                            asConsole("lp user " + playerName + " permission set libsdisguises.options.disguise.sheep.setcolor.yellow");
-                        }
-                    }
-                    if (reward != null) {
-                        Component milestoneMsg = Component.text("Vote", NamedTextColor.DARK_GREEN, TextDecoration.BOLD)
-                                .append(Component.text("  » ", NamedTextColor.DARK_GRAY)).append(Component.text(playerName, NamedTextColor.GREEN))
-                                .append(Component.text(" has voted ", NamedTextColor.AQUA)).append(Component.text(votes, NamedTextColor.YELLOW))
-                                .append(Component.text(" times and received ", NamedTextColor.AQUA)).append(reward);
-                        getServer().sendMessage(milestoneMsg);
-
-                        if (Bukkit.getPlayer(pUUID) == null) {
-                            createNotification("vote-milestone", null, pUUID.toString(), milestoneMsg, null, true);
-                        }
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
 
     public void tellConsole(Component message){
         Bukkit.getConsoleSender().sendMessage(message);
     }
-
 
     public void asConsole(String command) {
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);

@@ -29,8 +29,10 @@ import net.skyprison.skyprisoncore.commands.economy.EconomyCheck;
 import net.skyprison.skyprisoncore.commands.economy.MoneyHistory;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
 import net.skyprison.skyprisoncore.inventories.*;
+import net.skyprison.skyprisoncore.inventories.Referral;
 import net.skyprison.skyprisoncore.items.Vouchers;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.Notifications;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
 import org.apache.commons.lang.WordUtils;
@@ -1134,7 +1136,7 @@ public class InventoryClick implements Listener {
                                                 if(memberOnline != null) {
                                                     memberOnline.sendMessage(kickMsg);
                                                 } else {
-                                                    plugin.createNotification("mailbox-kicked", null, memberId.toString(), kickMsg, null, true);
+                                                    Notifications.createNotification("mailbox-kicked", null, memberId.toString(), kickMsg, null, true);
                                                 }
                                             }
                                         })))
@@ -1330,6 +1332,23 @@ public class InventoryClick implements Listener {
                                                 player.openInventory(inv.getInventory());
                                             })));
                                     player.sendMessage(msg);
+                                }
+                            }
+                        }
+                    }
+                } else if(customInv instanceof Referral inv) {
+                    if(currItem != null) {
+                        int slot = event.getRawSlot();
+                        switch (slot) {
+                            case 49 -> inv.updateSort();
+                            case 45 -> {
+                                if (isPaper) {
+                                    inv.updatePage(-1);
+                                }
+                            }
+                            case 53 -> {
+                                if (isPaper) {
+                                    inv.updatePage(1);
                                 }
                             }
                         }
@@ -1923,12 +1942,6 @@ public class InventoryClick implements Listener {
                         }
                     }
                 }
-                if (ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("Referral List")) {
-                    if (event.getCurrentItem() != null) {
-                        event.setCancelled(true);
-                    }
-                }
-
                 if (!player.hasPermission("skyprisoncore.contraband.itembypass")) {
                     if (event.getClickedInventory() instanceof PlayerInventory) {
                         plugin.InvGuardGearDelPlyr(player);
