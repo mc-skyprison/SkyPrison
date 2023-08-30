@@ -49,13 +49,11 @@ import java.util.List;
 import java.util.*;
 
 public class PlayerJoin implements Listener {
-
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
     private final DiscordApi discApi;
     private final DailyMissions dailyMissions;
     private final PlayerParticlesAPI particles;
-
     public PlayerJoin(SkyPrisonCore plugin, DatabaseHook db, DiscordApi discApi, DailyMissions dailyMissions, PlayerParticlesAPI particles) {
         this.plugin = plugin;
         this.db = db;
@@ -63,7 +61,6 @@ public class PlayerJoin implements Listener {
         this.dailyMissions = dailyMissions;
         this.particles = particles;
     }
-
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
