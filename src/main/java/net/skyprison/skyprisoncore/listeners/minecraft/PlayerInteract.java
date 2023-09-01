@@ -8,9 +8,11 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.MailBox;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.Mail;
+import net.skyprison.skyprisoncore.utils.Secret;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
+import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -67,6 +69,32 @@ public class PlayerInteract implements Listener {
                 }
                 event.setCancelled(true);
                 return;
+            }
+        }
+        if(block != null && action.equals(Action.RIGHT_CLICK_BLOCK) && block.getState() instanceof Sign sign) {
+            PersistentDataContainer pers = sign.getPersistentDataContainer();
+            if(!pers.isEmpty()) {
+                NamespacedKey key = new NamespacedKey(plugin, "secret-sign");
+                int secretId = pers.getOrDefault(key, PersistentDataType.INTEGER, -1);
+                if (secretId != -1) {
+                    Secret secret = Secret.getSecretFromId(secretId);
+                    if(secret != null) {
+                        if(secret.isAvailable()) {
+                            String rewardType = secret.rewardType();
+                            switch (rewardType) {
+                                case "tokens" -> {
+                                    int tokens = secret.reward();
+                                    plugin.tokens.addTokens(player.getUniqueId(), tokens, "secret", secret.name());
+                                    secret.setCooldown(player.getUniqueId());
+                                }
+                            }
+                        } else { // ADD MORE STUFF HERE
+                            player.sendMessage(Secret.getCooldownText(secret.cooldown(), System.currentTimeMillis()));
+                        }
+                        event.setCancelled(true);
+                        return;
+                    }
+                }
             }
         }
         if(item != null && item.hasItemMeta() && Objects.equals(event.getHand(), EquipmentSlot.HAND)

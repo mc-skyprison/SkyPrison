@@ -1734,5 +1734,3 @@ public class SkyPrisonCore extends JavaPlugin {
         }
     }
 }
-
-
