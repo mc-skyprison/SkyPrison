@@ -16,7 +16,6 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.items.Greg;
-import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.JailTimer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -42,10 +41,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static net.skyprison.skyprisoncore.SkyPrisonCore.*;
 
-public class Jail {
+public class JailCommands {
     private final SkyPrisonCore plugin;
     private final PaperCommandManager<CommandSender> manager;
-    public Jail(SkyPrisonCore plugin, DatabaseHook db, PaperCommandManager<CommandSender> manager) {
+    public JailCommands(SkyPrisonCore plugin, PaperCommandManager<CommandSender> manager) {
         this.plugin = plugin;
         this.manager = manager;
         createJailCommands();

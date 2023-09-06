@@ -24,7 +24,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.commands.Jail;
+import net.skyprison.skyprisoncore.commands.JailCommands;
 import net.skyprison.skyprisoncore.commands.donations.DonorAdd;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
@@ -277,7 +277,7 @@ public class PlayerJoin implements Listener {
 
 
             if(jailTime != 0) {
-                Jail.setJail(Bukkit.getConsoleSender(), player, jailReason, jailTime, false);
+                JailCommands.setJail(Bukkit.getConsoleSender(), player, jailReason, jailTime, false);
             }
 
             if(!plugin.userTags.containsKey(player.getUniqueId())) {

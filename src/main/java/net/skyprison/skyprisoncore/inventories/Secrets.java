@@ -7,7 +7,6 @@ import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
-import me.arcaniax.hdb.api.HeadDatabaseAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -15,6 +14,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.Secret;
+import net.skyprison.skyprisoncore.utils.SecretsUtils;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -34,7 +34,8 @@ public class Secrets implements CustomInventory {
     private final HashMap<String, List<Secret>> secrets = new HashMap<>();
     private final Inventory inventory;
     private String category;
-    private final ItemStack backButton;
+    private final ItemStack nextPage;
+    private final ItemStack prevPage;
     private final ItemStack redPane;
     private final ItemStack blackPane;
     private final DatabaseHook db;
@@ -84,8 +85,8 @@ public class Secrets implements CustomInventory {
                 int reward = rs.getInt(8);
 
                 long cooldown = rs.getLong(9);
-                Component coolText = Secret.getCooldownText(cooldown, currTime);
-                int found = Secret.getFoundAmount(id, player.getUniqueId().toString());
+                Component coolText = SecretsUtils.getCooldownText(cooldown, currTime);
+                int found = SecretsUtils.getFoundAmount(id, player.getUniqueId().toString());
                 if (found > 0) {
                     displayItem.editMeta(meta -> {
                         meta.displayName(MiniMessage.miniMessage().deserialize(name));
@@ -126,33 +127,31 @@ public class Secrets implements CustomInventory {
             RegionManager rm = container.get(BukkitAdapter.adapt(world));
 
             if (rm == null) {
-                category = "main";
+                category = "all";
             } else {
                 Set<ProtectedRegion> regions = getApplicableRegions(player, rm);
                 if (regions.isEmpty()) {
-                    category = "main";
+                    category = "all";
                 } else {
                     category = getCategoryFromRegion(rm, world.getName(), regions);
                 }
             }
         }
 
-        this.inventory = plugin.getServer().createInventory(this, 45, Component.text("Secrets - " +
-                WordUtils.capitalize(category.replace("-", " ")), NamedTextColor.RED));
+        this.inventory = plugin.getServer().createInventory(this, 45, Component.text("Secrets", NamedTextColor.GREEN));
 
         blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         blackPane.editMeta(meta -> meta.displayName(Component.text(" ")));
         redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
         redPane.editMeta(meta -> meta.displayName(Component.text(" ")));
-        HeadDatabaseAPI hdb = new HeadDatabaseAPI();
-        backButton = hdb.getItemHead("10307");
-        backButton.editMeta(meta -> meta.displayName(Component.text("Return to Menu", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)));
+        nextPage = new ItemStack(Material.PAPER);
+        nextPage.editMeta(meta -> meta.displayName(Component.text("Next Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)));
+        prevPage = new ItemStack(Material.PAPER);
+        prevPage.editMeta(meta -> meta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)));
 
         for (int i = 0; i < 45; i++) {
             if(i == 0 || i == 9 || i == 10 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35 || i == 36 || i == 44)
                 inventory.setItem(i, redPane);
-            else if(i == 40)
-                inventory.setItem(i, backButton);
             else if(i < 9 || i > 36)
                 inventory.setItem(i, blackPane);
         }

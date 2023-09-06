@@ -9,6 +9,7 @@ import net.skyprison.skyprisoncore.inventories.MailBox;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.Mail;
 import net.skyprison.skyprisoncore.utils.Secret;
+import net.skyprison.skyprisoncore.utils.SecretsUtils;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
@@ -77,7 +78,7 @@ public class PlayerInteract implements Listener {
                 NamespacedKey key = new NamespacedKey(plugin, "secret-sign");
                 int secretId = pers.getOrDefault(key, PersistentDataType.INTEGER, -1);
                 if (secretId != -1) {
-                    Secret secret = Secret.getSecretFromId(secretId);
+                    Secret secret = SecretsUtils.getSecretFromId(secretId);
                     if(secret != null) {
                         if(secret.isAvailable()) {
                             String rewardType = secret.rewardType();
@@ -85,11 +86,11 @@ public class PlayerInteract implements Listener {
                                 case "tokens" -> {
                                     int tokens = secret.reward();
                                     plugin.tokens.addTokens(player.getUniqueId(), tokens, "secret", secret.name());
-                                    secret.setCooldown(player.getUniqueId());
+                                    secret.setPlayerCooldown(player.getUniqueId());
                                 }
                             }
                         } else { // ADD MORE STUFF HERE
-                            player.sendMessage(Secret.getCooldownText(secret.cooldown(), System.currentTimeMillis()));
+                            player.sendMessage(SecretsUtils.getCooldownText(secret.cooldown(), System.currentTimeMillis()));
                         }
                         event.setCancelled(true);
                         return;

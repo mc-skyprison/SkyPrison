@@ -46,7 +46,7 @@ import net.skyprison.skyprisoncore.commands.discord.Discord;
 import net.skyprison.skyprisoncore.commands.donations.DonorAdd;
 import net.skyprison.skyprisoncore.commands.donations.Purchases;
 import net.skyprison.skyprisoncore.commands.economy.*;
-import net.skyprison.skyprisoncore.commands.guard.*;
+import net.skyprison.skyprisoncore.commands.guard.Safezone;
 import net.skyprison.skyprisoncore.commands.secrets.SecretFound;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
 import net.skyprison.skyprisoncore.inventories.*;
@@ -84,7 +84,6 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -165,13 +164,14 @@ public class SkyPrisonCore extends JavaPlugin {
     public HashMap<UUID, LinkedHashMap<String, Integer>> tokenLogPagePlayer = new HashMap<>();
     private final ScheduledExecutorService dailyExecutor = Executors.newSingleThreadScheduledExecutor();
     public static final HashMap<UUID, JailTimer> currentlyJailed = new HashMap<>();
-    public HashMap<Audience, Audience> lastMessaged = new HashMap<>();
+    public static final HashMap<Audience, Audience> lastMessaged = new HashMap<>();
     private PaperCommandManager<CommandSender> manager;
     private MinecraftHelp<CommandSender> minecraftHelp;
     private CommandConfirmationManager<CommandSender> confirmationManager;
     public static final HashMap<UUID, Long> bribeCooldown = new HashMap<>();
     public static final HashMap<UUID, Long> releasePapersCooldown = new HashMap<>();
     public static final HashMap<UUID, Integer> safezoneViolators = new HashMap<>();
+    public static final List<UUID> creatingSecret = new ArrayList<>();
     public static final Component pluginPrefix = Component.text("Sky", TextColor.fromHexString("#0fc3ff")).append(Component.text("Prison", TextColor.fromHexString("#ff0000")));
 
     @Override
@@ -570,38 +570,6 @@ public class SkyPrisonCore extends JavaPlugin {
         minPrice.put(Material.APPLE, 5.0);
     }
 
-    public void sendPrivateMessage(CommandSender sender, Audience receiver, String message) {
-        Component senderName = sender.name();
-        Component pMsg = Component.empty().append(Component.text(" » ", TextColor.fromHexString("#940b34")))
-                .append(getParsedString(sender, "private", message).colorIfAbsent(NamedTextColor.GRAY));
-        if (sender instanceof Player toPlayer) {
-            Component customName = toPlayer.customName();
-            if (customName != null) senderName = customName;
-        }
-
-        Component receiverName = Component.text("Unknown");
-        if(receiver instanceof Player player) {
-            receiverName = Objects.requireNonNullElse(player.customName(), player.displayName());
-        } else if(receiver instanceof CommandSender receiving) {
-            receiverName = receiving.name();
-        }
-
-        Component msgTo = Component.empty().append(Component.text("Me", TextColor.fromHexString("#f02d68"))).append(Component.text(" ⇒ ", TextColor.fromHexString("#940b34")))
-                .append(receiverName.colorIfAbsent(TextColor.fromHexString("#f02d68")));
-        Component msgFrom = Component.empty().append(senderName.colorIfAbsent(TextColor.fromHexString("#f02d68"))).append(Component.text(" ⇒ ", TextColor.fromHexString("#940b34")))
-                .append(Component.text("Me", TextColor.fromHexString("#f02d68")));
-
-        sender.sendMessage(msgTo.append(pMsg));
-        receiver.sendMessage(msgFrom.append(pMsg));
-
-        if (lastMessaged.isEmpty() || !lastMessaged.containsKey(sender) || !lastMessaged.get(sender).equals(receiver)) {
-            lastMessaged.put(sender, receiver);
-        }
-        if (lastMessaged.isEmpty() || !lastMessaged.containsKey(receiver)) {
-            lastMessaged.put(receiver, sender);
-        }
-    }
-
     private CustomInventory openBlacksmith(String blacksmith, Player player) {
         switch (blacksmith.toLowerCase()) {
             case "astrid" -> {
@@ -787,17 +755,6 @@ public class SkyPrisonCore extends JavaPlugin {
                     }
                 }));
 
-        this.manager.command(this.manager.commandBuilder("msg")
-                .permission("skyprisoncore.command.msg")
-                .argument(PlayerArgument.of("player"))
-                .argument(StringArgument.greedy("message"))
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    final Player player = c.get("player");
-                    final String message = c.get("message");
-                    sendPrivateMessage(sender, player, message);
-                }));
-
         this.manager.command(this.manager.commandBuilder("bartender")
                 .permission("skyprisoncore.command.bartender")
                 .argument(PlayerArgument.optional("player"))
@@ -808,19 +765,6 @@ public class SkyPrisonCore extends JavaPlugin {
                                 player.hasPermission("skyprisoncore.inventories.bartender.editing"), "bartender").getInventory()));
                     } else {
                         c.getSender().sendMessage(Component.text("Invalid Usage! /bartender (player)"));
-                    }
-                }));
-
-        this.manager.command(this.manager.commandBuilder("reply", "r")
-                .permission("skyprisoncore.command.reply")
-                .argument(StringArgument.greedy("message"))
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    if(!lastMessaged.isEmpty() && lastMessaged.containsKey(sender) && lastMessaged.get(sender) != null
-                            && ((lastMessaged.get(sender) instanceof Player player && player.isOnline()) || lastMessaged.get(sender) instanceof ConsoleCommandSender)) {
-                        sendPrivateMessage(sender, lastMessaged.get(sender), c.get("message"));
-                    } else {
-                        sender.sendMessage(Component.text("Noone to reply to found..", NamedTextColor.RED));
                     }
                 }));
 
@@ -1047,35 +991,6 @@ public class SkyPrisonCore extends JavaPlugin {
                         sender.sendMessage(Component.text("Player already has the maximum amount of mailboxes!", NamedTextColor.RED));
                     }
                 }));
-
-        this.manager.command(this.manager.commandBuilder("secret", "secrets")
-                .permission("skyprisoncore.command.secret")
-                .argument(PlayerArgument.of("player"))
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    Player player = c.get("player");
-                    if(player.hasPermission("skyprisoncore.mailboxes.amount.2")) {
-                        Bukkit.getScheduler().runTask(this, () -> asConsole("lp user " + player.getName() + " permission set skyprisoncore.mailboxes.amount.3"));
-                    } else if(player.hasPermission("skyprisoncore.mailboxes.amount.1")) {
-                        Bukkit.getScheduler().runTask(this, () -> asConsole("lp user " + player.getName() + " permission set skyprisoncore.mailboxes.amount.2"));
-                    } else {
-                        sender.sendMessage(Component.text("Player already has the maximum amount of mailboxes!", NamedTextColor.RED));
-                    }
-                }));
-        this.manager.command(this.manager.commandBuilder("secret", "secrets")
-                .permission("skyprisoncore.command.secret")
-                .argument(PlayerArgument.of("player"))
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    Player player = c.get("player");
-                    if(player.hasPermission("skyprisoncore.mailboxes.amount.2")) {
-                        Bukkit.getScheduler().runTask(this, () -> asConsole("lp user " + player.getName() + " permission set skyprisoncore.mailboxes.amount.3"));
-                    } else if(player.hasPermission("skyprisoncore.mailboxes.amount.1")) {
-                        Bukkit.getScheduler().runTask(this, () -> asConsole("lp user " + player.getName() + " permission set skyprisoncore.mailboxes.amount.2"));
-                    } else {
-                        sender.sendMessage(Component.text("Player already has the maximum amount of mailboxes!", NamedTextColor.RED));
-                    }
-                }));
         Command.Builder<CommandSender> referral = this.manager.commandBuilder("referral", "ref")
                 .permission("skyprisoncore.command.referral")
                 .argument(StringArgument.optional("player"))
@@ -1179,7 +1094,9 @@ public class SkyPrisonCore extends JavaPlugin {
                         sender.sendMessage(Component.text("Can only be used by a player!"));
                     }
                 }));
-        new Chats(this, this.manager, discApi);
+        new ChatCommands(this, this.manager, discApi);
+        new JailCommands(this, this.manager);
+        new SecretsCommands(this, this.manager);
 
         Objects.requireNonNull(getCommand("tokens")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
@@ -1196,12 +1113,10 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("bounty")).setExecutor(new Bounty(getDatabase(), this));
         Objects.requireNonNull(getCommand("killinfo")).setExecutor(new KillInfo(getDatabase()));
         Objects.requireNonNull(getCommand("firstjointop")).setExecutor(new FirstjoinTop(this, getDatabase()));
-        Objects.requireNonNull(getCommand("sword")).setExecutor(new Sword());
-        Objects.requireNonNull(getCommand("bow")).setExecutor(new Bow());
-        Objects.requireNonNull(getCommand("contraband")).setExecutor(new Contraband());
+
         Objects.requireNonNull(getCommand("ignoretp")).setExecutor(new IgnoreTeleport(this, getDatabase()));
-        Objects.requireNonNull(getCommand("guardduty")).setExecutor(new GuardDuty(this));
-        Objects.requireNonNull(getCommand("safezone")).setExecutor(new Safezone(this));
+
+
         Objects.requireNonNull(getCommand("buyback")).setExecutor(new BuyBack(this, getDatabase()));
         Objects.requireNonNull(getCommand("daily")).setExecutor(new Daily(this, getDatabase()));
         Objects.requireNonNull(getCommand("shopban")).setExecutor(new ShopBan(getDatabase()));

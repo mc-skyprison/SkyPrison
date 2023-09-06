@@ -28,19 +28,12 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class ClaimFlagsMobs implements CustomInventory {
-
     private final Inventory inventory;
-
     private final String category;
-
     private final boolean isAllowed;
-
     private final boolean canEdit;
-
     private final String claimId;
-
     private final String world;
-
     private final int page;
 
     public ClaimFlagsMobs(SkyPrisonCore plugin, String claimId, String world, boolean canEdit, boolean isAllowed, String category, int page) {

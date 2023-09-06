@@ -29,7 +29,6 @@ import net.skyprison.skyprisoncore.commands.economy.EconomyCheck;
 import net.skyprison.skyprisoncore.commands.economy.MoneyHistory;
 import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
 import net.skyprison.skyprisoncore.inventories.*;
-import net.skyprison.skyprisoncore.inventories.Referral;
 import net.skyprison.skyprisoncore.items.Vouchers;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.Notifications;
@@ -1346,6 +1345,25 @@ public class InventoryClick implements Listener {
                                     inv.updatePage(-1);
                                 }
                             }
+                            case 53 -> {
+                                if (isPaper) {
+                                    inv.updatePage(1);
+                                }
+                            }
+                        }
+                    }
+                } else if(customInv instanceof SecretsHistory inv) {
+                    if(currItem != null) {
+                        int slot = event.getRawSlot();
+                        switch (slot) {
+                            case 45 -> {
+                                if (isPaper) {
+                                    inv.updatePage(-1);
+                                }
+                            }
+                            case 48 -> inv.updateCategory(event.isLeftClick());
+                            case 49 -> inv.updateSort();
+                            case 50 -> inv.updateType(event.isLeftClick());
                             case 53 -> {
                                 if (isPaper) {
                                     inv.updatePage(1);
