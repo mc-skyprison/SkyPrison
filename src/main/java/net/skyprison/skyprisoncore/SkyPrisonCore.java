@@ -102,7 +102,6 @@ import org.javacord.api.interaction.SlashCommand;
 import org.javacord.api.interaction.SlashCommandOption;
 import org.javacord.api.interaction.SlashCommandOptionType;
 import org.jetbrains.annotations.NotNull;
-import org.mariadb.jdbc.Statement;
 
 import java.io.*;
 import java.sql.Connection;
@@ -165,13 +164,14 @@ public class SkyPrisonCore extends JavaPlugin {
     public HashMap<UUID, LinkedHashMap<String, Integer>> tokenLogAmountPlayer = new HashMap<>();
     public HashMap<UUID, LinkedHashMap<String, Integer>> tokenLogPagePlayer = new HashMap<>();
     private final ScheduledExecutorService dailyExecutor = Executors.newSingleThreadScheduledExecutor();
-    public static HashMap<UUID, JailTimer> currentlyJailed = new HashMap<>();
+    public static final HashMap<UUID, JailTimer> currentlyJailed = new HashMap<>();
     public HashMap<Audience, Audience> lastMessaged = new HashMap<>();
     private PaperCommandManager<CommandSender> manager;
     private MinecraftHelp<CommandSender> minecraftHelp;
     private CommandConfirmationManager<CommandSender> confirmationManager;
-    public final HashMap<UUID, Long> bribeCooldown = new HashMap<>();
-    public final HashMap<UUID, Long> releasePapersCooldown = new HashMap<>();
+    public static final HashMap<UUID, Long> bribeCooldown = new HashMap<>();
+    public static final HashMap<UUID, Long> releasePapersCooldown = new HashMap<>();
+    public static final HashMap<UUID, Integer> safezoneViolators = new HashMap<>();
     public static final Component pluginPrefix = Component.text("Sky", TextColor.fromHexString("#0fc3ff")).append(Component.text("Prison", TextColor.fromHexString("#ff0000")));
 
     @Override
@@ -619,155 +619,6 @@ public class SkyPrisonCore extends JavaPlugin {
         }
     }
 
-    public static void setJail(CommandSender sender, Player player, String reason, long time, boolean firstTime) {
-        int logsId = 0;
-        long totalTime = time;
-
-        UUID senderId = null;
-        if(sender instanceof Player playerSender) senderId = playerSender.getUniqueId();
-        if(firstTime) {
-            Component start = Component.empty().color(NamedTextColor.GRAY);
-            Component playerName = Component.text(player.getName(), TextColor.fromHexString("#e23857"), TextDecoration.BOLD);
-            Component senderName = Component.text(sender.getName(), TextColor.fromHexString("#e23857"), TextDecoration.BOLD);
-            Component yourself = Component.text("You've", TextColor.fromHexString("#e23857"), TextDecoration.BOLD);
-            Component timeComp = Component.text(" for ").append(Component.text("5", TextColor.fromHexString("#e23857"), TextDecoration.BOLD))
-                    .append(Component.text(" minutes!"));
-            Component reasonMsg = reason != null ? Component.text("\n Reason").append(Component.text(" » ", NamedTextColor.DARK_GRAY))
-                    .append(Component.text(reason)) : Component.empty();
-
-            sender.sendMessage(start.append(yourself).append(Component.text(" successfully jailed ")).append(playerName)
-                    .append(timeComp).append(reasonMsg));
-            player.sendMessage(start.append(yourself).append(Component.text(" been jailed by ")).append(senderName)
-                    .append(timeComp).append(reasonMsg));
-            Audience receivers =  Bukkit.getServer().filterAudience(audience -> !audience.equals(sender) && !audience.equals(player));
-            receivers.sendMessage(start.append(playerName).append(Component.text(" has been jailed by ")).append(senderName)
-                    .append(timeComp).append(reasonMsg));
-
-            try (Connection conn = db.getConnection(); PreparedStatement ps =
-                    conn.prepareStatement("INSERT INTO logs_jail (sender_id, target_id, reason, type, active, time_started, length_total) VALUES (?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
-                ps.setString(1, senderId != null ? senderId.toString() : null);
-                ps.setString(2, player.getUniqueId().toString());
-                ps.setString(3, reason);
-                ps.setString(4, "jail");
-                ps.setInt(5, 1);
-                ps.setLong(6, System.currentTimeMillis());
-                ps.setLong(7, time);
-                ps.executeUpdate();
-
-                ResultSet rs = ps.getGeneratedKeys();
-                if (rs.next()) {
-                    logsId = rs.getInt(1);
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        } else {
-            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id, length_total FROM logs_jail WHERE target_id = ? AND active = 1")) {
-                ps.setString(1, player.getUniqueId().toString());
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) {
-                    logsId = rs.getInt(1);
-                    totalTime = rs.getLong(2);
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-
-        Timer jail = new Timer();
-        JailTimer task = new JailTimer(db, player, time, logsId, totalTime);
-        currentlyJailed.put(player.getUniqueId(), task);
-        jail.scheduleAtFixedRate(task, 0, TimeUnit.SECONDS.toMillis(1));
-    }
-
-    public static void setUnjail(CommandSender sender, Player player, String reason, String type) {
-        JailTimer playerJail = currentlyJailed.get(player.getUniqueId());
-        currentlyJailed.remove(player.getUniqueId());
-        playerJail.cancel();
-        playerJail.timeBar.removeViewer(player);
-
-        Component start = Component.empty().color(NamedTextColor.GRAY);
-        Component yourself = Component.text("You've", TextColor.fromHexString("#e23857"), TextDecoration.BOLD);
-        if(type.equalsIgnoreCase("unjail")) {
-            Component playerName = Component.text(player.getName(), TextColor.fromHexString("#e23857"), TextDecoration.BOLD);
-            Component senderName = Component.text(sender.getName(), TextColor.fromHexString("#e23857"), TextDecoration.BOLD);
-            Component reasonMsg = reason != null ? Component.text("\n Reason").append(Component.text(" » ", NamedTextColor.DARK_GRAY))
-                    .append(Component.text(reason)) : Component.empty();
-
-            sender.sendMessage(start.append(yourself).append(Component.text(" successfully released ")).append(playerName)
-                    .append(Component.text(" from jail!")).append(reasonMsg));
-            player.sendMessage(start.append(yourself).append(Component.text(" been released from jail by ")).append(senderName)
-                    .append(Component.text("!")).append(reasonMsg));
-            Audience receivers = Bukkit.getServer().filterAudience(audience -> !audience.equals(sender) && !audience.equals(player));
-            receivers.sendMessage(start.append(playerName).append(Component.text(" has been released from jail by ")).append(senderName)
-                    .append(Component.text("!")).append(reasonMsg));
-        } else if(type.equalsIgnoreCase("bribe")) {
-            player.sendMessage(start.append(yourself).append(Component.text(" successfully bribed yourself out of jail!")));
-        } else if(type.equalsIgnoreCase("release-papers")) {
-            player.sendMessage(start.append(yourself).append(Component.text(" successfully used your Release Papers!")));
-        } else if(type.equalsIgnoreCase("fake-release-papers")) {
-            player.sendMessage(start.append(yourself).append(Component.text(" successfully used your Fake Release Papers!")));
-        }
-        Location leaveLoc = new Location(Bukkit.getWorld("world_prison"), 0.5, 135, 0.5);
-        player.teleportAsync(leaveLoc);
-
-        UUID senderId = null;
-        if(sender instanceof Player playerSender) senderId = playerSender.getUniqueId();
-        long currTime = System.currentTimeMillis();
-
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO logs_jail (sender_id, target_id, reason, type, active, time_started) VALUES (?, ?, ?, ?, ?, ?)")) {
-            ps.setString(1, senderId != null ? senderId.toString() : null);
-            ps.setString(2, player.getUniqueId().toString());
-            ps.setString(3, reason);
-            ps.setString(4, type);
-            ps.setLong(5, 0);
-            ps.setLong(6, currTime);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE logs_jail SET active = ?, time_finished = ?, length_served = ? WHERE id = ?")) {
-            ps.setInt(1, 0);
-            ps.setLong(2, currTime);
-            ps.setLong(3, playerJail.timeServed);
-            ps.setInt(4, playerJail.logsId);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-    private void fakeReleasePapers(CommandSender sender, Player player) {
-        ItemStack fakePapers = Greg.getFakeReleasePapers(this, 1);
-        PlayerInventory pInv = player.getInventory();
-        if(pInv.containsAtLeast(fakePapers, 1)) {
-            player.getInventory().removeItem(fakePapers);
-        }
-    }
-    private void releasePapers(CommandSender sender, Player player) {
-        ItemStack realPapers = Greg.getReleasePapers(this, 1);
-        PlayerInventory pInv = player.getInventory();
-        if(pInv.containsAtLeast(realPapers, 1)) {
-            player.getInventory().removeItem(realPapers);
-        } else {
-            return;
-        }
-        setUnjail(sender, player, "release-papers", "release-papers");
-    }
-    private void extendJail(Player player) {
-        JailTimer timer = currentlyJailed.get(player.getUniqueId());
-        long minute = TimeUnit.MINUTES.toMillis(1);
-        timer.increaseTime(minute);
-
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE logs_jail SET length_total = length_total + ? WHERE id = ?")) {
-            ps.setLong(1, minute);
-            ps.setInt(2, timer.logsId);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void giveItem(Player player, ItemStack item) {
         HashMap<Integer, ItemStack> didntFit = player.getInventory().addItem(item);
         for(ItemStack dropItem : didntFit.values()) {
@@ -945,52 +796,6 @@ public class SkyPrisonCore extends JavaPlugin {
                     final Player player = c.get("player");
                     final String message = c.get("message");
                     sendPrivateMessage(sender, player, message);
-                }));
-
-        this.manager.command(this.manager.commandBuilder("jail")
-                .permission("skyprisoncore.command.jail")
-                .argument(PlayerArgument.of("player"))
-                .argument(StringArgument.optional("reason", StringArgument.StringMode.GREEDY))
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    final Player player = c.get("player");
-                    final String message = c.getOrDefault("reason", null);
-
-                    setJail(sender, player, message, TimeUnit.MINUTES.toMillis(5), true);
-                }));
-        this.manager.command(this.manager.commandBuilder("unjail")
-                .permission("skyprisoncore.command.unjail")
-                .argument(PlayerArgument.<CommandSender>builder("player")
-                        .withSuggestionsProvider((commandSenderCommandContext, s) -> currentlyJailed.keySet().stream().map(Bukkit::getPlayer).filter(Objects::nonNull).map(Player::getName).toList()))
-                .argument(StringArgument.optional("reason", StringArgument.StringMode.GREEDY))
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    final Player player = c.get("player");
-                    final String message = c.getOrDefault("reason", null);
-                    setUnjail(sender, player, message, "unjail");
-                }));
-        this.manager.command(this.manager.commandBuilder("bribe")
-                .permission("skyprisoncore.command.bribe")
-                .argument(PlayerArgument.<CommandSender>builder("player")
-                        .withSuggestionsProvider((commandSenderCommandContext, s) -> currentlyJailed.keySet().stream().map(Bukkit::getPlayer).filter(Objects::nonNull).map(Player::getName).toList()))
-                .argument(IntegerArgument.of("amount"))
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    final Player player = c.get("player");
-                    final int amount = c.get("amount");
-                    bribeCooldown.put(player.getUniqueId(), TimeUnit.MINUTES.toMillis(10) + System.currentTimeMillis());
-                    if(amount > 0) {
-                        this.getServer().getScheduler().runTask(this, () -> asConsole("cmi money take " + player.getName() + " " + amount));
-                        setUnjail(sender, player, "bribe", "bribe");
-                    } else if(amount == 0) {
-                        releasePapers(sender, player);
-                    } else if(amount == -1) {
-                        fakeReleasePapers(sender, player);
-                    } else if(amount == -2) {
-                        setUnjail(sender, player, "fake-release-papers", "fake-release-papers");
-                    } else if(amount == -3) {
-                        extendJail(player);
-                    }
                 }));
 
         this.manager.command(this.manager.commandBuilder("bartender")
@@ -1243,6 +1048,34 @@ public class SkyPrisonCore extends JavaPlugin {
                     }
                 }));
 
+        this.manager.command(this.manager.commandBuilder("secret", "secrets")
+                .permission("skyprisoncore.command.secret")
+                .argument(PlayerArgument.of("player"))
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    Player player = c.get("player");
+                    if(player.hasPermission("skyprisoncore.mailboxes.amount.2")) {
+                        Bukkit.getScheduler().runTask(this, () -> asConsole("lp user " + player.getName() + " permission set skyprisoncore.mailboxes.amount.3"));
+                    } else if(player.hasPermission("skyprisoncore.mailboxes.amount.1")) {
+                        Bukkit.getScheduler().runTask(this, () -> asConsole("lp user " + player.getName() + " permission set skyprisoncore.mailboxes.amount.2"));
+                    } else {
+                        sender.sendMessage(Component.text("Player already has the maximum amount of mailboxes!", NamedTextColor.RED));
+                    }
+                }));
+        this.manager.command(this.manager.commandBuilder("secret", "secrets")
+                .permission("skyprisoncore.command.secret")
+                .argument(PlayerArgument.of("player"))
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    Player player = c.get("player");
+                    if(player.hasPermission("skyprisoncore.mailboxes.amount.2")) {
+                        Bukkit.getScheduler().runTask(this, () -> asConsole("lp user " + player.getName() + " permission set skyprisoncore.mailboxes.amount.3"));
+                    } else if(player.hasPermission("skyprisoncore.mailboxes.amount.1")) {
+                        Bukkit.getScheduler().runTask(this, () -> asConsole("lp user " + player.getName() + " permission set skyprisoncore.mailboxes.amount.2"));
+                    } else {
+                        sender.sendMessage(Component.text("Player already has the maximum amount of mailboxes!", NamedTextColor.RED));
+                    }
+                }));
         Command.Builder<CommandSender> referral = this.manager.commandBuilder("referral", "ref")
                 .permission("skyprisoncore.command.referral")
                 .argument(StringArgument.optional("player"))

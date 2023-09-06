@@ -33,7 +33,7 @@ public class Safezone implements CommandExecutor {
 							int violsLeft = 3 - viols;
 							if (viols < 3) {
 								target.sendMessage(Component.text("You have received 1 safezone warn(s)! (" + violsLeft + " warn(s) left until jail!)", NamedTextColor.RED));
-								guard.sendMessage(Component.text("Target has received 1 safezone warn(s)! (" + violsLeft + " warn(s) left until jail!", NamedTextColor.RED));
+								guard.sendMessage(Component.text("Target has received 1 safezone warn(s)! (" + violsLeft + " warn(s) left until jail!)", NamedTextColor.RED));
 								safezoneViolators.put(target.getUniqueId(), viols);
 							} else {
 								target.sendMessage(Component.text("You have been jailed for safezoning!", NamedTextColor.RED));

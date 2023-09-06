@@ -2,14 +2,11 @@ package net.skyprison.skyprisoncore.commands;
 
 import cloud.commandframework.arguments.standard.StringArgument;
 import cloud.commandframework.paper.PaperCommandManager;
-import net.kyori.adventure.audience.Audience;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.ChatUtils;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.javacord.api.DiscordApi;
-
-import java.util.stream.Collectors;
 
 public class Chats {
     private final SkyPrisonCore plugin;
@@ -18,7 +15,7 @@ public class Chats {
     public Chats(SkyPrisonCore plugin, PaperCommandManager<CommandSender> manager, DiscordApi discApi) {
         this.plugin = plugin;
         this.manager = manager;
-        createPrivateChats();
+        createChatCommands();
         this.chatUtils = new ChatUtils(plugin, discApi);
     }
     private void runCommand(String msg, CommandSender sender, String chatId, String discordId) {
@@ -32,7 +29,7 @@ public class Chats {
             }
         }
     }
-    private void createPrivateChats() {
+    private void createChatCommands() {
         manager.command(manager.commandBuilder("b")
                 .permission("skyprisoncore.command.build")
                 .argument(StringArgument.optional("message", StringArgument.StringMode.GREEDY))
