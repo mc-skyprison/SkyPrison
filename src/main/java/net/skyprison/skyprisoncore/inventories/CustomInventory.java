@@ -8,9 +8,7 @@ import java.util.List;
 public interface CustomInventory extends InventoryHolder {
     ClickBehavior defaultClickBehavior();
     List<Object> customClickList();
-
     int getPage();
-
     default boolean isCustomClick(Material mat) {
         return customClickList().contains(mat);
     }

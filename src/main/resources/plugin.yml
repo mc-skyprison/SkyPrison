@@ -90,20 +90,6 @@ commands:
     permission: skyprisoncore.command.token
     permission-message: §4Error:§c You do not have permission to execute this command...
   #
-  # GUI Commands
-  #
-  rewards:
-    description: Opens the secrets GUI
-    usage: /<command>
-    aliases: [reward, secret, secrets]
-    permission: skyprisoncore.command.secrets
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  secretfound:
-    description: Adds secretfound
-    usage: /<command>
-    permission: skyprisoncore.command.secretfound
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  #
   # Bounty Commands
   #
   bounty:
@@ -157,12 +143,6 @@ commands:
   #
   # Cheese?
   #
-  referral:
-    description: Give tokens to the guy who reffered you to the server
-    usage: /<command>
-    aliases: [refer, ref]
-    permission: skyprisoncore.command.referral
-    permission-message: §4Error:§c You do not have permission to execute this command...
   enchtable:
     description: Open portable enchant table
     usage: /<command>
@@ -183,15 +163,13 @@ commands:
 
 
   firstjointop:
-    description: See everyone who has referred you
+    description: firstjointop
     usage: /<command>
-    aliases: [referlist, reflist]
     permission: skyprisoncore.command.firstjointop
     permission-message: §4Error:§c You do not have permission to execute this command...
   permshop:
-    description: See everyone who has referred you
+    description: permshop
     usage: /<command>
-    aliases: [referlist, reflist]
     permission: skyprisoncore.command.permshop
     permission-message: §4Error:§c You do not have permission to execute this command...
   buyback:
@@ -203,11 +181,6 @@ commands:
     description: Opens the daily reward GUI
     usage: /<command>
     permission: skyprisoncore.command.daily
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  fixips:
-    description: Opens the daily reward GUI
-    usage: /<command>
-    permission: skyprisoncore.command.fixips
     permission-message: §4Error:§c You do not have permission to execute this command...
   skyplot:
     description: Opens the daily reward GUI
@@ -331,13 +304,6 @@ permissions:
   skyprisoncore.command.token:
     description: Gives access to /tokenteleport
   #
-  # GUI Permissions
-  #
-  skyprisoncore.command.secretfound:
-    description: Gives access to /secrets
-  skyprisoncore.command.secrets:
-    description: Gives access to /secrets
-  #
   # Bounty Permissions
   #
   skyprisoncore.command.bounty:
@@ -363,13 +329,6 @@ permissions:
   #
   skyprisoncore.command.killinfo:
     description: Gives access to /killinfo
-  #
-  # Referral
-  #
-  skyprisoncore.command.referrallist:
-    description: Gives access to /referrallist
-  skyprisoncore.command.referral:
-    description: Gives access to /referral
 
   skyprisoncore.command.firstjointop:
     description: Gives access to /firstjointop
@@ -386,8 +345,6 @@ permissions:
   skyprisoncore.command.daily:
     description: Gives access to /daily
   skyprisoncore.command.shopban:
-    description: Gives access to /shopban
-  skyprisoncore.command.fixips:
     description: Gives access to /shopban
   skyprisoncore.command.enchtable:
     description: Gives access to /enchtable

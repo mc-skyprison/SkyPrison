@@ -1,12 +1,14 @@
-package net.skyprison.skyprisoncore.inventories;
+package net.skyprison.skyprisoncore.inventories.secrets;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.inventories.ClickBehavior;
+import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.Secret;
+import net.skyprison.skyprisoncore.utils.secrets.Secret;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
@@ -24,14 +26,14 @@ public class SecretsHistory implements CustomInventory {
     private final List<Secret> secrets = new ArrayList<>();
     private final Inventory inventory;
     private int page = 1;
-    private final int totalPages;
+    private int totalPages;
     private boolean sort = true;
     private final ItemStack nextPage;
     private final ItemStack prevPage;
     private final ItemStack blackPane;
     private final ItemStack categoryItem = new ItemStack(Material.WRITABLE_BOOK);
     private final ItemStack typeItem = new ItemStack(Material.COMPARATOR);
-    private final List<String> categories = Arrays.asList("all", "grass", "desert", "nether", "snow", "prison-other", "skycity");
+    private final List<String> categories = new ArrayList<>();
     private final List<String> types = Arrays.asList("all", "secret", "parkour", "puzzle");
     private int catPos = 0;
     private int typePos = 0;
@@ -76,6 +78,11 @@ public class SecretsHistory implements CustomInventory {
         updatePage(0);
     }
     public void updatePage(int page) {
+        List<Secret> secretsToShow = new ArrayList<>(secrets);
+        secretsToShow = secretsToShow.stream().filter(secret -> (getCategory().equalsIgnoreCase("all") || secret.category().equalsIgnoreCase(getCategory())) &&
+                (getType().equalsIgnoreCase("all") || secret.type().equalsIgnoreCase(getType()))).toList();
+        totalPages = (int) Math.ceil((double) secretsToShow.size() / 45);
+
         this.page += page;
         if(this.page > totalPages) {
             this.page = 1;
@@ -83,9 +90,6 @@ public class SecretsHistory implements CustomInventory {
         for(int i = 0; i < 45; i++) inventory.setItem(i, null);
         inventory.setItem(45, this.page == 1 ? blackPane : prevPage);
         inventory.setItem(53, totalPages < 2 || this.page == totalPages ? blackPane : nextPage);
-        List<Secret> secretsToShow = new ArrayList<>(secrets);
-        secretsToShow = secretsToShow.stream().filter(secret -> (getCategory().equalsIgnoreCase("all") || secret.category().equalsIgnoreCase(getCategory()) &&
-                (getType().equalsIgnoreCase("all") || secret.type().equalsIgnoreCase(getType())))).toList();
         int toRemove = 45 * (this.page - 1);
         if(toRemove != 0) {
             secretsToShow = secretsToShow.subList(toRemove, secretsToShow.size());
@@ -99,6 +103,16 @@ public class SecretsHistory implements CustomInventory {
     }
 
     public SecretsHistory(SkyPrisonCore plugin, DatabaseHook db, UUID pUUID) {
+        categories.add("all");
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                "SELECT name FROM secrets_categories")) {
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()) {
+                categories.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Secrets History", NamedTextColor.RED));
 
         blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
@@ -124,7 +138,7 @@ public class SecretsHistory implements CustomInventory {
                 String type = rs.getString("type");
                 String rewardType = rs.getString("reward_type");
                 int reward = rs.getInt("reward");
-                long cooldown = rs.getLong("cooldown");
+                String cooldown = rs.getString("cooldown");
                 Date date = new Date(rs.getLong("collect_time"));
                 String itemName = dateFor.format(date);
                 ItemStack item = new ItemStack(Material.BAMBOO_SIGN);
@@ -136,12 +150,11 @@ public class SecretsHistory implements CustomInventory {
                     lore.add(Component.text("Reward: ", NamedTextColor.GRAY).append(Component.text(reward + " " + rewardType, NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false));
                     meta.lore(lore);
                 });
-                secrets.add(new Secret(id, itemName, item, secretCategory, type, 0, rewardType, reward, cooldown));
+                secrets.add(new Secret(id, itemName, item, secretCategory, type, rewardType, reward, cooldown));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        totalPages = (int) Math.ceil((double) secrets.size() / 45);
 
         for (int i = 45; i < 54; i++) {
             inventory.setItem(i, blackPane);

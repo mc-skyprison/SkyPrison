@@ -2,6 +2,7 @@ package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
+import com.destroystokyo.paper.MaterialSetTag;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.world.entity.EntityType;
 import com.sk89q.worldguard.WorldGuard;
@@ -27,19 +28,20 @@ import net.skyprison.skyprisoncore.commands.economy.Bounty;
 import net.skyprison.skyprisoncore.commands.economy.BuyBack;
 import net.skyprison.skyprisoncore.commands.economy.EconomyCheck;
 import net.skyprison.skyprisoncore.commands.economy.MoneyHistory;
-import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
 import net.skyprison.skyprisoncore.inventories.*;
+import net.skyprison.skyprisoncore.inventories.secrets.Secrets;
+import net.skyprison.skyprisoncore.inventories.secrets.SecretsCategoryEdit;
+import net.skyprison.skyprisoncore.inventories.secrets.SecretsEdit;
+import net.skyprison.skyprisoncore.inventories.secrets.SecretsHistory;
 import net.skyprison.skyprisoncore.items.Vouchers;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.Notifications;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
+import net.skyprison.skyprisoncore.utils.secrets.SecretsUtils;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.*;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -56,7 +58,6 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -69,7 +70,6 @@ public class InventoryClick implements Listener {
     private final SkyPrisonCore plugin;
     private final EconomyCheck econCheck;
     private final Bounty bounty;
-    private final SecretsGUI secretsGUI;
     private final Daily daily;
     private final MoneyHistory moneyHistory;
     private final BuyBack buyBack;
@@ -79,13 +79,11 @@ public class InventoryClick implements Listener {
     private final PlayerParticlesAPI particles;
     private final CustomRecipes customRecipes;
 
-    public InventoryClick(SkyPrisonCore plugin, EconomyCheck econCheck, Bounty bounty,
-                          SecretsGUI secretsGUI, Daily daily, MoneyHistory moneyHistory,
+    public InventoryClick(SkyPrisonCore plugin, EconomyCheck econCheck, Bounty bounty, Daily daily, MoneyHistory moneyHistory,
                           BuyBack buyBack, SkyPlot skyPlot, DatabaseHook db, Tags tag, PlayerParticlesAPI particles, CustomRecipes customRecipes) {
         this.plugin = plugin;
         this.econCheck = econCheck;
         this.bounty = bounty;
-        this.secretsGUI = secretsGUI;
         this.daily = daily;
         this.moneyHistory = moneyHistory;
         this.buyBack = buyBack;
@@ -781,7 +779,7 @@ public class InventoryClick implements Listener {
                             case 19 -> {
                                 plugin.chatLock.put(player.getUniqueId(), Arrays.asList("item-commands", inv));
                                 player.closeInventory();
-                                player.sendMessage(Component.text("Type the command to add in chat: (Type 'cancel' to cancel, Type command number to remove existing one)",
+                                player.sendMessage(Component.text("Type the command to add in chat: (Type 'cancel' to cancel, type command number to remove existing one)",
                                         NamedTextColor.YELLOW));
                             }
                             case 20 -> {
@@ -1371,6 +1369,391 @@ public class InventoryClick implements Listener {
                             }
                         }
                     }
+                } else if(customInv instanceof Secrets inv) {
+                    if(currItem != null && (inv.canEditSecrets() || inv.canEditCategories())) {
+                        int slot = event.getRawSlot();
+                        if(slot == 36) {
+                            if (isPaper) {
+                                inv.updatePage(-1);
+                            }
+                        } else if(slot == 44) {
+                            if (isPaper) {
+                                inv.updatePage(1);
+                            }
+                        } else if(slot == 39) {
+                            inv.updateCategory(event.isLeftClick());
+                            inv.updatePage(0);
+                        } else if(slot == 40) {
+                            inv.toggleNotFound();
+                            inv.updatePage(0);
+                        } else if(slot == 41) {
+                            inv.updateType(event.isLeftClick());
+                            inv.updatePage(0);
+                        } else if(slot == 4) {
+                            if (inv.canEditCategories() && !inv.getCategory().name().equalsIgnoreCase("all")) {
+                                player.openInventory(new SecretsCategoryEdit(plugin, db, player.getUniqueId(), inv.getCategory().name()).getInventory());
+                            }
+                        } else if(inv.getPositions().contains(slot)) {
+                            if (inv.canEditSecrets()) {
+                                NamespacedKey key = new NamespacedKey(plugin, "secret-id");
+                                int secretId = currItem.getPersistentDataContainer().getOrDefault(key, PersistentDataType.INTEGER, -1);
+                                if(secretId != -1) {
+                                    player.openInventory(new SecretsEdit(plugin, db, player.getUniqueId(), secretId).getInventory());
+                                }
+                            }
+                        }
+                    }
+                } else if (customInv instanceof SecretsEdit inv) {
+                    if(event.getClickedInventory() instanceof PlayerInventory && !event.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY)) {
+                        event.setCancelled(false);
+                        return;
+                    } else if(event.getCurrentItem() == null) {
+                        event.setCancelled(true);
+                        return;
+                    }
+                    if(event.getCurrentItem() != null) {
+                        Material clickedMat = event.getCurrentItem().getType();
+                        int clickedSlot = event.getSlot();
+                        switch (clickedSlot) {
+                            case 10 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("secret-name", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new secret name in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current name to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getName())));
+                            }
+                            case 11 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("secret-location", inv));
+                                player.closeInventory();
+                                Component signMsg = Component.text("Type what type of sign to get in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .append(Component.text("\nOptions: ", NamedTextColor.GRAY));
+                                for(Material sign : MaterialSetTag.STANDING_SIGNS.getValues()) {
+                                    signMsg = signMsg.append(Component.text("   ")).append(Component.text(sign.toString(), NamedTextColor.GOLD, TextDecoration.BOLD)
+                                            .hoverEvent(HoverEvent.showText(Component.text("Click to paste to chat", NamedTextColor.GRAY)))
+                                            .clickEvent(ClickEvent.suggestCommand(sign.toString())));
+                                }
+                                for(Material sign : MaterialSetTag.ITEMS_HANGING_SIGNS.getValues()) {
+                                    signMsg = signMsg.append(Component.text("   ")).append(Component.text(sign.toString(), NamedTextColor.GOLD, TextDecoration.BOLD)
+                                            .hoverEvent(HoverEvent.showText(Component.text("Click to paste to chat", NamedTextColor.GRAY)))
+                                            .clickEvent(ClickEvent.suggestCommand(sign.toString())));
+                                }
+                                player.sendMessage(signMsg);
+                            }
+                            case 13 -> {
+                                ItemStack newPreview = player.getItemOnCursor();
+                                if(!newPreview.getType().isAir()) {
+                                    event.setCancelled(false);
+                                    inv.setDisplayItem(newPreview);
+                                    player.openInventory(inv.getInventory());
+                                } else {
+                                    player.setItemOnCursor(ItemStack.deserializeBytes(inv.getDisplayItem()));
+                                }
+                            }
+                            case 15 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("secret-cooldown", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new secret cooldown in chat: (Type 'cancel' to cancel, Example: 1d, Can only be in WHOLE days)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current cooldown to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getCooldown())));
+                            }
+                            case 16 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("secret-max-uses", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new secret max uses in chat: (Type 'cancel' to cancel, type 0 for infinite)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current max uses to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(String.valueOf(inv.getMaxUses()))));
+                            }
+                            case 19 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("secret-category", inv));
+                                player.closeInventory();
+                                Component categoryMsg = Component.text("Type the new secret category in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current category to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getCategory()))
+                                        .append(Component.text("\nOptions: ", NamedTextColor.GRAY));
+                                for(String category : SecretsUtils.getCategoryNames()) {
+                                    categoryMsg = categoryMsg.appendSpace().append(Component.text(category, NamedTextColor.GOLD, TextDecoration.BOLD)
+                                            .hoverEvent(HoverEvent.showText(Component.text("Click to paste to chat", NamedTextColor.GRAY)))
+                                            .clickEvent(ClickEvent.suggestCommand(category)));
+                                }
+                                player.sendMessage(categoryMsg);
+                            }
+                            case 20 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("secret-type", inv));
+                                player.closeInventory();
+                                Component typeMsg = Component.text("Type the new secret type in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current type to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getType()))
+                                        .append(Component.text("\nOptions: ", NamedTextColor.GRAY));
+                                for(String type : SecretsUtils.getTypes()) {
+                                    typeMsg = typeMsg.appendSpace().append(Component.text(type, NamedTextColor.GOLD, TextDecoration.BOLD)
+                                            .hoverEvent(HoverEvent.showText(Component.text("Click to paste to chat", NamedTextColor.GRAY)))
+                                            .clickEvent(ClickEvent.suggestCommand(type)));
+                                }
+                                player.sendMessage(typeMsg);
+                            }
+                            case 24 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("secret-reward-type", inv));
+                                player.closeInventory();
+                                Component typeMsg = Component.text("Type the new reward type in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current reward type to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getRewardType()))
+                                        .append(Component.text("\nOptions: ", NamedTextColor.GRAY));
+                                for(String type : SecretsUtils.getRewardTypes()) {
+                                    typeMsg = typeMsg.appendSpace().append(Component.text(type, NamedTextColor.GOLD, TextDecoration.BOLD)
+                                            .hoverEvent(HoverEvent.showText(Component.text("Click to paste to chat", NamedTextColor.GRAY)))
+                                            .clickEvent(ClickEvent.suggestCommand(type)));
+                                }
+                                player.sendMessage(typeMsg);
+                            }
+                            case 25 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("secret-reward-amount", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new reward amount in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current reward amount to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(String.valueOf(inv.getRewardAmount()))));
+                            }
+                            case 27 -> player.openInventory(new Secrets(plugin, db, player, inv.getCategory(), player.hasPermission("skyprisoncore.command.secrets.create.secret"),
+                                    player.hasPermission("skyprisoncore.command.secrets.create.category")).getInventory());
+                            case 30 -> {
+                                if(clickedMat.equals(Material.RED_CONCRETE)) {
+                                    player.closeInventory();
+                                    plugin.secretChanges.add(player.getUniqueId());
+                                    Component msg = Component.text("Are you sure you want to delete this secret?", NamedTextColor.GRAY)
+                                            .append(Component.text("\nDELETE SECRET", NamedTextColor.RED, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                                if (plugin.secretChanges.contains(player.getUniqueId())) {
+                                                    plugin.secretChanges.remove(player.getUniqueId());
+                                                    HashMap<Integer, SecretsEdit> edits = plugin.secretsEditing.get(player.getUniqueId());
+                                                    edits.remove(inv.getSecretsId());
+                                                    plugin.secretsEditing.put(player.getUniqueId(), edits);
+                                                    try (Connection conn = db.getConnection(); PreparedStatement ps =
+                                                            conn.prepareStatement("UPDATE secrets SET deleted = 1 WHERE id = ?")) {
+                                                        ps.setInt(1, inv.getSecretsId());
+                                                        ps.executeUpdate();
+                                                    } catch (SQLException e) {
+                                                        e.printStackTrace();
+                                                    }
+                                                    audience.sendMessage(Component.text("Secret has been deleted!", NamedTextColor.RED));
+                                                    player.openInventory(new Secrets(plugin, db, player, inv.getCategory(), player.hasPermission("skyprisoncore.command.secrets.create.secret"),
+                                                            player.hasPermission("skyprisoncore.command.secrets.create.category")).getInventory());
+                                                }
+                                            })))
+                                            .append(Component.text("     "))
+                                            .append(Component.text("CANCEL DELETION", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                                if (plugin.secretChanges.contains(player.getUniqueId())) {
+                                                    plugin.secretChanges.remove(player.getUniqueId());
+                                                    audience.sendMessage(Component.text("Secret deletion cancelled!", NamedTextColor.GRAY));
+                                                    player.openInventory(inv.getInventory());
+                                                }
+                                            })));
+                                    player.sendMessage(msg);
+                                }
+                            }
+                            case 31 -> {
+                                player.closeInventory();
+                                plugin.secretChanges.add(player.getUniqueId());
+                                Component msg = Component.text("Are you sure you want to discard your changes?", NamedTextColor.GRAY)
+                                        .append(Component.text("\nDISCARD CHANGES", NamedTextColor.RED, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            if (plugin.secretChanges.contains(player.getUniqueId())) {
+                                                plugin.secretChanges.remove(player.getUniqueId());
+                                                HashMap<Integer, SecretsEdit> edits = plugin.secretsEditing.get(player.getUniqueId());
+                                                edits.remove(inv.getSecretsId());
+                                                plugin.secretsEditing.put(player.getUniqueId(), edits);
+                                                audience.sendMessage(Component.text("Changes have been discarded!", NamedTextColor.RED));
+                                                player.openInventory(new Secrets(plugin, db, player, inv.getCategory(), player.hasPermission("skyprisoncore.command.secrets.create.secret"),
+                                                        player.hasPermission("skyprisoncore.command.secrets.create.category")).getInventory());
+                                            }
+                                        })))
+                                        .append(Component.text("     "))
+                                        .append(Component.text("CANCEL", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            if (plugin.secretChanges.contains(player.getUniqueId())) {
+                                                plugin.secretChanges.remove(player.getUniqueId());
+                                                audience.sendMessage(Component.text("Discard changes cancelled!", NamedTextColor.GRAY));
+                                                player.openInventory(inv.getInventory());
+                                            }
+                                        })));
+                                player.sendMessage(msg);
+                            }
+                            case 32 -> {
+                                player.closeInventory();
+                                plugin.secretChanges.add(player.getUniqueId());
+                                Component msg = Component.text("Are you sure you want to save this secret?", NamedTextColor.GRAY)
+                                        .append(Component.text("\nSAVE SECRET", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            if (plugin.secretChanges.contains(player.getUniqueId())) {
+                                                if(inv.saveSecret()) {
+                                                    plugin.secretChanges.remove(player.getUniqueId());
+                                                    HashMap<Integer, SecretsEdit> edits = plugin.secretsEditing.get(player.getUniqueId());
+                                                    edits.remove(inv.getSecretsId());
+                                                    plugin.secretsEditing.put(player.getUniqueId(), edits);
+                                                    audience.sendMessage(Component.text("Secret has been saved!", NamedTextColor.GREEN));
+                                                    player.openInventory(new Secrets(plugin, db, player, inv.getCategory(), player.hasPermission("skyprisoncore.command.secrets.create.secret"),
+                                                            player.hasPermission("skyprisoncore.command.secrets.create.category")).getInventory());
+                                                } else {
+                                                    audience.sendMessage(Component.text("Something went wrong during saving! Cancelling..", NamedTextColor.RED));
+                                                    player.openInventory(inv.getInventory());
+                                                }
+                                            }
+                                        })))
+                                        .append(Component.text("     "))
+                                        .append(Component.text("CANCEL", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            if (plugin.secretChanges.contains(player.getUniqueId())) {
+                                                plugin.secretChanges.remove(player.getUniqueId());
+                                                audience.sendMessage(Component.text("Secret saving cancelled!", NamedTextColor.GRAY));
+                                                player.openInventory(inv.getInventory());
+                                            }
+                                        })));
+                                player.sendMessage(msg);
+                            }
+                        }
+                    }
+                } else if (customInv instanceof SecretsCategoryEdit inv) {
+                    if(event.getClickedInventory() instanceof PlayerInventory && !event.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY)) {
+                        event.setCancelled(false);
+                        return;
+                    } else if(event.getCurrentItem() == null) {
+                        event.setCancelled(true);
+                        return;
+                    }
+                    if(event.getCurrentItem() != null) {
+                        Material clickedMat = event.getCurrentItem().getType();
+                        int clickedSlot = event.getSlot();
+                        switch (clickedSlot) {
+                            case 10 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("secret-category-name", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new category name in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current name to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getName())));
+                            }
+                            case 11 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("secret-category-description", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new category description in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current description to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getDescription())));
+                            }
+                            case 13 -> {
+                                ItemStack newPreview = player.getItemOnCursor();
+                                if(!newPreview.getType().isAir()) {
+                                    event.setCancelled(false);
+                                    inv.setDisplayItem(newPreview);
+                                    player.openInventory(inv.getInventory());
+                                } else {
+                                    player.setItemOnCursor(ItemStack.deserializeBytes(inv.getDisplayItem()));
+                                }
+                            }
+                            case 16 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("secret-category-regions", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type the region & world to add in chat: (Format: <region>:<world>, type 'cancel' to cancel, type region number to remove existing one)",
+                                        NamedTextColor.YELLOW));
+                            }
+                            case 24 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("secret-category-permission", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new category permission in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current permission to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getPermission())));
+                            }
+                            case 25 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("secret-category-permission-message", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new category permission message in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current permission message to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(inv.getPermissionMessage())));
+                            }
+                            case 27 -> player.openInventory(new Secrets(plugin, db, player, inv.getCategoryId(), player.hasPermission("skyprisoncore.command.secrets.create.secret"),
+                                    player.hasPermission("skyprisoncore.command.secrets.create.category")).getInventory());
+                            case 30 -> {
+                                if(clickedMat.equals(Material.RED_CONCRETE)) {
+                                    player.closeInventory();
+                                    plugin.secretCategoryChanges.add(player.getUniqueId());
+                                    Component msg = Component.text("Are you sure you want to delete this Secrets Category?", NamedTextColor.GRAY)
+                                            .append(Component.text("\nDELETE CATEGORY", NamedTextColor.RED, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                                if (plugin.secretCategoryChanges.contains(player.getUniqueId())) {
+                                                    plugin.secretCategoryChanges.remove(player.getUniqueId());
+                                                    HashMap<String, SecretsCategoryEdit> edits = plugin.secretsCatEditing.get(player.getUniqueId());
+                                                    edits.remove(inv.getCategoryId());
+                                                    plugin.secretsCatEditing.put(player.getUniqueId(), edits);
+                                                    try (Connection conn = db.getConnection(); PreparedStatement ps =
+                                                            conn.prepareStatement("UPDATE secrets_categories SET deleted = 1 WHERE name = ?")) {
+                                                        ps.setString(1, inv.getCategoryId());
+                                                        ps.executeUpdate();
+                                                    } catch (SQLException e) {
+                                                        e.printStackTrace();
+                                                    }
+                                                    audience.sendMessage(Component.text("Secrets Category has been deleted!", NamedTextColor.RED));
+                                                    player.openInventory(new Secrets(plugin, db, player, inv.getCategoryId(), player.hasPermission("skyprisoncore.command.secrets.create.secret"),
+                                                            player.hasPermission("skyprisoncore.command.secrets.create.category")).getInventory());
+                                                }
+                                            })))
+                                            .append(Component.text("     "))
+                                            .append(Component.text("CANCEL DELETION", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                                if (plugin.secretCategoryChanges.contains(player.getUniqueId())) {
+                                                    plugin.secretCategoryChanges.remove(player.getUniqueId());
+                                                    audience.sendMessage(Component.text("Secrets Category deletion cancelled!", NamedTextColor.GRAY));
+                                                    player.openInventory(inv.getInventory());
+                                                }
+                                            })));
+                                    player.sendMessage(msg);
+                                }
+                            }
+                            case 31 -> {
+                                player.closeInventory();
+                                plugin.secretCategoryChanges.add(player.getUniqueId());
+                                Component msg = Component.text("Are you sure you want to discard your changes?", NamedTextColor.GRAY)
+                                        .append(Component.text("\nDISCARD CHANGES", NamedTextColor.RED, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            if (plugin.secretCategoryChanges.contains(player.getUniqueId())) {
+                                                plugin.secretCategoryChanges.remove(player.getUniqueId());
+                                                HashMap<String, SecretsCategoryEdit> edits = plugin.secretsCatEditing.get(player.getUniqueId());
+                                                edits.remove(inv.getCategoryId());
+                                                plugin.secretsCatEditing.put(player.getUniqueId(), edits);
+                                                audience.sendMessage(Component.text("Changes have been discarded!", NamedTextColor.RED));
+                                                player.openInventory(new Secrets(plugin, db, player, inv.getCategoryId(), player.hasPermission("skyprisoncore.command.secrets.create.secret"),
+                                                        player.hasPermission("skyprisoncore.command.secrets.create.category")).getInventory());
+                                            }
+                                        })))
+                                        .append(Component.text("     "))
+                                        .append(Component.text("CANCEL", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            if (plugin.secretCategoryChanges.contains(player.getUniqueId())) {
+                                                plugin.secretCategoryChanges.remove(player.getUniqueId());
+                                                audience.sendMessage(Component.text("Discard changes cancelled!", NamedTextColor.GRAY));
+                                                player.openInventory(inv.getInventory());
+                                            }
+                                        })));
+                                player.sendMessage(msg);
+                            }
+                            case 32 -> {
+                                player.closeInventory();
+                                plugin.secretCategoryChanges.add(player.getUniqueId());
+                                Component msg = Component.text("Are you sure you want to save this secrets category?", NamedTextColor.GRAY)
+                                        .append(Component.text("\nSAVE CATEGORY", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            if (plugin.secretCategoryChanges.contains(player.getUniqueId())) {
+                                                if(inv.saveCategory()) {
+                                                    plugin.secretCategoryChanges.remove(player.getUniqueId());
+                                                    HashMap<String, SecretsCategoryEdit> edits = plugin.secretsCatEditing.get(player.getUniqueId());
+                                                    edits.remove(inv.getCategoryId());
+                                                    plugin.secretsCatEditing.put(player.getUniqueId(), edits);
+                                                    audience.sendMessage(Component.text("Secrets Category has been saved!", NamedTextColor.GREEN));
+                                                    player.openInventory(new Secrets(plugin, db, player, inv.getCategoryId(), player.hasPermission("skyprisoncore.command.secrets.create.secret"),
+                                                            player.hasPermission("skyprisoncore.command.secrets.create.category")).getInventory());
+                                                } else {
+                                                    audience.sendMessage(Component.text("Something went wrong during saving! Cancelling..", NamedTextColor.RED));
+                                                    player.openInventory(inv.getInventory());
+                                                }
+                                            }
+                                        })))
+                                        .append(Component.text("     "))
+                                        .append(Component.text("CANCEL", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                            if (plugin.secretCategoryChanges.contains(player.getUniqueId())) {
+                                                plugin.secretCategoryChanges.remove(player.getUniqueId());
+                                                audience.sendMessage(Component.text("Secrets Category saving cancelled!", NamedTextColor.GRAY));
+                                                player.openInventory(inv.getInventory());
+                                            }
+                                        })));
+                                player.sendMessage(msg);
+                            }
+                        }
+                    }
                 }
             } else {
                 CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
@@ -1877,83 +2260,6 @@ public class InventoryClick implements Listener {
                                                 }
                                             }
                                         }
-                                        break;
-                                }
-                            }
-                        }
-                    }
-                }
-                if (ChatColor.stripColor(event.getView().getTitle()).contains("Secrets")) {
-                    if (event.getCurrentItem() != null) {
-                        event.setCancelled(true);
-                    }
-                    String[] title = event.getView().getTitle().split(" - ");
-                    HumanEntity human = event.getWhoClicked();
-                    if (human instanceof Player) {
-                        switch (title[1].toLowerCase()) {
-                            case "grass", "desert", "nether", "snow", "skycity", "marina", "skycity-other", "prison-other" -> {
-                                if (event.getSlot() == 40) {
-                                    secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "secrets");
-                                }
-                            }
-                            case "all" -> {
-                                switch (event.getSlot()) {
-                                    case 31 -> secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "main-menu");
-                                    case 11 -> secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "grass");
-                                    case 12 -> secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "desert");
-                                    case 13 -> secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "nether");
-                                    case 14 -> secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "snow");
-                                    case 15 -> secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "prison-other");
-                                    case 22 -> secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "skycity");
-                                }
-                            }
-                            case "rewards" -> {
-                                if (event.getCurrentItem() == null) {
-                                    break;
-                                }
-                                if (event.getSlot() == 49) {
-                                    secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "main-menu");
-                                } else if (event.getCurrentItem().getType().equals(Material.CHEST_MINECART)) {
-                                    File rewardsDataFile = new File(plugin.getDataFolder() + File.separator
-                                            + "rewardsdata.yml");
-                                    FileConfiguration rData = YamlConfiguration.loadConfiguration(rewardsDataFile);
-
-                                    ItemStack currItem = event.getCurrentItem();
-                                    NamespacedKey key = new NamespacedKey(plugin, "reward");
-                                    ItemMeta itemMeta = currItem.getItemMeta();
-                                    PersistentDataContainer container = itemMeta.getPersistentDataContainer();
-                                    String foundValue;
-                                    if (container.has(key, PersistentDataType.STRING)) {
-                                        foundValue = container.get(key, PersistentDataType.STRING);
-                                        if (Objects.requireNonNull(rData.getString(foundValue + ".reward-type")).equalsIgnoreCase("tokens")) {
-                                            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                                                    "UPDATE rewards_data SET reward_collected = ? WHERE user_id = ? AND reward_name = ?")) {
-                                                ps.setInt(1, 1);
-                                                ps.setString(2, player.getUniqueId().toString());
-                                                ps.setString(3, foundValue);
-                                                ps.executeUpdate();
-                                                int tokenAmount = rData.getInt(foundValue + ".reward");
-                                                plugin.tokens.addTokens(player.getUniqueId(), tokenAmount, "Secret Region Found", foundValue);
-                                                player.sendMessage(Component.text("Secrets", TextColor.fromHexString("#e9e962"))
-                                                        .append(Component.text(" » ", NamedTextColor.DARK_GRAY))
-                                                        .append(Component.text("You received " + tokenAmount + " tokens!", TextColor.fromHexString("#68e43e"))));
-                                                secretsGUI.openGUI(player, "rewards");
-                                            } catch (SQLException e) {
-                                                e.printStackTrace();
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            case "main" -> {
-                                switch (event.getSlot()) {
-                                    case 13:
-                                        break;
-                                    case 20:
-                                        secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "secrets");
-                                        break;
-                                    case 24:
-                                        secretsGUI.openGUI(Bukkit.getPlayer(human.getName()), "rewards");
                                         break;
                                 }
                             }

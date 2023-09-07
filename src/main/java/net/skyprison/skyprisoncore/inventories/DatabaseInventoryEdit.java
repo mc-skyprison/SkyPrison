@@ -176,7 +176,7 @@ public class DatabaseInventoryEdit implements CustomInventory {
                 item.setItemMeta(itemMeta);
                 inventory.setItem(i, item);
             } else if (i == 30) {
-                if (itemId != 0) {
+                if (itemId != -1) {
                     ItemStack item = new ItemStack(Material.RED_CONCRETE);
                     ItemMeta itemMeta = item.getItemMeta();
                     itemMeta.displayName(Component.text("Delete Item", NamedTextColor.DARK_RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
@@ -186,13 +186,13 @@ public class DatabaseInventoryEdit implements CustomInventory {
             } else if (i == 31) {
                 ItemStack item = new ItemStack(Material.GRAY_CONCRETE);
                 ItemMeta itemMeta = item.getItemMeta();
-                itemMeta.displayName(Component.text(itemId != 0 ? "Discard Changes" : "Discard Item", NamedTextColor.RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                itemMeta.displayName(Component.text(itemId != -1 ? "Discard Changes" : "Discard Item", NamedTextColor.RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
                 item.setItemMeta(itemMeta);
                 inventory.setItem(i, item);
             } else if (i == 32) {
                 ItemStack item = new ItemStack(Material.LIME_CONCRETE);
                 ItemMeta itemMeta = item.getItemMeta();
-                itemMeta.displayName(Component.text(itemId != 0 ? "Save Changes" : "Create Item", NamedTextColor.GREEN, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                itemMeta.displayName(Component.text(itemId != -1 ? "Save Changes" : "Create Item", NamedTextColor.GREEN, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
                 item.setItemMeta(itemMeta);
                 inventory.setItem(i, item);
             }

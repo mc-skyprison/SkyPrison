@@ -47,9 +47,9 @@ import net.skyprison.skyprisoncore.commands.donations.DonorAdd;
 import net.skyprison.skyprisoncore.commands.donations.Purchases;
 import net.skyprison.skyprisoncore.commands.economy.*;
 import net.skyprison.skyprisoncore.commands.guard.Safezone;
-import net.skyprison.skyprisoncore.commands.secrets.SecretFound;
-import net.skyprison.skyprisoncore.commands.secrets.SecretsGUI;
 import net.skyprison.skyprisoncore.inventories.*;
+import net.skyprison.skyprisoncore.inventories.secrets.SecretsCategoryEdit;
+import net.skyprison.skyprisoncore.inventories.secrets.SecretsEdit;
 import net.skyprison.skyprisoncore.items.*;
 import net.skyprison.skyprisoncore.listeners.advancedregionmarket.UnsellRegion;
 import net.skyprison.skyprisoncore.listeners.brewery.BrewDrink;
@@ -151,6 +151,10 @@ public class SkyPrisonCore extends JavaPlugin {
     public Timer spongeTimer = new Timer();
     public HashMap<UUID, HashMap<Integer, DatabaseInventoryEdit>> itemEditing = new HashMap<>();
     public HashMap<UUID, HashMap<Integer, NewsMessageEdit>> newsEditing = new HashMap<>();
+    public HashMap<UUID, HashMap<Integer, SecretsEdit>> secretsEditing = new HashMap<>();
+    public HashMap<UUID, HashMap<String, SecretsCategoryEdit>> secretsCatEditing = new HashMap<>();
+    public List<UUID> secretChanges = new ArrayList<>();
+    public List<UUID> secretCategoryChanges = new ArrayList<>();
     public HashMap<UUID, MailBoxSend> mailSend = new HashMap<>();
     public static DatabaseHook db;
     public static StateFlag FLY;
@@ -991,8 +995,14 @@ public class SkyPrisonCore extends JavaPlugin {
                         sender.sendMessage(Component.text("Player already has the maximum amount of mailboxes!", NamedTextColor.RED));
                     }
                 }));
-        Command.Builder<CommandSender> referral = this.manager.commandBuilder("referral", "ref")
+        Command.Builder<CommandSender> referral = this.manager.commandBuilder("referral", "ref", "refer")
                 .permission("skyprisoncore.command.referral")
+                .handler(c -> c.getSender().sendMessage(Component.text("If a player referred you to our server, you can do \n/referral <player> to give them some tokens!", NamedTextColor.GREEN)));
+
+        manager.command(referral);
+
+        this.manager.command((referral.literal("player"))
+                .permission("skyprisoncore.command.referral.player")
                 .argument(StringArgument.optional("player"))
                 .handler(c -> {
                     CommandSender sender = c.getSender();
@@ -1018,7 +1028,8 @@ public class SkyPrisonCore extends JavaPlugin {
                                         CMIUser reffedPlayer = CMI.getInstance().getPlayerManager().getUser(pUUID);
                                         if (reffedPlayer != null) {
                                             if (!user.getLastIp().equalsIgnoreCase(reffedPlayer.getLastIp())) {
-                                                try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO referrals (user_id, referred_by, refer_date) VALUES (?, ?, ?)")) {
+                                                try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                                                        "INSERT INTO referrals (user_id, referred_by, refer_date) VALUES (?, ?, ?)")) {
                                                     ps.setString(1, reffedPlayer.getUniqueId().toString());
                                                     ps.setString(2, player.getUniqueId().toString());
                                                     ps.setLong(3, System.currentTimeMillis());
@@ -1026,7 +1037,8 @@ public class SkyPrisonCore extends JavaPlugin {
                                                 } catch (SQLException e) {
                                                     e.printStackTrace();
                                                 }
-                                                Component beenReffed = Component.text(player.getName(), NamedTextColor.AQUA).append(Component.text(" has referred you! You have received ", NamedTextColor.DARK_AQUA))
+                                                Component beenReffed = Component.text(player.getName(), NamedTextColor.AQUA)
+                                                        .append(Component.text(" has referred you! You have received ", NamedTextColor.DARK_AQUA))
                                                         .append(Component.text("250", NamedTextColor.YELLOW)).append(Component.text(" tokens!", NamedTextColor.DARK_AQUA));
                                                 if (reffedPlayer.isOnline()) {
                                                     reffedPlayer.getPlayer().sendMessage(beenReffed);
@@ -1063,10 +1075,11 @@ public class SkyPrisonCore extends JavaPlugin {
                     } else {
                         sender.sendMessage(Component.text("Can only be used by a player!", NamedTextColor.RED));
                     }
-                });
+                }));
         this.manager.command(referral.literal("help")
                 .permission("skyprisoncore.command.referral.help")
                 .handler(c -> c.getSender().sendMessage(Component.text("If a player referred you to our server, you can do \n/referral <player> to give them some tokens!", NamedTextColor.GREEN))));
+
         this.manager.command(referral.literal("history", "list")
                 .permission("skyprisoncore.command.referral.history")
                 .handler(c -> {
@@ -1108,8 +1121,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("permshop")).setExecutor(new PermShop());
         Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, getDatabase()));
         Objects.requireNonNull(getCommand("dontsell")).setExecutor(new DontSell(getDatabase()));
-        Objects.requireNonNull(getCommand("secretfound")).setExecutor(new SecretFound(this, dailyMissions, getDatabase()));
-        Objects.requireNonNull(getCommand("rewards")).setExecutor(new SecretsGUI(this, getDatabase()));
         Objects.requireNonNull(getCommand("bounty")).setExecutor(new Bounty(getDatabase(), this));
         Objects.requireNonNull(getCommand("killinfo")).setExecutor(new KillInfo(getDatabase()));
         Objects.requireNonNull(getCommand("firstjointop")).setExecutor(new FirstjoinTop(this, getDatabase()));
@@ -1156,7 +1167,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EntityDeath(this, new Safezone(this), getDatabase(), dailyMissions), this);
         pm.registerEvents(new EntityPickupItem(this), this);
         pm.registerEvents(new InventoryClick(this, new EconomyCheck(this), new Bounty(getDatabase(), this),
-                new SecretsGUI(this, getDatabase()), new Daily(this, getDatabase()), new MoneyHistory(this),
+                new Daily(this, getDatabase()), new MoneyHistory(this),
                 new BuyBack(this, getDatabase()), new SkyPlot(this), getDatabase(), new Tags(this, getDatabase()), particles, new CustomRecipes(this)), this);
         pm.registerEvents(new InventoryOpen(this), this);
         pm.registerEvents(new LeavesDecay(), this);

@@ -1,5 +1,6 @@
 package net.skyprison.skyprisoncore.listeners.minecraft;
 
+import com.destroystokyo.paper.MaterialSetTag;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.LocalPlayer;
@@ -13,15 +14,22 @@ import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.Mail;
+import net.skyprison.skyprisoncore.utils.secrets.Secret;
+import net.skyprison.skyprisoncore.utils.secrets.SecretsUtils;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.DoubleChest;
+import org.bukkit.block.Sign;
 import org.bukkit.block.data.type.Chest;
+import org.bukkit.block.sign.Side;
+import org.bukkit.block.sign.SignSide;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -54,11 +62,68 @@ public class BlockPlace implements Listener {
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
         Player player = event.getPlayer();
+        Block block = event.getBlockPlaced();
+        ItemStack heldItem = event.getItemInHand();
+        if(block.getState() instanceof Sign preSign && (MaterialSetTag.ITEMS_HANGING_SIGNS.isTagged(heldItem.getType()) || MaterialSetTag.STANDING_SIGNS.isTagged(heldItem.getType())) &&
+        !heldItem.getPersistentDataContainer().isEmpty() && player.hasPermission("skyprisoncore.command.secrets.create.secret")) {
+            PersistentDataContainer itemPers = heldItem.getPersistentDataContainer();
+            NamespacedKey key = new NamespacedKey(plugin, "secret-sign");
+            if (itemPers.has(key, PersistentDataType.INTEGER)) {
+                int secretId = itemPers.getOrDefault(key, PersistentDataType.INTEGER, -1);
+                if (secretId != -1) {
+                    Secret secret = SecretsUtils.getSecretFromId(secretId);
+                    if (secret != null) {
+                        event.setCancelled(true);
+                        plugin.getServer().getScheduler().runTask(plugin, () -> {
+                            block.getWorld().setBlockData(block.getLocation(), preSign.getBlockData());
+                            Sign sign = (Sign) block.getLocation().getBlock().getState();
+                            SignSide front = sign.getSide(Side.FRONT);
+                            SignSide back = sign.getSide(Side.BACK);
+                            String[] name = secret.name().split(" ");
+
+                            PersistentDataContainer signPers = sign.getPersistentDataContainer();
+                            signPers.set(key, PersistentDataType.INTEGER, secretId);
+
+                            int charsUsed = 0;
+                            int line = 1;
+                            MiniMessage mm = MiniMessage.miniMessage();
+                            Style styling = mm.deserialize(secret.name()).style();
+                            StringBuilder firstLine = new StringBuilder();
+                            StringBuilder secondLine = new StringBuilder();
+                            for (String word : name) {
+                                int wordLength = mm.stripTags(word).length();
+                                if (charsUsed + wordLength > 14) {
+                                    line++;
+                                    charsUsed = 0;
+                                }
+                                if (line == 1) {
+                                    if (charsUsed > 0) firstLine.append(" ");
+                                    firstLine.append(word);
+                                } else if (line == 2) {
+                                    if (charsUsed > 0) secondLine.append(" ");
+                                    secondLine.append(word);
+                                }
+                                charsUsed += wordLength;
+                            }
+                            Component firstComp = mm.deserialize(firstLine.toString()).style(styling);
+                            Component secondComp = mm.deserialize(secondLine.toString()).style(styling);
+                            front.line(1, firstComp);
+                            front.line(2, secondComp);
+                            back.line(1, firstComp);
+                            back.line(2, secondComp);
+                            sign.setWaxed(true);
+                            sign.update();
+                        });
+                        return;
+                    }
+                }
+            }
+        }
+
         if ((!event.canBuild() || event.isCancelled()) && !player.hasPermission("skyprisoncore.blockjump.bypass")) {
             player.setVelocity(new Vector(0, -0.5, 0));
         } else {
             ItemStack item = event.getItemInHand();
-            Block block = event.getBlockPlaced();
             World world = block.getWorld();
             String worldName = world.getName();
             if(block.getType().equals(Material.ENDER_CHEST) && worldName.equalsIgnoreCase("world_prison")) {

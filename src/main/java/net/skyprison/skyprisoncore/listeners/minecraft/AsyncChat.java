@@ -1,5 +1,6 @@
 package net.skyprison.skyprisoncore.listeners.minecraft;
 
+import com.destroystokyo.paper.MaterialTags;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.world.weather.WeatherTypes;
 import com.sk89q.worldguard.WorldGuard;
@@ -27,11 +28,16 @@ import net.skyprison.skyprisoncore.commands.Claim;
 import net.skyprison.skyprisoncore.commands.ItemLore;
 import net.skyprison.skyprisoncore.commands.Tags;
 import net.skyprison.skyprisoncore.inventories.*;
+import net.skyprison.skyprisoncore.inventories.secrets.SecretsCategoryEdit;
+import net.skyprison.skyprisoncore.inventories.secrets.SecretsEdit;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.Notifications;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
+import net.skyprison.skyprisoncore.utils.secrets.SecretsUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -593,6 +599,202 @@ public class AsyncChat implements Listener {
                             } else {
                                 player.openInventory(inv.getInventory());
                             }
+                        }
+                        case "secret-name" -> {
+                            SecretsEdit inv = (SecretsEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                int length = MiniMessage.miniMessage().stripTags(msg).length();
+                                if(length <= 20) {
+                                    String[] words = MiniMessage.miniMessage().stripTags(msg).split(" ");
+                                    if(Arrays.stream(words).filter(word -> word.length() > 9).toList().isEmpty()) {
+                                        inv.setName(miniMsg);
+                                        player.openInventory(inv.getInventory());
+                                    } else {
+                                        player.sendMessage(Component.text("A single word can max be 9 characters! Try again..", NamedTextColor.RED));
+                                        removeChatLock = false;
+                                    }
+                                } else {
+                                    player.sendMessage(Component.text("Name can't be more than 20 characters (excluding formatting)! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
+                            }
+                        }
+                        case "secret-location" -> {
+                            SecretsEdit inv = (SecretsEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                Material sign = Material.valueOf(msg.toUpperCase());
+                                if(sign != null){
+                                    if (MaterialTags.SIGNS.isTagged(sign)) {
+                                        plugin.giveItem(player, SecretsUtils.getSign(plugin, inv.getSecretsId(), inv.getName(), sign));
+                                        player.openInventory(inv.getInventory());
+                                    } else {
+                                        player.sendMessage(Component.text("That's mot a sign! Try again..", NamedTextColor.RED));
+                                        removeChatLock = false;
+                                    }
+                                } else {
+                                    player.sendMessage(Component.text("Invalid material! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
+                            }
+                        }
+                        case "secret-cooldown" -> {
+                            SecretsEdit inv = (SecretsEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                if(msg.length() == 2 && msg.endsWith("d") && plugin.isInt(msg.substring(0, 1))) {
+                                    inv.setCooldown(msg);
+                                    player.openInventory(inv.getInventory());
+                                } else {
+                                    player.sendMessage(Component.text("Cooldown must be in \"<number>d\" format! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
+                            }
+                        }
+                        case "secret-max-uses" -> {
+                            SecretsEdit inv = (SecretsEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                if(plugin.isInt(msg)) {
+                                    inv.setMaxUses(Integer.parseInt(msg));
+                                    player.openInventory(inv.getInventory());
+                                } else {
+                                    player.sendMessage(Component.text("Max uses must be a number! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
+                            }
+                        }
+                        case "secret-category" -> {
+                            SecretsEdit inv = (SecretsEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                if(SecretsUtils.getCategoryNames().contains(msg.toLowerCase())) {
+                                    inv.setCategory(msg.toLowerCase());
+                                    player.openInventory(inv.getInventory());
+                                } else {
+                                    player.sendMessage(Component.text("Category doesn't exist! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
+                            }
+                        }
+                        case "secret-type" -> {
+                            SecretsEdit inv = (SecretsEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                if(SecretsUtils.getTypes().contains(msg.toLowerCase())) {
+                                    inv.setType(msg.toLowerCase());
+                                    player.openInventory(inv.getInventory());
+                                } else {
+                                    player.sendMessage(Component.text("Type doesn't exist! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
+                            }
+                        }
+                        case "secret-reward-type" -> {
+                            SecretsEdit inv = (SecretsEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                if(SecretsUtils.getRewardTypes().contains(msg.toLowerCase())) {
+                                    inv.setRewardType(msg.toLowerCase());
+                                    player.openInventory(inv.getInventory());
+                                } else {
+                                    player.sendMessage(Component.text("Reward Type doesn't exist! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
+                            }
+                        }
+                        case "secret-reward-amount" -> {
+                            SecretsEdit inv = (SecretsEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                if(plugin.isInt(msg)) {
+                                    inv.setRewardAmount(Integer.parseInt(msg));
+                                    player.openInventory(inv.getInventory());
+                                } else {
+                                    player.sendMessage(Component.text("Reward amount must be a number! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
+                            }
+                        }
+
+                        case "secret-category-name" -> {
+                            SecretsCategoryEdit inv = (SecretsCategoryEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                if(inv.setName(msg)) {
+                                    player.openInventory(inv.getInventory());
+                                } else {
+                                    player.sendMessage(Component.text("A category with that name already exists! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            }
+                            player.openInventory(inv.getInventory());
+                        }
+                        case "secret-category-description" -> {
+                            SecretsCategoryEdit inv = (SecretsCategoryEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                inv.setDescription(miniMsg);
+                            }
+                            player.openInventory(inv.getInventory());
+                        }
+                        case "secret-category-regions" -> {
+                            SecretsCategoryEdit inv = (SecretsCategoryEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                if(!plugin.isInt(msg)) {
+                                    if(msg.contains(":")) {
+                                        String[] split = msg.split(":");
+                                        World world = Bukkit.getWorld(split[1]);
+                                        if(world != null) {
+                                            RegionContainer rc = WorldGuard.getInstance().getPlatform().getRegionContainer();
+                                            RegionManager rm = rc.get(BukkitAdapter.adapt(world));
+                                            if(rm != null && rm.getRegion(split[0]) != null) {
+                                                inv.addRegion(msg);
+                                                player.openInventory(inv.getInventory());
+                                            } else {
+                                                player.sendMessage(Component.text("Region doesn't exist! Try again..", NamedTextColor.RED));
+                                                removeChatLock = false;
+                                            }
+                                        } else {
+                                            player.sendMessage(Component.text("World doesn't exist! Try again..", NamedTextColor.RED));
+                                            removeChatLock = false;
+                                        }
+                                    } else {
+                                        player.sendMessage(Component.text("Invalid Format! <region>:<world> Try again..", NamedTextColor.RED));
+                                        removeChatLock = false;
+                                    }
+                                } else {
+                                    if(!inv.removeRegion(Integer.parseInt(msg))) {
+                                        player.sendMessage(Component.text("Invalid Number! Cancelling..", NamedTextColor.RED));
+                                        player.openInventory(inv.getInventory());
+                                    } else {
+                                        player.openInventory(inv.getInventory());
+                                    }
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
+                            }
+                        }
+                        case "secret-category-permission" -> {
+                            SecretsCategoryEdit inv = (SecretsCategoryEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                inv.setPermission(msg);
+                            }
+                            player.openInventory(inv.getInventory());
+                        }
+                        case "secret-category-permission-message" -> {
+                            SecretsCategoryEdit inv = (SecretsCategoryEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                inv.setPermissionMessage(msg);
+                            }
+                            player.openInventory(inv.getInventory());
                         }
                     }
                 }

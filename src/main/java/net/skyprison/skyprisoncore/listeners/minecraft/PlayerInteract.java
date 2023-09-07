@@ -8,8 +8,8 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.MailBox;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.Mail;
-import net.skyprison.skyprisoncore.utils.Secret;
-import net.skyprison.skyprisoncore.utils.SecretsUtils;
+import net.skyprison.skyprisoncore.utils.secrets.Secret;
+import net.skyprison.skyprisoncore.utils.secrets.SecretsUtils;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
@@ -80,7 +80,7 @@ public class PlayerInteract implements Listener {
                 if (secretId != -1) {
                     Secret secret = SecretsUtils.getSecretFromId(secretId);
                     if(secret != null) {
-                        if(secret.isAvailable()) {
+                        if(secret.isAvailable(player.getUniqueId())) {
                             String rewardType = secret.rewardType();
                             switch (rewardType) {
                                 case "tokens" -> {
@@ -89,8 +89,8 @@ public class PlayerInteract implements Listener {
                                     secret.setPlayerCooldown(player.getUniqueId());
                                 }
                             }
-                        } else { // ADD MORE STUFF HERE
-                            player.sendMessage(SecretsUtils.getCooldownText(secret.cooldown(), System.currentTimeMillis()));
+                        } else {
+                            player.sendMessage(Component.text("You've recently used this! Time left: ", NamedTextColor.RED).append(secret.getTimeLeft(player.getUniqueId())));
                         }
                         event.setCancelled(true);
                         return;
