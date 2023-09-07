@@ -32,10 +32,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
-import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -152,14 +149,37 @@ public class JailCommands {
                     }
                 }));
         this.manager.command(this.manager.commandBuilder("guardduty")
-                .permission("skyprisoncore.command.contraband")
-                .argument(PlayerArgument.of("player"))
-                .argument(StringArgument.optional("reason", StringArgument.StringMode.GREEDY))
+                .permission("skyprisoncore.command.guardduty")
+                .senderType(Player.class)
                 .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    final Player player = c.get("player");
-                    final String message = c.getOrDefault("reason", "Contraband");
-                    contrabandMessager(sender, player, "contraband", message);
+                    LinkedHashMap<String, String> guardRanks = new LinkedHashMap<>() {{
+                        put("srguard", "skyprisoncore.guard.srguard");
+                        put("guard", "skyprisoncore.guard.guard");
+                        put("trguard", "skyprisoncore.guard.trguard");
+                    }};
+                    Player player = (Player) c.getSender();
+                    String action;
+                    String messageAction;
+
+                    if (!player.hasPermission("skyprisoncore.guard.onduty")) {
+                        action = "add";
+                        messageAction = "ON";
+                        player.sendMessage(Component.text("You are now ON duty!", NamedTextColor.RED));
+                    } else {
+                        action = "remove";
+                        messageAction = "OFF";
+                        plugin.InvGuardGearDelPlyr(player);
+                        player.sendMessage(Component.text("You are now OFF duty!", NamedTextColor.RED));
+                    }
+                    for (Map.Entry<String, String> entry : guardRanks.entrySet()) {
+                        if (player.hasPermission(entry.getValue())) {
+                            plugin.asConsole("lp user " + player.getName() + " parent " + action + " " + entry.getKey());
+                            break;
+                        }
+                    }
+                    plugin.getServer().sendMessage(Component.text("[", NamedTextColor.WHITE).append(Component.text("Guard", NamedTextColor.DARK_AQUA))
+                            .append(player.displayName().colorIfAbsent(NamedTextColor.BLUE)).append(Component.text(" is now ", NamedTextColor.AQUA))
+                            .append(Component.text(messageAction, NamedTextColor.AQUA, TextDecoration.BOLD)).append(Component.text(" duty!", NamedTextColor.AQUA)));
                 }));
     }
     private void contrabandMessager(CommandSender sender, Player player, String type, String reason) {

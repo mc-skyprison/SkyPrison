@@ -137,7 +137,7 @@ public class Secrets implements CustomInventory {
         allSecrets.editMeta(meta -> meta.displayName(Component.text("All Secrets", NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.ITALIC, false)));
         categories.add(new SecretCategory("all", "Shows all Secrets", allSecrets, "", "", new HashMap<>()));
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                "SELECT name, description, display_item, regions FROM secrets_categories")) {
+                "SELECT name, description, display_item, regions FROM secrets_categories WHERE deleted = 0 ORDER BY order ASC")) {
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
                 String name = rs.getString(1);
@@ -165,7 +165,7 @@ public class Secrets implements CustomInventory {
         }
 
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                "SELECT id, name, display_item, category, type, reward_type, reward, cooldown, max_uses FROM secrets")) {
+                "SELECT id, name, display_item, category, type, reward_type, reward, cooldown, max_uses, deleted FROM secrets")) {
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
                 int id = rs.getInt(1);
@@ -177,12 +177,17 @@ public class Secrets implements CustomInventory {
                 int reward = rs.getInt(7);
                 String cooldown = rs.getString(8);
                 int maxUses = rs.getInt(9);
+                int deleted = rs.getInt(10);
                 Component coolText = SecretsUtils.getTimeLeft(id, cooldown, player.getUniqueId());
                 int found = SecretsUtils.getFoundAmount(id, player.getUniqueId().toString());
+                Secret secret;
                 if (found > 0 || canEditSecrets) {
                     displayItem.editMeta(meta -> {
-                        meta.displayName(MiniMessage.miniMessage().deserialize(name));
+                        meta.displayName(MiniMessage.miniMessage().deserialize(name).decoration(TextDecoration.ITALIC, false));
                         List<Component> lore = new ArrayList<>();
+                        if(deleted == 1) {
+                            lore.add(Component.text("(No Longer Available)", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                        }
                         lore.add(Component.text("You've " + (type.equals("parkour") ? "done this parkour " : type.equals("puzzle") ?
                                         "completed this puzzle " : "found this secret "), NamedTextColor.GRAY)
                                 .append(Component.text(found + (maxUses > 0 ? "/" + maxUses : ""), NamedTextColor.AQUA)).append(Component.text(" time" + (found > 1 ? "s" : ""), NamedTextColor.GRAY))
@@ -201,7 +206,9 @@ public class Secrets implements CustomInventory {
                         NamespacedKey key = new NamespacedKey(plugin, "secret-id");
                         meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, id);
                     });
+                    secret = new Secret(id, name, displayItem, sCategory, type, rewardType, reward, cooldown);
                 } else {
+                    if(deleted == 1) continue;
                     ItemStack notFound = new ItemStack(Material.BOOK);
                     notFound.editMeta(meta -> {
                         meta.displayName(Component.text("???", NamedTextColor.RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
@@ -209,8 +216,8 @@ public class Secrets implements CustomInventory {
                                 .decoration(TextDecoration.ITALIC, false)));
                     });
                     displayItem = notFound;
+                    secret = new Secret(id, name, displayItem, sCategory, type, rewardType, reward, null);
                 }
-                Secret secret = new Secret(id, name, displayItem, sCategory, type, rewardType, reward, null);
                 secrets.add(secret);
             }
         } catch (SQLException e) {
@@ -228,7 +235,7 @@ public class Secrets implements CustomInventory {
             }
         }
 
-        this.inventory = plugin.getServer().createInventory(this, 45, Component.text("Secrets", NamedTextColor.GREEN));
+        this.inventory = plugin.getServer().createInventory(this, 45, Component.text("Secrets", TextColor.fromHexString("#30baa7"), TextDecoration.BOLD));
 
         ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         blackPane.editMeta(meta -> meta.displayName(Component.text(" ")));

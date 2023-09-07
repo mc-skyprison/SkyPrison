@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
@@ -145,7 +146,7 @@ public class SecretsHistory implements CustomInventory {
                 item.editMeta(meta -> {
                     meta.displayName(Component.text(itemName, NamedTextColor.GOLD, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
                     ArrayList<Component> lore = new ArrayList<>();
-                    lore.add(Component.text("Secret: ", NamedTextColor.GRAY).append(Component.text(secretName, NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false));
+                    lore.add(Component.text("Secret: ", NamedTextColor.GRAY).append(MiniMessage.miniMessage().deserialize(secretName)).decoration(TextDecoration.ITALIC, false));
                     lore.add(Component.text("Type: ", NamedTextColor.GRAY).append(Component.text(type, NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false));
                     lore.add(Component.text("Reward: ", NamedTextColor.GRAY).append(Component.text(reward + " " + rewardType, NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false));
                     meta.lore(lore);

@@ -44,34 +44,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.ignoretp
     permission-message: §4Error:§c You do not have permission to execute this command...
-  safezone:
-    description: Gives a player a safezone warning
-    usage: /<command>
-    permission: skyprisoncore.command.safezone
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  #
-  # Contraband Commands
-  #
-  sword:
-    description: Request sword from player
-    usage: /<command>
-    permission: skyprisoncore.command.sword
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  bow:
-    description: Request bow from player
-    usage: /<command>
-    permission: skyprisoncore.command.bow
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  contraband:
-    description: Request contraband from player
-    usage: /<command>
-    permission: skyprisoncore.command.contraband
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  guardduty:
-    description: Enable/disable guardduty
-    usage: /<command>
-    permission: skyprisoncore.command.guardduty
-    permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Minigame Commands
   #
@@ -79,15 +51,6 @@ commands:
     description: Sponge Commands
     usage: /<command>
     permission: skyprisoncore.command.sponge
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  #
-  # Teleport Commands
-  #
-  tokenteleport:
-    description: Teleport with tokens wow
-    aliases: [tokentp]
-    usage: /<command>
-    permission: skyprisoncore.command.token
     permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Bounty Commands
@@ -100,11 +63,6 @@ commands:
   #
   # Donation Commands
   #
-  donorbulk:
-    description: Add a donation
-    usage: /<command>
-    permission: skyprisoncore.command.donorbulk
-    permission-message: §4Error:§c You do not have permission to execute this command...
   donoradd:
     description: Add a donation
     usage: /<command>
@@ -160,8 +118,6 @@ commands:
     aliases: [xpb]
     permission: skyprisoncore.command.bottledexp
     permission-message: §4Error:§c You do not have permission to execute this command...
-
-
   firstjointop:
     description: firstjointop
     usage: /<command>
@@ -208,11 +164,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.tags
     permission-message: §4Error:§c You do not have permission to execute this command...
-  furnace:
-    description: Tags command
-    usage: /<command>
-    permission: skyprisoncore.command.furnace
-    permission-message: §4Error:§c You do not have permission to execute this command...
   minereset:
     description: Tags command
     usage: /<command>
@@ -258,8 +209,6 @@ commands:
 permissions:
   skyprisoncore.command.discord:
     description: Gives access to discord
-  skyprisoncore.command.furnace:
-    description: Gives access to discord
   skyprisoncore.command.minereset:
     description: Gives access to discord
 
@@ -273,26 +222,6 @@ permissions:
     description: Shows when a player hits you
   skyprisoncore.contraband.itembypass:
     description: Bypasses Item Removal and that kind of stuff
-  #
-  # Contraband Permissions
-  #
-  skyprisoncore.command.sword:
-    description: Gives access to /sword
-  skyprisoncore.command.bow:
-    description: Gives access to /bow
-  skyprisoncore.command.contraband:
-    description: Gives access to /contraband
-  skyprisoncore.command.safezone:
-    description: Gives access to /safezone
-
-  skyprisoncore.command.guardduty:
-    description: Gives access to /guardduty
-  #
-  # Builder Permissions
-  #
-  skyprisoncore.builder.onduty:
-    description: player is in build mode when they have this perm
-    default: false
   #
   # Minigame Permissions
   #
@@ -316,8 +245,6 @@ permissions:
   #
   # Donation Permissions
   #
-  skyprisoncore.command.donorbulk:
-    description: Gives you access to /donorbulk
   skyprisoncore.command.donoradd:
     description: Gives you access to /donoradd
   skyprisoncore.command.purchases:

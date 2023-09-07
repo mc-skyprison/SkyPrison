@@ -745,6 +745,20 @@ public class AsyncChat implements Listener {
                             }
                             player.openInventory(inv.getInventory());
                         }
+                        case "secret-category-order" -> {
+                            SecretsCategoryEdit inv = (SecretsCategoryEdit) chatLock.get(1);
+                            if(!msg.equalsIgnoreCase("cancel")) {
+                                if(plugin.isInt(msg)) {
+                                    inv.setOrder(Integer.parseInt(msg));
+                                    player.openInventory(inv.getInventory());
+                                } else {
+                                    player.sendMessage(Component.text("Order must be a number! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.openInventory(inv.getInventory());
+                            }
+                        }
                         case "secret-category-regions" -> {
                             SecretsCategoryEdit inv = (SecretsCategoryEdit) chatLock.get(1);
                             if(!msg.equalsIgnoreCase("cancel")) {

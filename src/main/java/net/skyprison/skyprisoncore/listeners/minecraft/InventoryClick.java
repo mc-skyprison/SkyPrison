@@ -73,21 +73,19 @@ public class InventoryClick implements Listener {
     private final Daily daily;
     private final MoneyHistory moneyHistory;
     private final BuyBack buyBack;
-    private final SkyPlot skyPlot;
     private final DatabaseHook db;
     private final Tags tag;
     private final PlayerParticlesAPI particles;
     private final CustomRecipes customRecipes;
 
     public InventoryClick(SkyPrisonCore plugin, EconomyCheck econCheck, Bounty bounty, Daily daily, MoneyHistory moneyHistory,
-                          BuyBack buyBack, SkyPlot skyPlot, DatabaseHook db, Tags tag, PlayerParticlesAPI particles, CustomRecipes customRecipes) {
+                          BuyBack buyBack, DatabaseHook db, Tags tag, PlayerParticlesAPI particles, CustomRecipes customRecipes) {
         this.plugin = plugin;
         this.econCheck = econCheck;
         this.bounty = bounty;
         this.daily = daily;
         this.moneyHistory = moneyHistory;
         this.buyBack = buyBack;
-        this.skyPlot = skyPlot;
         this.db = db;
         this.tag = tag;
         this.particles = particles;
@@ -1390,11 +1388,11 @@ public class InventoryClick implements Listener {
                             inv.updateType(event.isLeftClick());
                             inv.updatePage(0);
                         } else if(slot == 4) {
-                            if (inv.canEditCategories() && !inv.getCategory().name().equalsIgnoreCase("all")) {
+                            if (event.isShiftClick() && inv.canEditCategories() && !inv.getCategory().name().equalsIgnoreCase("all")) {
                                 player.openInventory(new SecretsCategoryEdit(plugin, db, player.getUniqueId(), inv.getCategory().name()).getInventory());
                             }
                         } else if(inv.getPositions().contains(slot)) {
-                            if (inv.canEditSecrets()) {
+                            if (event.isShiftClick() && inv.canEditSecrets()) {
                                 NamespacedKey key = new NamespacedKey(plugin, "secret-id");
                                 int secretId = currItem.getPersistentDataContainer().getOrDefault(key, PersistentDataType.INTEGER, -1);
                                 if(secretId != -1) {
@@ -1646,6 +1644,13 @@ public class InventoryClick implements Listener {
                                 player.closeInventory();
                                 player.sendMessage(Component.text("Type the region & world to add in chat: (Format: <region>:<world>, type 'cancel' to cancel, type region number to remove existing one)",
                                         NamedTextColor.YELLOW));
+                            }
+                            case 19 -> {
+                                plugin.chatLock.put(player.getUniqueId(), Arrays.asList("secret-category-order", inv));
+                                player.closeInventory();
+                                player.sendMessage(Component.text("Type new category order in chat: (Type 'cancel' to cancel)", NamedTextColor.YELLOW)
+                                        .hoverEvent(HoverEvent.showText(Component.text("Click to paste current order to chat", NamedTextColor.GRAY)))
+                                        .clickEvent(ClickEvent.suggestCommand(String.valueOf(inv.getOrder()))));
                             }
                             case 24 -> {
                                 plugin.chatLock.put(player.getUniqueId(), Arrays.asList("secret-category-permission", inv));

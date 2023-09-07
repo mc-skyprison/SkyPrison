@@ -46,7 +46,6 @@ import net.skyprison.skyprisoncore.commands.discord.Discord;
 import net.skyprison.skyprisoncore.commands.donations.DonorAdd;
 import net.skyprison.skyprisoncore.commands.donations.Purchases;
 import net.skyprison.skyprisoncore.commands.economy.*;
-import net.skyprison.skyprisoncore.commands.guard.Safezone;
 import net.skyprison.skyprisoncore.inventories.*;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsCategoryEdit;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsEdit;
@@ -1127,7 +1126,6 @@ public class SkyPrisonCore extends JavaPlugin {
 
         Objects.requireNonNull(getCommand("ignoretp")).setExecutor(new IgnoreTeleport(this, getDatabase()));
 
-
         Objects.requireNonNull(getCommand("buyback")).setExecutor(new BuyBack(this, getDatabase()));
         Objects.requireNonNull(getCommand("daily")).setExecutor(new Daily(this, getDatabase()));
         Objects.requireNonNull(getCommand("shopban")).setExecutor(new ShopBan(getDatabase()));
@@ -1141,7 +1139,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("moneyhistory")).setExecutor(new MoneyHistory(this));
         Objects.requireNonNull(getCommand("tags")).setExecutor(new Tags(this, getDatabase()));
         Objects.requireNonNull(getCommand("bomb")).setExecutor(new Bomb(this));
-        Objects.requireNonNull(getCommand("furnace")).setExecutor(new VirtualFurnace(this));
         Objects.requireNonNull(getCommand("minereset")).setExecutor(new MineReset(this));
         Objects.requireNonNull(getCommand("randomgive")).setExecutor(new RandomGive(this));
         Objects.requireNonNull(getCommand("customrecipes")).setExecutor(new CustomRecipes(this));
@@ -1164,11 +1161,11 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new CMIPlayerTeleportRequest(getDatabase()), this);
         pm.registerEvents(new CMIUserBalanceChange(this), this);
         pm.registerEvents(new EntityDamageByEntity(this), this);
-        pm.registerEvents(new EntityDeath(this, new Safezone(this), getDatabase(), dailyMissions), this);
+        pm.registerEvents(new EntityDeath(this, getDatabase(), dailyMissions), this);
         pm.registerEvents(new EntityPickupItem(this), this);
         pm.registerEvents(new InventoryClick(this, new EconomyCheck(this), new Bounty(getDatabase(), this),
                 new Daily(this, getDatabase()), new MoneyHistory(this),
-                new BuyBack(this, getDatabase()), new SkyPlot(this), getDatabase(), new Tags(this, getDatabase()), particles, new CustomRecipes(this)), this);
+                new BuyBack(this, getDatabase()), getDatabase(), new Tags(this, getDatabase()), particles, new CustomRecipes(this)), this);
         pm.registerEvents(new InventoryOpen(this), this);
         pm.registerEvents(new LeavesDecay(), this);
         pm.registerEvents(new McMMOLevelUp(this), this);

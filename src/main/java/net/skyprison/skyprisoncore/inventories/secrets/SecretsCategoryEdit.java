@@ -32,6 +32,7 @@ public class SecretsCategoryEdit implements CustomInventory {
     private String permission = "general";
     private String permissionMessage = "<red>You can't use this!";
     private List<String> regions = new ArrayList<>();
+    private int order = 0;
 
     public void updateInventory() {
         for (int i = 0; i < inventory.getSize(); i++) {
@@ -76,6 +77,15 @@ public class SecretsCategoryEdit implements CustomInventory {
                         lore.add(Component.text(b + ". " + region, NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
                         b++;
                     }
+                    meta.lore(lore);
+                });
+                inventory.setItem(i, item);
+            } else if (i == 19) {
+                ItemStack item = new ItemStack(Material.REPEATER);
+                item.editMeta(meta -> {
+                    meta.displayName(Component.text("Category Order", NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false));
+                    List<Component> lore = new ArrayList<>();
+                    lore.add(Component.text("Currently: ", NamedTextColor.YELLOW).append(Component.text(this.order, NamedTextColor.GOLD)).decoration(TextDecoration.ITALIC, false));
                     meta.lore(lore);
                 });
                 inventory.setItem(i, item);
@@ -176,27 +186,31 @@ public class SecretsCategoryEdit implements CustomInventory {
     }
     public boolean saveCategory() {
         if(this.categoryId != null && !this.categoryId.isEmpty()) {
-            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE secrets_categories SET name = ?, description = ?, display_item = ?, permission = ?, permission_message = ?, regions = ? WHERE name = ?")) {
+            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                    "UPDATE secrets_categories SET name = ?, description = ?, display_item = ?, permission = ?, permission_message = ?, regions = ?, order = ? WHERE name = ?")) {
                 ps.setString(1, this.name);
                 ps.setString(2, this.description);
                 ps.setBytes(3, this.displayItem);
                 ps.setString(4, this.permission);
                 ps.setString(5, this.permissionMessage);
                 ps.setString(6, String.join(";", this.regions));
-                ps.setString(7, this.categoryId);
+                ps.setInt(7, this.order);
+                ps.setString(8, this.categoryId);
                 ps.executeUpdate();
                 return true;
             } catch (SQLException e) {
                 e.printStackTrace();
             }
         } else {
-            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO secrets_categories (name, description, display_item, permission, permission_message, regions) VALUES (?, ?, ?, ?, ?, ?)")) {
+            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                    "INSERT INTO secrets_categories (name, description, display_item, permission, permission_message, regions, order) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
                 ps.setString(1, this.name);
                 ps.setString(2, this.description);
                 ps.setBytes(3, this.displayItem);
                 ps.setString(4, this.permission);
                 ps.setString(5, this.permissionMessage);
                 ps.setString(6, String.join(";", this.regions));
+                ps.setInt(7, this.order);
                 ps.executeUpdate();
                 return true;
             } catch (SQLException e) {
@@ -234,6 +248,9 @@ public class SecretsCategoryEdit implements CustomInventory {
     }
     public String getPermissionMessage() {
         return this.permissionMessage;
+    }
+    public int getOrder() {
+        return this.order;
     }
     public boolean setName(String name) {
         try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT name FROM secrets_categories WHERE name = ?")) {
@@ -273,6 +290,10 @@ public class SecretsCategoryEdit implements CustomInventory {
         this.regions.remove(position);
         updateInventory();
         return true;
+    }
+    public void setOrder(int order) {
+        this.order = order;
+        updateInventory();
     }
     @Override
     public @NotNull Inventory getInventory() {

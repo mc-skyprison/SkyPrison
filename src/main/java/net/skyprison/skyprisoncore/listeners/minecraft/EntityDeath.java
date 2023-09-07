@@ -6,7 +6,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.commands.guard.Safezone;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
@@ -26,13 +25,11 @@ import java.util.concurrent.TimeUnit;
 
 public class EntityDeath implements Listener {
     private final SkyPrisonCore plugin;
-    private final Safezone safezone;
     private final DatabaseHook db;
     private final DailyMissions dailyMissions;
 
-    public EntityDeath(SkyPrisonCore plugin, Safezone safezone, DatabaseHook db, DailyMissions dailyMissions) {
+    public EntityDeath(SkyPrisonCore plugin, DatabaseHook db, DailyMissions dailyMissions) {
         this.plugin = plugin;
-        this.safezone = safezone;
         this.db = db;
         this.dailyMissions = dailyMissions;
     }
@@ -40,7 +37,7 @@ public class EntityDeath implements Listener {
     public void playerDeath(EntityDeathEvent event) {
         if(event.getEntity() instanceof Player) {
             Player player = (Player) event.getEntity();
-            safezone.safezoneViolators.remove(player.getUniqueId());
+            SkyPrisonCore.safezoneViolators.remove(player.getUniqueId());
         }
 
         if(!(event.getEntity() instanceof Player) && event.getEntity().getKiller() != null) {
