@@ -17,7 +17,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
@@ -83,24 +82,24 @@ public class Bounty implements CommandExecutor {
 			if(j == 45) break;
 			ArrayList<Component> lore = new ArrayList<>();
 			ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-			SkullMeta meta = (SkullMeta) head.getItemMeta();
-			meta.setOwningPlayer(Bukkit.getOfflinePlayer(bountyPlayer));
-			meta.displayName(Component.text(Objects.requireNonNull(Bukkit.getOfflinePlayer(bountyPlayer).getName()), NamedTextColor.YELLOW, TextDecoration.BOLD));
-			lore.add(0, Component.text("Price: ", NamedTextColor.YELLOW).append(Component.text("$" + sortedMap.get(bountyPlayer), NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
+			int finalJ = j;
+			head.editMeta(SkullMeta.class, meta -> {
+				meta.setOwningPlayer(Bukkit.getOfflinePlayer(bountyPlayer));
+				meta.displayName(Component.text(Objects.requireNonNull(Bukkit.getOfflinePlayer(bountyPlayer).getName()), NamedTextColor.YELLOW, TextDecoration.BOLD));
+				lore.add(0, Component.text("Price: ", NamedTextColor.YELLOW).append(Component.text("$" + sortedMap.get(bountyPlayer), NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
 
-			meta.lore(lore);
+				meta.lore(lore);
 
-			if(j == 0) {
-				NamespacedKey key = new NamespacedKey(plugin, "stop-click");
-				meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
-				NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
-				meta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "bounties");
+				if(finalJ == 0) {
+					NamespacedKey key = new NamespacedKey(plugin, "stop-click");
+					meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
+					NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
+					meta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "bounties");
 
-				NamespacedKey key4 = new NamespacedKey(plugin, "page");
-				meta.getPersistentDataContainer().set(key4, PersistentDataType.INTEGER, page);
-			}
-
-			head.setItemMeta(meta);
+					NamespacedKey key4 = new NamespacedKey(plugin, "page");
+					meta.getPersistentDataContainer().set(key4, PersistentDataType.INTEGER, page);
+				}
+			});
 			bounties.setItem(j, head);
 			j++;
 		}
@@ -108,13 +107,10 @@ public class Bounty implements CommandExecutor {
 
 		ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
 		ItemStack nextPage = new ItemStack(Material.PAPER);
-		ItemMeta nextMeta = nextPage.getItemMeta();
-		nextMeta.displayName(Component.text("Next Page", NamedTextColor.GREEN));
-		nextPage.setItemMeta(nextMeta);
+		nextPage.editMeta(meta -> meta.displayName(Component.text("Next Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)));
 		ItemStack prevPage = new ItemStack(Material.PAPER);
-		ItemMeta prevMeta = prevPage.getItemMeta();
-		prevMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN));
-		prevPage.setItemMeta(prevMeta);
+		prevPage.editMeta(meta -> meta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)));
+
 		for(int i = 45; i < 54; i++) {
 			bounties.setItem(i, pane);
 		}

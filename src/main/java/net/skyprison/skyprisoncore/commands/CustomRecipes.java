@@ -22,7 +22,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,23 +39,20 @@ public class CustomRecipes implements CommandExecutor {
 
     public void openMainGUI(Player player) {
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-        ItemMeta redMeta = redPane.getItemMeta();
-        redMeta.displayName(Component.text(" "));
-        redPane.setItemMeta(redMeta);
+        redPane.editMeta(meta -> meta.displayName(Component.empty()));
 
         ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta blackMeta = blackPane.getItemMeta();
-        blackMeta.displayName(Component.text(" "));
-        blackPane.setItemMeta(blackMeta);
+        blackPane.editMeta(meta -> meta.displayName(Component.empty()));
 
         Inventory recipeGUI = Bukkit.createInventory(null, 27, Component.text("Recipes - Main", TextColor.fromHexString("#3B5998")));
         for(int i = 0; i < recipeGUI.getSize(); i++) {
             if(i == 0) {
-                NamespacedKey key = new NamespacedKey(plugin, "stop-click");
-                redMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
-                NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
-                redMeta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "recipes-main");
-                redPane.setItemMeta(redMeta);
+                redPane.editMeta(meta -> {
+                    NamespacedKey key = new NamespacedKey(plugin, "stop-click");
+                    meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
+                    NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
+                    meta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "recipes-main");
+                });
                 recipeGUI.setItem(i, redPane);
             } else if(i == 8 || i == 9 || i == 17 || i == 18 || i == 26) {
                 recipeGUI.setItem(i, redPane);
@@ -64,21 +60,21 @@ public class CustomRecipes implements CommandExecutor {
                 recipeGUI.setItem(i, blackPane);
             } else if(i == 12) {
                 ItemStack disabled = new ItemStack(Material.BARRIER, 1);
-                ItemMeta dMeta = disabled.getItemMeta();
-                dMeta.displayName(Component.text("Blocked Recipes", TextColor.fromHexString("#e51b1e")).decoration(TextDecoration.ITALIC, false));
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Click here to see all blocked recipes", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                dMeta.lore(lore);
-                disabled.setItemMeta(dMeta);
+                disabled.editMeta(meta -> {
+                    meta.displayName(Component.text("Blocked Recipes", TextColor.fromHexString("#e51b1e")).decoration(TextDecoration.ITALIC, false));
+                    List<Component> lore = new ArrayList<>();
+                    lore.add(Component.text("Click here to see all blocked recipes", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                    meta.lore(lore);
+                });
                 recipeGUI.setItem(i, disabled);
             } else if(i == 14) {
                 ItemStack custom = new ItemStack(Material.KNOWLEDGE_BOOK, 1);
-                ItemMeta cMeta = custom.getItemMeta();
-                cMeta.displayName(Component.text("Custom Recipes", TextColor.fromHexString("#50C878")).decoration(TextDecoration.ITALIC, false));
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Click here to see all custom recipes", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                cMeta.lore(lore);
-                custom.setItemMeta(cMeta);
+                custom.editMeta(meta -> {
+                    meta.displayName(Component.text("Custom Recipes", TextColor.fromHexString("#50C878")).decoration(TextDecoration.ITALIC, false));
+                    List<Component> lore = new ArrayList<>();
+                    lore.add(Component.text("Click here to see all custom recipes", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                    meta.lore(lore);
+                });
                 recipeGUI.setItem(i, custom);
             }
         }
@@ -87,14 +83,10 @@ public class CustomRecipes implements CommandExecutor {
 
     public void openCustomGUI(Player player) {
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-        ItemMeta redMeta = redPane.getItemMeta();
-        redMeta.displayName(Component.text(" "));
-        redPane.setItemMeta(redMeta);
+        redPane.editMeta(meta -> meta.displayName(Component.empty()));
 
         ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta blackMeta = blackPane.getItemMeta();
-        blackMeta.displayName(Component.text(" "));
-        blackPane.setItemMeta(blackMeta);
+        blackPane.editMeta(meta -> meta.displayName(Component.empty()));
 
         Inventory recipeGUI = Bukkit.createInventory(null, 54, Component.text("Recipes - Custom", TextColor.fromHexString("#3B5998")));
         List<CustomRecipe<?>> recipes = CustomCrafting.inst().getRegistries().getRecipes().getAvailable();
@@ -102,11 +94,12 @@ public class CustomRecipes implements CommandExecutor {
         int b = 0;
         for(int i = 0; i < recipeGUI.getSize(); i++) {
             if(i == 0) {
-                NamespacedKey key = new NamespacedKey(plugin, "stop-click");
-                redMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
-                NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
-                redMeta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "recipes-custom");
-                redPane.setItemMeta(redMeta);
+                redPane.editMeta(meta -> {
+                    NamespacedKey key = new NamespacedKey(plugin, "stop-click");
+                    meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
+                    NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
+                    meta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "recipes-custom");
+                });
                 recipeGUI.setItem(i, redPane);
             } else if(i == 8 || i == 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35 || i == 36 || i == 44 || i == 53) {
                 recipeGUI.setItem(i, redPane);
@@ -114,21 +107,21 @@ public class CustomRecipes implements CommandExecutor {
                 recipeGUI.setItem(i, blackPane);
             } else if(i == 45) {
                 ItemStack back = new ItemStack(Material.PAPER, 1);
-                ItemMeta backMeta = back.getItemMeta();
-                backMeta.displayName(Component.text("Back to Main Page", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Click here to go back to main recipes page", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                backMeta.lore(lore);
-                back.setItemMeta(backMeta);
+                back.editMeta(meta -> {
+                    meta.displayName(Component.text("Back to Main Page", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+                    List<Component> lore = new ArrayList<>();
+                    lore.add(Component.text("Click here to go back to main recipes page", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                    meta.lore(lore);
+                });
                 recipeGUI.setItem(i, back);
             } else {
                 if(recipes.size() > b) {
                     CustomRecipe<?> recipe = recipes.get(b);
                     ItemStack item = recipe.getResult().getItemStack();
-                    ItemMeta iMeta = item.getItemMeta();
-                    NamespacedKey key1 = new NamespacedKey(plugin, "custom-recipe");
-                    iMeta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, recipe.getNamespacedKey().toString());
-                    item.setItemMeta(iMeta);
+                    item.editMeta(meta -> {
+                        NamespacedKey key = new NamespacedKey(plugin, "custom-recipe");
+                        meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, recipe.getNamespacedKey().toString());
+                    });
                     item.setAmount(1);
                     recipeGUI.setItem(i, item);
                     b++;
@@ -140,23 +133,20 @@ public class CustomRecipes implements CommandExecutor {
 
     public void openSpecificGUI(Player player, String recipeStringKey) {
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-        ItemMeta redMeta = redPane.getItemMeta();
-        redMeta.displayName(Component.text(" "));
-        redPane.setItemMeta(redMeta);
+        redPane.editMeta(meta -> meta.displayName(Component.empty()));
 
         ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta blackMeta = blackPane.getItemMeta();
-        blackMeta.displayName(Component.text(" "));
-        blackPane.setItemMeta(blackMeta);
+        blackPane.editMeta(meta -> meta.displayName(Component.empty()));
 
         Inventory recipeGUI = Bukkit.createInventory(null, 45, Component.text("Recipes - Custom", TextColor.fromHexString("#3B5998")));
         for(int i = 0; i < recipeGUI.getSize(); i++) {
             if(i == 0) {
-                NamespacedKey key = new NamespacedKey(plugin, "stop-click");
-                redMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
-                NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
-                redMeta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "recipes-specific");
-                redPane.setItemMeta(redMeta);
+                redPane.editMeta(meta -> {
+                    NamespacedKey key = new NamespacedKey(plugin, "stop-click");
+                    meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
+                    NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
+                    meta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "recipes-specific");
+                });
                 recipeGUI.setItem(i, redPane);
             } else if(i == 8 || i == 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35 || i == 44) {
                 recipeGUI.setItem(i, redPane);
@@ -164,12 +154,12 @@ public class CustomRecipes implements CommandExecutor {
                 recipeGUI.setItem(i, blackPane);
             } else if(i == 36) {
                 ItemStack back = new ItemStack(Material.PAPER, 1);
-                ItemMeta backMeta = back.getItemMeta();
-                backMeta.displayName(Component.text("Back to Custom Recipes", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Click here to go back to all custom recipes", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                backMeta.lore(lore);
-                back.setItemMeta(backMeta);
+                back.editMeta(meta -> {
+                    meta.displayName(Component.text("Back to Custom Recipes", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+                    List<Component> lore = new ArrayList<>();
+                    lore.add(Component.text("Click here to go back to all custom recipes", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                    meta.lore(lore);
+                });
                 recipeGUI.setItem(i, back);
             }
         }
@@ -216,14 +206,10 @@ public class CustomRecipes implements CommandExecutor {
 
     public void openDisabledGUI(Player player) {
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-        ItemMeta redMeta = redPane.getItemMeta();
-        redMeta.displayName(Component.text(" "));
-        redPane.setItemMeta(redMeta);
+        redPane.editMeta(meta -> meta.displayName(Component.empty()));
 
         ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta blackMeta = blackPane.getItemMeta();
-        blackMeta.displayName(Component.text(" "));
-        blackPane.setItemMeta(blackMeta);
+        blackPane.editMeta(meta -> meta.displayName(Component.empty()));
 
         Inventory recipeGUI = Bukkit.createInventory(null, 54, Component.text("Recipes - Blocked", TextColor.fromHexString("#3B5998")));
         List<Recipe> disabledRecipes = CustomCrafting.inst().getDisableRecipesHandler().getCachedVanillaRecipes();
@@ -239,11 +225,12 @@ public class CustomRecipes implements CommandExecutor {
         int b = 0;
         for(int i = 0; i < recipeGUI.getSize(); i++) {
             if(i == 0) {
-                NamespacedKey key = new NamespacedKey(plugin, "stop-click");
-                redMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
-                NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
-                redMeta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "recipes-disabled");
-                redPane.setItemMeta(redMeta);
+                redPane.editMeta(meta -> {
+                    NamespacedKey key = new NamespacedKey(plugin, "stop-click");
+                    meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
+                    NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
+                    meta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "recipes-disabled");
+                });
                 recipeGUI.setItem(i, redPane);
             } else if(i == 8 || i == 9 || i == 17 || i == 18 || i == 26 || i == 27 || i == 35 || i == 36 || i == 44 || i == 53) {
                 recipeGUI.setItem(i, redPane);
@@ -251,12 +238,12 @@ public class CustomRecipes implements CommandExecutor {
                 recipeGUI.setItem(i, blackPane);
             } else if(i == 45) {
                 ItemStack back = new ItemStack(Material.PAPER, 1);
-                ItemMeta backMeta = back.getItemMeta();
-                backMeta.displayName(Component.text("Back to Main Page", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Click here to go back to main recipes page", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                backMeta.lore(lore);
-                back.setItemMeta(backMeta);
+                back.editMeta(meta -> {
+                    meta.displayName(Component.text("Back to Main Page", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+                    List<Component> lore = new ArrayList<>();
+                    lore.add(Component.text("Click here to go back to main recipes page", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                    meta.lore(lore);
+                });
                 recipeGUI.setItem(i, back);
             } else {
                 if(recipes.size() > b) {

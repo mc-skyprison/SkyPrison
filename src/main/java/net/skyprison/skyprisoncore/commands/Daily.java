@@ -14,7 +14,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
@@ -56,30 +55,34 @@ public class Daily implements CommandExecutor {
 		Inventory dailyGUI = Bukkit.createInventory(null, 27, Component.text("Daily Reward"));
 
 		ItemStack pane = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
-		ItemMeta paneMeta = pane.getItemMeta();
-		paneMeta.displayName(Component.empty());
-		pane.setItemMeta(paneMeta);
-		boolean hasCollected = false;
+		pane.editMeta(meta -> meta.displayName(Component.empty()));
+		boolean hasCollected;
 		if(!lastCollected.isEmpty()) {
 			Date date = new Date();
 			SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
 			String currDate = formatter.format(date);
 			if(currDate.equalsIgnoreCase(lastCollected)) {
 				hasCollected = true;
-			}
-		}
+			} else {
+                hasCollected = false;
+            }
+        } else {
+            hasCollected = false;
+        }
 
-		for (int i = 0; i < 27; i++) {
+        for (int i = 0; i < 27; i++) {
+			int finalCurrStreak = currStreak;
+			int finalHighestStreak = highestStreak;
 			switch (i) {
 				case 0 -> {
 					ItemStack startPane = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
-					ItemMeta startMeta = startPane.getItemMeta();
-					startMeta.displayName(Component.empty());
-					NamespacedKey key = new NamespacedKey(plugin, "stop-click");
-					startMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
-					NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
-					startMeta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "daily-reward");
-					startPane.setItemMeta(startMeta);
+					startPane.editMeta(meta -> {
+						meta.displayName(Component.empty());
+						NamespacedKey key = new NamespacedKey(plugin, "stop-click");
+						meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
+						NamespacedKey key1 = new NamespacedKey(plugin, "gui-type");
+						meta.getPersistentDataContainer().set(key1, PersistentDataType.STRING, "daily-reward");
+					});
 					dailyGUI.setItem(i, startPane);
 				}
 				case 13 -> {
@@ -89,19 +92,21 @@ public class Daily implements CommandExecutor {
 					} else {
 						dReward = new ItemStack(Material.MINECART);
 					}
-					ItemMeta dMeta = dReward.getItemMeta();
-					dMeta.displayName(Component.text("Daily Reward", NamedTextColor.YELLOW, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
-					ArrayList<Component> lore = new ArrayList<>();
-					if (!hasCollected) {
-						lore.add(Component.text("Click here to collect your reward!", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
-					} else {
-						lore.add(Component.text("You've already collected today!", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
-					}
-					lore.add(Component.empty());
-					lore.add(Component.text("Current Streak: ", NamedTextColor.GRAY).append(Component.text(currStreak, NamedTextColor.WHITE, TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
-					lore.add(Component.text("Highest Streak: ", NamedTextColor.GRAY).append(Component.text(highestStreak, NamedTextColor.WHITE, TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
-					dMeta.lore(lore);
-					dReward.setItemMeta(dMeta);
+					dReward.editMeta(meta -> {
+						meta.displayName(Component.text("Daily Reward", NamedTextColor.YELLOW, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+						ArrayList<Component> lore = new ArrayList<>();
+						if (!hasCollected) {
+							lore.add(Component.text("Click here to collect your reward!", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+						} else {
+							lore.add(Component.text("You've already collected today!", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+						}
+						lore.add(Component.empty());
+						lore.add(Component.text("Current Streak: ", NamedTextColor.GRAY).append(Component.text(finalCurrStreak, NamedTextColor.WHITE, TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
+						lore.add(Component.text("Highest Streak: ", NamedTextColor.GRAY).append(Component.text(finalHighestStreak, NamedTextColor.WHITE, TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
+						meta.lore(lore);
+					});
+
+
 					dailyGUI.setItem(i, dReward);
 				}
 				default -> dailyGUI.setItem(i, pane);

@@ -34,11 +34,12 @@ public class Bomb implements CommandExecutor {
 
         HeadDatabaseAPI hAPI = new HeadDatabaseAPI();
         ItemStack item = hAPI.getItemHead(getBombHdb(bombName));
-        SkullMeta iMeta = (SkullMeta) item.getItemMeta();
-        iMeta.displayName(Component.text(WordUtils.capitalize(bombName) + " Bomb", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-        NamespacedKey key = new NamespacedKey(plugin, "bomb-type");
-        iMeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, bombName);
-        item.setItemMeta(iMeta);
+        String finalBombName = bombName;
+        item.editMeta(SkullMeta.class, meta -> {
+            meta.displayName(Component.text(WordUtils.capitalize(finalBombName) + " Bomb", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+            NamespacedKey key = new NamespacedKey(plugin, "bomb-type");
+            meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, finalBombName);
+        });
         item.setAmount(amount);
         return item;
     }

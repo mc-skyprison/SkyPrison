@@ -30,18 +30,12 @@ public class ItemLore implements CommandExecutor { // /itemlore
     private void deleteLoreLine(Player player, ItemStack heldItem, int line) {
         ItemStack currHeldItem = player.getInventory().getItemInMainHand();
         if(currHeldItem.equals(heldItem)) {
-            ItemMeta heldMeta = currHeldItem.getItemMeta();
-            List<Component> lore = heldMeta.lore();
-
-            assert lore != null;
-            lore.remove(line - 1);
-            heldMeta.lore(lore);
-            if(currHeldItem.equals(heldItem)) {
-                player.getInventory().getItemInMainHand().setItemMeta(heldMeta);
-                displayLore(player);
-            } else {
-                player.sendMessage(Component.text("Item in hand has changed! Cancelling..", NamedTextColor.RED));
-            }
+            player.getInventory().getItemInMainHand().editMeta(meta -> {
+                List<Component> lore = Objects.requireNonNullElse(meta.lore(), new ArrayList<>());
+                lore.remove(line - 1);
+                meta.lore(lore);
+            });
+            displayLore(player);
         } else {
             player.sendMessage(Component.text("Item in hand has changed! Cancelling..", NamedTextColor.RED));
         }
@@ -50,28 +44,19 @@ public class ItemLore implements CommandExecutor { // /itemlore
     private void moveLoreLine(Player player, ItemStack heldItem, int position, boolean moveUp) {
         ItemStack currHeldItem = player.getInventory().getItemInMainHand();
         if(currHeldItem.equals(heldItem)) {
-            position = position - 1;
-            int newPos = moveUp ? position - 1 : position + 1;
-            ItemMeta heldMeta = currHeldItem.getItemMeta();
-            List<Component> lore = heldMeta.lore();
-            if(lore != null) {
+            int actualPosition = position - 1;
+            int newPos = moveUp ? actualPosition - 1 : actualPosition + 1;
+            player.getInventory().getItemInMainHand().editMeta(meta -> {
+                List<Component> lore = Objects.requireNonNullElse(meta.lore(), new ArrayList<>());
                 if(newPos >= 0 && newPos < lore.size()) {
                     Component lore1 = lore.get(newPos);
-                    Component lore2 = lore.get(position);
-
-                    lore.set(position, lore1);
+                    Component lore2 = lore.get(actualPosition);
+                    lore.set(actualPosition, lore1);
                     lore.set(newPos, lore2);
-
-                    heldMeta.lore(lore);
-
-                    if(currHeldItem.equals(heldItem)) {
-                        player.getInventory().getItemInMainHand().setItemMeta(heldMeta);
-                        displayLore(player);
-                    } else {
-                        player.sendMessage(Component.text("Item in hand has changed! Cancelling..", NamedTextColor.RED));
-                    }
+                    meta.lore(lore);
                 }
-            }
+            });
+            displayLore(player);
         } else {
             player.sendMessage(Component.text("Item in hand has changed! Cancelling..", NamedTextColor.RED));
         }

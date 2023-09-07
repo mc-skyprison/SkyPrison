@@ -28,7 +28,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
@@ -60,9 +60,9 @@ public class MineReset implements CommandExecutor { // /minereset <world> <mine>
                                 for (ItemStack item : player.getInventory().getContents()) {
                                     if (item != null) {
                                         if (item.getType().equals(Material.PAPER)) {
-                                            ItemMeta iMeta = item.getItemMeta();
-                                            if (iMeta.getPersistentDataContainer().has(key)) {
-                                                String voucherType = iMeta.getPersistentDataContainer().get(key, PersistentDataType.STRING);
+                                            PersistentDataContainer itemPers = item.getPersistentDataContainer();
+                                            if (itemPers.has(key, PersistentDataType.STRING)) {
+                                                String voucherType = itemPers.get(key, PersistentDataType.STRING);
                                                 if (voucherType != null) {
                                                     if (voucherType.equalsIgnoreCase("mine-reset")) {
                                                         item.setAmount(item.getAmount() - 1);
