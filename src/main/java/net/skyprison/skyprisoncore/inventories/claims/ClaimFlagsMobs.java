@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.inventories;
+package net.skyprison.skyprisoncore.inventories.claims;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.WorldGuard;
@@ -13,6 +13,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.inventories.ClickBehavior;
+import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;

@@ -56,7 +56,6 @@ public class Secrets implements CustomInventory {
     private int typePos = 0;
 
     public void updateCategory(Boolean direction) {
-        System.out.println(catPos);
         if(direction != null) catPos = direction ? (catPos + 1) % categories.size() : (catPos - 1 + categories.size()) % categories.size();
         TextColor color = NamedTextColor.GRAY;
         TextColor selectedColor = TextColor.fromHexString("#0fffc3");
@@ -135,9 +134,9 @@ public class Secrets implements CustomInventory {
         this.canEditCategories = canEditCategories;
         ItemStack allSecrets = new ItemStack(Material.MAGENTA_CONCRETE);
         allSecrets.editMeta(meta -> meta.displayName(Component.text("All Secrets", NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.ITALIC, false)));
-        categories.add(new SecretCategory("all", "Shows all Secrets", allSecrets, "", "", new HashMap<>()));
+        categories.add(new SecretCategory("all", "Shows all Secrets", allSecrets, "", "", new HashMap<>(), false));
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                "SELECT name, description, display_item, regions FROM secrets_categories WHERE deleted = 0 ORDER BY order ASC")) {
+                "SELECT name, description, display_item, regions FROM secrets_categories WHERE deleted = 0 ORDER BY category_order ASC")) {
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
                 String name = rs.getString(1);
@@ -158,7 +157,7 @@ public class Secrets implements CustomInventory {
                     List<String> worldRegions = regionMap.getOrDefault(split[0], new ArrayList<>(Collections.singleton(split[1])));
                     regionMap.put(split[0], worldRegions);
                 });
-                categories.add(new SecretCategory(name, description, displayItem, "", "", regionMap));
+                categories.add(new SecretCategory(name, description, displayItem, "", "", regionMap, false));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -206,7 +205,7 @@ public class Secrets implements CustomInventory {
                         NamespacedKey key = new NamespacedKey(plugin, "secret-id");
                         meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, id);
                     });
-                    secret = new Secret(id, name, displayItem, sCategory, type, rewardType, reward, cooldown);
+                    secret = new Secret(id, name, displayItem, sCategory, type, rewardType, reward, cooldown, deleted == 1);
                 } else {
                     if(deleted == 1) continue;
                     ItemStack notFound = new ItemStack(Material.BOOK);
@@ -216,7 +215,7 @@ public class Secrets implements CustomInventory {
                                 .decoration(TextDecoration.ITALIC, false)));
                     });
                     displayItem = notFound;
-                    secret = new Secret(id, name, displayItem, sCategory, type, rewardType, reward, null);
+                    secret = new Secret(id, name, displayItem, sCategory, type, rewardType, reward, null, false);
                 }
                 secrets.add(secret);
             }

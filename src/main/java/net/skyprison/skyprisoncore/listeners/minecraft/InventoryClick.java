@@ -29,10 +29,18 @@ import net.skyprison.skyprisoncore.commands.economy.BuyBack;
 import net.skyprison.skyprisoncore.commands.economy.EconomyCheck;
 import net.skyprison.skyprisoncore.commands.economy.MoneyHistory;
 import net.skyprison.skyprisoncore.inventories.*;
+import net.skyprison.skyprisoncore.inventories.claims.ClaimFlags;
+import net.skyprison.skyprisoncore.inventories.claims.ClaimFlagsMobs;
+import net.skyprison.skyprisoncore.inventories.claims.ClaimMembers;
+import net.skyprison.skyprisoncore.inventories.claims.ClaimPending;
+import net.skyprison.skyprisoncore.inventories.mail.*;
 import net.skyprison.skyprisoncore.inventories.secrets.Secrets;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsCategoryEdit;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsEdit;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsHistory;
+import net.skyprison.skyprisoncore.inventories.smith.BlacksmithTrimmer;
+import net.skyprison.skyprisoncore.inventories.smith.EndBlacksmithUpgrade;
+import net.skyprison.skyprisoncore.inventories.smith.GrassBlacksmithUpgrade;
 import net.skyprison.skyprisoncore.items.Vouchers;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.Notifications;
@@ -1368,7 +1376,7 @@ public class InventoryClick implements Listener {
                         }
                     }
                 } else if(customInv instanceof Secrets inv) {
-                    if(currItem != null && (inv.canEditSecrets() || inv.canEditCategories())) {
+                    if(currItem != null) {
                         int slot = event.getRawSlot();
                         if(slot == 36) {
                             if (isPaper) {

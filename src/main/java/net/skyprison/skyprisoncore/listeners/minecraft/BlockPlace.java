@@ -86,13 +86,14 @@ public class BlockPlace implements Listener {
 
                             int charsUsed = 0;
                             int line = 1;
+                            int maxChars = MaterialSetTag.STANDING_SIGNS.isTagged(heldItem.getType()) ? 14 : 10;
                             MiniMessage mm = MiniMessage.miniMessage();
                             Style styling = mm.deserialize(secret.name()).style();
                             StringBuilder firstLine = new StringBuilder();
                             StringBuilder secondLine = new StringBuilder();
                             for (String word : name) {
                                 int wordLength = mm.stripTags(word).length();
-                                if (charsUsed + wordLength > 14) {
+                                if (charsUsed + wordLength > maxChars) {
                                     line++;
                                     charsUsed = 0;
                                 }
@@ -105,8 +106,8 @@ public class BlockPlace implements Listener {
                                 }
                                 charsUsed += wordLength;
                             }
-                            Component firstComp = mm.deserialize(firstLine.toString()).style(styling);
-                            Component secondComp = mm.deserialize(secondLine.toString()).style(styling);
+                            Component firstComp = mm.deserialize(firstLine.toString()).applyFallbackStyle(styling);
+                            Component secondComp = mm.deserialize(secondLine.toString()).applyFallbackStyle(styling);
                             front.line(1, firstComp);
                             front.line(2, secondComp);
                             back.line(1, firstComp);

@@ -1,7 +1,7 @@
 package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.inventories.MailBoxSend;
+import net.skyprison.skyprisoncore.inventories.mail.MailBoxSend;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;

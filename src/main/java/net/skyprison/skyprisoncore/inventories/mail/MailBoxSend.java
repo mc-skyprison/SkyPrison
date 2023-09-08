@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.inventories;
+package net.skyprison.skyprisoncore.inventories.mail;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
@@ -8,6 +8,8 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.inventories.ClickBehavior;
+import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.Mail;
 import net.skyprison.skyprisoncore.utils.Notifications;

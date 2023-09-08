@@ -1,9 +1,9 @@
 package net.skyprison.skyprisoncore.listeners.minecraft;
 
-import net.skyprison.skyprisoncore.inventories.BlacksmithTrimmer;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
-import net.skyprison.skyprisoncore.inventories.EndBlacksmithUpgrade;
-import net.skyprison.skyprisoncore.inventories.GrassBlacksmithUpgrade;
+import net.skyprison.skyprisoncore.inventories.smith.BlacksmithTrimmer;
+import net.skyprison.skyprisoncore.inventories.smith.EndBlacksmithUpgrade;
+import net.skyprison.skyprisoncore.inventories.smith.GrassBlacksmithUpgrade;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.HumanEntity;

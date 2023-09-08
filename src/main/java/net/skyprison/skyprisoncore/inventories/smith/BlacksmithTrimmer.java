@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.inventories;
+package net.skyprison.skyprisoncore.inventories.smith;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
@@ -9,6 +9,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.inventories.ClickBehavior;
+import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;

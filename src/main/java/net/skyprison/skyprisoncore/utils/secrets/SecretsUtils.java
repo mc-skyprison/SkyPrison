@@ -42,7 +42,7 @@ public class SecretsUtils {
     public static List<String> getCategoryNames() {
         List<String> categories = new ArrayList<>();
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                "SELECT name FROM secrets_categories")) {
+                "SELECT name FROM secrets_categories WHERE deleted = 0 ORDER BY category_order ASC")) {
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
                 categories.add(rs.getString(1));
@@ -71,9 +71,13 @@ public class SecretsUtils {
         });
         return sign;
     }
+    public static Secret getCategoryFromId(int id) {
+
+        return null;
+    }
     public static Secret getSecretFromId(int id) {
         try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                "SELECT name, display_item, category, type, reward_type, reward, cooldown FROM secrets WHERE id = ?")) {
+                "SELECT name, display_item, category, type, reward_type, reward, cooldown, deleted FROM secrets WHERE id = ?")) {
             ps.setInt(1, id);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
@@ -84,7 +88,8 @@ public class SecretsUtils {
                 String rewardType = rs.getString(5);
                 int reward = rs.getInt(6);
                 String cooldown = rs.getString(7);
-                return new Secret(id, name, displayItem, sCategory, type, rewardType, reward, cooldown);
+                int deleted = rs.getInt(8);
+                return new Secret(id, name, displayItem, sCategory, type, rewardType, reward, cooldown, deleted == 1);
             }
         } catch (SQLException e) {
             e.printStackTrace();

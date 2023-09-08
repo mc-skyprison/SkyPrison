@@ -1,10 +1,12 @@
-package net.skyprison.skyprisoncore.inventories;
+package net.skyprison.skyprisoncore.inventories.mail;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.inventories.ClickBehavior;
+import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Material;
@@ -123,7 +125,6 @@ public class MailBox implements CustomInventory {
                     String sender = rs.getString(2);
                     String receiver = rs.getString(3);
                     Date sentAt = new Date(rs.getLong(5));
-                    System.out.println(dateFor.format(sentAt));
                     List<ItemStack> mailItems = new ArrayList<>();
                     ItemStack mail = ItemStack.deserializeBytes(rs.getBytes(4));
                     ItemStack displayMail = mail.clone();
@@ -157,7 +158,6 @@ public class MailBox implements CustomInventory {
                     String sender = rs.getString(2);
                     String receiver = rs.getString(3);
                     Date sentAt = new Date(rs.getLong(5));
-                    System.out.println(dateFor.format(sentAt));
                     List<ItemStack> mailItems = new ArrayList<>();
                     ItemStack mail = ItemStack.deserializeBytes(rs.getBytes(4));
                     ItemStack displayMail = mail.clone();

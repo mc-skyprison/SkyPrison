@@ -123,7 +123,7 @@ public class SecretsCategoryEdit implements CustomInventory {
         this.inventory = plugin.getServer().createInventory(this, 36, Component.text("Secrets Category " + (categoryId != null ? "Editing" : "Creation"), TextColor.fromHexString("#0fc3ff")));
         if (categoryId != null) {
             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT description, display_item, permission, " +
-                    "permission_message, regions FROM secrets_categories WHERE name = ?")) {
+                    "permission_message, regions, category_order FROM secrets_categories WHERE name = ?")) {
                 ps.setString(1, categoryId);
                 ResultSet rs = ps.executeQuery();
                 while (rs.next()) {
@@ -133,6 +133,7 @@ public class SecretsCategoryEdit implements CustomInventory {
                     this.permission = rs.getString(3);
                     this.permissionMessage = rs.getString(4);
                     this.regions = new ArrayList<>(Arrays.stream(rs.getString(5).split(";")).toList());
+                    this.order = rs.getInt(6);
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -187,7 +188,7 @@ public class SecretsCategoryEdit implements CustomInventory {
     public boolean saveCategory() {
         if(this.categoryId != null && !this.categoryId.isEmpty()) {
             try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                    "UPDATE secrets_categories SET name = ?, description = ?, display_item = ?, permission = ?, permission_message = ?, regions = ?, order = ? WHERE name = ?")) {
+                    "UPDATE secrets_categories SET name = ?, description = ?, display_item = ?, permission = ?, permission_message = ?, regions = ?, category_order = ? WHERE name = ?")) {
                 ps.setString(1, this.name);
                 ps.setString(2, this.description);
                 ps.setBytes(3, this.displayItem);
@@ -203,7 +204,7 @@ public class SecretsCategoryEdit implements CustomInventory {
             }
         } else {
             try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                    "INSERT INTO secrets_categories (name, description, display_item, permission, permission_message, regions, order) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO secrets_categories (name, description, display_item, permission, permission_message, regions, category_order) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
                 ps.setString(1, this.name);
                 ps.setString(2, this.description);
                 ps.setBytes(3, this.displayItem);

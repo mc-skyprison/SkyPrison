@@ -10,7 +10,7 @@ import java.util.UUID;
 
 import static net.skyprison.skyprisoncore.SkyPrisonCore.db;
 
-public record Secret(int id, String name, ItemStack displayItem, String category, String type, String rewardType, Integer reward, String cooldown) {
+public record Secret(int id, String name, ItemStack displayItem, String category, String type, String rewardType, Integer reward, String cooldown, boolean deleted) {
     public void setPlayerCooldown(UUID pUUID) {
         try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
                 "INSERT INTO secrets_userdata (secret_id, user_id, collect_time) VALUES (?, ?, ?)")) {
