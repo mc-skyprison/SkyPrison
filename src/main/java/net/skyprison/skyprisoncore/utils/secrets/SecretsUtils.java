@@ -77,7 +77,7 @@ public class SecretsUtils {
     }
     public static Secret getSecretFromId(int id) {
         try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                "SELECT name, display_item, category, type, reward_type, reward, cooldown, deleted FROM secrets WHERE id = ?")) {
+                "SELECT name, display_item, category, type, reward_type, reward, cooldown, max_uses deleted FROM secrets WHERE id = ?")) {
             ps.setInt(1, id);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
@@ -88,8 +88,9 @@ public class SecretsUtils {
                 String rewardType = rs.getString(5);
                 int reward = rs.getInt(6);
                 String cooldown = rs.getString(7);
-                int deleted = rs.getInt(8);
-                return new Secret(id, name, displayItem, sCategory, type, rewardType, reward, cooldown, deleted == 1);
+                int maxUses = rs.getInt(8);
+                int deleted = rs.getInt(9);
+                return new Secret(id, name, displayItem, sCategory, type, rewardType, reward, cooldown, maxUses, deleted == 1);
             }
         } catch (SQLException e) {
             e.printStackTrace();

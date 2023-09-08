@@ -127,7 +127,7 @@ public class SecretsHistory implements CustomInventory {
         typeItem.editMeta(meta -> meta.displayName(Component.text("Toggle Type", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false)));
 
         try (Connection conn = db.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT s.id, s.name, s.category, s.type, s.reward_type, s.reward, s.cooldown, su.collect_time FROM secrets_userdata su " +
+             PreparedStatement ps = conn.prepareStatement("SELECT s.id, s.name, s.category, s.type, s.reward_type, s.reward, s.cooldown, s.max_uses, s.deleted, su.collect_time FROM secrets_userdata su " +
                      "JOIN secrets s ON s.id = su.secret_id WHERE su.user_id = ? ORDER BY su.collect_time ASC")) {
             ps.setString(1, pUUID.toString());
             ResultSet rs = ps.executeQuery();
@@ -140,6 +140,8 @@ public class SecretsHistory implements CustomInventory {
                 String rewardType = rs.getString("reward_type");
                 int reward = rs.getInt("reward");
                 String cooldown = rs.getString("cooldown");
+                int maxUses = rs.getInt("max_uses");
+                int deleted = rs.getInt("deleted");
                 Date date = new Date(rs.getLong("collect_time"));
                 String itemName = dateFor.format(date);
                 ItemStack item = new ItemStack(Material.BAMBOO_SIGN);
@@ -151,7 +153,7 @@ public class SecretsHistory implements CustomInventory {
                     lore.add(Component.text("Reward: ", NamedTextColor.GRAY).append(Component.text(reward + " " + rewardType, NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false));
                     meta.lore(lore);
                 });
-                secrets.add(new Secret(id, itemName, item, secretCategory, type, rewardType, reward, cooldown));
+                secrets.add(new Secret(id, itemName, item, secretCategory, type, rewardType, reward, cooldown, maxUses, deleted == 1));
             }
         } catch (SQLException e) {
             e.printStackTrace();

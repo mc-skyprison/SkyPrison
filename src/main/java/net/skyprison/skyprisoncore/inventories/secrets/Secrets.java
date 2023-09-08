@@ -205,7 +205,7 @@ public class Secrets implements CustomInventory {
                         NamespacedKey key = new NamespacedKey(plugin, "secret-id");
                         meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, id);
                     });
-                    secret = new Secret(id, name, displayItem, sCategory, type, rewardType, reward, cooldown, deleted == 1);
+                    secret = new Secret(id, name, displayItem, sCategory, type, rewardType, reward, cooldown, maxUses, deleted == 1);
                 } else {
                     if(deleted == 1) continue;
                     ItemStack notFound = new ItemStack(Material.BOOK);
@@ -215,7 +215,7 @@ public class Secrets implements CustomInventory {
                                 .decoration(TextDecoration.ITALIC, false)));
                     });
                     displayItem = notFound;
-                    secret = new Secret(id, name, displayItem, sCategory, type, rewardType, reward, null, false);
+                    secret = new Secret(id, name, displayItem, sCategory, type, rewardType, reward, null, maxUses, false);
                 }
                 secrets.add(secret);
             }

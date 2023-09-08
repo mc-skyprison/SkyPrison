@@ -80,17 +80,21 @@ public class PlayerInteract implements Listener {
                 if (secretId != -1) {
                     Secret secret = SecretsUtils.getSecretFromId(secretId);
                     if(secret != null) {
-                        if(secret.isAvailable(player.getUniqueId())) {
-                            String rewardType = secret.rewardType();
-                            switch (rewardType) {
-                                case "tokens" -> {
-                                    int tokens = secret.reward();
-                                    plugin.tokens.addTokens(player.getUniqueId(), tokens, "secret", secret.name());
-                                    secret.setPlayerCooldown(player.getUniqueId());
+                        if(secret.hasUsesLeft(player.getUniqueId())) {
+                            if (secret.isAvailable(player.getUniqueId())) {
+                                String rewardType = secret.rewardType();
+                                switch (rewardType) {
+                                    case "tokens" -> {
+                                        int tokens = secret.reward();
+                                        plugin.tokens.addTokens(player.getUniqueId(), tokens, "secret", secret.name());
+                                        secret.setPlayerCooldown(player.getUniqueId());
+                                    }
                                 }
+                            } else {
+                                player.sendMessage(Component.text("You've recently used this! Time left: ", NamedTextColor.RED).append(secret.getTimeLeft(player.getUniqueId())));
                             }
                         } else {
-                            player.sendMessage(Component.text("You've recently used this! Time left: ", NamedTextColor.RED).append(secret.getTimeLeft(player.getUniqueId())));
+                            player.sendMessage(Component.text("You've already used this the max number of times!", NamedTextColor.RED));
                         }
                         event.setCancelled(true);
                         return;
