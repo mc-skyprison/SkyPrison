@@ -149,11 +149,6 @@ commands:
     aliases: [plottp, plotteleport]
     permission: skyprisoncore.command.plotteleport
     permission-message: §4Error:§c You do not have permission to execute this command...
-  discord:
-    description: commands relating to discord
-    usage: /<command>
-    permission: skyprisoncore.command.discord
-    permission-message: §4Error:§c You do not have permission to execute this command...
   bomb:
     description: commands relating to bomb
     usage: /<command>
@@ -207,10 +202,8 @@ commands:
     permission: skyprisoncore.command.news
     permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
-  skyprisoncore.command.discord:
-    description: Gives access to discord
   skyprisoncore.command.minereset:
-    description: Gives access to discord
+    description: Gives access to minereset
 
   #
   # Guard Permissions

@@ -42,7 +42,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.skyprison.skyprisoncore.commands.*;
-import net.skyprison.skyprisoncore.commands.discord.Discord;
+import net.skyprison.skyprisoncore.commands.DiscordCommands;
 import net.skyprison.skyprisoncore.commands.donations.DonorAdd;
 import net.skyprison.skyprisoncore.commands.donations.Purchases;
 import net.skyprison.skyprisoncore.commands.economy.*;
@@ -1115,6 +1115,7 @@ public class SkyPrisonCore extends JavaPlugin {
         new ChatCommands(this, this.manager, discApi);
         new JailCommands(this, this.manager);
         new SecretsCommands(this, this.manager);
+        new DiscordCommands(this, getDatabase(), discApi, this.manager);
 
         Objects.requireNonNull(getCommand("tokens")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
@@ -1154,8 +1155,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("itemlore")).setExecutor(new ItemLore(this));
         Objects.requireNonNull(getCommand("namecolour")).setExecutor(new NameColour(this, getDatabase()));
         Objects.requireNonNull(getCommand("news")).setExecutor(new News(this, getDatabase()));
-
-        Objects.requireNonNull(getCommand("discord")).setExecutor(new Discord(this, getDatabase(), discApi));
     }
 
     public void registerEvents() {
