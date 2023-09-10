@@ -649,7 +649,7 @@ public class AsyncChat implements Listener {
                         case "secret-cooldown" -> {
                             SecretsEdit inv = (SecretsEdit) chatLock.get(1);
                             if(!msg.equalsIgnoreCase("cancel")) {
-                                if(msg.length() == 2 && msg.endsWith("d") && plugin.isInt(msg.substring(0, 1))) {
+                                if(msg.endsWith("d") && plugin.isInt(msg.substring(0, msg.length() - 1))) {
                                     inv.setCooldown(msg);
                                     player.openInventory(inv.getInventory());
                                 } else {

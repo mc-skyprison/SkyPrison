@@ -42,7 +42,6 @@ public class Secrets implements CustomInventory {
     private final HashMap<Secret, Integer> found = new HashMap<>();
     private final List<Integer> positions = Arrays.asList(11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 29, 30, 31, 32, 33);
     private final Inventory inventory;
-    private final UUID pUUID;
     private int page = 1;
     private final boolean canEditSecrets;
     private final boolean canEditCategories;
@@ -55,8 +54,8 @@ public class Secrets implements CustomInventory {
     private final ItemStack sortItem = new ItemStack(Material.OAK_SIGN);
     private final List<SecretCategory> categories = new ArrayList<>();
     private final List<String> types = Arrays.asList("all", "secret", "parkour", "puzzle");
-    private final List<String> show = Arrays.asList("all", "available", "not-available", "found", "not-found");
-    private final List<String> sort = Arrays.asList("a_->_z", "z_->_a", "least_time_left", "most_time_left", "least_found", "most_found");
+    private final List<String> show = Arrays.asList("all", "available", "not_available", "found", "not_found");
+    private final List<String> sort = Arrays.asList("a_-_z", "z_-_a", "least_time_left", "most_time_left", "least_found", "most_found");
     private int catPos = 0;
     private int typePos = 0;
     private int showPos = 0;
@@ -95,9 +94,9 @@ public class Secrets implements CustomInventory {
         TextColor selectedColor = TextColor.fromHexString("#0fffc3");
         showItem.editMeta(meta -> {
             List<Component> lore = new ArrayList<>();
-            types.forEach(type -> lore.add(Component.text(WordUtils.capitalize(type).replace("-", " "),
-                    getType().equalsIgnoreCase(type) ? selectedColor : color).decoration(TextDecoration.BOLD,
-                    getType().equalsIgnoreCase(type)).decoration(TextDecoration.ITALIC, false)));
+            show.forEach(show -> lore.add(Component.text(WordUtils.capitalize(show).replace("_", " "),
+                    getShow().equalsIgnoreCase(show) ? selectedColor : color).decoration(TextDecoration.BOLD,
+                    getShow().equalsIgnoreCase(show)).decoration(TextDecoration.ITALIC, false)));
             meta.lore(lore);
         });
         inventory.setItem(41, showItem);
@@ -109,9 +108,9 @@ public class Secrets implements CustomInventory {
         TextColor selectedColor = TextColor.fromHexString("#0fffc3");
         sortItem.editMeta(meta -> {
             List<Component> lore = new ArrayList<>();
-            types.forEach(type -> lore.add(Component.text(WordUtils.capitalize(type).replace("-", " "),
-                    getType().equalsIgnoreCase(type) ? selectedColor : color).decoration(TextDecoration.BOLD,
-                    getType().equalsIgnoreCase(type)).decoration(TextDecoration.ITALIC, false)));
+            sort.forEach(sort -> lore.add(Component.text(WordUtils.capitalize(sort).replace("_", " "),
+                    getSort().equalsIgnoreCase(sort) ? selectedColor : color).decoration(TextDecoration.BOLD,
+                    getSort().equalsIgnoreCase(sort)).decoration(TextDecoration.ITALIC, false)));
             meta.lore(lore);
         });
 
@@ -137,10 +136,19 @@ public class Secrets implements CustomInventory {
     public void updatePage(int page) {
         List<Secret> secretsToShow = new ArrayList<>(secrets);
 
-        secretsToShow = secretsToShow.stream().filter(secret ->
-                (getCategory().name().equals("all") || secret.category().equalsIgnoreCase(getCategory().name()))
-                && (getType().equals("all") || secret.type().equalsIgnoreCase(getType()))
-                && (getShow().equals("all") || secret.cooldown() != null)).toList();
+        secretsToShow = secretsToShow.stream().filter(secret -> {
+            if(!getCategory().name().equals("all") && !secret.category().equals(getCategory().name())) return false;
+            if(!getType().equals("all") && !secret.type().equals(getType())) return false;
+            if(!getShow().equals("all")) {
+                if(getShow().equals("available") && cooldowns.containsKey(secret) && TimeUnit.MILLISECONDS.toDays(cooldowns.get(secret)) > TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis())) return false;
+                if(getShow().equals("not-available") && !cooldowns.containsKey(secret) || TimeUnit.MILLISECONDS.toDays(cooldowns.get(secret)) < TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis())) return false;
+                if(getShow().equals("found") && !found.containsKey(secret)) return false;
+                return !getShow().equals("not-found") || !found.containsKey(secret);
+            }
+            return true;
+        }).toList();
+
+
         int totalPages = (int) Math.ceil((double) secretsToShow.size() / 15);
 
         this.page += page;
@@ -183,7 +191,6 @@ public class Secrets implements CustomInventory {
     public Secrets(SkyPrisonCore plugin, DatabaseHook db, Player player, final String category, boolean canEditSecrets, boolean canEditCategories) {
         this.canEditSecrets = canEditSecrets;
         this.canEditCategories = canEditCategories;
-        this.pUUID = player.getUniqueId();
         ItemStack allSecrets = new ItemStack(Material.MAGENTA_CONCRETE);
         allSecrets.editMeta(meta -> meta.displayName(Component.text("All Secrets", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false)));
         categories.add(new SecretCategory("all", "Shows all Secrets", allSecrets, "", "", new HashMap<>(), false));
@@ -268,7 +275,7 @@ public class Secrets implements CustomInventory {
                     });
                     secret = new Secret(id, name, displayItem, sCategory, type, rewardType, reward, cooldown, maxUses, deleted == 1);
 
-                    long collected = SecretsUtils.getPlayerCooldown(id, pUUID);
+                    long collected = SecretsUtils.getPlayerCooldown(id, player.getUniqueId());
 
                     if(collected != 0) {
                         collected += SecretsUtils.coolInMillis(cooldown);
@@ -284,7 +291,7 @@ public class Secrets implements CustomInventory {
                                 .decoration(TextDecoration.ITALIC, false)));
                     });
                     displayItem = notFound;
-                    secret = new Secret(id, name, displayItem, sCategory, type, rewardType, reward, null, maxUses, false);
+                    secret = new Secret(id, "???", displayItem, sCategory, type, rewardType, reward, null, maxUses, false);
                 }
                 secrets.add(secret);
             }
