@@ -5,7 +5,6 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.managers.RegionManager;
-import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -35,25 +34,33 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class Secrets implements CustomInventory {
     private final List<Secret> secrets = new ArrayList<>();
+    private final HashMap<Secret, Long> cooldowns = new HashMap<>();
+    private final HashMap<Secret, Integer> found = new HashMap<>();
     private final List<Integer> positions = Arrays.asList(11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 29, 30, 31, 32, 33);
     private final Inventory inventory;
+    private final UUID pUUID;
     private int page = 1;
     private final boolean canEditSecrets;
     private final boolean canEditCategories;
     private final ItemStack nextPage;
     private final ItemStack prevPage;
     private final ItemStack redPane;
-    private boolean showNotFound = false;
     private final ItemStack categoryItem = new ItemStack(Material.WRITABLE_BOOK);
     private final ItemStack typeItem = new ItemStack(Material.COMPARATOR);
-    private final ItemStack notFoundItem = new ItemStack(Material.COMPASS);
+    private final ItemStack showItem = new ItemStack(Material.COMPASS);
+    private final ItemStack sortItem = new ItemStack(Material.OAK_SIGN);
     private final List<SecretCategory> categories = new ArrayList<>();
     private final List<String> types = Arrays.asList("all", "secret", "parkour", "puzzle");
+    private final List<String> show = Arrays.asList("all", "available", "not-available", "found", "not-found");
+    private final List<String> sort = Arrays.asList("a_->_z", "z_->_a", "least_time_left", "most_time_left", "least_found", "most_found");
     private int catPos = 0;
     private int typePos = 0;
+    private int showPos = 0;
+    private int sortPos = 0;
 
     public void updateCategory(Boolean direction) {
         if(direction != null) catPos = direction ? (catPos + 1) % categories.size() : (catPos - 1 + categories.size()) % categories.size();
@@ -61,11 +68,12 @@ public class Secrets implements CustomInventory {
         TextColor selectedColor = TextColor.fromHexString("#0fffc3");
         categoryItem.editMeta(meta -> {
             List<Component> lore = new ArrayList<>();
-            categories.forEach(category -> lore.add(Component.text(WordUtils.capitalize(category.name()).replace("-", " "),
-                    getCategory().name().equalsIgnoreCase(category.name()) ? selectedColor : color).decoration(TextDecoration.ITALIC, false)));
+            categories.forEach(category -> lore.add(Component.text(WordUtils.capitalize(category.name().replace("-", " ")),
+                    getCategory().name().equalsIgnoreCase(category.name()) ? selectedColor : color).decoration(TextDecoration.BOLD,
+                            getCategory().name().equalsIgnoreCase(category.name())).decoration(TextDecoration.ITALIC, false)));
             meta.lore(lore);
         });
-        inventory.setItem(39, categoryItem);
+        inventory.setItem(38, categoryItem);
         inventory.setItem(4, getCategory().displayItem());
     }
     public void updateType(Boolean direction) {
@@ -75,27 +83,64 @@ public class Secrets implements CustomInventory {
         typeItem.editMeta(meta -> {
             List<Component> lore = new ArrayList<>();
             types.forEach(type -> lore.add(Component.text(WordUtils.capitalize(type).replace("-", " "),
-                    getType().equalsIgnoreCase(type) ? selectedColor : color).decoration(TextDecoration.ITALIC, false)));
+                    getType().equalsIgnoreCase(type) ? selectedColor : color).decoration(TextDecoration.BOLD,
+                    getType().equalsIgnoreCase(type)).decoration(TextDecoration.ITALIC, false)));
             meta.lore(lore);
         });
-        inventory.setItem(41, typeItem);
+        inventory.setItem(39, typeItem);
     }
-    public void toggleNotFound() {
-        showNotFound = !showNotFound;
-        notFoundItem.editMeta(meta -> {
+    public void updateShowing(Boolean direction) {
+        if(direction != null) showPos = direction ? (showPos + 1) % show.size() : (showPos - 1 + show.size()) % show.size();
+        TextColor color = NamedTextColor.GRAY;
+        TextColor selectedColor = TextColor.fromHexString("#0fffc3");
+        showItem.editMeta(meta -> {
             List<Component> lore = new ArrayList<>();
-            lore.add(Component.text("Currently ", NamedTextColor.GRAY).append(Component.text(showNotFound ? "SHOWING" : "HIDING",
-                            showNotFound ? NamedTextColor.GREEN : NamedTextColor.RED, TextDecoration.BOLD)).append(Component.text(" secrets you haven't found", NamedTextColor.GRAY))
-                    .decoration(TextDecoration.ITALIC, false));
+            types.forEach(type -> lore.add(Component.text(WordUtils.capitalize(type).replace("-", " "),
+                    getType().equalsIgnoreCase(type) ? selectedColor : color).decoration(TextDecoration.BOLD,
+                    getType().equalsIgnoreCase(type)).decoration(TextDecoration.ITALIC, false)));
             meta.lore(lore);
         });
-        inventory.setItem(40, notFoundItem);
+        inventory.setItem(41, showItem);
+    }
+
+    public void updateSort(Boolean direction) {
+        if(direction != null) sortPos = direction ? (sortPos + 1) % sort.size() : (sortPos - 1 + sort.size()) % sort.size();
+        TextColor color = NamedTextColor.GRAY;
+        TextColor selectedColor = TextColor.fromHexString("#0fffc3");
+        sortItem.editMeta(meta -> {
+            List<Component> lore = new ArrayList<>();
+            types.forEach(type -> lore.add(Component.text(WordUtils.capitalize(type).replace("-", " "),
+                    getType().equalsIgnoreCase(type) ? selectedColor : color).decoration(TextDecoration.BOLD,
+                    getType().equalsIgnoreCase(type)).decoration(TextDecoration.ITALIC, false)));
+            meta.lore(lore);
+        });
+
+        secrets.sort((s1, s2) -> {
+            if (getSort().equals("a_->_z")) {
+                return s1.name().compareToIgnoreCase(s2.name());
+            } else if (getSort().equals("z_->_a")) {
+                return s2.name().compareToIgnoreCase(s1.name());
+            } else if (getSort().equals("least_time_left")) {
+                return Long.compare(cooldowns.get(s1), cooldowns.get(s2));
+            } else if (getSort().equals("most_time_left")) {
+                return Long.compare(cooldowns.get(s2), cooldowns.get(s1));
+            } else if (getSort().equals("least_found")) {
+                return Integer.compare(found.get(s1), found.get(s2));
+            } else if (getSort().equals("most_found")) {
+                return Integer.compare(found.get(s2), found.get(s1));
+            }
+            return 0;
+        });
+
+        inventory.setItem(42, sortItem);
     }
     public void updatePage(int page) {
         List<Secret> secretsToShow = new ArrayList<>(secrets);
-        secretsToShow = secretsToShow.stream().filter(secret -> (getCategory().name().equalsIgnoreCase("all") || secret.category().equalsIgnoreCase(getCategory().name()))
-                && (getType().equalsIgnoreCase("all") || secret.type().equalsIgnoreCase(getType()))
-                && (showNotFound || secret.cooldown() != null)).toList();
+
+        secretsToShow = secretsToShow.stream().filter(secret ->
+                (getCategory().name().equals("all") || secret.category().equalsIgnoreCase(getCategory().name()))
+                && (getType().equals("all") || secret.type().equalsIgnoreCase(getType()))
+                && (getShow().equals("all") || secret.cooldown() != null)).toList();
         int totalPages = (int) Math.ceil((double) secretsToShow.size() / 15);
 
         this.page += page;
@@ -114,26 +159,33 @@ public class Secrets implements CustomInventory {
             if (secretsIterator.hasNext()) inventory.setItem(pos, secretsIterator.next().displayItem());
         });
     }
-    private int getCatPosFromRegion(String worldName, List<String> regions) {
-        for (int i = 0; i < categories.size(); i++) {
-            Map<String, List<String>> regionMap = categories.get(i).regions();
-            List<String> worldRegions = regionMap.get(worldName);
-            if (worldRegions != null && !Collections.disjoint(worldRegions, regions)) {
-                return i;
-            }
+    private int getCatPosFromRegion(String worldName, HashMap<String, Integer> regions) {
+        HashMap<Integer, List<SecretCategory>> selCats = new HashMap<>();
+        categories.forEach(category -> category.regions().getOrDefault(worldName, new ArrayList<>()).forEach(region -> {
+                    if(regions.containsKey(region)) {
+                        int priority = regions.get(region);
+                        List<SecretCategory> cats = selCats.getOrDefault(priority, new ArrayList<>());
+                        cats.add(category);
+                        selCats.put(priority, cats);
+                    }
+                }));
+        if(!selCats.isEmpty()) {
+            int priority = Collections.max(selCats.keySet());
+            return categories.indexOf(selCats.get(priority).get(0));
         }
         return 0;
     }
-    private List<String> getApplicableRegions(Player player, RegionManager rm) {
+    private HashMap<String, Integer> getApplicableRegions(Player player, RegionManager rm) {
         Location loc = player.getLocation();
         ApplicableRegionSet regionList = rm.getApplicableRegions(BlockVector3.at(loc.getX(), loc.getY(), loc.getZ()));
-        return regionList.getRegions().stream().map(ProtectedRegion::getId).toList();
+        return regionList.getRegions().stream().collect(HashMap::new, (m, r) -> m.put(r.getId(), r.getPriority()), HashMap::putAll);
     }
     public Secrets(SkyPrisonCore plugin, DatabaseHook db, Player player, final String category, boolean canEditSecrets, boolean canEditCategories) {
         this.canEditSecrets = canEditSecrets;
         this.canEditCategories = canEditCategories;
+        this.pUUID = player.getUniqueId();
         ItemStack allSecrets = new ItemStack(Material.MAGENTA_CONCRETE);
-        allSecrets.editMeta(meta -> meta.displayName(Component.text("All Secrets", NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.ITALIC, false)));
+        allSecrets.editMeta(meta -> meta.displayName(Component.text("All Secrets", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false)));
         categories.add(new SecretCategory("all", "Shows all Secrets", allSecrets, "", "", new HashMap<>(), false));
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
                 "SELECT name, description, display_item, regions FROM secrets_categories WHERE deleted = 0 ORDER BY category_order ASC")) {
@@ -152,11 +204,13 @@ public class Secrets implements CustomInventory {
                 }
                 String regions = rs.getString(4);
                 HashMap<String, List<String>> regionMap = new HashMap<>();
-                Arrays.stream(regions.split(";")).forEach(region -> {
-                    String[] split = region.split(":"); // region : world
-                    List<String> worldRegions = regionMap.getOrDefault(split[0], new ArrayList<>(Collections.singleton(split[1])));
-                    regionMap.put(split[0], worldRegions);
-                });
+                if(regions != null && !regions.isEmpty()) {
+                    Arrays.stream(regions.split(";")).forEach(region -> {
+                        String[] split = region.split(":"); // region : world
+                        List<String> worldRegions = regionMap.getOrDefault(split[1], new ArrayList<>(Collections.singleton(split[0])));
+                        regionMap.put(split[1], worldRegions);
+                    });
+                }
                 categories.add(new SecretCategory(name, description, displayItem, "", "", regionMap, false));
             }
         } catch (SQLException e) {
@@ -179,7 +233,10 @@ public class Secrets implements CustomInventory {
                 int deleted = rs.getInt(10);
                 Component coolText = SecretsUtils.getTimeLeft(id, cooldown, player.getUniqueId());
                 int found = SecretsUtils.getFoundAmount(id, player.getUniqueId().toString());
+                long lastFound = SecretsUtils.getTimeSinceLastFound(id, player.getUniqueId().toString());
+                long daysSince = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - lastFound);
                 Secret secret;
+                String doneType = type.equals("parkour") ? "done" : type.equals("puzzle") ? "completed" : "found";
                 if (found > 0 || canEditSecrets) {
                     displayItem.editMeta(meta -> {
                         meta.displayName(MiniMessage.miniMessage().deserialize(name).decoration(TextDecoration.ITALIC, false));
@@ -187,15 +244,19 @@ public class Secrets implements CustomInventory {
                         if(deleted == 1) {
                             lore.add(Component.text("(No Longer Available)", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
                         }
-                        lore.add(Component.text("You've " + (type.equals("parkour") ? "done this parkour " : type.equals("puzzle") ?
-                                        "completed this puzzle " : "found this secret "), NamedTextColor.GRAY)
-                                .append(Component.text(found + (maxUses > 0 ? "/" + maxUses : ""), NamedTextColor.AQUA)).append(Component.text(" time" + (found > 1 ? "s" : ""), NamedTextColor.GRAY))
-                                .decoration(TextDecoration.ITALIC, false));
-                        lore.add(Component.text("Cooldown: ", NamedTextColor.RED).append(coolText).decoration(TextDecoration.ITALIC, false));
+                        lore.add(Component.text("Reward", NamedTextColor.GRAY).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
+                                .append(Component.text(reward + " " + WordUtils.capitalize(rewardType.replace("-", " ")),
+                                        TextColor.fromHexString("#48e2e5"), TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
                         lore.add(Component.empty());
-                        lore.add(Component.text("Reward: ", NamedTextColor.AQUA).append(Component.text(reward + " " +
-                                        WordUtils.capitalize(rewardType.replace("-", " ")), NamedTextColor.GRAY))
-                                .decoration(TextDecoration.ITALIC, false));
+                        lore.add(coolText.decoration(TextDecoration.ITALIC, false));
+                        lore.add(Component.text("                       ", NamedTextColor.DARK_GRAY, TextDecoration.STRIKETHROUGH).decoration(TextDecoration.ITALIC, false));
+                        lore.add(Component.text("You've " + doneType + " this " + type + " ", NamedTextColor.GRAY)
+                                .append(Component.text(found + (maxUses > 0 ? "/" + maxUses : ""), TextColor.fromHexString("#48e2e5"), TextDecoration.BOLD))
+                                .append(Component.text(" time" + (found > 1 ? "s" : ""), NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
+
+                        lore.add(Component.text("You last " + (type.equals("parkour") ? "did" : doneType) + " it ", NamedTextColor.GRAY)
+                                .append(Component.text(daysSince, TextColor.fromHexString("#48e2e5"), TextDecoration.BOLD))
+                                .append(Component.text(" day" + (found > 1 ? "s" : "") + " ago", NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
                         if(canEditSecrets) {
                             lore.add(Component.empty());
                             lore.add(Component.text("SHIFT CLICK TO EDIT", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
@@ -206,6 +267,14 @@ public class Secrets implements CustomInventory {
                         meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, id);
                     });
                     secret = new Secret(id, name, displayItem, sCategory, type, rewardType, reward, cooldown, maxUses, deleted == 1);
+
+                    long collected = SecretsUtils.getPlayerCooldown(id, pUUID);
+
+                    if(collected != 0) {
+                        collected += SecretsUtils.coolInMillis(cooldown);
+                    }
+                    cooldowns.put(secret, collected);
+                    this.found.put(secret, found);
                 } else {
                     if(deleted == 1) continue;
                     ItemStack notFound = new ItemStack(Material.BOOK);
@@ -229,7 +298,7 @@ public class Secrets implements CustomInventory {
             RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
             RegionManager rm = container.get(BukkitAdapter.adapt(world));
             if(rm != null) {
-                List<String> regions = getApplicableRegions(player, rm);
+                HashMap<String, Integer> regions = getApplicableRegions(player, rm);
                 catPos = getCatPosFromRegion(world.getName(), regions);
             }
         }
@@ -252,12 +321,18 @@ public class Secrets implements CustomInventory {
                 inventory.setItem(i, blackPane);
         }
 
-        categoryItem.editMeta(meta -> meta.displayName(Component.text("Switch Category", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false)));
-        notFoundItem.editMeta(meta -> meta.displayName(Component.text("Toggle Not Found Secrets", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false)));
-        typeItem.editMeta(meta -> meta.displayName(Component.text("Switch Type", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false)));
+        categoryItem.editMeta(meta -> meta.displayName(Component.text("Switch Category", NamedTextColor.GOLD, TextDecoration.BOLD)
+                .decoration(TextDecoration.ITALIC, false)));
+        showItem.editMeta(meta -> meta.displayName(Component.text("Toggle Secrets", NamedTextColor.GOLD, TextDecoration.BOLD)
+                .decoration(TextDecoration.ITALIC, false)));
+        typeItem.editMeta(meta -> meta.displayName(Component.text("Switch Type", NamedTextColor.GOLD, TextDecoration.BOLD)
+                .decoration(TextDecoration.ITALIC, false)));
+        sortItem.editMeta(meta -> meta.displayName(Component.text("Switch Sort", NamedTextColor.GOLD, TextDecoration.BOLD)
+                .decoration(TextDecoration.ITALIC, false)));
         updateCategory(null);
         updateType(null);
-        toggleNotFound();
+        updateShowing(null);
+        updateSort(null);
         updatePage(0);
     }
 
@@ -269,6 +344,12 @@ public class Secrets implements CustomInventory {
     }
     public String getType() {
         return this.types.get(typePos);
+    }
+    public String getShow() {
+        return this.show.get(showPos);
+    }
+    public String getSort() {
+        return this.sort.get(sortPos);
     }
 
     @Override

@@ -76,7 +76,6 @@ public class ChatCommands {
                     final String message = c.get("message");
                     sendPrivateMessage(sender, player, message);
                 }));
-
         manager.command(manager.commandBuilder("reply", "r")
                 .permission("skyprisoncore.command.reply")
                 .argument(StringArgument.greedy("message"))
@@ -88,6 +87,14 @@ public class ChatCommands {
                     } else {
                         sender.sendMessage(Component.text("Noone to reply to found..", NamedTextColor.RED));
                     }
+                }));
+        manager.command(manager.commandBuilder("stellraw")
+                .permission("skyprisoncore.command.stellraw")
+                .argument(StringArgument.greedy("message"))
+                .handler(c -> {
+                    String msg = c.get("message");
+                    Component fMsg = plugin.getParsedString(c.getSender(), "chat", msg);
+                    plugin.getServer().sendMessage(fMsg);
                 }));
     }
     private void sendPrivateMessage(CommandSender sender, Audience receiver, String message) {

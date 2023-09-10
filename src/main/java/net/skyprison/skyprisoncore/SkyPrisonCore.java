@@ -42,20 +42,20 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.skyprison.skyprisoncore.commands.*;
-import net.skyprison.skyprisoncore.commands.DiscordCommands;
 import net.skyprison.skyprisoncore.commands.donations.DonorAdd;
 import net.skyprison.skyprisoncore.commands.donations.Purchases;
 import net.skyprison.skyprisoncore.commands.economy.*;
 import net.skyprison.skyprisoncore.inventories.*;
-import net.skyprison.skyprisoncore.inventories.mail.MailBox;
 import net.skyprison.skyprisoncore.inventories.mail.MailBoxSend;
-import net.skyprison.skyprisoncore.inventories.mail.MailHistory;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsCategoryEdit;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsEdit;
 import net.skyprison.skyprisoncore.inventories.smith.BlacksmithTrimmer;
 import net.skyprison.skyprisoncore.inventories.smith.EndBlacksmithUpgrade;
 import net.skyprison.skyprisoncore.inventories.smith.GrassBlacksmithUpgrade;
-import net.skyprison.skyprisoncore.items.*;
+import net.skyprison.skyprisoncore.items.BlacksmithEnd;
+import net.skyprison.skyprisoncore.items.Greg;
+import net.skyprison.skyprisoncore.items.TreeFeller;
+import net.skyprison.skyprisoncore.items.Vouchers;
 import net.skyprison.skyprisoncore.listeners.advancedregionmarket.UnsellRegion;
 import net.skyprison.skyprisoncore.listeners.brewery.BrewDrink;
 import net.skyprison.skyprisoncore.listeners.cmi.CMIPlayerTeleportRequest;
@@ -107,7 +107,6 @@ import org.javacord.api.interaction.SlashCommandOption;
 import org.javacord.api.interaction.SlashCommandOptionType;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -700,27 +699,6 @@ public class SkyPrisonCore extends JavaPlugin {
                         }
                     }
                 }));
-        Command.Builder<CommandSender> postOffice = this.manager.commandBuilder("postoffice")
-                .permission("skyprisoncore.command.postoffice");
-        List<String> postOfficeOptions = List.of("mailbox");
-        this.manager.command(postOffice.literal("give")
-                .permission("skyprisoncore.command.postoffice.give")
-                .argument(PlayerArgument.of("player"))
-                .argument(StringArgument.<CommandSender>builder("type")
-                        .withSuggestionsProvider((commandSenderCommandContext, s) -> postOfficeOptions))
-                .argument(IntegerArgument.of("amount"))
-                .handler(c -> {
-                    final Player player = c.get("player");
-                    final String type = c.get("type");
-                    final int amount = c.get("amount");
-                    if(postOfficeOptions.contains(type.toLowerCase())) {
-                        ItemStack item = PostOffice.getItemFromType(this, type, amount);
-                        if (item != null) {
-                            giveItem(player, item);
-                            c.getSender().sendMessage(Component.text("Successfully sent!"));
-                        }
-                    }
-                }));
 
 
         Command.Builder<CommandSender> endSmith = this.manager.commandBuilder("endsmith")
@@ -820,186 +798,7 @@ public class SkyPrisonCore extends JavaPlugin {
                         }
                     }
                 }));
-        Command.Builder<CommandSender> vote = this.manager.commandBuilder("vote")
-                .permission("skyprisoncore.command.vote")
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    Component msg = Component.text("Vote for our server!", NamedTextColor.DARK_RED, TextDecoration.BOLD);
-                    msg = msg.appendNewline();
-                    msg = msg.append(Component.text("Planet Minecraft", NamedTextColor.RED, TextDecoration.BOLD).hoverEvent(HoverEvent
-                                    .showText(Component.text("Click Here to vote on PlanetMinecraft", NamedTextColor.AQUA)))
-                            .clickEvent(ClickEvent.openUrl("https://www.planetminecraft.com/server/sky-prison/vote/")));
-                    msg = msg.appendNewline();
-                    msg = msg.append(Component.text("Minecraft Serverlist", NamedTextColor.RED, TextDecoration.BOLD).hoverEvent(HoverEvent
-                                    .showText(Component.text("Click Here to vote on Minecraft Serverlist", NamedTextColor.AQUA)))
-                            .clickEvent(ClickEvent.openUrl("https://minecraft-server-list.com/server/473461/vote/")));
-                    msg = msg.appendNewline();
-                    msg = msg.append(Component.text("Minecraft Servers", NamedTextColor.RED, TextDecoration.BOLD).hoverEvent(HoverEvent
-                                    .showText(Component.text("Click Here to vote on Minecraft Servers", NamedTextColor.AQUA)))
-                            .clickEvent(ClickEvent.openUrl("https://minecraftservers.org/vote/457013")));
-                    msg = msg.appendNewline();
-                    msg = msg.append(Component.text("TopG", NamedTextColor.RED, TextDecoration.BOLD).hoverEvent(HoverEvent
-                                    .showText(Component.text("Click Here to vote on TopG", NamedTextColor.AQUA)))
-                            .clickEvent(ClickEvent.openUrl("https://topg.org/Minecraft/in-471006")));
-                    msg = msg.appendNewline();
-                    msg = msg.append(Component.text("Minecraft Buzz", NamedTextColor.RED, TextDecoration.BOLD).hoverEvent(HoverEvent
-                                    .showText(Component.text("Click Here to vote on Minecraft Buzz", NamedTextColor.AQUA)))
-                            .clickEvent(ClickEvent.openUrl("https://minecraft.buzz/vote/1142")));
-                    msg = msg.appendNewline();
-                    msg = msg.append(Component.text("Minecraft MP", NamedTextColor.RED, TextDecoration.BOLD).hoverEvent(HoverEvent
-                                    .showText(Component.text("Click Here to vote on Minecraft MP", NamedTextColor.AQUA)))
-                            .clickEvent(ClickEvent.openUrl("https://minecraft-mp.com/server/279527/vote/")));
-                    sender.sendMessage(msg);
-                });
-        this.manager.command(vote);
 
-        this.manager.command(vote.literal("history")
-                .permission("skyprisoncore.command.vote.history")
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    if(sender instanceof Player player) {
-                        Bukkit.getScheduler().runTask(this, () -> player.openInventory(new VoteHistory(this, db, player.getUniqueId()).getInventory()));
-                    }
-                }));
-
-        this.manager.command(vote.literal("history")
-                .permission("skyprisoncore.command.vote.history.others")
-                .argument(StringArgument.optional("player"))
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    if(sender instanceof Player player) {
-                        String playerName = c.getOrDefault("player", player.getName());
-                        UUID pUUID = PlayerManager.getPlayerId(playerName);
-                        if (pUUID != null) {
-                            Bukkit.getScheduler().runTask(this, () -> player.openInventory(new VoteHistory(this, db, pUUID).getInventory()));
-                        } else {
-                            sender.sendMessage(Component.text("Specified player doesn't exist!"));
-                        }
-                    } else {
-                        sender.sendMessage(Component.text("Can only be used by a player!"));
-                    }
-                }));
-        this.manager.command(this.manager.commandBuilder("stellraw")
-                .permission("skyprisoncore.command.stellraw")
-                .argument(StringArgument.greedy("message"))
-                .handler(c -> {
-                    String msg = c.get("message");
-                    Component fMsg = getParsedString(c.getSender(), "chat", msg);
-                    getServer().sendMessage(fMsg);
-                }));
-        this.manager.command(this.manager.commandBuilder("votefix")
-                .permission("skyprisoncore.command.votefix")
-                .handler(c -> {
-                    try {
-                        String sql = "INSERT INTO votes (user_id, time, service, address, tokens) VALUES (?, ?, ?, ?, ?)";
-                        FileInputStream fstream = new FileInputStream(this.getDataFolder()+ File.separator + "user_votes.txt");
-                        long currTime = System.currentTimeMillis();
-                        try (BufferedReader br = new BufferedReader(new InputStreamReader(fstream)); Connection conn = db.getConnection();
-                             PreparedStatement ps = conn.prepareStatement(sql)) {
-                            ps.setLong(2, currTime);
-                            ps.setString(3, "Unknown");
-                            ps.setString(4, "Unknown");
-                            ps.setInt(5, 0);
-                            String line;
-                            while ((line = br.readLine()) != null) {
-                                System.out.println(line);
-                                String[] parts = line.split(";");
-                                if (parts.length == 2) {
-                                    String userId = parts[0];
-                                    int totalVotes = Integer.parseInt(parts[1]);
-                                    for (int i = 0; i < totalVotes; i++) {
-                                        ps.setString(1, userId);
-                                        ps.addBatch();
-                                        if (i % 100 == 0) {
-                                            ps.executeBatch();
-                                        }
-                                    }
-                                    ps.executeBatch();
-                                }
-                            }
-                            System.out.println("DONE!");
-                        } catch (IOException | SQLException e) {
-                            e.printStackTrace();
-                        }
-                    } catch (FileNotFoundException e) {
-                        throw new RuntimeException(e);
-                    }
-                }));
-        Command.Builder<CommandSender> mail = this.manager.commandBuilder("mail")
-                .permission("skyprisoncore.command.mail");
-        this.manager.command(mail.literal("history")
-                .permission("skyprisoncore.command.mail.history")
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    if(sender instanceof Player player) {
-                        Bukkit.getScheduler().runTask(this, () -> player.openInventory(new MailHistory(this, db, player.getUniqueId()).getInventory()));
-                    } else {
-                        sender.sendMessage(Component.text("Can only be used by a player!"));
-                    }
-                }));
-        this.manager.command(mail.literal("history")
-                .permission("skyprisoncore.command.mail.history.others")
-                .argument(StringArgument.optional("player"))
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    if(sender instanceof Player player) {
-                        String playerName = c.getOrDefault("player", player.getName());
-                        UUID pUUID = PlayerManager.getPlayerId(playerName);
-                        if (pUUID != null) {
-                            Bukkit.getScheduler().runTask(this, () -> player.openInventory(new MailHistory(this, db, pUUID).getInventory()));
-                        } else {
-                            sender.sendMessage(Component.text("Specified player doesn't exist!"));
-                        }
-                    } else {
-                        sender.sendMessage(Component.text("Can only be used by a player!"));
-                    }
-                }));
-        this.manager.command(mail.literal("send")
-                .permission("skyprisoncore.command.mail.send")
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    if(sender instanceof Player player) {
-                        Bukkit.getScheduler().runTask(this, () -> player.openInventory(new MailBoxSend(this, db, player,
-                                player.hasPermission("skyprisoncore.command.mail.send.items")).getInventory()));
-                    } else {
-                        sender.sendMessage(Component.text("Can only be used by a player!"));
-                    }
-                }));
-        this.manager.command(mail.literal("open")
-                .permission("skyprisoncore.command.mail.open")
-                .argument(IntegerArgument.of("mailbox-id"))
-                .argument(PlayerArgument.optional("player"))
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    Player player = c.getOrDefault("player", sender instanceof Player ? (Player) sender : null);
-                    if(player != null) {
-                        int mailBoxId = c.get("mailbox-id");
-                        String mailBox = Mail.getMailBoxName(mailBoxId);
-                        if(mailBox != null && !mailBox.isEmpty()) {
-                            Bukkit.getScheduler().runTask(this, () -> player.openInventory(
-                                    new MailBox(this, db, player, isOwner(player, mailBoxId), mailBoxId, 1).getInventory()));
-                        } else {
-                            sender.sendMessage(Component.text("No mailbox found with that id!", NamedTextColor.RED));
-                        }
-                    } else {
-                        sender.sendMessage(Component.text("Incorrect Usage! /mail open <id> <player>"));
-                    }
-                }));
-
-        this.manager.command(mail.literal("expand")
-                .permission("skyprisoncore.command.mail.expand")
-                .argument(PlayerArgument.of("player"))
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    Player player = c.get("player");
-                    if(player.hasPermission("skyprisoncore.mailboxes.amount.2")) {
-                        Bukkit.getScheduler().runTask(this, () -> asConsole("lp user " + player.getName() + " permission set skyprisoncore.mailboxes.amount.3"));
-                    } else if(player.hasPermission("skyprisoncore.mailboxes.amount.1")) {
-                        Bukkit.getScheduler().runTask(this, () -> asConsole("lp user " + player.getName() + " permission set skyprisoncore.mailboxes.amount.2"));
-                    } else {
-                        sender.sendMessage(Component.text("Player already has the maximum amount of mailboxes!", NamedTextColor.RED));
-                    }
-                }));
         Command.Builder<CommandSender> referral = this.manager.commandBuilder("referral", "ref", "refer")
                 .permission("skyprisoncore.command.referral")
                 .handler(c -> c.getSender().sendMessage(Component.text("If a player referred you to our server, you can do \n/referral <player> to give them some tokens!", NamedTextColor.GREEN)));
@@ -1112,10 +911,13 @@ public class SkyPrisonCore extends JavaPlugin {
                         sender.sendMessage(Component.text("Can only be used by a player!"));
                     }
                 }));
-        new ChatCommands(this, this.manager, discApi);
-        new JailCommands(this, this.manager);
-        new SecretsCommands(this, this.manager);
-        new DiscordCommands(this, getDatabase(), discApi, this.manager);
+        new ChatCommands(this, manager, discApi);
+        new JailCommands(this, manager);
+        new SecretsCommands(this, manager);
+        new DiscordCommands(this, getDatabase(), discApi, manager);
+        new VoteCommands(this, getDatabase(), manager);
+        new MailCommands(this, getDatabase(), manager);
+        new StoreCommands(this, getDatabase(), manager);
 
         Objects.requireNonNull(getCommand("tokens")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
@@ -1258,20 +1060,6 @@ public class SkyPrisonCore extends JavaPlugin {
                 }
             });
         }
-    }
-
-    public static boolean isOwner(Player player, int mailBox) {
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT owner_id FROM mail_boxes WHERE id = ?")) {
-            ps.setInt(1, mailBox);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                UUID ownerId = UUID.fromString(rs.getString(1));
-                return player.getUniqueId().equals(ownerId);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 
     public static @NotNull TagResolver papiTag(final @NotNull Player player) {

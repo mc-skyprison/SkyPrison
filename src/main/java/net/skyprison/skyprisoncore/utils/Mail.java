@@ -2,6 +2,7 @@ package net.skyprison.skyprisoncore.utils;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -68,6 +69,19 @@ public class Mail {
             e.printStackTrace();
         }
         return deleted;
+    }
+    public static boolean isOwner(Player player, int mailBox) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT owner_id FROM mail_boxes WHERE id = ?")) {
+            ps.setInt(1, mailBox);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                UUID ownerId = UUID.fromString(rs.getString(1));
+                return player.getUniqueId().equals(ownerId);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
     public static boolean isMailBoxValid(int mailBox) {
         boolean isValid = false;

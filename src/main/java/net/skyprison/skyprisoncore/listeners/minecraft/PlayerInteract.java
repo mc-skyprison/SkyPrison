@@ -64,7 +64,7 @@ public class PlayerInteract implements Listener {
             int mailBox = Mail.getMailBox(block);
             if(mailBox != -1) {
                 if(isMember(player, mailBox)) {
-                    player.openInventory(new MailBox(plugin, db, player, SkyPrisonCore.isOwner(player, mailBox), mailBox, 1).getInventory());
+                    player.openInventory(new MailBox(plugin, db, player, Mail.isOwner(player, mailBox), mailBox, 1).getInventory());
                 } else {
                     player.sendMessage(Component.text("You are not a member of this mailbox!", NamedTextColor.RED));
                 }
@@ -91,7 +91,7 @@ public class PlayerInteract implements Listener {
                                     }
                                 }
                             } else {
-                                player.sendMessage(Component.text("You've recently used this! Time left: ", NamedTextColor.RED).append(secret.getTimeLeft(player.getUniqueId())));
+                                player.sendMessage(Component.text("You've recently used this! ", NamedTextColor.RED).append(secret.getTimeLeft(player.getUniqueId())));
                             }
                         } else {
                             player.sendMessage(Component.text("You've already used this the max number of times!", NamedTextColor.RED));
