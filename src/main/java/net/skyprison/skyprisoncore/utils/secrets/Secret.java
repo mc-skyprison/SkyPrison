@@ -48,7 +48,6 @@ public record Secret(int id, String name, ItemStack displayItem, String category
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
         return hasUsesLeft;
     }
     public Component getTimeLeft(UUID pUUID) {

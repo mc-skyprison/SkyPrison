@@ -9,7 +9,9 @@ import net.skyprison.skyprisoncore.inventories.mail.MailBox;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.Mail;
 import net.skyprison.skyprisoncore.utils.secrets.Secret;
+import net.skyprison.skyprisoncore.utils.secrets.SecretCategory;
 import net.skyprison.skyprisoncore.utils.secrets.SecretsUtils;
+import org.apache.commons.lang.WordUtils;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
@@ -30,6 +32,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Objects;
 
 public class PlayerInteract implements Listener {
@@ -52,7 +55,6 @@ public class PlayerInteract implements Listener {
         }
         return false;
     }
-
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
         ItemStack item = event.getItem();
@@ -82,6 +84,7 @@ public class PlayerInteract implements Listener {
                     if(secret != null) {
                         if(secret.hasUsesLeft(player.getUniqueId())) {
                             if (secret.isAvailable(player.getUniqueId())) {
+                                List<Secret> notFound = SecretsUtils.getNotFoundSecrets(secret.category(), player.getUniqueId());
                                 String rewardType = secret.rewardType();
                                 switch (rewardType) {
                                     case "tokens" -> {
@@ -90,8 +93,22 @@ public class PlayerInteract implements Listener {
                                         secret.setPlayerCooldown(player.getUniqueId());
                                     }
                                 }
+                                if(notFound.size() == 1 && notFound.contains(secret)) {
+                                    SecretCategory category = SecretsUtils.getCategoryFromId(secret.category());
+                                    if(category != null) {
+                                        String categoryRewardType = category.rewardType();
+                                        switch (categoryRewardType) {
+                                            case "tokens" -> {
+                                                int tokens = category.rewardAmount();
+                                                plugin.tokens.addTokens(player.getUniqueId(), tokens, "secret-category", category.name());
+                                            }
+                                        }
+                                        player.sendMessage(Component.text("You've found all the secrets in this category, and have received ", NamedTextColor.GREEN)
+                                                .append(Component.text(category.rewardAmount() + " " + WordUtils.capitalize(category.rewardType()) + "!", NamedTextColor.GOLD, TextDecoration.BOLD)));
+                                    }
+                                }
                             } else {
-                                player.sendMessage(Component.text("You've recently used this! ", NamedTextColor.RED).append(secret.getTimeLeft(player.getUniqueId())));
+                                player.sendMessage(secret.getTimeLeft(player.getUniqueId()).append(Component.text(" until you can collect this!").decorate(TextDecoration.BOLD)));
                             }
                         } else {
                             player.sendMessage(Component.text("You've already used this the max number of times!", NamedTextColor.RED));

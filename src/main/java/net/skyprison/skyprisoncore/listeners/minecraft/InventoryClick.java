@@ -1386,17 +1386,14 @@ public class InventoryClick implements Listener {
                             if (isPaper) {
                                 inv.updatePage(1);
                             }
-                        } else if(slot == 38) {
+                        } else if(slot == 39) {
                             inv.updateCategory(event.isLeftClick());
                             inv.updatePage(0);
-                        } else if(slot == 39) {
+                        } else if(slot == 40) {
                             inv.updateType(event.isLeftClick());
                             inv.updatePage(0);
                         } else if(slot == 41) {
                             inv.updateShowing(event.isLeftClick());
-                            inv.updatePage(0);
-                        } else if(slot == 42) {
-                            inv.updateSort(event.isLeftClick());
                             inv.updatePage(0);
                         } else if(slot == 4) {
                             if (event.isShiftClick() && inv.canEditCategories() && !inv.getCategory().name().equalsIgnoreCase("all")) {

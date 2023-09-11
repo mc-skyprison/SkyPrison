@@ -26,12 +26,12 @@ import java.util.concurrent.TimeUnit;
 import static net.skyprison.skyprisoncore.SkyPrisonCore.db;
 
 public class SecretsUtils {
-    public static int getFoundAmount(int secretId, String playerId) {
+    public static int getFoundAmount(int secretId, UUID playerId) {
         int found = 0;
         try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
                 "SELECT COUNT(id) FROM secrets_userdata WHERE secret_id = ? AND user_id = ?")) {
             ps.setInt(1, secretId);
-            ps.setString(2, playerId);
+            ps.setString(2, playerId.toString());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 found = rs.getInt(1);
@@ -40,21 +40,6 @@ public class SecretsUtils {
             e.printStackTrace();
         }
         return found;
-    }
-    public static long getTimeSinceLastFound(int secretId, String playerId) {
-        long lastFound = 0;
-        try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                "SELECT MAX(collect_time) FROM secrets_userdata WHERE secret_id = ? AND user_id = ?")) {
-            ps.setInt(1, secretId);
-            ps.setString(2, playerId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                lastFound = rs.getLong(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return lastFound;
     }
     public static List<String> getCategoryNames() {
         List<String> categories = new ArrayList<>();
@@ -88,8 +73,61 @@ public class SecretsUtils {
         });
         return sign;
     }
-    public static Secret getCategoryFromId(int id) {
-
+    public static List<Secret> getNotFoundSecrets(String category, UUID pUUID) {
+        List<Secret> secrets = getSecretsInCategory(category);
+        secrets = secrets.stream().filter(secret -> getFoundAmount(secret.id(), pUUID) == 0).toList();
+        return secrets;
+    }
+    public static List<Secret> getSecretsInCategory(String category) {
+        List<Secret> secrets = new ArrayList<>();
+        try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                "SELECT id, name, display_item, type, reward_type, reward, cooldown, max_uses, deleted FROM secrets WHERE category = ?")) {
+            ps.setString(1, category);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                int id = rs.getInt(1);
+                String name = rs.getString(2);
+                ItemStack displayItem = ItemStack.deserializeBytes(rs.getBytes(3));
+                String type = rs.getString(4);
+                String rewardType = rs.getString(5);
+                int reward = rs.getInt(6);
+                String cooldown = rs.getString(7);
+                int maxUses = rs.getInt(8);
+                int deleted = rs.getInt(9);
+                secrets.add(new Secret(id, name, displayItem, category, type, rewardType, reward, cooldown, maxUses, deleted == 1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return secrets;
+    }
+    public static SecretCategory getCategoryFromId(String id) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                "SELECT description, display_item, permission, permission_message, regions, deleted, reward_type, reward FROM secrets_categories WHERE name = ?")) {
+            ps.setString(1, id);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                String description = rs.getString(1);
+                ItemStack displayItem = ItemStack.deserializeBytes(rs.getBytes(2));
+                String permission = rs.getString(3);
+                String permissionMessage = rs.getString(4);
+                String regions = rs.getString(5);
+                int deleted = rs.getInt(6);
+                String rewardType = rs.getString(7);
+                int reward = rs.getInt(8);
+                HashMap<String, List<String>> regionMap = new HashMap<>();
+                if(regions != null && !regions.isEmpty()) {
+                    Arrays.stream(regions.split(";")).forEach(region -> {
+                        String[] split = region.split(":"); // region : world
+                        List<String> worldRegions = regionMap.getOrDefault(split[1], new ArrayList<>(Collections.singleton(split[0])));
+                        regionMap.put(split[1], worldRegions);
+                    });
+                }
+                return new SecretCategory(id, description, displayItem, permission, permissionMessage, regionMap, deleted == 1, rewardType, reward);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return null;
     }
     public static Secret getSecretFromId(int id) {
@@ -100,14 +138,14 @@ public class SecretsUtils {
             if (rs.next()) {
                 String name = rs.getString(1);
                 ItemStack displayItem = ItemStack.deserializeBytes(rs.getBytes(2));
-                String sCategory = rs.getString(3);
+                String category = rs.getString(3);
                 String type = rs.getString(4);
                 String rewardType = rs.getString(5);
                 int reward = rs.getInt(6);
                 String cooldown = rs.getString(7);
                 int maxUses = rs.getInt(8);
                 int deleted = rs.getInt(9);
-                return new Secret(id, name, displayItem, sCategory, type, rewardType, reward, cooldown, maxUses, deleted == 1);
+                return new Secret(id, name, displayItem, category, type, rewardType, reward, cooldown, maxUses, deleted == 1);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -125,7 +163,7 @@ public class SecretsUtils {
         if (currTime.getDayOfYear() < cooldownDate.getDayOfYear()) {
             Duration duration = Duration.between(currTime, cooldownDate);
             List<String> timeStrings = timeToString(duration);
-            String timeString = "<#ff5f33>" + String.join(", ", timeStrings) + " Left";
+            String timeString = "<#ff5f33>" + String.join(", ", timeStrings) + " <bold>Left</bold>";
             coolText = MiniMessage.miniMessage().deserialize(timeString);
         }
         return coolText;
@@ -150,7 +188,7 @@ public class SecretsUtils {
     public static long getPlayerCooldown(int secretId, UUID pUUID) {
         long collected = 0;
         try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                "SELECT collect_time FROM secrets_userdata WHERE secret_id = ? AND user_id = ? ORDER BY collect_time DESC LIMIT 1")) {
+                "SELECT MAX(collect_time) FROM secrets_userdata WHERE secret_id = ? AND user_id = ?")) {
             ps.setInt(1, secretId);
             ps.setString(2, pUUID.toString());
             ResultSet rs = ps.executeQuery();
