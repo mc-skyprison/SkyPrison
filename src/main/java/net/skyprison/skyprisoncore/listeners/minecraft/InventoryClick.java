@@ -43,6 +43,7 @@ import net.skyprison.skyprisoncore.inventories.smith.EndBlacksmithUpgrade;
 import net.skyprison.skyprisoncore.inventories.smith.GrassBlacksmithUpgrade;
 import net.skyprison.skyprisoncore.items.Vouchers;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.NewsUtils;
 import net.skyprison.skyprisoncore.utils.Notifications;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
@@ -427,7 +428,7 @@ public class InventoryClick implements Listener {
                                                 player.openInventory(new NewsMessageEdit(plugin, inv.getDatabase(), player.getUniqueId(), newsMessage).getInventory());
                                             }
                                         } else {
-                                            plugin.sendNewsMessage(player, newsMessage);
+                                            NewsUtils.sendNewsMessage(player, newsMessage);
                                         }
                                     }
                                 }

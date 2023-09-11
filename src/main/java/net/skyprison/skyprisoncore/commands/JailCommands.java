@@ -173,7 +173,8 @@ public class JailCommands {
                     }
                     for (Map.Entry<String, String> entry : guardRanks.entrySet()) {
                         if (player.hasPermission(entry.getValue())) {
-                            plugin.asConsole("lp user " + player.getName() + " parent " + action + " " + entry.getKey());
+                            plugin.getServer().getScheduler().runTask(plugin, () -> plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(),
+                                    "lp user " + player.getName() + " parent " + action + " " + entry.getKey()));
                             break;
                         }
                     }

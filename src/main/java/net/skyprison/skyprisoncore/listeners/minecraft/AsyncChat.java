@@ -36,6 +36,7 @@ import net.skyprison.skyprisoncore.inventories.mail.MailBoxSettings;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsCategoryEdit;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsEdit;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.NewsUtils;
 import net.skyprison.skyprisoncore.utils.Notifications;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
@@ -114,7 +115,7 @@ public class AsyncChat implements Listener {
                                     String regex = "([01]?[0-9]|2[0-3]):[0-5][0-9]";
                                     Pattern p = Pattern.compile(regex);
                                     if(p.matcher(msg).matches()) {
-                                        region.setFlag(Flags.TIME_LOCK, String.valueOf(plugin.timeToTicks(msg)));
+                                        region.setFlag(Flags.TIME_LOCK, String.valueOf(NewsUtils.timeToTicks(msg)));
                                     } else {
                                         if(!msg.equalsIgnoreCase("cancel")) {
                                             player.sendMessage(prefix.append(

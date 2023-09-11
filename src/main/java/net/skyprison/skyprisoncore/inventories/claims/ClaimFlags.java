@@ -15,6 +15,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
+import net.skyprison.skyprisoncore.utils.NewsUtils;
 import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -142,7 +143,7 @@ public class ClaimFlags implements CustomInventory {
                         case MESSAGE -> {
                             if(isSet) {
                                 if(flag.getFlags().get(0).equals(Flags.TIME_LOCK)) {
-                                    flagStatus = Component.text(plugin.ticksToTime(Integer.parseInt(currFlagState.toString())), NamedTextColor.GREEN, TextDecoration.BOLD);
+                                    flagStatus = Component.text(NewsUtils.ticksToTime(Integer.parseInt(currFlagState.toString())), NamedTextColor.GREEN, TextDecoration.BOLD);
                                 } else {
                                     flagStatus = LegacyComponentSerializer.legacyAmpersand().deserialize(currFlagState.toString());
                                 }

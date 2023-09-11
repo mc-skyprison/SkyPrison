@@ -2,6 +2,7 @@ package net.skyprison.skyprisoncore.listeners.discord;
 
 import com.gmail.nossr50.datatypes.party.Party;
 import com.gmail.nossr50.party.PartyManager;
+import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -55,9 +56,7 @@ public class MessageCreate implements MessageCreateListener {
                                         .append(Component.text(" |", NamedTextColor.WHITE)).append(Component.text(server.getHighestRole(user).get().getName(), TextColor.fromHexString(hexColor)))
                                                 .append(Component.text("] ", NamedTextColor.WHITE)).append(Component.text(userName, NamedTextColor.GRAY))
                                                         .append(Component.text(" » ", NamedTextColor.GRAY)).append(Component.text(message, NamedTextColor.GOLD));
-                                for (Player player : Bukkit.getOnlinePlayers()) {
-                                    player.sendMessage(newMessage);
-                                }
+                                plugin.getServer().sendMessage(newMessage);
                             }
                         }
                         case "791054229136605194" -> { // admin
@@ -88,10 +87,8 @@ public class MessageCreate implements MessageCreateListener {
                             }
                             if (p != null) {
                                 List<Player> pMembers = p.getOnlineMembers();
-                                for (Player online : pMembers) {
-                                    online.sendMessage(nMessage);
-                                }
-                                plugin.tellConsole(nMessage);
+                                Audience receivers = Audience.audience(pMembers.stream().collect(Audience.toAudience()), plugin.getServer().getConsoleSender());
+                                receivers.sendMessage(nMessage);
                                 String dMessage = "(**" + p.getName() + "**) " + userName + " » " + splitMsg[1];
                                 channel.sendMessage(dMessage);
                             }

@@ -6,6 +6,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.mail.MailBox;
+import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.Mail;
 import net.skyprison.skyprisoncore.utils.secrets.Secret;
@@ -38,9 +39,11 @@ import java.util.Objects;
 public class PlayerInteract implements Listener {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
-    public PlayerInteract(SkyPrisonCore plugin, DatabaseHook db) {
+    private final DailyMissions dm;
+    public PlayerInteract(SkyPrisonCore plugin, DatabaseHook db, DailyMissions dm) {
         this.plugin = plugin;
         this.db = db;
+        this.dm = dm;
     }
     public boolean isMember(Player player, int mailBox) {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id FROM mail_boxes_users WHERE mailbox_id = ? AND user_id = ?")) {
@@ -91,6 +94,14 @@ public class PlayerInteract implements Listener {
                                         int tokens = secret.reward();
                                         plugin.tokens.addTokens(player.getUniqueId(), tokens, "secret", secret.name());
                                         secret.setPlayerCooldown(player.getUniqueId());
+                                    }
+                                }
+                                for (String mission : dm.getMissions(player)) {
+                                    if(!dm.isCompleted(player, mission)) {
+                                        String[] missSplit = mission.split("-");
+                                        if (missSplit[0].equalsIgnoreCase("secrets")) {
+                                            dm.updatePlayerMission(player, mission);
+                                        }
                                     }
                                 }
                                 if(notFound.size() == 1 && notFound.contains(secret)) {

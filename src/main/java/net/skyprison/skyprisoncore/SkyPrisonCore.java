@@ -28,9 +28,6 @@ import litebans.api.Events;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.ClickEvent.Action;
-import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -45,7 +42,9 @@ import net.skyprison.skyprisoncore.commands.*;
 import net.skyprison.skyprisoncore.commands.donations.DonorAdd;
 import net.skyprison.skyprisoncore.commands.donations.Purchases;
 import net.skyprison.skyprisoncore.commands.economy.*;
-import net.skyprison.skyprisoncore.inventories.*;
+import net.skyprison.skyprisoncore.inventories.CustomInventory;
+import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
+import net.skyprison.skyprisoncore.inventories.NewsMessageEdit;
 import net.skyprison.skyprisoncore.inventories.mail.MailBoxSend;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsCategoryEdit;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsEdit;
@@ -331,7 +330,7 @@ public class SkyPrisonCore extends JavaPlugin {
         new BukkitRunnable() {
             @Override
             public void run() {
-                Bukkit.getOnlinePlayers().forEach(player -> sendNewsMessage(player, 0));
+                Bukkit.getOnlinePlayers().forEach(player -> NewsUtils.sendNewsMessage(player, 0));
             }
         }.runTaskTimer(this, 20*950, 20*950);
 
@@ -742,175 +741,6 @@ public class SkyPrisonCore extends JavaPlugin {
                     }
                 }));
 
-        this.manager.command(this.manager.commandBuilder("bartender")
-                .permission("skyprisoncore.command.bartender")
-                .argument(PlayerArgument.optional("player"))
-                .handler(c -> {
-                    Player player = c.getOptional("player").isPresent() ? (Player) c.getOptional("player").get() : c.getSender() instanceof Player ? (Player) c.getSender() : null;
-                    if(player != null) {
-                        Bukkit.getScheduler().runTask(this, () -> player.openInventory(new DatabaseInventory(this, db, player,
-                                player.hasPermission("skyprisoncore.inventories.bartender.editing"), "bartender").getInventory()));
-                    } else {
-                        c.getSender().sendMessage(Component.text("Invalid Usage! /bartender (player)"));
-                    }
-                }));
-
-        Command.Builder<CommandSender> customInv = this.manager.commandBuilder("custominv")
-                .permission("skyprisoncore.command.custominv");
-        this.manager.command(customInv.literal("list")
-                .permission("skyprisoncore.command.custominv.list")
-                .argument(IntegerArgument.<CommandSender>builder("page").asOptionalWithDefault(1).withMin(1).withMax(20))
-                .handler(c -> {
-                    int page = c.get("page");
-                    Component list = new CustomInv(db).getFormattedList(page);
-                    c.getSender().sendMessage(list);
-                }));
-        this.manager.command(customInv.literal("open")
-                .permission("skyprisoncore.command.custominv.open")
-                .argument(StringArgument.<CommandSender>builder("name")
-                        .withSuggestionsProvider((commandSenderCommandContext, s) -> new CustomInv(db).getList()))
-                .argument(PlayerArgument.optional("player"))
-                .handler(c -> {
-                    Player player = c.getOptional("player").isPresent() ? (Player) c.getOptional("player").get() : c.getSender() instanceof Player ? (Player) c.getSender() : null;
-                    if(player != null) {
-                        CustomInv inv = new CustomInv(db);
-                        String invName = c.get("name");
-                        if(inv.categoryExists(invName)) {
-                            if (player.hasPermission("skyprisoncore.inventories." + invName)) {
-                                Bukkit.getScheduler().runTask(this, () -> player.openInventory(new DatabaseInventory(this, db, player,
-                                        player.hasPermission("skyprisoncore.inventories." + invName + ".editing"), invName).getInventory()));
-                            }
-                        }
-                    }
-                }));
-        this.manager.command(customInv.literal("create")
-                .permission("skyprisoncore.command.custominv.create")
-                .argument(StringArgument.of("name"))
-                .argument(StringArgument.optional("display"))
-                .argument(StringArgument.optional("colour"))
-                .handler(c -> {
-                    CustomInv inv = new CustomInv(db);
-                    String name = c.get("name");
-                    if(!inv.categoryExists(name)) {
-                        String colour = c.getOrDefault("colour", null);
-                        if(colour == null || NamedTextColor.NAMES.value(colour) != null || TextColor.fromHexString(colour) != null) {
-                            inv.createCategory(name, c.getOrDefault("display", null), colour);
-                        }
-                    }
-                }));
-
-        Command.Builder<CommandSender> referral = this.manager.commandBuilder("referral", "ref", "refer")
-                .permission("skyprisoncore.command.referral")
-                .handler(c -> c.getSender().sendMessage(Component.text("If a player referred you to our server, you can do \n/referral <player> to give them some tokens!", NamedTextColor.GREEN)));
-
-        manager.command(referral);
-
-        this.manager.command((referral.literal("player"))
-                .permission("skyprisoncore.command.referral.player")
-                .argument(StringArgument.optional("player"))
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    if(sender instanceof Player player) {
-                        String playerName = c.getOrDefault("player", null);
-                        if (playerName != null) {
-                            UUID pUUID = PlayerManager.getPlayerId(playerName);
-                            if(pUUID != null) {
-                                boolean hasReferred = false;
-                                try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT * FROM referrals WHERE referred_by = ?")) {
-                                    ps.setString(1, player.getUniqueId().toString());
-                                    ResultSet rs = ps.executeQuery();
-                                    if (rs.next()) {
-                                        hasReferred = true;
-                                    }
-                                } catch (SQLException e) {
-                                    e.printStackTrace();
-                                }
-                                if (!hasReferred) {
-                                    CMIUser user = CMI.getInstance().getPlayerManager().getUser(player.getUniqueId());
-                                    long playtime = TimeUnit.MILLISECONDS.toHours(user.getTotalPlayTime());
-                                    if (playtime >= 1 && playtime < 24) { // Checks that the player has played more than an hour on the server but less than 24 hours.
-                                        CMIUser reffedPlayer = CMI.getInstance().getPlayerManager().getUser(pUUID);
-                                        if (reffedPlayer != null) {
-                                            if (!user.getLastIp().equalsIgnoreCase(reffedPlayer.getLastIp())) {
-                                                try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                                                        "INSERT INTO referrals (user_id, referred_by, refer_date) VALUES (?, ?, ?)")) {
-                                                    ps.setString(1, reffedPlayer.getUniqueId().toString());
-                                                    ps.setString(2, player.getUniqueId().toString());
-                                                    ps.setLong(3, System.currentTimeMillis());
-                                                    ps.executeUpdate();
-                                                } catch (SQLException e) {
-                                                    e.printStackTrace();
-                                                }
-                                                Component beenReffed = Component.text(player.getName(), NamedTextColor.AQUA)
-                                                        .append(Component.text(" has referred you! You have received ", NamedTextColor.DARK_AQUA))
-                                                        .append(Component.text("250", NamedTextColor.YELLOW)).append(Component.text(" tokens!", NamedTextColor.DARK_AQUA));
-                                                if (reffedPlayer.isOnline()) {
-                                                    reffedPlayer.getPlayer().sendMessage(beenReffed);
-                                                } else {
-                                                    Notifications.createNotification("referred", player.getName(), reffedPlayer.getUniqueId().toString(), beenReffed, null, true);
-                                                }
-                                                player.sendMessage(Component.text("You sucessfully referred ", NamedTextColor.DARK_AQUA)
-                                                        .append(Component.text(reffedPlayer.getName(), NamedTextColor.AQUA)).append(Component.text(" and have received ", NamedTextColor.DARK_AQUA))
-                                                        .append(Component.text("50", NamedTextColor.GOLD)).append(Component.text(" tokens!", NamedTextColor.DARK_AQUA)));
-                                                tokens.addTokens(reffedPlayer.getUniqueId(), 250, "Referred Someone", player.getName());
-                                                tokens.addTokens(player.getUniqueId(), 50, "Was Referred", reffedPlayer.getName());
-                                            } else {
-                                                player.sendMessage(Component.text("/referral <player>", NamedTextColor.RED));
-                                            }
-                                        } else {
-                                            player.sendMessage(Component.text("/referral <player>", NamedTextColor.RED));
-                                        }
-                                    } else {
-                                        if (playtime < 1) {
-                                            player.sendMessage(Component.text("You need to play 1 hour to be able to refer someone!", NamedTextColor.RED));
-                                        } else {
-                                            player.sendMessage(Component.text("You have played too long to refer anyone!", NamedTextColor.RED));
-                                        }
-                                    }
-                                } else {
-                                    player.sendMessage(Component.text("You have already referred someone!", NamedTextColor.RED));
-                                }
-                            } else {
-                                player.sendMessage(Component.text("Specified player doesn't exist!", NamedTextColor.RED));
-                            }
-                        } else {
-                            c.getSender().sendMessage(Component.text("If a player referred you to our server, you can do \n/referral <player> to give them some tokens!", NamedTextColor.GREEN));
-                        }
-                    } else {
-                        sender.sendMessage(Component.text("Can only be used by a player!", NamedTextColor.RED));
-                    }
-                }));
-        this.manager.command(referral.literal("help")
-                .permission("skyprisoncore.command.referral.help")
-                .handler(c -> c.getSender().sendMessage(Component.text("If a player referred you to our server, you can do \n/referral <player> to give them some tokens!", NamedTextColor.GREEN))));
-
-        this.manager.command(referral.literal("history", "list")
-                .permission("skyprisoncore.command.referral.history")
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    if(sender instanceof Player player) {
-                        Bukkit.getScheduler().runTask(this, () -> player.openInventory(new Referral(this, db, player).getInventory()));
-                    } else {
-                        sender.sendMessage(Component.text("Can only be used by a player!"));
-                    }
-                }));
-        this.manager.command(referral.literal("history", "list")
-                .permission("skyprisoncore.command.referral.history.others")
-                .argument(StringArgument.optional("player"))
-                .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    if(sender instanceof Player player) {
-                        String playerName = c.getOrDefault("player", player.getName());
-                        UUID pUUID = PlayerManager.getPlayerId(playerName);
-                        if (pUUID != null) {
-                            Bukkit.getScheduler().runTask(this, () -> player.openInventory(new Referral(this, db, player).getInventory()));
-                        } else {
-                            sender.sendMessage(Component.text("Specified player doesn't exist!"));
-                        }
-                    } else {
-                        sender.sendMessage(Component.text("Can only be used by a player!"));
-                    }
-                }));
         new ChatCommands(this, manager, discApi);
         new JailCommands(this, manager);
         new SecretsCommands(this, manager);
@@ -918,6 +748,8 @@ public class SkyPrisonCore extends JavaPlugin {
         new VoteCommands(this, getDatabase(), manager);
         new MailCommands(this, getDatabase(), manager);
         new StoreCommands(this, getDatabase(), manager);
+        new ReferralCommands(this, getDatabase(), manager);
+        new CustomInvCommands(this, getDatabase(), manager);
 
         Objects.requireNonNull(getCommand("tokens")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
@@ -977,7 +809,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new LeavesDecay(), this);
         pm.registerEvents(new McMMOLevelUp(this), this);
         pm.registerEvents(new PlayerChangedWorld(), this);
-        pm.registerEvents(new PlayerInteract(this, db), this);
+        pm.registerEvents(new PlayerInteract(this, db, dailyMissions), this);
         pm.registerEvents(new PlayerMove(this), this);
         pm.registerEvents(new PlayerPostRespawn(), this);
         pm.registerEvents(new PlayerTag(this), this);
@@ -1074,120 +906,6 @@ public class SkyPrisonCore extends JavaPlugin {
 
     private DatabaseHook getDatabase() {
         return db;
-    }
-
-    public void sendNewsMessage(Player player, int newsMessage) {
-        Component msg = Component.newline().append(MiniMessage.miniMessage().deserialize("<b><#0fc3ff>Sky<#ff0000>Prison <#e65151>News</b>").appendNewline().appendSpace());
-        HoverEvent<Component> hoverEvent = null;
-        ClickEvent clickEvent = null;
-        if(newsMessage == 0) {
-            LinkedHashMap<HashMap<String, Object>, Integer> newsMessages = new LinkedHashMap<>();
-
-            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT content, hover, click_type, click_data, permission, priority, " +
-                    "limited_time, limited_start, limited_end FROM news")) {
-                ps.setInt(1, newsMessage);
-                ResultSet rs = ps.executeQuery();
-                while (rs.next()) {
-                    if(rs.getInt(7) != 0) {
-                        long start = rs.getLong(8);
-                        long end = rs.getLong(9);
-                        long curr = System.currentTimeMillis();
-                        if(start < curr || end < curr) continue;
-                    }
-                    if(player.hasPermission("skyprisoncore.news." + rs.getString(5))) {
-                        HashMap<String, Object> messageComps = new HashMap<>();
-                        Component message = MiniMessage.miniMessage().deserialize(rs.getString(1));
-                        messageComps.put("content", message);
-                        if(!rs.getString(2).isEmpty()) {
-                            messageComps.put("hover", HoverEvent.showText(MiniMessage.miniMessage().deserialize(rs.getString(2))));
-                        }
-                        if(!rs.getString(3).isEmpty()) {
-                            Action action = Objects.requireNonNull(Action.NAMES.value(rs.getString(3).toLowerCase()));
-                            String value = "";
-                            switch (action) {
-                                case OPEN_URL, SUGGEST_COMMAND, COPY_TO_CLIPBOARD -> value = rs.getString(4);
-                                case RUN_COMMAND -> value = "/" + rs.getString(4);
-                            }
-                            clickEvent = ClickEvent.clickEvent(action, value);
-                            messageComps.put("click", clickEvent);
-                        }
-                        newsMessages.put(messageComps, rs.getInt(6));
-                    }
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-
-            if(!newsMessages.isEmpty()) {
-                List<Integer> cumulativeWeights = new ArrayList<>();
-                int totalWeight = 0;
-
-                for (Integer weight : newsMessages.values()) {
-                    totalWeight += weight;
-                    cumulativeWeights.add(totalWeight);
-                }
-
-                Random rand = new Random();
-                int randomWeight = rand.nextInt(totalWeight);
-
-                int index = Collections.binarySearch(cumulativeWeights, randomWeight);
-
-                if (index < 0) {
-                    index = Math.abs(index + 1);
-                }
-                HashMap<String, Object> finalMsg = new ArrayList<>(newsMessages.keySet()).get(index);
-                Component content = (Component) finalMsg.get("content");
-                hoverEvent = (HoverEvent<Component>) finalMsg.getOrDefault("hover", null);
-                clickEvent = (ClickEvent) finalMsg.getOrDefault("click", null);
-                msg = msg.append(content);
-            }
-        } else {
-            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT content, hover, click_type, click_data FROM news WHERE id = ?")) {
-                ps.setInt(1, newsMessage);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) {
-                    Component message = MiniMessage.miniMessage().deserialize(rs.getString(1));
-                    msg = msg.append(message);
-                    if(!rs.getString(2).isEmpty()) {
-                        hoverEvent = HoverEvent.showText(MiniMessage.miniMessage().deserialize(rs.getString(2)));
-                    }
-                    if(!rs.getString(3).isEmpty()) {
-                        Action action = Objects.requireNonNull(Action.NAMES.value(rs.getString(3).toLowerCase()));
-                        String value = "";
-                        switch (action) {
-                            case OPEN_URL, SUGGEST_COMMAND, COPY_TO_CLIPBOARD -> value = rs.getString(4);
-                            case RUN_COMMAND -> value = "/" + rs.getString(4);
-                        }
-                        clickEvent = ClickEvent.clickEvent(action, value);
-                    }
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-        msg = msg.appendNewline().hoverEvent(hoverEvent).clickEvent(clickEvent);
-        player.sendMessage(msg);
-    }
-
-    public String ticksToTime(int ticks) { // 500 -> 24:00
-        String time = String.valueOf(ticks / 1000.0);
-        String[] split = time.split("\\.");
-        int minutes = (Integer.parseInt(split[1]) * 60) % 60;
-        int hours = Integer.parseInt(split[0]);
-        String sMinutes = String.valueOf(minutes);
-        String sHours = String.valueOf(hours);
-        if(minutes < 10) {
-            sMinutes = "0" + sMinutes;
-        }
-        if(hours < 10) {
-            sHours = "0" + sHours;
-        }
-        return sHours + ":" + sMinutes;
-    }
-
-    public int timeToTicks(String time) {
-        String[] split = time.split(":");
-        return (int) ((Integer.parseInt(split[0]) * 1000) + ((Math.rint(Integer.parseInt(split[1]) / 60.0 * 100.0) / 100.0) * 1000));
     }
 
     public boolean isLong(String str) {
