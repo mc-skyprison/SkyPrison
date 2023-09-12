@@ -188,7 +188,7 @@ public class Placeholders extends PlaceholderExpansion {
 		}
 
 		if(identifier.equalsIgnoreCase("mailbox_amount")) {
-			return String.valueOf(Mail.getMailboxAmount(player.getUniqueId()));
+			return String.valueOf(MailUtils.getMailboxAmount(player.getUniqueId()));
 		}
 
 

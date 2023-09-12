@@ -881,7 +881,7 @@ public class InventoryClick implements Listener {
                                 Component msg = Component.text("Are you sure you want to save this item?", NamedTextColor.GRAY)
                                         .append(Component.text("\nSAVE ITEM", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
                                             if (plugin.customItemChanges.contains(player.getUniqueId())) {
-                                                if(new CustomInvUtils(db).saveItem(inv)) {
+                                                if(CustomInvUtils.saveItem(inv)) {
                                                     plugin.customItemChanges.remove(player.getUniqueId());
                                                     HashMap<Integer, DatabaseInventoryEdit> itemEdits = plugin.itemEditing.get(player.getUniqueId());
                                                     itemEdits.remove(inv.getItemId());
@@ -1137,7 +1137,7 @@ public class InventoryClick implements Listener {
                                                 if(memberOnline != null) {
                                                     memberOnline.sendMessage(kickMsg);
                                                 } else {
-                                                    Notifications.createNotification("mailbox-kicked", null, memberId.toString(), kickMsg, null, true);
+                                                    NotificationsUtils.createNotification("mailbox-kicked", null, memberId.toString(), kickMsg, null, true);
                                                 }
                                             }
                                         })))

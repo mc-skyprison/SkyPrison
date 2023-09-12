@@ -9,7 +9,6 @@ import java.sql.SQLException;
 
 public class DatabaseHook {
     private final DataSource dataSource;
-
     public DatabaseHook(SkyPrisonCore plugin) throws SQLException {
         MariaDbPoolDataSource dataSource = new MariaDbPoolDataSource();
         String ip = plugin.getConfig().getString("database.ip");
@@ -23,7 +22,6 @@ public class DatabaseHook {
         }
         this.dataSource = dataSource;
     }
-
     public Connection getConnection() {
         try {
             return dataSource.getConnection();

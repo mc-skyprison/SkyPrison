@@ -7,7 +7,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
-import net.skyprison.skyprisoncore.utils.Notifications;
+import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -51,7 +51,7 @@ public class ClaimPending implements CustomInventory {
         prevPage.setItemMeta(prevMeta);
 
 
-        HashMap<Integer, List<String>> pending = Notifications.getNotificationsFromExtra(claimIds.keySet().stream().toList());
+        HashMap<Integer, List<String>> pending = NotificationsUtils.getNotificationsFromExtra(claimIds.keySet().stream().toList());
 
         int totalPages = (int) Math.ceil((double) pending.size() / 28);
 

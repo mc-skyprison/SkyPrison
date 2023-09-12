@@ -13,7 +13,7 @@ import net.skyprison.skyprisoncore.inventories.mail.MailBoxSend;
 import net.skyprison.skyprisoncore.inventories.mail.MailHistory;
 import net.skyprison.skyprisoncore.items.PostOffice;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.Mail;
+import net.skyprison.skyprisoncore.utils.MailUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -104,10 +104,10 @@ public class MailCommands {
                     Player player = c.getOrDefault("player", sender instanceof Player ? (Player) sender : null);
                     if(player != null) {
                         int mailBoxId = c.get("mailbox-id");
-                        String mailBox = Mail.getMailBoxName(mailBoxId);
+                        String mailBox = MailUtils.getMailBoxName(mailBoxId);
                         if(mailBox != null && !mailBox.isEmpty()) {
                             Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(
-                                    new MailBox(plugin, db, player, Mail.isOwner(player, mailBoxId), mailBoxId, 1).getInventory()));
+                                    new MailBox(plugin, db, player, MailUtils.isOwner(player, mailBoxId), mailBoxId, 1).getInventory()));
                         } else {
                             sender.sendMessage(Component.text("No mailbox found with that id!", NamedTextColor.RED));
                         }

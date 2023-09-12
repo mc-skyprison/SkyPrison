@@ -9,7 +9,7 @@ import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.items.PostOffice;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.Mail;
+import net.skyprison.skyprisoncore.utils.MailUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -156,7 +156,7 @@ public class MailBoxSettings implements CustomInventory {
         return this.isOwner;
     }
     public boolean setName(String name) {
-        if(Mail.getMailBoxByName(name) == -2) {
+        if(MailUtils.getMailBoxByName(name) == -2) {
             try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE mail_boxes SET name = ? WHERE id = ?")) {
                 ps.setString(1, name);
                 ps.setInt(2, mailBox);

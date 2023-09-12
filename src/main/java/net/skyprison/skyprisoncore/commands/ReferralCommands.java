@@ -10,7 +10,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.Referral;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.Notifications;
+import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -82,7 +82,7 @@ public class ReferralCommands {
                                                 if (reffedPlayer.isOnline()) {
                                                     reffedPlayer.getPlayer().sendMessage(beenReffed);
                                                 } else {
-                                                    Notifications.createNotification("referred", player.getName(), reffedPlayer.getUniqueId().toString(), beenReffed, null, true);
+                                                    NotificationsUtils.createNotification("referred", player.getName(), reffedPlayer.getUniqueId().toString(), beenReffed, null, true);
                                                 }
                                                 player.sendMessage(Component.text("You sucessfully referred ", NamedTextColor.DARK_AQUA)
                                                         .append(Component.text(reffedPlayer.getName(), NamedTextColor.AQUA)).append(Component.text(" and have received ", NamedTextColor.DARK_AQUA))

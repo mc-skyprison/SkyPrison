@@ -31,7 +31,6 @@ public class PlayerManager {
         } catch (SQLException ignored) {}
         return null;
     }
-
     public static long getPlayerDiscord(UUID pUUID) {
         long discordId = 0;
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT discord_id FROM users WHERE user_id = ?")) {

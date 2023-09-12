@@ -19,7 +19,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.Mail;
+import net.skyprison.skyprisoncore.utils.MailUtils;
 import net.skyprison.skyprisoncore.utils.secrets.Secret;
 import net.skyprison.skyprisoncore.utils.secrets.SecretsUtils;
 import org.bukkit.*;
@@ -285,7 +285,7 @@ public class BlockPlace implements Listener {
                     }
                 } else if(pers.has(mailKey)) {
                     if(worldName.equalsIgnoreCase("world_free")) {
-                        int amount = Mail.getMailboxAmount(player.getUniqueId());
+                        int amount = MailUtils.getMailboxAmount(player.getUniqueId());
                         int existAmount = amount - 1;
                         int mailBox = pers.get(mailKey, PersistentDataType.INTEGER);
                         Chest chest = (Chest) block.getBlockData();
@@ -330,7 +330,7 @@ public class BlockPlace implements Listener {
                             }
                         } else if(mailBox != -2 && player.hasPermission("skyprisoncore.mailboxes.amount." + existAmount)) {
                             TextDisplay boxDisplay = (TextDisplay) world.spawnEntity(disLoc, EntityType.TEXT_DISPLAY);
-                            boxDisplay.text(Component.text("Mailbox " + Mail.getMailBoxName(mailBox), NamedTextColor.YELLOW));
+                            boxDisplay.text(Component.text("Mailbox " + MailUtils.getMailBoxName(mailBox), NamedTextColor.YELLOW));
                             boxDisplay.setBillboard(Display.Billboard.CENTER);
                             try (Connection conn = db.getConnection(); PreparedStatement ps =
                                     conn.prepareStatement("UPDATE mail_boxes SET x = ?, y = ?, z = ?, world = ?, is_placed = ?, display_text = ? WHERE id = ?")) {
@@ -365,7 +365,7 @@ public class BlockPlace implements Listener {
                     Location loc = bLoc == left ? right : bLoc == right ? left : null;
                     if(loc != null) {
                         Block b = loc.getBlock();
-                        if(Mail.getMailBox(b) != -1) {
+                        if(MailUtils.getMailBox(b) != -1) {
                             Chest chestData = (Chest) block.getBlockData();
                             chestData.setType(Chest.Type.SINGLE);
                             block.setBlockData(chestData);

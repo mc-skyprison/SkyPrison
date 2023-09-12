@@ -7,7 +7,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.Mail;
+import net.skyprison.skyprisoncore.utils.MailUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
@@ -95,7 +95,7 @@ public class MailHistory implements CustomInventory {
                 ItemStack item = ItemStack.deserializeBytes(rs.getBytes(2));
                 int cost = rs.getInt(3);
                 int mailBox = rs.getInt(4);
-                boolean deleted = Mail.isMailBoxDeleted(mailBox);
+                boolean deleted = MailUtils.isMailBoxDeleted(mailBox);
 
                 String date = dateFor.format(new Date(rs.getLong(5)));
                 item.editMeta(meta -> {
@@ -105,7 +105,7 @@ public class MailHistory implements CustomInventory {
                         lore.add(Component.text("                         ", NamedTextColor.DARK_GRAY, TextDecoration.STRIKETHROUGH));
                     }
                     lore.add(Component.text("Mailbox: ", NamedTextColor.GRAY).append(Component.text(Objects.requireNonNullElse(
-                            Mail.getMailBoxName(mailBox), "COULDN'T GET MAILBOX NAME!") + (deleted ? " (Deleted)" : ""), NamedTextColor.WHITE))
+                            MailUtils.getMailBoxName(mailBox), "COULDN'T GET MAILBOX NAME!") + (deleted ? " (Deleted)" : ""), NamedTextColor.WHITE))
                             .decoration(TextDecoration.ITALIC, false));
                     lore.add(Component.text("Sent by: ", NamedTextColor.GRAY).append(Component.text(Objects.requireNonNullElse(PlayerManager.getPlayerName(sender),
                                     "COULDN'T GET NAME"), NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false));

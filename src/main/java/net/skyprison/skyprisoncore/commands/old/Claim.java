@@ -34,7 +34,7 @@ import net.skyprison.skyprisoncore.inventories.claims.ClaimFlags;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimMembers;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimPending;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.Notifications;
+import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -302,7 +302,7 @@ public class Claim implements CommandExecutor {
                     Player tPlayer = targetPlayer.getPlayer();
                     Objects.requireNonNull(tPlayer).sendMessage(targetMsg);
                 } else {
-                    Notifications.createNotification("claim-delete", null, targetPlayer.getUniqueId().toString(), targetMsg, null, true);
+                    NotificationsUtils.createNotification("claim-delete", null, targetPlayer.getUniqueId().toString(), targetMsg, null, true);
                 }
             }
         } else {
@@ -1003,7 +1003,7 @@ public class Claim implements CommandExecutor {
                 .append(Component.text("\nACCEPT INVITE", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.runCommand("/claim accept invite " + notifId)))
                 .append(Component.text("     "))
                 .append(Component.text("DECLINE INVITE", NamedTextColor.RED, TextDecoration.BOLD).clickEvent(ClickEvent.runCommand("/claim decline invite " + notifId)));
-        Notifications.createNotification("claim-invite", claimId, iUser.getOfflinePlayer().toString(), msg, notifId, false);
+        NotificationsUtils.createNotification("claim-invite", claimId, iUser.getOfflinePlayer().toString(), msg, notifId, false);
 
 
         if (iUser.isOnline()) {
@@ -1015,11 +1015,11 @@ public class Claim implements CommandExecutor {
     }
 
     public void inviteDecline(Player player, String claimId, String notifId) {
-        if(!Notifications.hasNotification(notifId, player).isEmpty()) {
+        if(!NotificationsUtils.hasNotification(notifId, player).isEmpty()) {
             String claimName = (String) getClaimData(Collections.singletonList(claimId)).get(claimId).get("name");
             HashMap<UUID, String> toNotify = getClaimUsers(Collections.singletonList(claimId), Arrays.asList("owner", "co-owner")).get(claimId);
 
-            Notifications.deleteNotification(notifId);
+            NotificationsUtils.deleteNotification(notifId);
 
             player.sendMessage(prefix.append(Component.text("You've successfully declined the invite to join the claim ", TextColor.fromHexString("#20df80"))
                     .append(Component.text(claimName, TextColor.fromHexString("#20df80"), TextDecoration.BOLD))));
@@ -1033,14 +1033,14 @@ public class Claim implements CommandExecutor {
                 if (oPlayer.isOnline()) {
                     Objects.requireNonNull(oPlayer.getPlayer()).sendMessage(msg);
                 } else {
-                    Notifications.createNotification("claim-invite-declined", claimId, pUUID.toString(), msg, null, true);
+                    NotificationsUtils.createNotification("claim-invite-declined", claimId, pUUID.toString(), msg, null, true);
                 }
             }
         }
     }
 
     public void inviteAccept(Player player, String claimId, String notifId) {
-        if(!Notifications.hasNotification(notifId, player).isEmpty()) {
+        if(!NotificationsUtils.hasNotification(notifId, player).isEmpty()) {
             HashMap<String, Object> claimData = getClaimData(Collections.singletonList(claimId)).get(claimId);
             final RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
             final RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld((String) claimData.get("world")))));
@@ -1049,7 +1049,7 @@ public class Claim implements CommandExecutor {
             String claimName = (String) claimData.get("name");
             HashMap<UUID, String> toNotify = getClaimUsers(Collections.singletonList(claimId), Arrays.asList("owner", "co-owner")).get(claimId);
 
-            Notifications.deleteNotification(notifId);
+            NotificationsUtils.deleteNotification(notifId);
 
 
             try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO claims_members (user_id, claim_id, user_rank) VALUES (?, ?, ?)")) {
@@ -1073,7 +1073,7 @@ public class Claim implements CommandExecutor {
                 if (oPlayer.isOnline()) {
                     Objects.requireNonNull(oPlayer.getPlayer()).sendMessage(msg);
                 } else {
-                    Notifications.createNotification("claim-invite-accepted", claimId, pUUID.toString(), msg, null, true);
+                    NotificationsUtils.createNotification("claim-invite-accepted", claimId, pUUID.toString(), msg, null, true);
                 }
             }
         }
@@ -1130,7 +1130,7 @@ public class Claim implements CommandExecutor {
         if(kickedPlayer.isOnline()) {
             kickedPlayer.getPlayer().sendMessage(msg);
         } else {
-            Notifications.createNotification("claim-kick", claimId, kickedPlayer.getUniqueId().toString(), msg, null, true);
+            NotificationsUtils.createNotification("claim-kick", claimId, kickedPlayer.getUniqueId().toString(), msg, null, true);
         }
     }
 
@@ -1158,7 +1158,7 @@ public class Claim implements CommandExecutor {
         if(promotedPlayer.isOnline()) {
             promotedPlayer.getPlayer().sendMessage(msg);
         } else {
-            Notifications.createNotification("claim-promote", claimId, promotedPlayer.getUniqueId().toString(), msg, null, true);
+            NotificationsUtils.createNotification("claim-promote", claimId, promotedPlayer.getUniqueId().toString(), msg, null, true);
         }
     }
 
@@ -1185,7 +1185,7 @@ public class Claim implements CommandExecutor {
         if(demotedPlayer.isOnline()) {
             demotedPlayer.getPlayer().sendMessage(msg);
         } else {
-            Notifications.createNotification("claim-demote", claimId, demotedPlayer.getUniqueId().toString(), msg, null, true);
+            NotificationsUtils.createNotification("claim-demote", claimId, demotedPlayer.getUniqueId().toString(), msg, null, true);
         }
     }
 
@@ -1225,7 +1225,7 @@ public class Claim implements CommandExecutor {
                 } else {
                     executorPlayer.sendMessage(prefix.append(Component.text("Successfully created transfer request! " + transferPlayer.getName() + " will receive the request when they log on. ", TextColor.fromHexString("#20df80"))));
                 }
-                Notifications.createNotification("claim-transfer", claimId, transferPlayer.getUniqueId().toString(), msg, notifId, false);
+                NotificationsUtils.createNotification("claim-transfer", claimId, transferPlayer.getUniqueId().toString(), msg, notifId, false);
             } else {
                 executorPlayer.sendMessage(prefix.append(Component.text(transferPlayer.getName(), NamedTextColor.RED, TextDecoration.BOLD)
                         .append(Component.text(" doesn't have enough claim blocks!", NamedTextColor.RED))));
@@ -1237,8 +1237,8 @@ public class Claim implements CommandExecutor {
     }
 
     public void transferDecline(Player transferPlayer, String claimId, String notifId) {
-        if(!Notifications.hasNotification(notifId, transferPlayer).isEmpty()) {
-            Notifications.deleteNotification(notifId);
+        if(!NotificationsUtils.hasNotification(notifId, transferPlayer).isEmpty()) {
+            NotificationsUtils.deleteNotification(notifId);
 
             String claimName = (String) getClaimData(Collections.singletonList(claimId)).get(claimId).get("name");
 
@@ -1254,14 +1254,14 @@ public class Claim implements CommandExecutor {
             if (Bukkit.getPlayer(owner) != null) {
                 Objects.requireNonNull(Bukkit.getPlayer(owner)).sendMessage(msg);
             } else {
-                Notifications.createNotification("claim-transfer-declined", claimId, owner.toString(), msg, null, true);
+                NotificationsUtils.createNotification("claim-transfer-declined", claimId, owner.toString(), msg, null, true);
             }
         }
     }
 
     public void transferAccept(Player transferPlayer, String claimId, String notifId) {
-        if(!Notifications.hasNotification(notifId, transferPlayer).isEmpty()) {
-            Notifications.deleteNotification(notifId);
+        if(!NotificationsUtils.hasNotification(notifId, transferPlayer).isEmpty()) {
+            NotificationsUtils.deleteNotification(notifId);
             HashMap<String, HashMap<String, Object>> claims = getClaimData(Collections.singletonList(claimId));
             if (!claims.isEmpty()) {
                 HashMap<String, Object> claimData = getClaimData(Collections.singletonList(claimId)).get(claimId);
@@ -1386,7 +1386,7 @@ public class Claim implements CommandExecutor {
                     if (Bukkit.getPlayer(owner) != null) {
                         Objects.requireNonNull(Bukkit.getPlayer(owner)).sendMessage(msg);
                     } else {
-                        Notifications.createNotification("claim-transfer-accepted", claimId, owner.toString(), msg, null, true);
+                        NotificationsUtils.createNotification("claim-transfer-accepted", claimId, owner.toString(), msg, null, true);
                     }
                 } else {
                     transferPlayer.sendMessage(prefix.append(Component.text("You don't have enough claim blocks for this claim transfer! Cancelling transfer..", NamedTextColor.RED)));
@@ -1842,7 +1842,7 @@ public class Claim implements CommandExecutor {
                                     claimIds = new ArrayList<>(userClaims.keySet());
                                     claimIds.removeAll(alreadyMember.keySet());
                                     if (!claimIds.isEmpty()) {
-                                        List<String> alreadyInvited = Notifications.hasNotifications("claim-invite", claimIds, iUser.getOfflinePlayer());
+                                        List<String> alreadyInvited = NotificationsUtils.hasNotifications("claim-invite", claimIds, iUser.getOfflinePlayer());
                                         claimIds.removeAll(alreadyInvited);
                                         if(!claimIds.isEmpty()) {
                                             if (claimIds.size() == 1) {
@@ -2235,7 +2235,7 @@ public class Claim implements CommandExecutor {
                                                 if(tUser.isOnline()) {
                                                     tUser.getPlayer().sendMessage(msg);
                                                 } else {
-                                                    Notifications.createNotification("claim-give", null, tUser.getUniqueId().toString(), msg, null, true);
+                                                    NotificationsUtils.createNotification("claim-give", null, tUser.getUniqueId().toString(), msg, null, true);
                                                 }
                                             } else {
                                                 player.sendMessage(prefix.append(Component.text("Incorrect Usage! /claim blocks give <player> <amount>", NamedTextColor.RED)));
@@ -2278,7 +2278,7 @@ public class Claim implements CommandExecutor {
                                                         if (tUser.isOnline()) {
                                                             tUser.getPlayer().sendMessage(msg);
                                                         } else {
-                                                            Notifications.createNotification("claim-set", null, tUser.getUniqueId().toString(), msg, null, true);
+                                                            NotificationsUtils.createNotification("claim-set", null, tUser.getUniqueId().toString(), msg, null, true);
                                                         }
                                                     } else {
                                                         player.sendMessage(prefix.append(Component.text("This would put the player's total blocks below their used blocks!", NamedTextColor.RED)));
@@ -2326,7 +2326,7 @@ public class Claim implements CommandExecutor {
                                                     if(tUser.isOnline()) {
                                                         tUser.getPlayer().sendMessage(msg);
                                                     } else {
-                                                        Notifications.createNotification("claim-take", null, tUser.getUniqueId().toString(), msg, null, true);
+                                                        NotificationsUtils.createNotification("claim-take", null, tUser.getUniqueId().toString(), msg, null, true);
                                                     }
                                                 } else {
                                                     player.sendMessage(prefix.append(Component.text("Player doesn't have enough claim blocks!", NamedTextColor.RED)));
@@ -2502,7 +2502,7 @@ public class Claim implements CommandExecutor {
                     default -> {
                         if (args.length > 1) { // /claim accept invite <id>
                             if(args.length == 3) {
-                                String claimId = Notifications.hasNotification(args[2], player);
+                                String claimId = NotificationsUtils.hasNotification(args[2], player);
                                 if(!claimId.isEmpty()) {
                                     boolean state = args[0].equalsIgnoreCase("accept");
                                     switch (args[1].toLowerCase()) {

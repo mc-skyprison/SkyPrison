@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class Mail {
+public class MailUtils {
     private static final DatabaseHook db = SkyPrisonCore.db;
     public static List<String> getBoxesWithMail(UUID pUUID) {
         List<String> mailBoxes = new ArrayList<>();

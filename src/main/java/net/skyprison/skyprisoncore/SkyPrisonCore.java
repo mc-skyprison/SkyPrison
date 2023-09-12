@@ -276,7 +276,7 @@ public class SkyPrisonCore extends JavaPlugin {
         }
 
         if (this.manager.hasCapability(CloudBukkitCapabilities.ASYNCHRONOUS_COMPLETION)) {
-            ((PaperCommandManager<CommandSender>) this.manager).registerAsynchronousCompletions();
+            this.manager.registerAsynchronousCompletions();
         }
 
         this.confirmationManager = new CommandConfirmationManager<>(30L, TimeUnit.SECONDS,
@@ -481,8 +481,6 @@ public class SkyPrisonCore extends JavaPlugin {
                 }
             } catch (InterruptedException | ExecutionException ignored) {
             }
-
-
 
             SlashCommand.with("link", "Link your Discord and Minecraft Account", List.of(
                             SlashCommandOption.createWithChoices(SlashCommandOptionType.STRING, "link-code", "Code for linking", true)
@@ -784,7 +782,6 @@ public class SkyPrisonCore extends JavaPlugin {
                 .build()
         );
 
-
         new ChatCommands(this, manager, discApi);
         new JailCommands(this, manager);
         new SecretsCommands(this, manager);
@@ -1006,10 +1003,6 @@ public class SkyPrisonCore extends JavaPlugin {
                     .build()
             )
             .build();
-
-    public void tellConsole(Component message){
-        Bukkit.getConsoleSender().sendMessage(message);
-    }
 
     public void asConsole(String command) {
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);

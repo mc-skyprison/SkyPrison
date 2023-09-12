@@ -28,7 +28,7 @@ import net.skyprison.skyprisoncore.commands.JailCommands;
 import net.skyprison.skyprisoncore.commands.old.donations.DonorAdd;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.Mail;
+import net.skyprison.skyprisoncore.utils.MailUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -166,7 +166,7 @@ public class PlayerJoin implements Listener {
             player.sendMessage(messages);
         }
 
-        List<String> mails = Mail.getBoxesWithMail(player.getUniqueId());
+        List<String> mails = MailUtils.getBoxesWithMail(player.getUniqueId());
         if(!mails.isEmpty()) {
             for(String mail : mails) {
                 boolean postOffice = mail.equalsIgnoreCase("post office");

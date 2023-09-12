@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-public class Notifications {
+public class NotificationsUtils {
     private static final DatabaseHook db = SkyPrisonCore.db;
     public static String hasNotification(String id, OfflinePlayer player) {
         String notification = "";

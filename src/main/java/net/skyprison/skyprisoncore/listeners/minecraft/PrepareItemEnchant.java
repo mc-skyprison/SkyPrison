@@ -7,14 +7,10 @@ import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
 import org.bukkit.inventory.ItemStack;
 
 public class PrepareItemEnchant implements Listener {
-
     private final SkyPrisonCore plugin;
-
     public PrepareItemEnchant(SkyPrisonCore plugin) {
         this.plugin = plugin;
     }
-
-
     @EventHandler
     public void onPrepareItemEnchant(PrepareItemEnchantEvent event) {
         ItemStack item = event.getItem();

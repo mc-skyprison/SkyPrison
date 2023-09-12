@@ -11,8 +11,8 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.Mail;
-import net.skyprison.skyprisoncore.utils.Notifications;
+import net.skyprison.skyprisoncore.utils.MailUtils;
+import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -189,8 +189,8 @@ public class MailBoxSend implements CustomInventory {
     public void sendMail(ItemStack itemToSend) {
         plugin.mailSend.remove(player.getUniqueId());
         sendTo.forEach((uuid, name) -> {
-            int mailBox = Mail.getValidMailBox(uuid);
-            String mailBoxName = Mail.getMailBoxName(mailBox);
+            int mailBox = MailUtils.getValidMailBox(uuid);
+            String mailBoxName = MailUtils.getMailBoxName(mailBox);
             try (Connection conn = db.getConnection(); PreparedStatement ps =
                     conn.prepareStatement("INSERT INTO mails (sender_id, receiver_id, item, cost, mailbox_id, sent_at, collected) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
                 ps.setString(1, player.getUniqueId().toString());
@@ -258,7 +258,7 @@ public class MailBoxSend implements CustomInventory {
                     player.getWorld().dropItemNaturally(player.getLocation(), dropItem).setOwner(player.getUniqueId());
                 }
             } else {
-                Notifications.scheduleForOnline(player.getUniqueId().toString(), "mail-item", Base64.getEncoder().encodeToString(getSendItem().serializeAsBytes()));
+                NotificationsUtils.scheduleForOnline(player.getUniqueId().toString(), "mail-item", Base64.getEncoder().encodeToString(getSendItem().serializeAsBytes()));
             }
         }
     }
@@ -324,7 +324,7 @@ public class MailBoxSend implements CustomInventory {
                                 pInv.setItemInOffHand(getOffHand());
                                 pInv.addItem(new ItemStack(Material.WRITABLE_BOOK, getSendToSize()));
                             } else {
-                                Notifications.scheduleForOnline(player.getUniqueId().toString(), "mail-offhand", Base64.getEncoder().encodeToString(getOffHand().serializeAsBytes()));
+                                NotificationsUtils.scheduleForOnline(player.getUniqueId().toString(), "mail-offhand", Base64.getEncoder().encodeToString(getOffHand().serializeAsBytes()));
                             }
                             cancelTimer();
                         }

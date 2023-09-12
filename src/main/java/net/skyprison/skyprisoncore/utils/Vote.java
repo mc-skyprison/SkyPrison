@@ -86,7 +86,7 @@ public class Vote {
                     if(player != null) {
                         player.sendMessage(voteMsg);
                     } else {
-                        Notifications.createNotification("vote-all", null, pUUID.toString(), voteMsg, null, true);
+                        NotificationsUtils.createNotification("vote-all", null, pUUID.toString(), voteMsg, null, true);
                     }
                 }
             }
@@ -166,7 +166,7 @@ public class Vote {
                         Bukkit.getServer().sendMessage(milestoneMsg);
 
                         if (Bukkit.getPlayer(pUUID) == null) {
-                            Notifications.createNotification("vote-milestone", null, pUUID.toString(), milestoneMsg, null, true);
+                            NotificationsUtils.createNotification("vote-milestone", null, pUUID.toString(), milestoneMsg, null, true);
                         }
                     }
                 }

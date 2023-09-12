@@ -10,7 +10,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.old.economy.Tokens;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.Notifications;
+import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -86,7 +86,7 @@ public class Votifier implements Listener {
                 if (player != null) {
                     player.sendMessage(playerMsg);
                 } else {
-                    Notifications.createNotification("vote", String.valueOf(id), pUUID.toString(), playerMsg, null, true);
+                    NotificationsUtils.createNotification("vote", String.valueOf(id), pUUID.toString(), playerMsg, null, true);
                 }
 
                 net.skyprison.skyprisoncore.utils.Vote.checkVoteMilestones(pUUID);

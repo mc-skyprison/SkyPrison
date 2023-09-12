@@ -8,7 +8,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.mail.MailBox;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.Mail;
+import net.skyprison.skyprisoncore.utils.MailUtils;
 import net.skyprison.skyprisoncore.utils.secrets.Secret;
 import net.skyprison.skyprisoncore.utils.secrets.SecretCategory;
 import net.skyprison.skyprisoncore.utils.secrets.SecretsUtils;
@@ -66,10 +66,10 @@ public class PlayerInteract implements Listener {
         Action action = event.getAction();
         if(block != null && block.getWorld().getName().equalsIgnoreCase("world_free") && (action.equals(Action.LEFT_CLICK_BLOCK) || action.equals(Action.RIGHT_CLICK_BLOCK))
         && block.getType().equals(Material.CHEST)) {
-            int mailBox = Mail.getMailBox(block);
+            int mailBox = MailUtils.getMailBox(block);
             if(mailBox != -1) {
                 if(isMember(player, mailBox)) {
-                    player.openInventory(new MailBox(plugin, db, player, Mail.isOwner(player, mailBox), mailBox, 1).getInventory());
+                    player.openInventory(new MailBox(plugin, db, player, MailUtils.isOwner(player, mailBox), mailBox, 1).getInventory());
                 } else {
                     player.sendMessage(Component.text("You are not a member of this mailbox!", NamedTextColor.RED));
                 }
