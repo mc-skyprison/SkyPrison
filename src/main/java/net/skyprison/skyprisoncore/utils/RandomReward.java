@@ -4,7 +4,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.commands.Bomb;
 import net.skyprison.skyprisoncore.items.Greg;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Material;
@@ -118,7 +117,7 @@ public enum RandomReward {
                     amount = biasedRandom(2, 4);
                 }
             }
-            item = Bomb.getBomb(plugin, reward.toString(), amount);
+            item = BombUtils.getBomb(plugin, reward.toString(), amount);
         } else if(rew.contains("feces")) {
             amount = rand.nextInt(5) + 1;
             item = new ItemStack(Material.BROWN_DYE, amount);

@@ -23,11 +23,11 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.commands.*;
-import net.skyprison.skyprisoncore.commands.economy.Bounty;
-import net.skyprison.skyprisoncore.commands.economy.BuyBack;
-import net.skyprison.skyprisoncore.commands.economy.EconomyCheck;
-import net.skyprison.skyprisoncore.commands.economy.MoneyHistory;
+import net.skyprison.skyprisoncore.commands.old.*;
+import net.skyprison.skyprisoncore.commands.old.economy.Bounty;
+import net.skyprison.skyprisoncore.commands.old.economy.BuyBack;
+import net.skyprison.skyprisoncore.commands.old.economy.EconomyCheck;
+import net.skyprison.skyprisoncore.commands.old.economy.MoneyHistory;
 import net.skyprison.skyprisoncore.inventories.*;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimFlags;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimFlagsMobs;
@@ -42,10 +42,7 @@ import net.skyprison.skyprisoncore.inventories.smith.BlacksmithTrimmer;
 import net.skyprison.skyprisoncore.inventories.smith.EndBlacksmithUpgrade;
 import net.skyprison.skyprisoncore.inventories.smith.GrassBlacksmithUpgrade;
 import net.skyprison.skyprisoncore.items.Vouchers;
-import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.NewsUtils;
-import net.skyprison.skyprisoncore.utils.Notifications;
-import net.skyprison.skyprisoncore.utils.PlayerManager;
+import net.skyprison.skyprisoncore.utils.*;
 import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
 import net.skyprison.skyprisoncore.utils.secrets.SecretsUtils;
 import org.apache.commons.lang.WordUtils;
@@ -723,7 +720,7 @@ public class InventoryClick implements Listener {
                                             player.getInventory().removeItem(voucher);
                                         }
 
-                                        CustomInv.addUses(player.getUniqueId(), (int) item.get("id"), db);
+                                        CustomInvUtils.addUses(player.getUniqueId(), (int) item.get("id"), db);
                                         inv.updateUsage(player, event.getSlot());
                                         inv.updateInventory(player);
                                     }
@@ -884,7 +881,7 @@ public class InventoryClick implements Listener {
                                 Component msg = Component.text("Are you sure you want to save this item?", NamedTextColor.GRAY)
                                         .append(Component.text("\nSAVE ITEM", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
                                             if (plugin.customItemChanges.contains(player.getUniqueId())) {
-                                                if(new CustomInv(db).saveItem(inv)) {
+                                                if(new CustomInvUtils(db).saveItem(inv)) {
                                                     plugin.customItemChanges.remove(player.getUniqueId());
                                                     HashMap<Integer, DatabaseInventoryEdit> itemEdits = plugin.itemEditing.get(player.getUniqueId());
                                                     itemEdits.remove(inv.getItemId());

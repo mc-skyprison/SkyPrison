@@ -101,12 +101,6 @@ commands:
   #
   # Cheese?
   #
-  enchtable:
-    description: Open portable enchant table
-    usage: /<command>
-    aliases: [ench, enchanttable]
-    permission: skyprisoncore.command.enchtable
-    permission-message: §4Error:§c You do not have permission to execute this command...
   removeitalics:
     description: Removes italics from item
     usage: /<command>
@@ -148,11 +142,6 @@ commands:
     usage: /<command>
     aliases: [plottp, plotteleport]
     permission: skyprisoncore.command.plotteleport
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  bomb:
-    description: commands relating to bomb
-    usage: /<command>
-    permission: skyprisoncore.command.bomb
     permission-message: §4Error:§c You do not have permission to execute this command...
   tags:
     description: Tags command
@@ -295,8 +284,6 @@ permissions:
   skyprisoncore.command.tags:
     description: Gives access to /tags
   skyprisoncore.command.tags.admin:
-    description: Gives access to tags stuff
-  skyprisoncore.command.bomb:
     description: Gives access to tags stuff
   skyprisoncore.command.customrecipes:
     description: Gives access to tags stuff

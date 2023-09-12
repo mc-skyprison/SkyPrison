@@ -25,7 +25,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.JailCommands;
-import net.skyprison.skyprisoncore.commands.donations.DonorAdd;
+import net.skyprison.skyprisoncore.commands.old.donations.DonorAdd;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.Mail;

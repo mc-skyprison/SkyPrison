@@ -39,9 +39,10 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.skyprison.skyprisoncore.commands.*;
-import net.skyprison.skyprisoncore.commands.donations.DonorAdd;
-import net.skyprison.skyprisoncore.commands.donations.Purchases;
-import net.skyprison.skyprisoncore.commands.economy.*;
+import net.skyprison.skyprisoncore.commands.old.*;
+import net.skyprison.skyprisoncore.commands.old.donations.DonorAdd;
+import net.skyprison.skyprisoncore.commands.old.donations.Purchases;
+import net.skyprison.skyprisoncore.commands.old.economy.*;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
 import net.skyprison.skyprisoncore.inventories.NewsMessageEdit;
@@ -699,7 +700,6 @@ public class SkyPrisonCore extends JavaPlugin {
                     }
                 }));
 
-
         Command.Builder<CommandSender> endSmith = this.manager.commandBuilder("endsmith")
                 .permission("skyprisoncore.command.endsmith");
         List<String> endSmithOptions = List.of("reset-repair", "keep-enchants", "keep-trims");
@@ -741,6 +741,50 @@ public class SkyPrisonCore extends JavaPlugin {
                     }
                 }));
 
+        Command.Builder<CommandSender> bomb = this.manager.commandBuilder("bomb")
+                .permission("skyprisoncore.command.bomb");
+        List<String> bombOptions = List.of("small", "medium", "large", "massive", "nuke");
+        this.manager.command(bomb.literal("give")
+                .permission("skyprisoncore.command.bomb.give")
+                .argument(PlayerArgument.of("player"))
+                .argument(StringArgument.<CommandSender>builder("type")
+                        .withSuggestionsProvider((commandSenderCommandContext, s) -> bombOptions))
+                .argument(IntegerArgument.of("amount"))
+                .handler(c -> {
+                    final Player player = c.get("player");
+                    final String type = c.get("type");
+                    final int amount = c.get("amount");
+                    if(bombOptions.contains(type.toLowerCase())) {
+                        ItemStack item = BombUtils.getBomb(this, type, amount);
+                        giveItem(player, item);
+                        c.getSender().sendMessage(Component.text("Successfully sent!"));
+                    }
+                }));
+
+        manager.command(manager.commandBuilder("enchtable", "ench", "enchanttable")
+                .senderType(Player.class)
+                .permission("skyprisoncore.command.enchtable")
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    Location loc;
+                    String worldName = player.getWorld().getName();
+
+                    switch (worldName.toLowerCase()) {
+                        case "world_prison" -> loc = new Location(Bukkit.getWorld("world_prison"), -121, 150, -175);
+                        case "world_free" -> loc = new Location(Bukkit.getWorld("world_free"), -2941, 148, -758);
+                        case "world_free_nether" -> loc = new Location(Bukkit.getWorld("world_free_nether"), -17, 116, -52);
+                        case "world_free_end" -> loc = new Location(Bukkit.getWorld("world_free_end"), -203, 77, 4);
+                        default -> {
+                            player.sendMessage(Component.text("You can't use /enchtable in this world!", NamedTextColor.RED));
+                            return;
+                        }
+                    }
+                    player.openEnchanting(loc, true);
+                })
+                .build()
+        );
+
+
         new ChatCommands(this, manager, discApi);
         new JailCommands(this, manager);
         new SecretsCommands(this, manager);
@@ -770,7 +814,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("buyback")).setExecutor(new BuyBack(this, getDatabase()));
         Objects.requireNonNull(getCommand("daily")).setExecutor(new Daily(this, getDatabase()));
         Objects.requireNonNull(getCommand("shopban")).setExecutor(new ShopBan(getDatabase()));
-        Objects.requireNonNull(getCommand("enchtable")).setExecutor(new EnchTable());
         Objects.requireNonNull(getCommand("removeitalics")).setExecutor(new RemoveItalics(this));
         Objects.requireNonNull(getCommand("bottledexp")).setExecutor(new BottledExp(this));
         Objects.requireNonNull(getCommand("transportpass")).setExecutor(new TransportPass(this));
@@ -779,7 +822,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("plot")).setExecutor(new PlotTeleport(this));
         Objects.requireNonNull(getCommand("moneyhistory")).setExecutor(new MoneyHistory(this));
         Objects.requireNonNull(getCommand("tags")).setExecutor(new Tags(this, getDatabase()));
-        Objects.requireNonNull(getCommand("bomb")).setExecutor(new Bomb(this));
         Objects.requireNonNull(getCommand("minereset")).setExecutor(new MineReset(this));
         Objects.requireNonNull(getCommand("randomgive")).setExecutor(new RandomGive(this));
         Objects.requireNonNull(getCommand("customrecipes")).setExecutor(new CustomRecipes(this));
