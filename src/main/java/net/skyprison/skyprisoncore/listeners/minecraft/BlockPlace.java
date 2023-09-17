@@ -86,7 +86,7 @@ public class BlockPlace implements Listener {
 
                             int charsUsed = 0;
                             int line = 1;
-                            int maxChars = MaterialSetTag.STANDING_SIGNS.isTagged(heldItem.getType()) ? 14 : 10;
+                            int maxChars = MaterialSetTag.STANDING_SIGNS.isTagged(heldItem.getType()) ? 13 : 10;
                             MiniMessage mm = MiniMessage.miniMessage();
                             Style styling = mm.deserialize(secret.name()).style();
                             StringBuilder firstLine = new StringBuilder();

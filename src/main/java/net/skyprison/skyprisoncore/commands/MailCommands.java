@@ -115,7 +115,6 @@ public class MailCommands {
                         sender.sendMessage(Component.text("Incorrect Usage! /mail open <id> <player>"));
                     }
                 }));
-
         this.manager.command(mail.literal("expand")
                 .permission("skyprisoncore.command.mail.expand")
                 .argument(PlayerArgument.of("player"))

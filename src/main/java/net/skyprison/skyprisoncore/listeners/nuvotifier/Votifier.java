@@ -16,6 +16,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.mariadb.jdbc.Statement;
+import su.nightexpress.excellentcrates.ExcellentCratesAPI;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -41,14 +42,15 @@ public class Votifier implements Listener {
 
         UUID pUUID = PlayerManager.getPlayerId(playerName);
         if(pUUID != null) {
+            int tokens = net.skyprison.skyprisoncore.utils.Vote.getVoteTokens(pUUID);
             int id = -1;
             try (Connection conn = db.getConnection();
-                 PreparedStatement ps = conn.prepareStatement("INSERT INTO votes (user_id, time, service, tokens) VALUES (?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+                 PreparedStatement ps = conn.prepareStatement("INSERT INTO votes (user_id, time, service, address, tokens) VALUES (?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
                 ps.setString(1, pUUID.toString());
                 ps.setLong(2, time);
                 ps.setString(3, serviceName);
                 ps.setString(4, serviceAddress);
-                ps.setInt(5, 0);
+                ps.setInt(5, tokens);
                 ps.executeUpdate();
 
                 ResultSet rs = ps.getGeneratedKeys();
@@ -59,7 +61,6 @@ public class Votifier implements Listener {
                 e.printStackTrace();
             }
             if(id != -1) {
-                int tokens = net.skyprison.skyprisoncore.utils.Vote.getVoteTokens(pUUID);
                 Component noBold = Component.text("");
                 Component voteMsg = noBold.append(Component.text("Vote", TextColor.fromHexString("#37a452"), TextDecoration.BOLD)).append(Component.text(" » ", NamedTextColor.DARK_GRAY));
                 Component everyoneMsg = voteMsg.append(Component.text(playerName, TextColor.fromHexString("#e02957"), TextDecoration.BOLD))
@@ -97,7 +98,8 @@ public class Votifier implements Listener {
                             .append(Component.text("3 Vote Keys", TextColor.fromHexString("#e02957"), TextDecoration.BOLD))
                             .append(Component.text("!", TextColor.fromHexString("#2db4e1"), TextDecoration.BOLD));
                     receivers.sendMessage(partyMsg);
-                    plugin.asConsole("crates key give * crate_vote 3");
+                    if(player != null) player.sendMessage(partyMsg);
+                    plugin.getServer().getOnlinePlayers().forEach(oPlayer -> ExcellentCratesAPI.getKeyManager().giveKey(oPlayer, ExcellentCratesAPI.getKeyManager().getKeyById("crate_vote"), 3));
                 }
             } else {
                 plugin.getLogger().warning("Failed to get vote ID from vote made by " + playerName + " on site " + serviceName + "!");

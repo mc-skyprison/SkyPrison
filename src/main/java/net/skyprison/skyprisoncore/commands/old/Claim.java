@@ -29,6 +29,11 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.cacheddata.CachedPermissionData;
+import net.luckperms.api.model.user.User;
+import net.luckperms.api.model.user.UserManager;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimFlags;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimMembers;
@@ -51,6 +56,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 public class Claim implements CommandExecutor {
     private final SkyPrisonCore plugin;
@@ -962,12 +968,33 @@ public class Claim implements CommandExecutor {
             boolean finalCanEdit = canEdit;
             info = info.append(Component.text("\nVIEW FLAGS", TextColor.fromHexString("#0fffc3"))
                     .hoverEvent(HoverEvent.showText(Component.text("View flags", NamedTextColor.GRAY)))
-                    .clickEvent(ClickEvent.callback(audience -> player.openInventory(new ClaimFlags(plugin, claimId, claimData.get("world").toString(), finalCanEdit, "", 1).getInventory())))
+                    .clickEvent(ClickEvent.callback(audience -> ownerHasPurchasedFlags(claimId).thenAcceptAsync(hasPurchasedFlags ->
+                            plugin.getServer().getScheduler().runTask(plugin, () ->
+                                    player.openInventory(new ClaimFlags(plugin, claimId, claimData.get("world").toString(), finalCanEdit, hasPurchasedFlags, "", 1).getInventory())))))
                     .decorate(TextDecoration.BOLD));
 
             info = info.decoration(TextDecoration.ITALIC, false);
         }
         player.sendMessage(info);
+    }
+
+    public CompletableFuture<Boolean> ownerHasPurchasedFlags(String claimId) {
+        UUID ownerId = getClaimOwner(claimId);
+        Player player = Bukkit.getPlayer(ownerId);
+
+        if(player != null) {
+            CompletableFuture<Boolean> future = new CompletableFuture<>();
+            future.complete(player.hasPermission("skyprisoncore.claim.flags.purchased"));
+            return future;
+        }
+
+        LuckPerms luckAPI = LuckPermsProvider.get();
+        UserManager userManager = luckAPI.getUserManager();
+        CompletableFuture<User> userFuture = userManager.loadUser(ownerId);
+        return userFuture.thenApplyAsync(user -> {
+            CachedPermissionData permissionData = user.getCachedData().getPermissionData();
+            return permissionData.checkPermission("skyprisoncore.claim.flags.purchased").asBoolean();
+        });
     }
 
     public void invitePlayerMultiple(Player executorPlayer, OfflinePlayer targetPlayer, CMIUser iUser, List<String> claimIds) {
@@ -1424,8 +1451,10 @@ public class Claim implements CommandExecutor {
         if(!Objects.equals(executorPlayer.getUniqueId(), targetPlayer.getUniqueId()) && !hasPerm(executorPlayer)) return;
         boolean canEdit = userRank.equalsIgnoreCase("owner") || userRank.equalsIgnoreCase("co-owner");
         if(hasPerm(executorPlayer)) canEdit = true;
-        ClaimFlags claimFlags = new ClaimFlags(plugin, claimId, world, canEdit, "", 1);
-        executorPlayer.openInventory(claimFlags.getInventory());
+        boolean finalCanEdit = canEdit;
+        ownerHasPurchasedFlags(claimId).thenAcceptAsync(hasPurchasedFlags ->
+                plugin.getServer().getScheduler().runTask(plugin, () ->
+                        executorPlayer.openInventory(new ClaimFlags(plugin, claimId, world, finalCanEdit, hasPurchasedFlags, "", 1).getInventory())));
     }
 
     public HashMap<String, HashMap<UUID, String>> getClaimUsers(List<String> claimIds, List<String> ranks) {

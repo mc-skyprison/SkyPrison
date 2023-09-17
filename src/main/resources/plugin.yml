@@ -255,8 +255,6 @@ permissions:
     description: Gives access to /daily
   skyprisoncore.command.shopban:
     description: Gives access to /shopban
-  skyprisoncore.command.enchtable:
-    description: Gives access to /enchtable
   skyprisoncore.command.removeitalics:
     description: Gives access to /removeitalics
   skyprisoncore.command.bottledexp:

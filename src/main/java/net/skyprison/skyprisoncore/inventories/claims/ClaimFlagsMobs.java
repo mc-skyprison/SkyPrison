@@ -37,8 +37,9 @@ public class ClaimFlagsMobs implements CustomInventory {
     private final String claimId;
     private final String world;
     private final int page;
+    private final boolean hasPurchased;
 
-    public ClaimFlagsMobs(SkyPrisonCore plugin, String claimId, String world, boolean canEdit, boolean isAllowed, String category, int page) {
+    public ClaimFlagsMobs(SkyPrisonCore plugin, String claimId, String world, boolean canEdit, boolean hasPurchased, boolean isAllowed, String category, int page) {
         RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
         RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld(world))));
         assert regionManager != null;
@@ -50,6 +51,7 @@ public class ClaimFlagsMobs implements CustomInventory {
         this.category = category;
         this.canEdit = canEdit;
         this.isAllowed = isAllowed;
+        this.hasPurchased = hasPurchased;
         this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Mob Spawns", TextColor.fromHexString("#0fc3ff")));
         ItemStack redPane = new ItemStack(isAllowed ? Material.LIME_STAINED_GLASS_PANE : Material.RED_STAINED_GLASS_PANE);
         ItemMeta redMeta = redPane.getItemMeta();
@@ -210,6 +212,9 @@ public class ClaimFlagsMobs implements CustomInventory {
     }
     public boolean getCanEdit() {
         return this.canEdit;
+    }
+    public boolean getHasPurchased() {
+        return this.hasPurchased;
     }
 
     @Override

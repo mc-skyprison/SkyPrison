@@ -777,7 +777,7 @@ public class SkyPrisonCore extends JavaPlugin {
                             return;
                         }
                     }
-                    player.openEnchanting(loc, true);
+                    getServer().getScheduler().runTask(this, () -> player.openEnchanting(loc, true));
                 })
                 .build()
         );

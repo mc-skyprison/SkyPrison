@@ -172,31 +172,37 @@ public class InventoryClick implements Listener {
                             case 47 -> {
                                 if (isPaper) {
                                     player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(),
-                                            inv.getCanEdit(), inv.getCategory(), inv.getPage() - 1).getInventory());
+                                            inv.getCanEdit(), inv.getHasPurchased(), inv.getCategory(), inv.getPage() - 1).getInventory());
                                 }
                             }
                             case 48 -> {
                                 if (clickedMat.equals(Material.WRITABLE_BOOK)) {
                                     player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(),
-                                            inv.getCanEdit(), inv.getNextCategory(inv.getCategory()), 1).getInventory());
+                                            inv.getCanEdit(), inv.getHasPurchased(), inv.getNextCategory(inv.getCategory()), 1).getInventory());
                                 }
                             }
                             case 50 -> {
                                 if (clickedMat.equals(Material.ZOMBIE_SPAWN_EGG)) {
                                     player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(),
-                                            inv.getCanEdit(), true, "", 1).getInventory());
+                                            inv.getCanEdit(), inv.getHasPurchased(), true, "", 1).getInventory());
                                 }
                             }
                             case 51 -> {
                                 if (isPaper) {
                                     player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(),
-                                            inv.getCanEdit(), inv.getCategory(), inv.getPage() + 1).getInventory());
+                                            inv.getCanEdit(), inv.getHasPurchased(), inv.getCategory(), inv.getPage() + 1).getInventory());
                                 }
                             }
                             default -> {
                                 if(!clickedMat.isEmpty() && !clickedMat.name().endsWith("GLASS_PANE")) {
                                     NamespacedKey flagKey = new NamespacedKey(plugin, "flag");
                                     AvailableFlags flag = AvailableFlags.valueOf(event.getCurrentItem().getPersistentDataContainer().get(flagKey, PersistentDataType.STRING));
+                                    if(flag.getGroup().equalsIgnoreCase("purchased")) {
+                                        if(!inv.getHasPurchased()) {
+                                            player.sendMessage(prefix.append(Component.text("You need to purchase this flag to use it!", NamedTextColor.RED)));
+                                            return;
+                                        }
+                                    }
                                     RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
                                     RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld(inv.getWorld()))));
                                     if(regionManager != null) {
@@ -213,10 +219,10 @@ public class InventoryClick implements Listener {
                                                     }
                                                     player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
                                                     player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(),
-                                                            inv.getCanEdit(), inv.getCategory(), inv.getPage()).getInventory());
+                                                            inv.getCanEdit(), inv.getHasPurchased(), inv.getCategory(), inv.getPage()).getInventory());
                                                 } else if(flags.get(0) instanceof StringFlag stringFlag) {
                                                     plugin.chatLock.put(player.getUniqueId(), Arrays.asList(flag, inv.getClaimId(),
-                                                            inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
+                                                            inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage(), inv.getHasPurchased()));
                                                     player.closeInventory();
                                                     if(!stringFlag.equals(Flags.TIME_LOCK)) {
                                                         player.sendMessage(prefix.append(Component.text("Enter the new "
@@ -228,7 +234,7 @@ public class InventoryClick implements Listener {
                                                     }
                                                 } else if(flags.get(0) instanceof RegistryFlag<?>) {
                                                     plugin.chatLock.put(player.getUniqueId(), Arrays.asList(flag, inv.getClaimId(),
-                                                            inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
+                                                            inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage(), inv.getHasPurchased()));
                                                     player.closeInventory();
                                                     player.sendMessage(Component.text("Enter the weather you want (Available types are 'Clear', 'Rain', 'Thunder', " +
                                                                     "Enter null to unset)",
@@ -240,10 +246,10 @@ public class InventoryClick implements Listener {
                                                             StateFlag.State.DENY : StateFlag.State.ALLOW));
                                                     player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
                                                     player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(),
-                                                            inv.getCanEdit(), inv.getCategory(), inv.getPage()).getInventory());
+                                                            inv.getCanEdit(), inv.getHasPurchased(), inv.getCategory(), inv.getPage()).getInventory());
                                                 } else if(flags.get(0) instanceof StringFlag stringFlag) {
                                                     plugin.chatLock.put(player.getUniqueId(), Arrays.asList(flag, inv.getClaimId(),
-                                                            inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
+                                                            inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage(), inv.getHasPurchased()));
                                                     player.closeInventory();
                                                     if(!stringFlag.equals(Flags.TIME_LOCK)) {
                                                         player.sendMessage(prefix.append(Component.text("Enter the new "
@@ -254,7 +260,7 @@ public class InventoryClick implements Listener {
                                                     }
                                                 } else if(flags.get(0) instanceof RegistryFlag<?>) {
                                                     plugin.chatLock.put(player.getUniqueId(), Arrays.asList(flag, inv.getClaimId(),
-                                                            inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage()));
+                                                            inv.getWorld(), inv.getCanEdit(), inv.getCategory(), inv.getPage(), inv.getHasPurchased()));
                                                     player.closeInventory();
                                                     player.sendMessage(Component.text("Enter the weather you want (Available types are 'Clear', 'Rain', 'Thunder'",
                                                             TextColor.fromHexString("#20df80")));
@@ -272,13 +278,13 @@ public class InventoryClick implements Listener {
                         switch (event.getSlot()) {
                             case 45 -> {
                                 if (clickedMat.equals(Material.PLAYER_HEAD)) {
-                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), "", 1).getInventory());
+                                    player.openInventory(new ClaimFlags(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(), inv.getHasPurchased(),"", 1).getInventory());
                                 }
                             }
                             case 47 -> {
                                 if (isPaper) {
                                     player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(),
-                                            inv.getIsAllowed(), inv.getCategory(), inv.getPage() - 1).getInventory());
+                                            inv.getHasPurchased(), inv.getIsAllowed(), inv.getCategory(), inv.getPage() - 1).getInventory());
                                 }
                             }
                             case 48 -> {
@@ -296,23 +302,23 @@ public class InventoryClick implements Listener {
                                         }
                                     }
                                     player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(),
-                                            inv.getIsAllowed(), inv.getCategory(), inv.getPage()).getInventory());
+                                            inv.getHasPurchased(), inv.getIsAllowed(), inv.getCategory(), inv.getPage()).getInventory());
                                 }
                             }
                             case 49 -> {
                                 if(clickedMat.equals(Material.LIME_CONCRETE)) {
                                     player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(),
-                                            false, inv.getCategory(), inv.getPage()).getInventory());
+                                            inv.getHasPurchased(), false, inv.getCategory(), inv.getPage()).getInventory());
                                 } else if(clickedMat.equals(Material.RED_CONCRETE)) {
                                     player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(),
-                                            true, inv.getCategory(), inv.getPage()).getInventory());
+                                            inv.getHasPurchased(), true, inv.getCategory(), inv.getPage()).getInventory());
 
                                 }
                             }
                             case 51 -> {
                                 if (isPaper) {
                                     player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(), inv.getCanEdit(),
-                                            inv.getIsAllowed(), inv.getCategory(), inv.getPage() + 1).getInventory());
+                                            inv.getHasPurchased(), inv.getIsAllowed(), inv.getCategory(), inv.getPage() + 1).getInventory());
                                 }
                             }
                             default -> {
@@ -336,7 +342,7 @@ public class InventoryClick implements Listener {
                                                 region.setFlag(Flags.DENY_SPAWN, deniedMobs);
                                                 player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
                                                 player.openInventory(new ClaimFlagsMobs(plugin, inv.getClaimId(), inv.getWorld(),
-                                                        inv.getCanEdit(), inv.getIsAllowed(), inv.getCategory(), inv.getPage()).getInventory());
+                                                        inv.getCanEdit(), inv.getHasPurchased(), inv.getIsAllowed(), inv.getCategory(), inv.getPage()).getInventory());
                                             }
                                         }
                                     }
@@ -722,7 +728,7 @@ public class InventoryClick implements Listener {
 
                                         CustomInvUtils.addUses(player.getUniqueId(), (int) item.get("id"), db);
                                         inv.updateUsage(player, event.getSlot());
-                                        inv.updateInventory(player);
+                                        plugin.getServer().getScheduler().runTask(plugin, () -> inv.updateInventory(player));
                                     }
                                 }
                             } else {

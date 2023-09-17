@@ -86,7 +86,7 @@ public class JailCommands {
                     } else if(type == 0) {
                         releasePapers(sender, player);
                     } else if(type == -1) {
-                        fakeReleasePapers(sender, player);
+                        fakeReleasePapers(player);
                     } else if(type == -2) {
                         setUnjail(sender, player, "fake-release-papers", "fake-release-papers");
                     } else if(type == -3) {
@@ -178,7 +178,7 @@ public class JailCommands {
                             break;
                         }
                     }
-                    plugin.getServer().sendMessage(Component.text("[", NamedTextColor.WHITE).append(Component.text("Guard", NamedTextColor.DARK_AQUA))
+                    plugin.getServer().sendMessage(Component.text("Guard ", NamedTextColor.AQUA)
                             .append(player.displayName().colorIfAbsent(NamedTextColor.BLUE)).append(Component.text(" is now ", NamedTextColor.AQUA))
                             .append(Component.text(messageAction, NamedTextColor.AQUA, TextDecoration.BOLD)).append(Component.text(" duty!", NamedTextColor.AQUA)));
                 }));
@@ -216,7 +216,7 @@ public class JailCommands {
                 @Override
                 public void run() {
                     if (i == 6) {
-                        sender.sendMessage(cbPrefix.append(Component.text("Time's Up! Did the player hand over their " + finalType + "?", TextColor.fromHexString("#4dabdd")))
+                        sender.sendMessage(cbPrefix.append(Component.text("Time's Up! Did the player hand over their " + finalType + "? ", TextColor.fromHexString("#4dabdd")))
                                 .append(Component.text("CLICK HERE TO JAIL PLAYER", NamedTextColor.RED, TextDecoration.BOLD)
                                         .hoverEvent(HoverEvent.showText(Component.text("Click to jail player!", NamedTextColor.GRAY)))
                                         .clickEvent(ClickEvent.callback(c ->
@@ -357,15 +357,12 @@ public class JailCommands {
             e.printStackTrace();
         }
     }
-    private void fakeReleasePapers(CommandSender sender, Player player) {
+    private void fakeReleasePapers(Player player) {
         ItemStack fakePapers = Greg.getFakeReleasePapers(plugin, 1);
         PlayerInventory pInv = player.getInventory();
         if(pInv.containsAtLeast(fakePapers, 1)) {
             player.getInventory().removeItem(fakePapers);
-        } else {
-            return;
         }
-        setUnjail(sender, player, "fake-release-papers", "fake-release-papers");
     }
     private void releasePapers(CommandSender sender, Player player) {
         ItemStack realPapers = Greg.getReleasePapers(plugin, 1);

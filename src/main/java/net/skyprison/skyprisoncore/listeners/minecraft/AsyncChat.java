@@ -142,7 +142,7 @@ public class AsyncChat implements Listener {
                                 }
                             }
                             if(removeChatLock) {
-                                ClaimFlags claimFlags = new ClaimFlags(plugin, (String) chatLock.get(1), (String) chatLock.get(2), (boolean) chatLock.get(3), (String) chatLock.get(4), (int) chatLock.get(5));
+                                ClaimFlags claimFlags = new ClaimFlags(plugin, (String) chatLock.get(1), (String) chatLock.get(2), (boolean) chatLock.get(3), (boolean) chatLock.get(6), (String) chatLock.get(4), (int) chatLock.get(5));
                                 player.openInventory(claimFlags.getInventory());
                             }
                         }
