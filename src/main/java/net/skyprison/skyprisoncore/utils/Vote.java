@@ -67,8 +67,8 @@ public class Vote {
         return votes;
     }
     public static void onAllSites(UUID pUUID) {
-        long startOfToday = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS).toInstant().toEpochMilli();
-        long endOfToday = startOfToday + 24*60*60*1000 - 1;
+        long startOfToday = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS).toEpochSecond();
+        long endOfToday = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS).plusDays(1).toEpochSecond();
         try (Connection conn = db.getConnection();
              PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) FROM votes WHERE user_id = ? AND time >= ? AND time <= ?")) {
             ps.setString(1, pUUID.toString());

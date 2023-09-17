@@ -16,6 +16,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class VoteHistory implements CustomInventory {
     private final List<ItemStack> votes = new ArrayList<>();
@@ -79,7 +80,7 @@ public class VoteHistory implements CustomInventory {
             ResultSet rs = ps.executeQuery();
             SimpleDateFormat dateFor = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
             while (rs.next()) {
-                Date date = new Date(rs.getLong(1));
+                Date date = new Date(TimeUnit.SECONDS.toMillis(rs.getLong(1)));
                 String service = rs.getString(2);
                 int tokens = rs.getInt(3);
                 String name = dateFor.format(date);

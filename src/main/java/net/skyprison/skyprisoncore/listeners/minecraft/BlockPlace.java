@@ -285,7 +285,7 @@ public class BlockPlace implements Listener {
                     }
                 } else if(pers.has(mailKey)) {
                     if(worldName.equalsIgnoreCase("world_free")) {
-                        int amount = MailUtils.getMailboxAmount(player.getUniqueId());
+                        int amount = MailUtils.getMailboxAmount(player.getUniqueId()) + 1;
                         int existAmount = amount - 1;
                         int mailBox = pers.get(mailKey, PersistentDataType.INTEGER);
                         Chest chest = (Chest) block.getBlockData();

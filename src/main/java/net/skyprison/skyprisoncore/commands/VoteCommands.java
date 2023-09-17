@@ -20,6 +20,7 @@ import java.io.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.UUID;
 
 public class VoteCommands {
@@ -98,10 +99,9 @@ public class VoteCommands {
                     try {
                         String sql = "INSERT INTO votes (user_id, time, service, address, tokens) VALUES (?, ?, ?, ?, ?)";
                         FileInputStream fstream = new FileInputStream(plugin.getDataFolder()+ File.separator + "user_votes.txt");
-                        long currTime = System.currentTimeMillis();
                         try (BufferedReader br = new BufferedReader(new InputStreamReader(fstream)); Connection conn = db.getConnection();
                              PreparedStatement ps = conn.prepareStatement(sql)) {
-                            ps.setLong(2, currTime);
+                            ps.setLong(2, Instant.now().getEpochSecond());
                             ps.setString(3, "Unknown");
                             ps.setString(4, "Unknown");
                             ps.setInt(5, 0);
