@@ -67,8 +67,8 @@ public class Vote {
         return votes;
     }
     public static void onAllSites(UUID pUUID) {
-        long startOfToday = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS).toEpochSecond();
-        long endOfToday = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS).plusDays(1).toEpochSecond();
+        long startOfToday = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS).toInstant().toEpochMilli();
+        long endOfToday = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS).plusDays(1).toInstant().toEpochMilli() - 1;
         try (Connection conn = db.getConnection();
              PreparedStatement ps = conn.prepareStatement("SELECT COUNT(id) FROM votes WHERE user_id = ? AND time >= ? AND time <= ?")) {
             ps.setString(1, pUUID.toString());
@@ -79,8 +79,8 @@ public class Vote {
                 int votes = rs.getInt(1);
                 if(votes == 6) {
                     Player player = Bukkit.getPlayer(pUUID);
-                    Component voteMsg = Component.text("Vote", NamedTextColor.DARK_GREEN, TextDecoration.BOLD).append(Component.text("  » ", NamedTextColor.DARK_GRAY))
-                            .append(Component.text(" You've voted on 6 sites today, and have therefore received a Vote Key!", NamedTextColor.AQUA));
+                    Component voteMsg = Component.text("Vote", NamedTextColor.DARK_GREEN, TextDecoration.BOLD).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
+                            .append(Component.text("You've voted on 6 sites today, and have therefore received a Vote Key!", NamedTextColor.AQUA));
                     String playerName = player != null ? player.getName() : PlayerManager.getPlayerName(pUUID);
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "crate key give " + playerName + " crate_vote 1");
                     if(player != null) {

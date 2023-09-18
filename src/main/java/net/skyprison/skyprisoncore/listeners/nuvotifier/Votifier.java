@@ -38,7 +38,7 @@ public class Votifier implements Listener {
         String playerName = vote.getUsername();
         String serviceName = vote.getServiceName();
         String serviceAddress = vote.getAddress();
-        long time = Long.parseLong(vote.getTimeStamp());
+        long time = System.currentTimeMillis();
 
         UUID pUUID = PlayerManager.getPlayerId(playerName);
         if(pUUID != null) {
@@ -70,13 +70,13 @@ public class Votifier implements Listener {
                         .append(Component.text("/Vote", TextColor.fromHexString("#2db4e1"), TextDecoration.BOLD));
                 Component playerMsg = voteMsg.append(Component.text("You have received ", TextColor.fromHexString("#0fff87")))
                         .append(Component.text(tokens + " Tokens", TextColor.fromHexString("#e02957"), TextDecoration.BOLD))
-                        .append(Component.text("! ", TextColor.fromHexString("#0fff87"), TextDecoration.BOLD));
+                        .append(Component.text("!", TextColor.fromHexString("#0fff87"), TextDecoration.BOLD));
                 if(tokens == -1) {
                     tokens = 50;
                     everyoneMsg = voteMsg.append(Component.text(playerName, TextColor.fromHexString("#e02957"), TextDecoration.BOLD))
                             .append(Component.text(" voted for the first time and received ", TextColor.fromHexString("#0fff87")))
                             .append(Component.text(tokens + " Tokens", TextColor.fromHexString("#e02957"), TextDecoration.BOLD))
-                            .append(Component.text("!", TextColor.fromHexString("#0fff87"), TextDecoration.BOLD))
+                            .append(Component.text("! ", TextColor.fromHexString("#0fff87"), TextDecoration.BOLD))
                             .append(Component.text("/Vote", TextColor.fromHexString("#2db4e1"), TextDecoration.BOLD));
                 }
                 new Tokens(plugin, db).addTokens(pUUID, tokens, "voting", serviceName);

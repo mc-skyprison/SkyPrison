@@ -89,7 +89,7 @@ public class MailUtils {
                 "SELECT id FROM mail_boxes WHERE id = ? AND is_placed = 1 AND deleted = 0")) {
             ps.setInt(1, mailBox);
             ResultSet rs = ps.executeQuery();
-            if (!rs.next()) {
+            if (rs.next()) {
                 isValid = true;
             }
         } catch (SQLException e) {

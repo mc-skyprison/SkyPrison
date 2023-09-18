@@ -16,11 +16,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.io.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.time.Instant;
 import java.util.UUID;
 
 public class VoteCommands {
@@ -91,43 +86,6 @@ public class VoteCommands {
                         }
                     } else {
                         sender.sendMessage(Component.text("Can only be used by a player!"));
-                    }
-                }));
-        manager.command(manager.commandBuilder("votefix")
-                .permission("skyprisoncore.command.votefix")
-                .handler(c -> {
-                    try {
-                        String sql = "INSERT INTO votes (user_id, time, service, address, tokens) VALUES (?, ?, ?, ?, ?)";
-                        FileInputStream fstream = new FileInputStream(plugin.getDataFolder()+ File.separator + "user_votes.txt");
-                        try (BufferedReader br = new BufferedReader(new InputStreamReader(fstream)); Connection conn = db.getConnection();
-                             PreparedStatement ps = conn.prepareStatement(sql)) {
-                            ps.setLong(2, Instant.now().getEpochSecond());
-                            ps.setString(3, "Unknown");
-                            ps.setString(4, "Unknown");
-                            ps.setInt(5, 0);
-                            String line;
-                            while ((line = br.readLine()) != null) {
-                                System.out.println(line);
-                                String[] parts = line.split(";");
-                                if (parts.length == 2) {
-                                    String userId = parts[0];
-                                    int totalVotes = Integer.parseInt(parts[1]);
-                                    for (int i = 0; i < totalVotes; i++) {
-                                        ps.setString(1, userId);
-                                        ps.addBatch();
-                                        if (i % 100 == 0) {
-                                            ps.executeBatch();
-                                        }
-                                    }
-                                    ps.executeBatch();
-                                }
-                            }
-                            System.out.println("DONE!");
-                        } catch (IOException | SQLException e) {
-                            e.printStackTrace();
-                        }
-                    } catch (FileNotFoundException e) {
-                        throw new RuntimeException(e);
                     }
                 }));
     }
