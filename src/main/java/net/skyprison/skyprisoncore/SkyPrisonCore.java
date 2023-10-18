@@ -847,7 +847,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new InventoryOpen(this), this);
         pm.registerEvents(new LeavesDecay(), this);
         pm.registerEvents(new McMMOLevelUp(this), this);
-        pm.registerEvents(new PlayerChangedWorld(), this);
+        pm.registerEvents(new PlayerChangedWorld(db), this);
         pm.registerEvents(new PlayerInteract(this, db, dailyMissions), this);
         pm.registerEvents(new PlayerMove(this), this);
         pm.registerEvents(new PlayerPostRespawn(), this);

@@ -19,7 +19,6 @@ public class PlayerEditBook implements Listener {
     public PlayerEditBook(SkyPrisonCore plugin) {
         this.plugin = plugin;
     }
-
     @EventHandler
     public void onPlayerEditBook(PlayerEditBookEvent event) {
         Player player = event.getPlayer();

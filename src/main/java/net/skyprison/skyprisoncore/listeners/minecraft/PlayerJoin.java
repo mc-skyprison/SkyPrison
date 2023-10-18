@@ -32,7 +32,9 @@ import net.skyprison.skyprisoncore.utils.MailUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -48,6 +50,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.*;
+
+import static net.skyprison.skyprisoncore.utils.PlayerInvUtils.changeInventory;
+import static net.skyprison.skyprisoncore.utils.PlayerInvUtils.isPrisonWorld;
 
 public class PlayerJoin implements Listener {
     private final SkyPrisonCore plugin;
@@ -65,21 +70,28 @@ public class PlayerJoin implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        AttributeInstance attackSpeed = player.getAttribute(Attribute.GENERIC_ATTACK_SPEED);
+        if(attackSpeed != null && attackSpeed.getValue() != attackSpeed.getDefaultValue()) {
+            Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_ATTACK_SPEED)).setBaseValue(attackSpeed.getDefaultValue());
+        }
+
         Location loc = player.getLocation();
+        World world = player.getWorld();
+        com.sk89q.worldedit.world.World weWorld = BukkitAdapter.adapt(world);
         if(plugin.customClaimShape.containsKey(player.getUniqueId())) {
             LocalSession session = WorldEdit.getInstance().getSessionManager().get(BukkitAdapter.adapt(player));
-            RegionSelector newSelector = new CuboidRegionSelector(session.getRegionSelector(BukkitAdapter.adapt(player.getWorld())));
+            RegionSelector newSelector = new CuboidRegionSelector(session.getRegionSelector(weWorld));
             session.setDefaultRegionSelector(RegionSelectorType.CUBOID);
-            session.setRegionSelector(BukkitAdapter.adapt(player.getWorld()), newSelector);
+            session.setRegionSelector(weWorld, newSelector);
         }
-        if(loc.getWorld().getName().equalsIgnoreCase("world_prison")) {
+        if(world.getName().equals("world_prison")) {
             RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
-            RegionManager regions = container.get(BukkitAdapter.adapt(player.getWorld()));
+            RegionManager regions = container.get(weWorld);
             assert regions != null;
             ApplicableRegionSet regionList = regions.getApplicableRegions(BlockVector3.at(loc.getX(), loc.getY(), loc.getZ()));
             for(ProtectedRegion region : regionList.getRegions()) {
                 if(region.getId().contains("mine")) {
-                    if(loc.getBlock().isSolid() || loc.clone().offset(0, 1, 0).toLocation(loc.getWorld()).getBlock().isSolid()) {
+                    if(loc.getBlock().isSolid() || loc.clone().offset(0, 1, 0).toLocation(world).getBlock().isSolid()) {
                         plugin.asConsole("warp " + region.getId() + " " + player.getName());
                     }
                     break;
@@ -109,7 +121,7 @@ public class PlayerJoin implements Listener {
                     ItemStack item = ItemStack.deserializeBytes(Base64.getDecoder().decode(rs.getString(2)));
                     HashMap<Integer, ItemStack> didntFit = player.getInventory().addItem(item);
                     for (ItemStack dropItem : didntFit.values()) {
-                        player.getWorld().dropItemNaturally(player.getLocation(), dropItem).setOwner(player.getUniqueId());
+                        world.dropItemNaturally(player.getLocation(), dropItem).setOwner(player.getUniqueId());
                     }
                 } else if(type.equalsIgnoreCase("mail-offhand")) {
                     ItemStack item = ItemStack.deserializeBytes(Base64.getDecoder().decode(rs.getString(2)));
@@ -247,17 +259,27 @@ public class PlayerJoin implements Listener {
             }
 
             int tag_id = 0;
+            String logoutWorld = "";
             try(Connection conn = db.getConnection();
-                PreparedStatement ps = conn.prepareStatement("SELECT blocks_mined, tokens, active_tag FROM users WHERE user_id = ?")) {
+                PreparedStatement ps = conn.prepareStatement("SELECT blocks_mined, tokens, active_tag, logout_world FROM users WHERE user_id = ?")) {
                 ps.setString(1, player.getUniqueId().toString());
                 ResultSet rs = ps.executeQuery();
                 if (rs.next()) {
                     plugin.blockBreaks.put(player.getUniqueId(), rs.getInt(1));
                     plugin.tokensData.put(player.getUniqueId(), rs.getInt(2));
                     tag_id = rs.getInt(3);
+                    logoutWorld = rs.getString(4);
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
+            }
+
+            if(logoutWorld != null && !logoutWorld.isEmpty() && !player.hasPermission("skyprisoncore.invchange.bypass")) {
+                if(!logoutWorld.equals(world.getName())) {
+                    boolean fromPrison = isPrisonWorld(logoutWorld);
+                    boolean toPrison = isPrisonWorld(world.getName());
+                    changeInventory(player, fromPrison, toPrison);
+                }
             }
 
 
@@ -300,13 +322,6 @@ public class PlayerJoin implements Listener {
                         particles.addActivePlayerParticle(player, ParticleEffect.CLOUD, ParticleStyle.fromInternalName(tagsEffect));
                 }
             }
-
-            if(player.getWorld().getName().equalsIgnoreCase("world_prison") || player.getWorld().getName().equalsIgnoreCase("world_event") || player.getWorld().getName().equalsIgnoreCase("world_war")) {
-                Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_ATTACK_SPEED)).setBaseValue(16);
-            } else {
-                Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_ATTACK_SPEED)).setBaseValue(Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_ATTACK_SPEED)).getDefaultValue());
-            }
-
         });
     }
 }

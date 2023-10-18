@@ -50,10 +50,11 @@ public class PlayerQuit implements Listener {
                 }
             }
 
-            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET blocks_mined = ?, tokens = ? WHERE user_id = ?")) {
+            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET blocks_mined = ?, tokens = ?, logout_world = ? WHERE user_id = ?")) {
                 ps.setInt(1, plugin.blockBreaks.get(player.getUniqueId()));
                 ps.setInt(2, plugin.tokensData.get(player.getUniqueId()));
-                ps.setString(3, player.getUniqueId().toString());
+                ps.setString(3, player.getWorld().getName());
+                ps.setString(4, player.getUniqueId().toString());
                 ps.executeUpdate();
             } catch (SQLException e) {
                 e.printStackTrace();

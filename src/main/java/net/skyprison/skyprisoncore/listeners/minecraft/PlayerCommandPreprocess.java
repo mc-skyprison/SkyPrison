@@ -8,7 +8,6 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 
 public class PlayerCommandPreprocess implements Listener {
     public PlayerCommandPreprocess() {}
-
     @EventHandler
     public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
         if(event.isCancelled() && event.getPlayer().getWorld().getName().equalsIgnoreCase("world_prison") && !event.getPlayer().isOp()) {
