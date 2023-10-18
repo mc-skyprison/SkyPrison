@@ -40,8 +40,6 @@ import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.skyprison.skyprisoncore.commands.*;
 import net.skyprison.skyprisoncore.commands.old.*;
-import net.skyprison.skyprisoncore.commands.old.donations.DonorAdd;
-import net.skyprison.skyprisoncore.commands.old.donations.Purchases;
 import net.skyprison.skyprisoncore.commands.old.economy.*;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
@@ -788,7 +786,7 @@ public class SkyPrisonCore extends JavaPlugin {
         new DiscordCommands(this, getDatabase(), discApi, manager);
         new VoteCommands(this, getDatabase(), manager);
         new MailCommands(this, getDatabase(), manager);
-        new StoreCommands(this, getDatabase(), manager);
+        new StoreCommands(getDatabase(), manager);
         new ReferralCommands(this, getDatabase(), manager);
         new CustomInvCommands(this, getDatabase(), manager);
 
@@ -796,8 +794,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("tokens")).setTabCompleter(new TabCompleter());
         Objects.requireNonNull(getCommand("token")).setTabCompleter(new TabCompleter());
-        Objects.requireNonNull(getCommand("donoradd")).setExecutor(new DonorAdd(getDatabase()));
-        Objects.requireNonNull(getCommand("purchases")).setExecutor(new Purchases(getDatabase(), this));
         Objects.requireNonNull(getCommand("econcheck")).setExecutor(new EconomyCheck(this));
         Objects.requireNonNull(getCommand("permshop")).setExecutor(new PermShop());
         Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, getDatabase()));
@@ -847,7 +843,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new InventoryOpen(this), this);
         pm.registerEvents(new LeavesDecay(), this);
         pm.registerEvents(new McMMOLevelUp(this), this);
-        pm.registerEvents(new PlayerChangedWorld(db), this);
+        pm.registerEvents(new PlayerChangedWorld(), this);
         pm.registerEvents(new PlayerInteract(this, db, dailyMissions), this);
         pm.registerEvents(new PlayerMove(this), this);
         pm.registerEvents(new PlayerPostRespawn(), this);

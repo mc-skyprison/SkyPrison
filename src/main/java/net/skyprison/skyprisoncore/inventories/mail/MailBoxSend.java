@@ -258,7 +258,7 @@ public class MailBoxSend implements CustomInventory {
                     player.getWorld().dropItemNaturally(player.getLocation(), dropItem).setOwner(player.getUniqueId());
                 }
             } else {
-                NotificationsUtils.scheduleForOnline(player.getUniqueId().toString(), "mail-item", Base64.getEncoder().encodeToString(getSendItem().serializeAsBytes()));
+                NotificationsUtils.scheduleForOnline(player.getUniqueId(), "mail-item", Base64.getEncoder().encodeToString(getSendItem().serializeAsBytes()));
             }
         }
     }
@@ -324,7 +324,7 @@ public class MailBoxSend implements CustomInventory {
                                 pInv.setItemInOffHand(getOffHand());
                                 pInv.addItem(new ItemStack(Material.WRITABLE_BOOK, getSendToSize()));
                             } else {
-                                NotificationsUtils.scheduleForOnline(player.getUniqueId().toString(), "mail-offhand", Base64.getEncoder().encodeToString(getOffHand().serializeAsBytes()));
+                                NotificationsUtils.scheduleForOnline(player.getUniqueId(), "mail-offhand", Base64.getEncoder().encodeToString(getOffHand().serializeAsBytes()));
                             }
                             cancelTimer();
                         }

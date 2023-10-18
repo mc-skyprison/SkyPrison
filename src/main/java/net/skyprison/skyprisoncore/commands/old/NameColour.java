@@ -110,7 +110,7 @@ public class NameColour implements CommandExecutor { // /namecolour <coloured na
                             player.sendMessage(colourChange);
                         } else {
                             NotificationsUtils.createNotification("namecolour-update", null, pUUID, colourChange, null, true);
-                            NotificationsUtils.scheduleForOnline(pUUID, "namecolour", "remove");
+                            NotificationsUtils.scheduleForOnline(UUID.fromString(pUUID), "namecolour", "remove");
                         }
                     }
                     sender.sendMessage(Component.text("Successfully removed the name color", TextColor.fromHexString("#87fdd2")));
@@ -134,7 +134,7 @@ public class NameColour implements CommandExecutor { // /namecolour <coloured na
                                     player.sendMessage(colourChange);
                                 } else {
                                     NotificationsUtils.createNotification("namecolour-update", null, pUUID, colourChange, null, true);
-                                    NotificationsUtils.scheduleForOnline(pUUID, "namecolour", GsonComponentSerializer.gson().serialize(nickName));
+                                    NotificationsUtils.scheduleForOnline(UUID.fromString(pUUID), "namecolour", GsonComponentSerializer.gson().serialize(nickName));
                                 }
                             }
                             sender.sendMessage(Component.text("Successfully changed the name color to ", TextColor.fromHexString("#87fdd2")).append(nickName));
@@ -169,7 +169,7 @@ public class NameColour implements CommandExecutor { // /namecolour <coloured na
                                 player.sendMessage(colourChange);
                             } else {
                                 NotificationsUtils.createNotification("namecolour-update", null, pUUID, colourChange, null, true);
-                                NotificationsUtils.scheduleForOnline(pUUID, "namecolour", GsonComponentSerializer.gson().serialize(nickName));
+                                NotificationsUtils.scheduleForOnline(UUID.fromString(pUUID), "namecolour", GsonComponentSerializer.gson().serialize(nickName));
                             }
                         }
                         sender.sendMessage(Component.text("Successfully changed the name color to ", TextColor.fromHexString("#87fdd2")).append(nickName));

@@ -60,19 +60,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.bounty
     permission-message: §4Error:§c You do not have permission to execute this command...
-  #
-  # Donation Commands
-  #
-  donoradd:
-    description: Add a donation
-    usage: /<command>
-    permission: skyprisoncore.command.donoradd
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  purchases:
-    description: Show purchases
-    usage: /<command>
-    permission: skyprisoncore.command.purchases
-    permission-message: §4Error:§c You do not have permission to execute this command...
   endupgrade:
     description: Opens the end upgrade GUI
     usage: /<command>
@@ -224,15 +211,6 @@ permissions:
   skyprisoncore.command.bounty.silent:
     description: Hides bounty messages
     default: false
-  #
-  # Donation Permissions
-  #
-  skyprisoncore.command.donoradd:
-    description: Gives you access to /donoradd
-  skyprisoncore.command.purchases:
-    description: Gives you access to /purchases
-  skyprisoncore.command.purchases.others:
-    description: Gives you access to /purchases
   #
   # Killinfo Permissions
   #

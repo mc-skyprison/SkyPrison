@@ -25,7 +25,6 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.JailCommands;
-import net.skyprison.skyprisoncore.commands.old.donations.DonorAdd;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.MailUtils;
@@ -51,8 +50,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.*;
 
-import static net.skyprison.skyprisoncore.utils.PlayerInvUtils.changeInventory;
-import static net.skyprison.skyprisoncore.utils.PlayerInvUtils.isPrisonWorld;
+import static net.skyprison.skyprisoncore.utils.PlayerManager.*;
 
 public class PlayerJoin implements Listener {
     private final SkyPrisonCore plugin;
@@ -116,7 +114,7 @@ public class PlayerJoin implements Listener {
                     }
                     player.customName(content);
                 } else if(type.equalsIgnoreCase("purchase-total-check")) {
-                    DonorAdd.checkTotal(player, Double.parseDouble(rs.getString(2)));
+                    checkTotalPurchases(player, Double.parseDouble(rs.getString(2)));
                 } else if(type.equalsIgnoreCase("mail-item")) {
                     ItemStack item = ItemStack.deserializeBytes(Base64.getDecoder().decode(rs.getString(2)));
                     HashMap<Integer, ItemStack> didntFit = player.getInventory().addItem(item);

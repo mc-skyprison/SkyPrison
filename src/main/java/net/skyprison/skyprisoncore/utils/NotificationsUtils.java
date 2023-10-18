@@ -79,9 +79,9 @@ public class NotificationsUtils {
 
 
 
-    public static void scheduleForOnline(String pUUID, String type, String content) {
+    public static void scheduleForOnline(UUID pUUID, String type, String content) {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO schedule_online (user_id, type, content) VALUES (?, ?, ?)")) {
-            ps.setString(1, pUUID);
+            ps.setString(1, pUUID.toString());
             ps.setString(2, type);
             ps.setString(3, content);
             ps.executeUpdate();

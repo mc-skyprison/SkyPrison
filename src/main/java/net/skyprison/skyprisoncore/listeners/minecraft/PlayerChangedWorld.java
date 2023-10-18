@@ -1,20 +1,15 @@
 package net.skyprison.skyprisoncore.listeners.minecraft;
 
-import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 
-import static net.skyprison.skyprisoncore.utils.PlayerInvUtils.changeInventory;
-import static net.skyprison.skyprisoncore.utils.PlayerInvUtils.isPrisonWorld;
+import static net.skyprison.skyprisoncore.utils.PlayerManager.changeInventory;
+import static net.skyprison.skyprisoncore.utils.PlayerManager.isPrisonWorld;
 
 public class PlayerChangedWorld implements Listener {
-    private final DatabaseHook db;
-    public PlayerChangedWorld(DatabaseHook db) {
-        this.db = db;
-    }
     @EventHandler
     public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
         Player player = event.getPlayer();
