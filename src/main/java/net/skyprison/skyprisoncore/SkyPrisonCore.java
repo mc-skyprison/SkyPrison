@@ -87,6 +87,7 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -105,6 +106,7 @@ import org.javacord.api.interaction.SlashCommandOption;
 import org.javacord.api.interaction.SlashCommandOptionType;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -779,6 +781,11 @@ public class SkyPrisonCore extends JavaPlugin {
                 })
                 .build()
         );
+
+        manager.command(manager.commandBuilder("invconvert")
+                .senderType(ConsoleCommandSender.class)
+                .permission("skyprisoncore.command.invconvert")
+                .handler(c -> new InventoryLoader().loadInventories(getDataFolder() + File.separator + "data")));
 
         new ChatCommands(this, manager, discApi);
         new JailCommands(this, manager);

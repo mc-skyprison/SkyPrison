@@ -91,7 +91,8 @@ public class PlayerManager {
         }
     }
     public static boolean isPrisonWorld(String world) {
-        return world.equals("world_prison") || world.equals("world_free") || world.equals("world_free_nether") || world.equals("world_free_the_end");
+        return world.equals("world_prison") || world.equals("world_free") || world.equals("world_free_nether")
+                || world.equals("world_free_the_end") || world.equals("world_skycity") || world.equals("world_prison_tutorial");
     }
     public static void changeInventory(Player player, boolean fromPrison, boolean toPrison) {
         if(fromPrison || toPrison) {
