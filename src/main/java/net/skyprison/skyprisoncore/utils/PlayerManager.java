@@ -12,6 +12,7 @@ import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -80,11 +81,18 @@ public class PlayerManager {
             BukkitObjectInputStream dataInput = new BukkitObjectInputStream(inputStream);
             Inventory inv = dataInput.readInt() != 41 ? Bukkit.getServer().createInventory(null, InventoryType.ENDER_CHEST) : Bukkit.getServer().createInventory(null, InventoryType.PLAYER);
 
-            for (int i = 0; i < inv.getSize(); i++) {
-                inv.setItem(i, (ItemStack) dataInput.readObject());
+            try {
+                for (int i = 0; i < inv.getSize(); i++) {
+                    try {
+                        ItemStack item = (ItemStack) dataInput.readObject();
+                        inv.setItem(i, item);
+                    } catch (EOFException e) {
+                        break;
+                    }
+                }
+            } finally {
+                dataInput.close();
             }
-
-            dataInput.close();
             return inv;
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException("Failed to decode inventory!", e);
