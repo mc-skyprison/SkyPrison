@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "net.skyprison"
-version = "7.0.0"
+version = "7.1.0"
 description = "Core plugin for SkyPrison"
 
 
@@ -37,8 +37,7 @@ dependencies {
     compileOnly("org.jetbrains:annotations:24.0.0")
     compileOnly("org.purpurmc.purpur:purpur-api:1.20.2-R0.1-SNAPSHOT")
     compileOnly("net.luckperms:api:5.4")
-    compileOnly("io.github.miniplaceholders:miniplaceholders-api:2.1.0")
-    compileOnly("me.neznamy:tab-api:3.2.4") // Used for PvP
+    compileOnly("me.neznamy:tab-api:4.0.2") // Used for PvP
     compileOnly("com.github.DieReicheErethons:Brewery:3.1.1")
     compileOnly("com.arcaniax:HeadDatabase-API:1.3.1")
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.8-SNAPSHOT")
@@ -48,7 +47,7 @@ dependencies {
     compileOnly("net.coreprotect:coreprotect:21.2")
     compileOnly("me.NoChance.PvPManager:PvPManager:3.10.9")
     compileOnly("com.github.alex9849:advanced-region-market:3.4.4")
-    compileOnly("com.gitlab.ruany:LiteBansAPI:0.3.5")
+    compileOnly("com.gitlab.ruany:LiteBansAPI:0.4.1")
     compileOnly("LibsDisguises:LibsDisguises:10.0.33")
     compileOnly("dev.esophose:playerparticles:8.3")
     compileOnly("com.github.Realizedd.Duels:duels-api:3.5.1")

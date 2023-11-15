@@ -3,7 +3,7 @@ package net.skyprison.skyprisoncore.listeners.pvpmanager;
 import me.NoChance.PvPManager.Events.PlayerTogglePvPEvent;
 import me.neznamy.tab.api.TabAPI;
 import me.neznamy.tab.api.TabPlayer;
-import me.neznamy.tab.api.team.UnlimitedNametagManager;
+import me.neznamy.tab.api.nametag.UnlimitedNameTagManager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
@@ -12,10 +12,10 @@ public class PlayerTogglePvP  implements Listener {
 
     @EventHandler
     public void onPlayerTogglePvP(PlayerTogglePvPEvent event) {
-        if(TabAPI.getInstance().getTeamManager() instanceof UnlimitedNametagManager nametagManager) {
+        if(TabAPI.getInstance().getNameTagManager() instanceof UnlimitedNameTagManager nametagManager) {
             TabPlayer tPlayer = TabAPI.getInstance().getPlayer(event.getPlayer().getUniqueId());
             if (event.getPvPState()) {
-                nametagManager.resetLine(tPlayer, "belowname");
+                nametagManager.setLine(tPlayer, "belowname", null);
             } else {
                 nametagManager.setLine(tPlayer, "belowname", "<red>PVP OFF</red>");
             }
