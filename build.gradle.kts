@@ -46,7 +46,7 @@ dependencies {
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.2.11")
     compileOnly("net.coreprotect:coreprotect:21.2")
     compileOnly("me.NoChance.PvPManager:PvPManager:3.10.9")
-    compileOnly("com.github.alex9849:advanced-region-market:3.4.4")
+    compileOnly("com.github.alex9849:advanced-region-market:3.5.3")
     compileOnly("com.gitlab.ruany:LiteBansAPI:0.4.1")
     compileOnly("LibsDisguises:LibsDisguises:10.0.33")
     compileOnly("dev.esophose:playerparticles:8.3")
