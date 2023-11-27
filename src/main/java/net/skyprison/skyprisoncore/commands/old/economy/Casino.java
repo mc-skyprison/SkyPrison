@@ -6,6 +6,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -55,8 +56,8 @@ public class Casino implements CommandExecutor {
                 long cooldown = casinoCools.get(args[1]);
                 if (cooldown < System.currentTimeMillis()) {
                     if (user.getBalance() >= Integer.parseInt(args[2])) {
-                        plugin.asConsole("cmi money take " + player.getName() + " " + args[2]);
-                        plugin.asConsole("crates key give " + player.getName() + " " + args[1] + " 1");
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + args[2]);
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "crates key give " + player.getName() + " " + args[1] + " 1");
                         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE casino_cooldowns SET casino_cooldown = ? WHERE user_id = ? AND casino_name = ?")) {
                             ps.setLong(1, nCooldown);
                             ps.setString(2, player.getUniqueId().toString());
@@ -88,8 +89,8 @@ public class Casino implements CommandExecutor {
                 }
             } else {
                 if (user.getBalance() >= Integer.parseInt(args[2])) {
-                    plugin.asConsole("cmi money take " + player.getName() + " " + args[2]);
-                    plugin.asConsole("crates key give " + player.getName() + " " + args[1] + " 1");
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + args[2]);
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "crates key give " + player.getName() + " " + args[1] + " 1");
 
                     try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO casino_cooldowns (user_id, casino_name, casino_cooldown) VALUES (?, ?, ?)")) {
                         ps.setString(1, player.getUniqueId().toString());
@@ -103,8 +104,8 @@ public class Casino implements CommandExecutor {
             }
         } else {
             if (user.getBalance() >= Integer.parseInt(args[2])) {
-                plugin.asConsole("cmi money take " + player.getName() + " " + args[2]);
-                plugin.asConsole("crates key give " + player.getName() + " " + args[1] + " 1");
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + args[2]);
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "crates key give " + player.getName() + " " + args[1] + " 1");
 
                 try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO casino_cooldowns (user_id, casino_name, casino_cooldown) VALUES (?, ?, ?)")) {
                     ps.setString(1, player.getUniqueId().toString());

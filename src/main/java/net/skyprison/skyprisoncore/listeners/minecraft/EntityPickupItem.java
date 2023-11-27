@@ -1,6 +1,7 @@
 package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -17,10 +18,10 @@ public class EntityPickupItem implements Listener {
     public void onEntityPickupItem(EntityPickupItemEvent event) {
         if (event.getEntity() instanceof Player player) {
             if (!player.hasPermission("skyprisoncore.contraband.itembypass")) {
-                if (plugin.isGuardGear(event.getItem().getItemStack())) {
+                if (PlayerManager.isGuardGear(event.getItem().getItemStack())) {
                     event.setCancelled(true);
                 }
-                plugin.InvGuardGearDelPlyr(player);
+                PlayerManager.checkGuardGear(player);
             }
         }
     }

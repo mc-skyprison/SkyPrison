@@ -30,7 +30,7 @@ public class TransportPass implements CommandExecutor {
                             int uTokens = plugin.tokensData.get(player.getUniqueId()) - 250;
                             player.sendMessage(prefix.append(Component.text("250 tokens ", NamedTextColor.AQUA).append(Component.text("was removed from your balance", NamedTextColor.GRAY))));
                             plugin.tokensData.put(player.getUniqueId(), uTokens);
-                            plugin.asConsole("lp user " + player.getName() + " permission settemp skyprisoncore.command.transportpass.bus true 7d");
+                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + player.getName() + " permission settemp skyprisoncore.command.transportpass.bus true 7d");
                         } else {
                             player.sendMessage(prefix.append(Component.text("You do not have enough tokens to buy this!", NamedTextColor.RED)));
                         }
@@ -44,7 +44,7 @@ public class TransportPass implements CommandExecutor {
                             int uTokens = plugin.tokensData.get(player.getUniqueId()) - 500;
                             player.sendMessage(prefix.append(Component.text("500 tokens ", NamedTextColor.AQUA).append(Component.text("was removed from your balance", NamedTextColor.GRAY))));
                             plugin.tokensData.put(player.getUniqueId(), uTokens);
-                            plugin.asConsole("lp user " + player.getName() + " permission settemp skyprisoncore.command.transportpass.train true 7d");
+                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + player.getName() + " permission settemp skyprisoncore.command.transportpass.train true 7d");
                         } else {
                             player.sendMessage(prefix.append(Component.text("You do not have enough tokens to buy this!", NamedTextColor.RED)));
                         }

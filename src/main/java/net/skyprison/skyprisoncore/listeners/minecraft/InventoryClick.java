@@ -710,12 +710,12 @@ public class InventoryClick implements Listener {
 
                                             commands.forEach(command -> {
                                                 command = PlaceholderAPI.setPlaceholders(player, command);
-                                                plugin.asConsole(command);
+                                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
                                             });
                                         }
 
                                         if(removeMoney) {
-                                            plugin.asConsole("cmi money take " + player.getName() + " " + moneyCost);
+                                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + moneyCost);
                                         }
                                         if(removeTokens) {
                                             plugin.tokens.removeTokens(player.getUniqueId(), tokenCost, inv.getCategory(), clickedMat.toString());
@@ -947,7 +947,7 @@ public class InventoryClick implements Listener {
                                                     }
                                                 });
                                             }
-                                            plugin.asConsole("cmi money take " + player.getName() + " " + price);
+                                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + price);
                                             inv.resultTaken();
                                         } else {
                                             event.setCancelled(true);
@@ -979,7 +979,7 @@ public class InventoryClick implements Listener {
                                                 if(cursor != null) {
                                                     cursor.editMeta(meta -> meta.lore(null));
                                                 }
-                                                plugin.asConsole("cmi money take " + player.getName() + " " + price);
+                                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + price);
                                                 inv.resultTaken();
                                             } else {
                                                 event.setCancelled(true);
@@ -1012,7 +1012,7 @@ public class InventoryClick implements Listener {
                                                 if(cursor != null) {
                                                     cursor.editMeta(meta -> meta.lore(null));
                                                 }
-                                                plugin.asConsole("cmi money take " + player.getName() + " " + price);
+                                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + price);
                                                 inv.resultTaken();
                                             } else {
                                                 event.setCancelled(true);
@@ -1270,7 +1270,7 @@ public class InventoryClick implements Listener {
                                         if (inv.getSendingType()) {
                                             if (inv.canAfford()) {
                                                 player.closeInventory();
-                                                plugin.asConsole("cmi money take " + player.getName() + " " + inv.getCost());
+                                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + inv.getCost());
                                                 inv.sendMail(inv.getSendItem());
                                             } else {
                                                 player.sendMessage(Component.text("You don't have enough money to send this mail!", NamedTextColor.RED));
@@ -1826,8 +1826,8 @@ public class InventoryClick implements Listener {
                                                                 "DELETE FROM recent_sells WHERE recent_id = ?")) {
                                                             ps.setInt(1, buyId);
                                                             ps.executeUpdate();
-                                                            plugin.asConsole("give " + player.getName() + " " + itemType + " " + itemAmount);
-                                                            plugin.asConsole("cmi money take " + player.getName() + " " + itemPrice);
+                                                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "give " + player.getName() + " " + itemType + " " + itemAmount);
+                                                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + itemPrice);
                                                             buyBack.openGUI(player);
                                                         } catch (SQLException e) {
                                                             e.printStackTrace();
@@ -2285,7 +2285,7 @@ public class InventoryClick implements Listener {
                 }
                 if (!player.hasPermission("skyprisoncore.contraband.itembypass")) {
                     if (event.getClickedInventory() instanceof PlayerInventory) {
-                        plugin.InvGuardGearDelPlyr(player);
+                        PlayerManager.checkGuardGear(player);
                     }
                 }
             }

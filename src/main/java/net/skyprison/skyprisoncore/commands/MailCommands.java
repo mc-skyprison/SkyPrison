@@ -122,9 +122,9 @@ public class MailCommands {
                     CommandSender sender = c.getSender();
                     Player player = c.get("player");
                     if(player.hasPermission("skyprisoncore.mailboxes.amount.2")) {
-                        Bukkit.getScheduler().runTask(plugin, () -> plugin.asConsole("lp user " + player.getName() + " permission set skyprisoncore.mailboxes.amount.3"));
+                        Bukkit.getScheduler().runTask(plugin, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.mailboxes.amount.3"));
                     } else if(player.hasPermission("skyprisoncore.mailboxes.amount.1")) {
-                        Bukkit.getScheduler().runTask(plugin, () -> plugin.asConsole("lp user " + player.getName() + " permission set skyprisoncore.mailboxes.amount.2"));
+                        Bukkit.getScheduler().runTask(plugin, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.mailboxes.amount.2"));
                     } else {
                         sender.sendMessage(Component.text("Player already has the maximum amount of mailboxes!", NamedTextColor.RED));
                     }

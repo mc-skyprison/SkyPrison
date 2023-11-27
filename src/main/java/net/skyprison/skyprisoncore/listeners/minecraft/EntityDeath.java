@@ -107,8 +107,8 @@ public class EntityDeath implements Listener {
                     }
 
                     if(hasBounty) {
-                        Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "money give " + killer.getName() + " " + bounty);
-                        Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + killer.getName() + " increment bounties_collected +1 -s");
+                        Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "money give " + killer.getName() + " " + bounty);
+                        Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + killer.getName() + " increment bounties_collected +1 -s");
                         for (Player online : Bukkit.getServer().getOnlinePlayers()) {
                             if (!online.hasPermission("skyprisoncore.bounty.silent")) {
                                 online.sendMessage(Component.text("[", NamedTextColor.WHITE).append(Component.text("Bounties", NamedTextColor.RED))
@@ -203,13 +203,13 @@ public class EntityDeath implements Listener {
         int pKillStreak = killstreak + 1;
 
         if(pDeaths == 1000) {
-            plugin.asConsole("lp user " + killed.getName() + " permission set skyprisoncore.tag.52");
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + killed.getName() + " permission set skyprisoncore.tag.52");
             killer.sendMessage(Component.text("You have died a whopping", NamedTextColor.GRAY).append(Component.text(" 1,000 ", NamedTextColor.RED, TextDecoration.BOLD)
                     .append(Component.text("times! Therefore, you get a special tag!", NamedTextColor.GRAY))));
         }
 
         if(pKills == 1000) {
-            plugin.asConsole("lp user " + killer.getName() + " permission set skyprisoncore.tag.53");
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + killer.getName() + " permission set skyprisoncore.tag.53");
             killer.sendMessage(Component.text("You have killed a whopping", NamedTextColor.GRAY).append(Component.text(" 1,000 ", NamedTextColor.RED, TextDecoration.BOLD)
                     .append(Component.text("players! Therefore, you get a special tag!", NamedTextColor.GRAY))));
         }

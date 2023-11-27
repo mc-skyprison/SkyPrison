@@ -178,16 +178,43 @@ public class PlayerManager {
     public static void checkTotalPurchases(Player player, double total) {
         if (total >= 10.0) {
             if (!player.hasPermission("group.donor1")) {
-                Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getUniqueId() + " parent add donor1");
+                Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getUniqueId() + " parent add donor1");
             } else if (total >= 50.0) {
                 if (!player.hasPermission("group.donor2")) {
-                    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getUniqueId() + " parent add donor2");
+                    Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getUniqueId() + " parent add donor2");
                 } else if (total >= 100.0) {
                     if (!player.hasPermission("group.donor3")) {
-                        Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getUniqueId() + " parent add donor3");
+                        Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getUniqueId() + " parent add donor3");
                     }
                 }
             }
         }
+    }
+    public static boolean isGuardGear(ItemStack item) {
+        boolean isGuardGear = false;
+        String name = item.hasDisplayName() ? item.displayName().toString() : "";
+        switch (item.getType()) {
+            case CHAINMAIL_HELMET, CHAINMAIL_CHESTPLATE, CHAINMAIL_LEGGINGS, CHAINMAIL_BOOTS, DIAMOND_SWORD -> isGuardGear = true;
+            case BOW -> {
+                if(!name.isEmpty() & name.contains("Guard Bow") && item.isUnbreakable()) {
+                    isGuardGear = true;
+                }
+            }
+            case SHIELD -> {
+                if(!name.isEmpty() & name.contains("Guard Shield") && item.isUnbreakable()) {
+                    isGuardGear = true;
+                }
+            }
+        }
+        return isGuardGear;
+    }
+
+    public static void checkGuardGear(Player player) {
+        PlayerInventory pInv = player.getInventory();
+        pInv.forEach(item -> {
+            if (item != null && isGuardGear(item)) {
+                item.setAmount(0);
+            }
+        });
     }
 }

@@ -17,6 +17,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.items.Greg;
 import net.skyprison.skyprisoncore.utils.JailTimer;
+import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -80,7 +81,7 @@ public class JailCommands {
                     final int type = c.get("type");
                     bribeCooldown.put(player.getUniqueId(), TimeUnit.MINUTES.toMillis(10) + System.currentTimeMillis());
                     if(type > 0) {
-                        plugin.getServer().getScheduler().runTask(plugin, () -> plugin.getServer().dispatchCommand(
+                        plugin.getServer().getScheduler().runTask(plugin, () -> Bukkit.dispatchCommand(
                                 plugin.getServer().getConsoleSender(), "cmi money take " + player.getName() + " " + type));
                         setUnjail(sender, player, "bribe", "bribe");
                     } else if(type == 0) {
@@ -168,12 +169,12 @@ public class JailCommands {
                     } else {
                         action = "remove";
                         messageAction = "OFF";
-                        plugin.InvGuardGearDelPlyr(player);
+                        PlayerManager.checkGuardGear(player);
                         player.sendMessage(Component.text("You are now OFF duty!", NamedTextColor.RED));
                     }
                     for (Map.Entry<String, String> entry : guardRanks.entrySet()) {
                         if (player.hasPermission(entry.getValue())) {
-                            plugin.getServer().getScheduler().runTask(plugin, () -> plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(),
+                            plugin.getServer().getScheduler().runTask(plugin, () -> Bukkit.dispatchCommand(plugin.getServer().getConsoleSender(),
                                     "lp user " + player.getName() + " parent " + action + " " + entry.getKey()));
                             break;
                         }

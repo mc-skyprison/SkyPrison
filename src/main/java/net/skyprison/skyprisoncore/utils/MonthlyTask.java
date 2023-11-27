@@ -8,6 +8,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.old.economy.Tokens;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -52,26 +53,17 @@ public class MonthlyTask extends TimerTask {
                     if(playerName != null) {
                         if(i == 1) {
                             topVoter = playerName;
-                            plugin.asConsole("lp user " + playerName + " permission set skyprisoncore.tag.85");
+                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + playerName + " permission set skyprisoncore.tag.85");
                         }
                         new Tokens(plugin, db).addTokens(pUUID, 200, "monthly-top-voter", String.valueOf(i));
                         topVote = topVote.appendNewline().append(Component.text(i + ". ", NamedTextColor.GRAY, TextDecoration.BOLD))
                                 .append(Component.text(playerName, NamedTextColor.RED, TextDecoration.BOLD))
                                 .append(Component.text(" » ", NamedTextColor.DARK_GRAY, TextDecoration.BOLD))
-                                .append(Component.text(plugin.formatNumber(rs.getInt("vote_count")) + " Votes", TextColor.fromHexString("#cccccc"), TextDecoration.BOLD));
+                                .append(Component.text(plugin.formatNumber(rs.getInt("vote_count")) + " Votes",
+                                        TextColor.fromHexString("#cccccc"), TextDecoration.BOLD));
                         i++;
                         Player player = Bukkit.getPlayer(pUUID);
-                        Component voterMsg = Component.text("You came ", NamedTextColor.GRAY, TextDecoration.BOLD)
-                                .append(Component.text(i == 1 ? "First" : i == 2 ? "Second" : "Third", NamedTextColor.RED, TextDecoration.BOLD))
-                                .append(Component.text("in Monthly Voters! You've been awarded ", NamedTextColor.GRAY, TextDecoration.BOLD))
-                                .append(Component.text("200 Tokens", NamedTextColor.RED, TextDecoration.BOLD));
-                        if(i == 1) {
-                            voterMsg = voterMsg.append(Component.text(" and ", NamedTextColor.GRAY, TextDecoration.BOLD))
-                                    .append(Component.text("Voter Legend Tag", NamedTextColor.RED, TextDecoration.BOLD))
-                                    .append(Component.text("!", NamedTextColor.GRAY, TextDecoration.BOLD));
-                        } else {
-                            voterMsg = voterMsg.append(Component.text("!", NamedTextColor.GRAY, TextDecoration.BOLD));
-                        }
+                        Component voterMsg = getVoterMsg(i);
                         if(player != null) {
                             player.sendMessage(voterMsg);
                         } else {
@@ -88,5 +80,21 @@ public class MonthlyTask extends TimerTask {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    @NotNull
+    private static Component getVoterMsg(int i) {
+        Component voterMsg = Component.text("You came ", NamedTextColor.GRAY, TextDecoration.BOLD)
+                .append(Component.text(i == 1 ? "First" : i == 2 ? "Second" : "Third", NamedTextColor.RED, TextDecoration.BOLD))
+                .append(Component.text("in Monthly Voters! You've been awarded ", NamedTextColor.GRAY, TextDecoration.BOLD))
+                .append(Component.text("200 Tokens", NamedTextColor.RED, TextDecoration.BOLD));
+        if(i == 1) {
+            voterMsg = voterMsg.append(Component.text(" and ", NamedTextColor.GRAY, TextDecoration.BOLD))
+                    .append(Component.text("Voter Legend Tag", NamedTextColor.RED, TextDecoration.BOLD))
+                    .append(Component.text("!", NamedTextColor.GRAY, TextDecoration.BOLD));
+        } else {
+            voterMsg = voterMsg.append(Component.text("!", NamedTextColor.GRAY, TextDecoration.BOLD));
+        }
+        return voterMsg;
     }
 }

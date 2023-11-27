@@ -4,6 +4,7 @@ import io.github.a5h73y.parkour.Parkour;
 import io.github.a5h73y.parkour.event.ParkourFinishEvent;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -22,7 +23,7 @@ public class ParkourFinish implements Listener {
         Player player = event.getPlayer();
         List<String> uncompletedCourses = Parkour.getInstance().getPlayerManager().getUncompletedCourses(player);
         if(uncompletedCourses.isEmpty()) {
-            plugin.asConsole("lp user " + player.getName() + " permission set skyprisoncore.tag.17");
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.tag.17");
         }
 
         if(!event.getEventName().equalsIgnoreCase("parkour1")) {

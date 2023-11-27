@@ -38,7 +38,7 @@ public class UserRoleRemove implements UserRoleRemoveListener {
 
             if (!pUUID.isEmpty()) {
                 OfflinePlayer player = Bukkit.getOfflinePlayer(UUID.fromString(pUUID));
-                plugin.asConsole("lp user " + player.getName() + " permission unset deluxetags.tag.serverbooster");
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + player.getName() + " permission unset deluxetags.tag.serverbooster");
             }
         }
     }

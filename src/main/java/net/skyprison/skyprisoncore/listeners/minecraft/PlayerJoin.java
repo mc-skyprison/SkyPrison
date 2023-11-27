@@ -90,11 +90,11 @@ public class PlayerJoin implements Listener {
             for(ProtectedRegion region : regionList.getRegions()) {
                 if(region.getId().contains("mine")) {
                     if(loc.getBlock().isSolid() || loc.clone().offset(0, 1, 0).toLocation(world).getBlock().isSolid()) {
-                        plugin.asConsole("warp " + region.getId() + " " + player.getName());
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "warp " + region.getId() + " " + player.getName());
                     }
                     break;
                 } else if(region.getId().equalsIgnoreCase("guard-secretview")) {
-                    plugin.asConsole("warp prison " + player.getName());
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "warp prison " + player.getName());
                 }
             }
         }

@@ -39,7 +39,7 @@ public class UserRoleAdd implements UserRoleAddListener {
 
             if (!pUUID.isEmpty()) {
                 OfflinePlayer player = Bukkit.getOfflinePlayer(UUID.fromString(pUUID));
-                plugin.asConsole("lp user " + player.getName() + " permission set deluxetags.tag.serverbooster");
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + player.getName() + " permission set deluxetags.tag.serverbooster");
             }
         }
     }

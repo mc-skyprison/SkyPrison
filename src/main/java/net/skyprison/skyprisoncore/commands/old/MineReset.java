@@ -98,7 +98,7 @@ public class MineReset implements CommandExecutor { // /minereset <world> <mine>
                             Region rg = WorldEditRegionConverter.convertToRegion(region);
                             try {
                                 Pattern wPattern = WorldEdit.getInstance().getPatternFactory().parseFromInput(pattern, context);
-                                plugin.asConsole("regiontp tp " + mine + " " + mine + " " + args[0] + " -s");
+                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "regiontp tp " + mine + " " + mine + " " + args[0] + " -s");
                                 try (EditSession editSession = WorldEdit.getInstance().newEditSession(BukkitAdapter.adapt(w))) {
                                     editSession.setBlocks(rg, wPattern);
                                     editSession.commit();
@@ -108,7 +108,7 @@ public class MineReset implements CommandExecutor { // /minereset <world> <mine>
                                 String mineName = mine.replace("-", " ");
                                 mineName = WordUtils.capitalize(mineName);
                                 if (!mine.contains("donor")) {
-                                    plugin.asConsole("broadcast !§f[§cMines§f] " + colour + mineName + " §7has been reset! -w:" + args[0]);
+                                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "broadcast !§f[§cMines§f] " + colour + mineName + " §7has been reset! -w:" + args[0]);
                                 } else {
                                     String donor = "";
                                     String perm = "";

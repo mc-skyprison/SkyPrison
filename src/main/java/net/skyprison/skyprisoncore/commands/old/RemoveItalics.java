@@ -8,6 +8,7 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -35,7 +36,7 @@ public class RemoveItalics implements CommandExecutor {
 			ItemMeta iMeta = item.getItemMeta();
 			iMeta.displayName(newName);
 			item.setItemMeta(iMeta);
-			plugin.asConsole("cmi money take " + player.getName() + " " + 50000);
+			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + 50000);
 			player.sendMessage(Component.text("Successfully removed italics from item name!", NamedTextColor.GREEN));
 		} else {
 			player.sendMessage(Component.text("Item no longer in your inventory! Cancelling...", NamedTextColor.RED));

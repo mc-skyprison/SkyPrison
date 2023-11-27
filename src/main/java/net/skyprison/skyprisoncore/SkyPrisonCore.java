@@ -123,6 +123,7 @@ import java.util.stream.Collectors;
 
 public class SkyPrisonCore extends JavaPlugin {
     public HashMap<UUID, Boolean> flyPvP = new HashMap<>();
+    public Map<Player, Map.Entry<Player, Long>> hitcd = new HashMap<>();
     public HashMap<UUID, Integer> teleportMove = new HashMap<>();
     public Map<UUID, Integer> tokensData = new HashMap<>();
     public HashMap<UUID, String> userTags = new HashMap<>();
@@ -177,9 +178,7 @@ public class SkyPrisonCore extends JavaPlugin {
     private MinecraftHelp<CommandSender> minecraftHelp;
     private CommandConfirmationManager<CommandSender> confirmationManager;
     public static final HashMap<UUID, Long> bribeCooldown = new HashMap<>();
-    public static final HashMap<UUID, Long> releasePapersCooldown = new HashMap<>();
     public static final HashMap<UUID, Integer> safezoneViolators = new HashMap<>();
-    public static final List<UUID> creatingSecret = new ArrayList<>();
     public static final Component pluginPrefix = Component.text("Sky", TextColor.fromHexString("#0fc3ff")).append(Component.text("Prison", TextColor.fromHexString("#ff0000")));
 
     @Override
@@ -203,7 +202,6 @@ public class SkyPrisonCore extends JavaPlugin {
     public void onEnable() {
         new ConfigCreator(this).init();
         new LangCreator(this).init();
-
 
         try {
             db = new DatabaseHook(this);
@@ -230,15 +228,12 @@ public class SkyPrisonCore extends JavaPlugin {
                     .join();
 
             onConnectToDiscord();
-
             new BukkitRunnable() {
                 @Override
                 public void run() {
                     updateDiscordRoles();
                 }
             }.runTaskTimerAsynchronously(this, 20 * 1800, 20 * 1800);
-
-
             new BukkitRunnable() {
                 @Override
                 public void run() {
@@ -247,9 +242,9 @@ public class SkyPrisonCore extends JavaPlugin {
             }.runTaskTimerAsynchronously(this, 20 * 1800, 20 * 1800);
         }
 
-        tokens = new Tokens(this, getDatabase());
+        tokens = new Tokens(this, db);
 
-        dailyMissions = new DailyMissions(this, getDatabase());
+        dailyMissions = new DailyMissions(this, db);
 
         registerMinPrice();
 
@@ -303,7 +298,7 @@ public class SkyPrisonCore extends JavaPlugin {
         registerEvents();
 
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            new Placeholders(this, dailyMissions, getDatabase()).register();
+            new Placeholders(this, dailyMissions, db).register();
             getLogger().info("Placeholders registered");
         }
 
@@ -314,7 +309,7 @@ public class SkyPrisonCore extends JavaPlugin {
         tommorow.set(Calendar.MINUTE, 1);
         tommorow.set(Calendar.SECOND, 0);
         tommorow.set(Calendar.MILLISECOND, 0);
-        dayTimer.schedule(new NextDayTask(this, getDatabase()), tommorow.getTime());
+        dayTimer.schedule(new NextDayTask(this, db), tommorow.getTime());
 
         Timer monthTimer = new Timer();
         Calendar nextMonth = Calendar.getInstance();
@@ -324,9 +319,7 @@ public class SkyPrisonCore extends JavaPlugin {
         nextMonth.set(Calendar.MINUTE, 1);
         nextMonth.set(Calendar.SECOND, 0);
         nextMonth.set(Calendar.MILLISECOND, 0);
-
-
-        monthTimer.schedule(new MonthlyTask(this, getDatabase()), nextMonth.getTime());
+        monthTimer.schedule(new MonthlyTask(this, db), nextMonth.getTime());
 
         new BukkitRunnable() {
             @Override
@@ -397,18 +390,6 @@ public class SkyPrisonCore extends JavaPlugin {
         ItemStack voucher = Vouchers.getVoucherFromType(this, voucherType, amount);
         return inv.containsAtLeast(voucher, amount);
     }
-
-    public Component getParsedName(String name, boolean allTags) {
-        TagResolver.Builder resolver = TagResolver.builder();
-        if(allTags) {
-            resolver.resolvers(StandardTags.defaults());
-        } else {
-            resolver.resolvers(StandardTags.color(), StandardTags.gradient(), StandardTags.rainbow());
-        }
-        final MiniMessage miniMessage = MiniMessage.builder().tags(resolver.build()).build();
-        return miniMessage.deserialize(name);
-    }
-
     public TextColor getChatColour(Player player) {
         TextColor chatColour = NamedTextColor.GRAY;
         if(player != null) {
@@ -419,7 +400,6 @@ public class SkyPrisonCore extends JavaPlugin {
         }
         return chatColour;
     }
-
     public Component getParsedString(CommandSender sender, String formatType, String message) {
         TagResolver.Builder resolver = TagResolver.builder();
         if (!sender.hasPermission("skyprisoncore.format." + formatType)) return Component.text(message);
@@ -437,7 +417,6 @@ public class SkyPrisonCore extends JavaPlugin {
         final MiniMessage miniMessage = MiniMessage.builder().tags(resolver.build()).build();
         return miniMessage.deserialize(message);
     }
-
     @Override
     public void onDisable() {
         if(!shinyGrass.isEmpty()) {
@@ -485,10 +464,10 @@ public class SkyPrisonCore extends JavaPlugin {
             SlashCommand.with("link", "Link your Discord and Minecraft Account", List.of(
                             SlashCommandOption.createWithChoices(SlashCommandOptionType.STRING, "link-code", "Code for linking", true)
                     )).createGlobal(discApi).join();
-            discApi.addListener(new SlashCommandCreate(this, getDatabase()));
+            discApi.addListener(new SlashCommandCreate(this, db));
             discApi.addListener(new MessageCreate(this, new ChatUtils(this, discApi), discApi));
-            discApi.addListener(new UserRoleAdd(this, getDatabase()));
-            discApi.addListener(new UserRoleRemove(this, getDatabase()));
+            discApi.addListener(new UserRoleAdd(this, db));
+            discApi.addListener(new UserRoleRemove(this, db));
         }
     }
 
@@ -502,7 +481,7 @@ public class SkyPrisonCore extends JavaPlugin {
         if(discApi != null && discApi.getServerById("782795465632251955").isPresent()) {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 long discordId = 0;
-                try(Connection conn = getDatabase().getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT discord_id FROM users WHERE user_id = ?")) {
+                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT discord_id FROM users WHERE user_id = ?")) {
                     ps.setString(1, player.getUniqueId().toString());
                     ResultSet rs = ps.executeQuery();
                     while (rs.next()) {
@@ -790,12 +769,12 @@ public class SkyPrisonCore extends JavaPlugin {
         new ChatCommands(this, manager, discApi);
         new JailCommands(this, manager);
         new SecretsCommands(this, manager);
-        new DiscordCommands(this, getDatabase(), discApi, manager);
-        new VoteCommands(this, getDatabase(), manager);
-        new MailCommands(this, getDatabase(), manager);
-        new StoreCommands(getDatabase(), manager);
-        new ReferralCommands(this, getDatabase(), manager);
-        new CustomInvCommands(this, getDatabase(), manager);
+        new DiscordCommands(this, db, discApi, manager);
+        new VoteCommands(this, db, manager);
+        new MailCommands(this, db, manager);
+        new StoreCommands(db, manager);
+        new ReferralCommands(this, db, manager);
+        new CustomInvCommands(this, db, manager);
 
         Objects.requireNonNull(getCommand("tokens")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
@@ -803,50 +782,50 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("token")).setTabCompleter(new TabCompleter());
         Objects.requireNonNull(getCommand("econcheck")).setExecutor(new EconomyCheck(this));
         Objects.requireNonNull(getCommand("permshop")).setExecutor(new PermShop());
-        Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, getDatabase()));
-        Objects.requireNonNull(getCommand("dontsell")).setExecutor(new DontSell(getDatabase()));
-        Objects.requireNonNull(getCommand("bounty")).setExecutor(new Bounty(getDatabase(), this));
-        Objects.requireNonNull(getCommand("killinfo")).setExecutor(new KillInfo(getDatabase()));
-        Objects.requireNonNull(getCommand("firstjointop")).setExecutor(new FirstjoinTop(this, getDatabase()));
+        Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, db));
+        Objects.requireNonNull(getCommand("dontsell")).setExecutor(new DontSell(db));
+        Objects.requireNonNull(getCommand("bounty")).setExecutor(new Bounty(db, this));
+        Objects.requireNonNull(getCommand("killinfo")).setExecutor(new KillInfo(db));
+        Objects.requireNonNull(getCommand("firstjointop")).setExecutor(new FirstjoinTop(this, db));
 
-        Objects.requireNonNull(getCommand("ignoretp")).setExecutor(new IgnoreTeleport(this, getDatabase()));
+        Objects.requireNonNull(getCommand("ignoretp")).setExecutor(new IgnoreTeleport(this, db));
 
-        Objects.requireNonNull(getCommand("buyback")).setExecutor(new BuyBack(this, getDatabase()));
-        Objects.requireNonNull(getCommand("daily")).setExecutor(new Daily(this, getDatabase()));
-        Objects.requireNonNull(getCommand("shopban")).setExecutor(new ShopBan(getDatabase()));
+        Objects.requireNonNull(getCommand("buyback")).setExecutor(new BuyBack(this, db));
+        Objects.requireNonNull(getCommand("daily")).setExecutor(new Daily(this, db));
+        Objects.requireNonNull(getCommand("shopban")).setExecutor(new ShopBan(db));
         Objects.requireNonNull(getCommand("removeitalics")).setExecutor(new RemoveItalics(this));
         Objects.requireNonNull(getCommand("bottledexp")).setExecutor(new BottledExp(this));
         Objects.requireNonNull(getCommand("transportpass")).setExecutor(new TransportPass(this));
-        Objects.requireNonNull(getCommand("casino")).setExecutor(new Casino(this, getDatabase()));
+        Objects.requireNonNull(getCommand("casino")).setExecutor(new Casino(this, db));
         Objects.requireNonNull(getCommand("skyplot")).setExecutor(new SkyPlot(this));
         Objects.requireNonNull(getCommand("plot")).setExecutor(new PlotTeleport(this));
         Objects.requireNonNull(getCommand("moneyhistory")).setExecutor(new MoneyHistory(this));
-        Objects.requireNonNull(getCommand("tags")).setExecutor(new Tags(this, getDatabase()));
+        Objects.requireNonNull(getCommand("tags")).setExecutor(new Tags(this, db));
         Objects.requireNonNull(getCommand("minereset")).setExecutor(new MineReset(this));
         Objects.requireNonNull(getCommand("randomgive")).setExecutor(new RandomGive(this));
         Objects.requireNonNull(getCommand("customrecipes")).setExecutor(new CustomRecipes(this));
-        Objects.requireNonNull(getCommand("claim")).setExecutor(new Claim(this, getDatabase()));
+        Objects.requireNonNull(getCommand("claim")).setExecutor(new Claim(this, db));
 
         Objects.requireNonNull(getCommand("rename")).setExecutor(new Rename());
         Objects.requireNonNull(getCommand("itemlore")).setExecutor(new ItemLore(this));
-        Objects.requireNonNull(getCommand("namecolour")).setExecutor(new NameColour(this, getDatabase()));
-        Objects.requireNonNull(getCommand("news")).setExecutor(new News(this, getDatabase()));
+        Objects.requireNonNull(getCommand("namecolour")).setExecutor(new NameColour(this, db));
+        Objects.requireNonNull(getCommand("news")).setExecutor(new News(this, db));
     }
 
     public void registerEvents() {
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new BlockBreak(this, dailyMissions, particles), this);
-        pm.registerEvents(new BlockDamage(this, getDatabase(), dailyMissions), this);
+        pm.registerEvents(new BlockDamage(this, db, dailyMissions), this);
         pm.registerEvents(new BlockPlace(this, dailyMissions, db), this);
-        pm.registerEvents(new BrewDrink(getDatabase()), this);
-        pm.registerEvents(new CMIPlayerTeleportRequest(getDatabase()), this);
+        pm.registerEvents(new BrewDrink(db), this);
+        pm.registerEvents(new CMIPlayerTeleportRequest(db), this);
         pm.registerEvents(new CMIUserBalanceChange(this), this);
         pm.registerEvents(new EntityDamageByEntity(this), this);
-        pm.registerEvents(new EntityDeath(this, getDatabase(), dailyMissions), this);
+        pm.registerEvents(new EntityDeath(this, db, dailyMissions), this);
         pm.registerEvents(new EntityPickupItem(this), this);
-        pm.registerEvents(new InventoryClick(this, new EconomyCheck(this), new Bounty(getDatabase(), this),
-                new Daily(this, getDatabase()), new MoneyHistory(this),
-                new BuyBack(this, getDatabase()), getDatabase(), new Tags(this, getDatabase()), particles, new CustomRecipes(this)), this);
+        pm.registerEvents(new InventoryClick(this, new EconomyCheck(this), new Bounty(db, this),
+                new Daily(this, db), new MoneyHistory(this),
+                new BuyBack(this, db), db, new Tags(this, db), particles, new CustomRecipes(this)), this);
         pm.registerEvents(new InventoryOpen(this), this);
         pm.registerEvents(new LeavesDecay(), this);
         pm.registerEvents(new McMMOLevelUp(this), this);
@@ -859,9 +838,9 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PlayerUnJail(), this);
         pm.registerEvents(new PlayerUntag(), this);
         pm.registerEvents(new ShopCreate(this), this);
-        pm.registerEvents(new ShopPostTransaction(getDatabase(), dailyMissions), this);
-        pm.registerEvents(new ShopPreTransaction(getDatabase()), this);
-        pm.registerEvents(new ShopPurchase(getDatabase()), this);
+        pm.registerEvents(new ShopPostTransaction(db, dailyMissions), this);
+        pm.registerEvents(new ShopPreTransaction(db), this);
+        pm.registerEvents(new ShopPurchase(db), this);
         pm.registerEvents(new ShopSuccessPurchase(this), this);
         pm.registerEvents(new UnsellRegion(), this);
         pm.registerEvents(new PlayerFish(dailyMissions), this);
@@ -870,8 +849,8 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PlayerCommandPreprocess(), this);
         pm.registerEvents(new ParkourFinish(this, dailyMissions), this);
         pm.registerEvents(new PlayerTogglePvP(), this);
-        pm.registerEvents(new ServerLoad(this, particles, getDatabase()), this);
-        pm.registerEvents(new CrateObtainReward(getDatabase()), this);
+        pm.registerEvents(new ServerLoad(this, particles, db), this);
+        pm.registerEvents(new CrateObtainReward(db), this);
         pm.registerEvents(new EntityToggleGlide(), this);
         pm.registerEvents(new PlayerBucketEmpty(), this);
         pm.registerEvents(new AsyncChatDecorate(this), this);
@@ -884,9 +863,9 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new Votifier(this, db), this);
         pm.registerEvents(new PlayerSwapHandItems(this), this);
 
-        pm.registerEvents(new AsyncChat(this, discApi, getDatabase(), new Tags(this, getDatabase()), new ItemLore(this)), this);
-        pm.registerEvents(new PlayerQuit(this, getDatabase(), discApi, dailyMissions), this);
-        pm.registerEvents(new PlayerJoin(this, getDatabase(), discApi, dailyMissions, particles), this);
+        pm.registerEvents(new AsyncChat(this, discApi, db, new Tags(this, db), new ItemLore(this)), this);
+        pm.registerEvents(new PlayerQuit(this, db, discApi, dailyMissions), this);
+        pm.registerEvents(new PlayerJoin(this, db, discApi, dailyMissions, particles), this);
 
         pm.registerEvents(new McMMOPartyChat(discApi), this);
 
@@ -944,12 +923,6 @@ public class SkyPrisonCore extends JavaPlugin {
             return Tag.inserting(componentPlaceholder);
         });
     }
-
-
-    private DatabaseHook getDatabase() {
-        return db;
-    }
-
     public boolean isLong(String str) {
         try {
             Long.parseLong(str);
@@ -958,7 +931,6 @@ public class SkyPrisonCore extends JavaPlugin {
             return false;
         }
     }
-
     public boolean isInt(String str) {
         try {
             Integer.parseInt(str);
@@ -967,7 +939,6 @@ public class SkyPrisonCore extends JavaPlugin {
             return false;
         }
     }
-
     public void checkOnlineDailies() {
         Date date = new Date();
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
@@ -975,7 +946,7 @@ public class SkyPrisonCore extends JavaPlugin {
 
         for(Player player : Bukkit.getOnlinePlayers()) {
             String lastDay = "";
-            try(Connection conn = getDatabase().getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT last_collected FROM dailies WHERE user_id = ?")) {
+            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT last_collected FROM dailies WHERE user_id = ?")) {
                 ps.setString(1, player.getUniqueId().toString());
                 ResultSet rs = ps.executeQuery();
                 while(rs.next()) {
@@ -990,7 +961,6 @@ public class SkyPrisonCore extends JavaPlugin {
             }
         }
     }
-
     public static String getQuestionMarks(List<String> list) {
         if(!list.isEmpty()) {
             return "(" + list.stream().map(id -> "?").collect(Collectors.joining(",")) + ")";
@@ -998,7 +968,6 @@ public class SkyPrisonCore extends JavaPlugin {
             return "";
         }
     }
-
     public final MiniMessage playerMsgBuilder = MiniMessage.builder()
             .tags(TagResolver.builder()
                     .resolver(StandardTags.color())
@@ -1006,36 +975,8 @@ public class SkyPrisonCore extends JavaPlugin {
                     .build()
             )
             .build();
-
-    public void asConsole(String command) {
-        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
-    }
-
     public String formatNumber(double value) {
         DecimalFormat df = new DecimalFormat("###,###,###.##");
         return df.format(value);
-    }
-
-    public Map<Player, Map.Entry<Player, Long>> hitcd = new HashMap<>();
-    public boolean isGuardGear(ItemStack i) {
-        if (i != null) {
-            if (i.getType() == Material.CHAINMAIL_HELMET || i.getType() == Material.CHAINMAIL_CHESTPLATE || i.getType() == Material.CHAINMAIL_LEGGINGS || i.getType() == Material.CHAINMAIL_BOOTS || i.getType() == Material.DIAMOND_SWORD) {
-                return true;
-            } else if (i.getType() == Material.BOW && i.getItemMeta().hasDisplayName()) {
-                return i.getItemMeta().hasDisplayName() && Objects.requireNonNull(i.getItemMeta().displayName()).toString().contains("Guard Bow") && i.getItemMeta().isUnbreakable();
-            } else if (i.getType() == Material.SHIELD && i.getItemMeta().hasDisplayName()) {
-                return i.getItemMeta().hasDisplayName() && Objects.requireNonNull(i.getItemMeta().displayName()).toString().contains("Guard Shield") && i.getItemMeta().isUnbreakable();
-            }
-        }
-        return false;
-    }
-
-    public void InvGuardGearDelPlyr(Player player) {
-        for (int n = 0; n < player.getInventory().getSize(); n++) {
-            ItemStack i = player.getInventory().getItem(n);
-            if (i != null && isGuardGear(i)) {
-                i.setAmount(0);
-            }
-        }
     }
 }

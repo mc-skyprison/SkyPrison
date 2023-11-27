@@ -6,6 +6,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
@@ -40,7 +41,7 @@ public class BottledExp implements CommandExecutor {
 		if (user.getInventory().canFit(expBottle)) {
 			user.takeExp(amount);
 			user.getInventory().addItem(expBottle);
-			plugin.asConsole("cmi money take " + player.getName() + " " + amount * 0.25);
+			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + amount * 0.25);
 			player.sendMessage(Component.text("-" + plugin.formatNumber(amount) + " XP", NamedTextColor.DARK_RED, TextDecoration.BOLD));
 		} else {
 			player.sendMessage(Component.text("You do not have space in your inventory!", NamedTextColor.RED));
@@ -62,7 +63,7 @@ public class BottledExp implements CommandExecutor {
 		if (user.getInventory().canFit(expBottle)) {
 			user.takeExp(tAmount);
 			user.getInventory().addItem(expBottle);
-			plugin.asConsole("cmi money take " + player.getName() + " " + tAmount * 0.25);
+			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + tAmount * 0.25);
 			player.sendMessage(Component.text("-" + plugin.formatNumber(tAmount) + " XP", NamedTextColor.DARK_RED, TextDecoration.BOLD));
 		} else {
 			player.sendMessage(Component.text("You do not have space in your inventory!", NamedTextColor.RED));
