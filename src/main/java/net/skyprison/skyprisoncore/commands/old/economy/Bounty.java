@@ -188,6 +188,7 @@ public class Bounty implements CommandExecutor {
 
 										double bountyPrize = round(Double.parseDouble(args[2]), 2);
 										if (user.getBalance() >= bountyPrize) {
+
 											if (hasBounty) {
 												for (Player online : Bukkit.getServer().getOnlinePlayers()) {
 													if (!online.hasPermission("skyprisoncore.command.bounty.silent")) {
