@@ -26,7 +26,7 @@ public class Sponge implements CommandExecutor {
 	private final SkyPrisonCore plugin;
 	private final DatabaseHook db;
 
-	public final Component prefix = Component.text("Sponge ", TextColor.fromHexString("#FFFF00")).append(Component.text(" | ", NamedTextColor.WHITE));
+	public final Component prefix = Component.text("Sponge", TextColor.fromHexString("#FFFF00")).append(Component.text(" | ", NamedTextColor.WHITE));
 
 	public Sponge(SkyPrisonCore plugin, DatabaseHook db) {
 		this.plugin = plugin;

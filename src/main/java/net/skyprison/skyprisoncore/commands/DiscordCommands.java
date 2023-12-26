@@ -1,6 +1,7 @@
 package net.skyprison.skyprisoncore.commands;
 
 
+import cloud.commandframework.Command;
 import cloud.commandframework.arguments.standard.LongArgument;
 import cloud.commandframework.arguments.standard.StringArgument;
 import cloud.commandframework.paper.PaperCommandManager;
@@ -40,7 +41,7 @@ public class DiscordCommands {
     }
 
     private void createDiscordCommands() {
-        cloud.commandframework.Command.Builder<CommandSender> discord = this.manager.commandBuilder("discord")
+        Command.Builder<CommandSender> discord = manager.commandBuilder("discord")
                 .permission("skyprisoncore.command.discord")
                 .handler(c -> {
                     Player player = (Player) c.getSender();

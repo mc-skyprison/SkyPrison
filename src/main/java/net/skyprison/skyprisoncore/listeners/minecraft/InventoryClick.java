@@ -24,7 +24,6 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.old.*;
-import net.skyprison.skyprisoncore.commands.old.economy.Bounty;
 import net.skyprison.skyprisoncore.commands.old.economy.BuyBack;
 import net.skyprison.skyprisoncore.commands.old.economy.EconomyCheck;
 import net.skyprison.skyprisoncore.commands.old.economy.MoneyHistory;
@@ -75,7 +74,6 @@ import java.util.concurrent.TimeUnit;
 public class InventoryClick implements Listener {
     private final SkyPrisonCore plugin;
     private final EconomyCheck econCheck;
-    private final Bounty bounty;
     private final Daily daily;
     private final MoneyHistory moneyHistory;
     private final BuyBack buyBack;
@@ -84,11 +82,10 @@ public class InventoryClick implements Listener {
     private final PlayerParticlesAPI particles;
     private final CustomRecipes customRecipes;
 
-    public InventoryClick(SkyPrisonCore plugin, EconomyCheck econCheck, Bounty bounty, Daily daily, MoneyHistory moneyHistory,
+    public InventoryClick(SkyPrisonCore plugin, EconomyCheck econCheck, Daily daily, MoneyHistory moneyHistory,
                           BuyBack buyBack, DatabaseHook db, Tags tag, PlayerParticlesAPI particles, CustomRecipes customRecipes) {
         this.plugin = plugin;
         this.econCheck = econCheck;
-        this.bounty = bounty;
         this.daily = daily;
         this.moneyHistory = moneyHistory;
         this.buyBack = buyBack;
@@ -1771,6 +1768,21 @@ public class InventoryClick implements Listener {
                             }
                         }
                     }
+                } else if (customInv instanceof BountiesList inv) {
+                    if(event.getCurrentItem() != null) {
+                        switch (event.getSlot()) {
+                            case 46 -> {
+                                if (isPaper) {
+                                    inv.updatePage(-1);
+                                }
+                            }
+                            case 52 -> {
+                                if (isPaper) {
+                                    inv.updatePage(1);
+                                }
+                            }
+                        }
+                    }
                 }
             } else {
                 CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
@@ -1837,18 +1849,6 @@ public class InventoryClick implements Listener {
                                                     }
                                                 } else {
                                                     player.sendMessage(Component.text("You do not have enough space in your inventory!", NamedTextColor.RED));
-                                                }
-                                            }
-                                        }
-                                        break;
-                                    case "bounties":
-                                        if (event.getClickedInventory().getItem(event.getSlot()) != null) {
-                                            Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
-                                            if (clickedMat.equals(Material.PAPER)) {
-                                                if (event.getSlot() == 46) {
-                                                    bounty.openGUI(player, page - 1);
-                                                } else if (event.getSlot() == 52) {
-                                                    bounty.openGUI(player, page + 1);
                                                 }
                                             }
                                         }

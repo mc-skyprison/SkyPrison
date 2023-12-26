@@ -52,14 +52,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.sponge
     permission-message: §4Error:§c You do not have permission to execute this command...
-  #
-  # Bounty Commands
-  #
-  bounty:
-    description: Bounty Commands
-    usage: /<command>
-    permission: skyprisoncore.command.bounty
-    permission-message: §4Error:§c You do not have permission to execute this command...
   endupgrade:
     description: Opens the end upgrade GUI
     usage: /<command>
@@ -92,12 +84,6 @@ commands:
     description: Removes italics from item
     usage: /<command>
     permission: skyprisoncore.command.removeitalics
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  bottledexp:
-    description: Bottles experience
-    usage: /<command>
-    aliases: [xpb]
-    permission: skyprisoncore.command.bottledexp
     permission-message: §4Error:§c You do not have permission to execute this command...
   firstjointop:
     description: firstjointop
@@ -202,16 +188,6 @@ permissions:
   skyprisoncore.command.token:
     description: Gives access to /tokenteleport
   #
-  # Bounty Permissions
-  #
-  skyprisoncore.command.bounty:
-    description: Gives access to /bounty commands
-  skyprisoncore.command.bounty.bypass:
-    description: Players cant bounty you.
-  skyprisoncore.command.bounty.silent:
-    description: Hides bounty messages
-    default: false
-  #
   # Killinfo Permissions
   #
   skyprisoncore.command.killinfo:
@@ -235,14 +211,6 @@ permissions:
     description: Gives access to /shopban
   skyprisoncore.command.removeitalics:
     description: Gives access to /removeitalics
-  skyprisoncore.command.bottledexp:
-    description: Gives access to /removeitalics
-  skyprisoncore.command.bottledexp.tier1:
-    description: Gives access to 10,000 XP /xpb
-  skyprisoncore.command.bottledexp.tier2:
-    description: Gives access to ANY XP /xpb
-  skyprisoncore.command.bottledexp.tier3:
-    description: Gives access to /xpb <exp> <amount of bottles>
   skyprisoncore.command.skyplot:
     description: Gives access to /skyplot
   skyprisoncore.command.plotteleport:

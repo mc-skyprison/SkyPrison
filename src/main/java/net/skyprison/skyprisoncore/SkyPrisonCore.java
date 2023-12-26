@@ -91,6 +91,8 @@ import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -178,6 +180,7 @@ public class SkyPrisonCore extends JavaPlugin {
     private MinecraftHelp<CommandSender> minecraftHelp;
     private CommandConfirmationManager<CommandSender> confirmationManager;
     public static final HashMap<UUID, Long> bribeCooldown = new HashMap<>();
+    public static final HashMap<UUID, Long> bountyCooldown = new HashMap<>();
     public static final HashMap<UUID, Integer> safezoneViolators = new HashMap<>();
     public static final Component pluginPrefix = Component.text("Sky", TextColor.fromHexString("#0fc3ff")).append(Component.text("Prison", TextColor.fromHexString("#ff0000")));
 
@@ -212,7 +215,7 @@ public class SkyPrisonCore extends JavaPlugin {
         String dToken = getConfig().getString("discord-token");
 
         if (Bukkit.getPluginManager().isPluginEnabled("PlayerParticles")) {
-            this.particles = PlayerParticlesAPI.getInstance();
+            particles = PlayerParticlesAPI.getInstance();
         }
 
         SessionManager sessionManager = WorldGuard.getInstance().getPlatform().getSessionManager();
@@ -253,33 +256,33 @@ public class SkyPrisonCore extends JavaPlugin {
 
         final Function<CommandSender, CommandSender> mapperFunction = Function.identity();
         try {
-            this.manager = new PaperCommandManager<>(this, executionCoordinatorFunction, mapperFunction, mapperFunction);
+            manager = new PaperCommandManager<>(this, executionCoordinatorFunction, mapperFunction, mapperFunction);
         } catch (final Exception e) {
-            this.getLogger().severe("Failed to initialize the command manager!");
-            this.getServer().getPluginManager().disablePlugin(this);
+            getLogger().severe("Failed to initialize the command manager!");
+            getServer().getPluginManager().disablePlugin(this);
             return;
         }
 
-        this.manager.commandSuggestionProcessor(new FilteringCommandSuggestionProcessor<>(
+        manager.commandSuggestionProcessor(new FilteringCommandSuggestionProcessor<>(
                 FilteringCommandSuggestionProcessor.Filter.<CommandSender>contains(true).andTrimBeforeLastSpace()
         ));
 
-        this.minecraftHelp = new MinecraftHelp<>( "/spc help", AudienceProvider.nativeAudience(), this.manager);
+        minecraftHelp = new MinecraftHelp<>( "/spc help", AudienceProvider.nativeAudience(), manager);
 
-        if (this.manager.hasCapability(CloudBukkitCapabilities.BRIGADIER)) {
-            this.manager.registerBrigadier();
+        if (manager.hasCapability(CloudBukkitCapabilities.BRIGADIER)) {
+            manager.registerBrigadier();
         }
 
-        if (this.manager.hasCapability(CloudBukkitCapabilities.ASYNCHRONOUS_COMPLETION)) {
-            this.manager.registerAsynchronousCompletions();
+        if (manager.hasCapability(CloudBukkitCapabilities.ASYNCHRONOUS_COMPLETION)) {
+            manager.registerAsynchronousCompletions();
         }
 
-        this.confirmationManager = new CommandConfirmationManager<>(30L, TimeUnit.SECONDS,
+        confirmationManager = new CommandConfirmationManager<>(30L, TimeUnit.SECONDS,
                 context -> context.getCommandContext().getSender().sendMessage(Component.text("Confirmation required. Confirm using /example confirm.", NamedTextColor.RED)),
                 sender -> sender.sendMessage(Component.text("You don't have any pending commands.", NamedTextColor.RED))
         );
 
-        this.confirmationManager.registerConfirmationProcessor(this.manager);
+        confirmationManager.registerConfirmationProcessor(manager);
 
         new MinecraftExceptionHandler<CommandSender>()
                 .withInvalidSenderHandler()
@@ -290,11 +293,9 @@ public class SkyPrisonCore extends JavaPlugin {
                         .append(pluginPrefix)
                         .append(Component.text(" » ", NamedTextColor.DARK_GRAY))
                         .append(component).build()
-                ).apply(this.manager, AudienceProvider.nativeAudience());
+                ).apply(manager, AudienceProvider.nativeAudience());
 
-        this.registerCommands();
-
-
+        registerCommands();
         registerEvents();
 
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -587,10 +588,10 @@ public class SkyPrisonCore extends JavaPlugin {
                         .handler(context -> minecraftHelp.queryCommands(context.getOrDefault("query", ""), context.getSender()))
         );
 
-        Command.Builder<CommandSender> treefeller = this.manager.commandBuilder("treefeller")
+        Command.Builder<CommandSender> treefeller = manager.commandBuilder("treefeller")
                 .permission("skyprisoncore.command.treefeller");
         List<String> treefellerOptions = List.of("axe", "speed", "cooldown", "durability", "repair");
-        this.manager.command(treefeller.literal("give")
+        manager.command(treefeller.literal("give")
                 .permission("skyprisoncore.command.treefeller.give")
                 .argument(PlayerArgument.of("player"))
                 .argument(StringArgument.<CommandSender>builder("type")
@@ -615,7 +616,7 @@ public class SkyPrisonCore extends JavaPlugin {
                 }));
 
         List<String> blacksmithOptions = List.of("astrid", "end", "trim");
-        this.manager.command(this.manager.commandBuilder("blacksmith")
+        manager.command(manager.commandBuilder("blacksmith")
                 .permission("skyprisoncore.command.blacksmith")
                 .argument(StringArgument.<CommandSender>builder("blacksmith")
                         .withSuggestionsProvider((commandSenderCommandContext, s) -> blacksmithOptions))
@@ -635,9 +636,9 @@ public class SkyPrisonCore extends JavaPlugin {
                     }
                 })));
 
-        Command.Builder<CommandSender> voucher = this.manager.commandBuilder("voucher")
+        Command.Builder<CommandSender> voucher = manager.commandBuilder("voucher")
                 .permission("skyprisoncore.command.voucher");
-        this.manager.command(voucher.literal("give")
+        manager.command(voucher.literal("give")
                         .permission("skyprisoncore.command.voucher.give")
                         .argument(PlayerArgument.of("player"))
                         .argument(StringArgument.<CommandSender>builder("voucher")
@@ -654,11 +655,11 @@ public class SkyPrisonCore extends JavaPlugin {
                             }
                         }));
 
-        Command.Builder<CommandSender> greg = this.manager.commandBuilder("greg")
+        Command.Builder<CommandSender> greg = manager.commandBuilder("greg")
                 .permission("skyprisoncore.command.greg");
         List<String> gregOptions = List.of("grease", "allay-dust", "strength", "speed", "fire-resistance", "instant-health", "instant-damage",
                 "release-papers", "fake-release-papers");
-        this.manager.command(greg.literal("give")
+        manager.command(greg.literal("give")
                 .permission("skyprisoncore.command.greg.give")
                 .argument(PlayerArgument.of("player"))
                 .argument(StringArgument.<CommandSender>builder("type")
@@ -677,10 +678,10 @@ public class SkyPrisonCore extends JavaPlugin {
                     }
                 }));
 
-        Command.Builder<CommandSender> endSmith = this.manager.commandBuilder("endsmith")
+        Command.Builder<CommandSender> endSmith = manager.commandBuilder("endsmith")
                 .permission("skyprisoncore.command.endsmith");
         List<String> endSmithOptions = List.of("reset-repair", "keep-enchants", "keep-trims");
-        this.manager.command(endSmith.literal("addon")
+        manager.command(endSmith.literal("addon")
                 .permission("skyprisoncore.command.endsmith.give")
                 .argument(PlayerArgument.of("player"))
                 .argument(StringArgument.<CommandSender>builder("type")
@@ -699,7 +700,7 @@ public class SkyPrisonCore extends JavaPlugin {
                     }
                 }));
         List<String> templateOptions = List.of("helmet", "chestplate", "leggings", "boots", "axe", "pickaxe", "shovel", "hoe");
-        this.manager.command(endSmith.literal("template")
+        manager.command(endSmith.literal("template")
                 .permission("skyprisoncore.command.endsmith.give")
                 .argument(PlayerArgument.of("player"))
                 .argument(StringArgument.<CommandSender>builder("type")
@@ -718,10 +719,10 @@ public class SkyPrisonCore extends JavaPlugin {
                     }
                 }));
 
-        Command.Builder<CommandSender> bomb = this.manager.commandBuilder("bomb")
+        Command.Builder<CommandSender> bomb = manager.commandBuilder("bomb")
                 .permission("skyprisoncore.command.bomb");
         List<String> bombOptions = List.of("small", "medium", "large", "massive", "nuke");
-        this.manager.command(bomb.literal("give")
+        manager.command(bomb.literal("give")
                 .permission("skyprisoncore.command.bomb.give")
                 .argument(PlayerArgument.of("player"))
                 .argument(StringArgument.<CommandSender>builder("type")
@@ -775,6 +776,12 @@ public class SkyPrisonCore extends JavaPlugin {
         new StoreCommands(db, manager);
         new ReferralCommands(this, db, manager);
         new CustomInvCommands(this, db, manager);
+        new BottledExpCommands(this, manager);
+        new EconomyCommands(this, db, manager);
+
+        Permission bountyBypass = new Permission("skyprisoncore.command.bounty.bypass", PermissionDefault.FALSE);
+        Bukkit.getPluginManager().addPermission(bountyBypass);
+
 
         Objects.requireNonNull(getCommand("tokens")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
@@ -784,7 +791,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("permshop")).setExecutor(new PermShop());
         Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, db));
         Objects.requireNonNull(getCommand("dontsell")).setExecutor(new DontSell(db));
-        Objects.requireNonNull(getCommand("bounty")).setExecutor(new Bounty(db, this));
         Objects.requireNonNull(getCommand("killinfo")).setExecutor(new KillInfo(db));
         Objects.requireNonNull(getCommand("firstjointop")).setExecutor(new FirstjoinTop(this, db));
 
@@ -794,7 +800,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("daily")).setExecutor(new Daily(this, db));
         Objects.requireNonNull(getCommand("shopban")).setExecutor(new ShopBan(db));
         Objects.requireNonNull(getCommand("removeitalics")).setExecutor(new RemoveItalics(this));
-        Objects.requireNonNull(getCommand("bottledexp")).setExecutor(new BottledExp(this));
         Objects.requireNonNull(getCommand("transportpass")).setExecutor(new TransportPass(this));
         Objects.requireNonNull(getCommand("casino")).setExecutor(new Casino(this, db));
         Objects.requireNonNull(getCommand("skyplot")).setExecutor(new SkyPlot(this));
@@ -823,7 +828,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EntityDamageByEntity(this), this);
         pm.registerEvents(new EntityDeath(this, db, dailyMissions), this);
         pm.registerEvents(new EntityPickupItem(this), this);
-        pm.registerEvents(new InventoryClick(this, new EconomyCheck(this), new Bounty(db, this),
+        pm.registerEvents(new InventoryClick(this, new EconomyCheck(this),
                 new Daily(this, db), new MoneyHistory(this),
                 new BuyBack(this, db), db, new Tags(this, db), particles, new CustomRecipes(this)), this);
         pm.registerEvents(new InventoryOpen(this), this);

@@ -34,10 +34,10 @@ public class MailCommands {
         createMailCommands();
     }
     private void createMailCommands() {
-        Command.Builder<CommandSender> postOffice = this.manager.commandBuilder("postoffice")
+        Command.Builder<CommandSender> postOffice = manager.commandBuilder("postoffice")
                 .permission("skyprisoncore.command.postoffice");
         List<String> postOfficeOptions = List.of("mailbox");
-        this.manager.command(postOffice.literal("give")
+        manager.command(postOffice.literal("give")
                 .permission("skyprisoncore.command.postoffice.give")
                 .argument(PlayerArgument.of("player"))
                 .argument(StringArgument.<CommandSender>builder("type")
@@ -55,9 +55,9 @@ public class MailCommands {
                         }
                     }
                 }));
-        Command.Builder<CommandSender> mail = this.manager.commandBuilder("mail")
+        Command.Builder<CommandSender> mail = manager.commandBuilder("mail")
                 .permission("skyprisoncore.command.mail");
-        this.manager.command(mail.literal("history")
+        manager.command(mail.literal("history")
                 .permission("skyprisoncore.command.mail.history")
                 .handler(c -> {
                     CommandSender sender = c.getSender();
@@ -67,7 +67,7 @@ public class MailCommands {
                         sender.sendMessage(Component.text("Can only be used by a player!"));
                     }
                 }));
-        this.manager.command(mail.literal("history")
+        manager.command(mail.literal("history")
                 .permission("skyprisoncore.command.mail.history.others")
                 .argument(StringArgument.optional("player"))
                 .handler(c -> {
@@ -84,7 +84,7 @@ public class MailCommands {
                         sender.sendMessage(Component.text("Can only be used by a player!"));
                     }
                 }));
-        this.manager.command(mail.literal("send")
+        manager.command(mail.literal("send")
                 .permission("skyprisoncore.command.mail.send")
                 .handler(c -> {
                     CommandSender sender = c.getSender();
@@ -95,7 +95,7 @@ public class MailCommands {
                         sender.sendMessage(Component.text("Can only be used by a player!"));
                     }
                 }));
-        this.manager.command(mail.literal("open")
+        manager.command(mail.literal("open")
                 .permission("skyprisoncore.command.mail.open")
                 .argument(IntegerArgument.of("mailbox-id"))
                 .argument(PlayerArgument.optional("player"))
@@ -115,7 +115,7 @@ public class MailCommands {
                         sender.sendMessage(Component.text("Incorrect Usage! /mail open <id> <player>"));
                     }
                 }));
-        this.manager.command(mail.literal("expand")
+        manager.command(mail.literal("expand")
                 .permission("skyprisoncore.command.mail.expand")
                 .argument(PlayerArgument.of("player"))
                 .handler(c -> {

@@ -2,6 +2,7 @@ package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
+import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -35,8 +36,7 @@ public class EntityDeath implements Listener {
     }
     @EventHandler
     public void playerDeath(EntityDeathEvent event) {
-        if(event.getEntity() instanceof Player) {
-            Player player = (Player) event.getEntity();
+        if(event.getEntity() instanceof Player player) {
             SkyPrisonCore.safezoneViolators.remove(player.getUniqueId());
         }
 
@@ -107,17 +107,28 @@ public class EntityDeath implements Listener {
                     }
 
                     if(hasBounty) {
-                        Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "money give " + killer.getName() + " " + bounty);
-                        Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi usermeta " + killer.getName() + " increment bounties_collected +1 -s");
-                        for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-                            if (!online.hasPermission("skyprisoncore.bounty.silent")) {
-                                online.sendMessage(Component.text("[", NamedTextColor.WHITE).append(Component.text("Bounties", NamedTextColor.RED))
-                                        .append(Component.text("] ", NamedTextColor.WHITE)).append(Component.text(killer.getName() + " has claimed the bounty on " + killed.getName() + "!", NamedTextColor.YELLOW)));
+                        Component bountyPrefix = Component.text("Bounties", NamedTextColor.RED).append(Component.text(" | ", NamedTextColor.WHITE));
+                        Component bountyMsg = bountyPrefix.append(Component.text(killer.getName() + " has killed " + killed.getName() + " and claimed the ", NamedTextColor.YELLOW)
+                                .append(Component.text("$" + plugin.formatNumber(bounty), NamedTextColor.GREEN))
+                                .append(Component.text(" bounty on them!", NamedTextColor.YELLOW)));
+
+                        Component targetMsg = bountyPrefix.append(Component.text(killer.getName() + " has claimed the ", NamedTextColor.YELLOW)
+                                    .append(Component.text("$" + plugin.formatNumber(bounty), NamedTextColor.GREEN))
+                                    .append(Component.text(" bounty on you!", NamedTextColor.YELLOW)));
+
+                        Audience receivers = Bukkit.getServer().filterAudience(audience -> {
+                            if(audience instanceof Player onlinePlayer) {
+                                return !onlinePlayer.hasPermission("skyprisoncore.command.bounty.silent") && !onlinePlayer.getUniqueId().equals(killed.getUniqueId());
                             }
-                        }
+                            return true;
+                        });
+                        receivers.sendMessage(bountyMsg);
+                        killed.sendMessage(targetMsg);
+
                         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM bounties WHERE user_id = ?")) {
                             ps.setString(1, killed.getUniqueId().toString());
                             ps.executeUpdate();
+                            Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "cmi money give " + killer.getName() + " " + bounty);
                         } catch (SQLException e) {
                             e.printStackTrace();
                         }
@@ -126,7 +137,6 @@ public class EntityDeath implements Listener {
                     //
                     // Token Kills Stuff
                     //
-
 
                     long killedOn = 0;
                     boolean hasKilled = false;
@@ -145,7 +155,7 @@ public class EntityDeath implements Listener {
                         e.printStackTrace();
                     }
 
-                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT killed_on FROM player_kills WHERE killer_id = ? AND killed_id = ?")) {
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT killed_on FROM recently_killed WHERE killer_id = ? AND killed_id = ?")) {
                         ps.setString(1, killer.getUniqueId().toString());
                         ps.setString(2, killed.getUniqueId().toString());
                         ResultSet rs = ps.executeQuery();
@@ -255,7 +265,7 @@ public class EntityDeath implements Listener {
             plugin.tokens.addTokens(killer.getUniqueId(), 1, "Player Kill", killed.getName());
         }
 
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO player_kills (killer_id, killed_id, killed_on) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE killed_on = VALUE(killed_on)")) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO recently_killed (killer_id, killed_id, killed_on) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE killed_on = VALUE(killed_on)")) {
             ps.setString(1, killer.getUniqueId().toString());
             ps.setString(2, killed.getUniqueId().toString());
             ps.setLong(3, System.currentTimeMillis());
