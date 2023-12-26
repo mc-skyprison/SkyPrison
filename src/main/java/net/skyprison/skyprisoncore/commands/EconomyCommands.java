@@ -14,7 +14,8 @@ import net.luckperms.api.cacheddata.CachedPermissionData;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.model.user.UserManager;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.inventories.BountiesList;
+import net.skyprison.skyprisoncore.inventories.economy.BountiesList;
+import net.skyprison.skyprisoncore.inventories.economy.BuyBack;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
@@ -45,7 +46,8 @@ public class EconomyCommands {
         this.plugin = plugin;
         this.db = db;
         this.manager = manager;
-        createEconomyCommands();
+        createBountyCommands();
+        createMiscCommands();
     }
     public static double round(double value, int places) {
         if (places < 0) throw new IllegalArgumentException();
@@ -54,20 +56,16 @@ public class EconomyCommands {
         bd = bd.setScale(places, RoundingMode.HALF_UP);
         return bd.doubleValue();
     }
-    private Component getBountyHelp() {
-        return Component.textOfChildren(Component.text("----==== ", NamedTextColor.WHITE)
-                        .append(Component.text("Bounties", NamedTextColor.RED))
-                        .append(Component.text("====----", NamedTextColor.WHITE)))
-                .append(Component.text("\n/bounty set <player> <amount>", NamedTextColor.YELLOW)
-                        .append(Component.text(" - Set a bounty on a player", NamedTextColor.WHITE)))
-                .append(Component.text("\n/bounty help", NamedTextColor.YELLOW)
-                        .append(Component.text(" - Shows this", NamedTextColor.WHITE)))
-                .append(Component.text("\n/bounty list", NamedTextColor.YELLOW)
-                        .append(Component.text(" - Shows all players with bountiesr", NamedTextColor.WHITE)))
-                .append(Component.text("\n/bounty mute", NamedTextColor.YELLOW)
-                        .append(Component.text(" - Mutes/Unmutes bounty messages except for bounties towards yourself", NamedTextColor.WHITE)));
+    private void createMiscCommands() {
+        manager.command(manager.commandBuilder("buyback")
+                .senderType(Player.class)
+                .permission("skyprisoncore.command.buyback")
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new BuyBack(plugin, db, player).getInventory()));
+                }));
     }
-    private void createEconomyCommands() {
+    private void createBountyCommands() {
         Command.Builder<CommandSender> bounty = manager.commandBuilder("bounty")
                 .permission("skyprisoncore.command.bounty")
                 .handler(c -> c.getSender().sendMessage(getBountyHelp()));
@@ -233,5 +231,18 @@ public class EconomyCommands {
                         player.sendMessage(bountyPrefix.append(Component.text("Bounty messages unmuted!", NamedTextColor.YELLOW)));
                     }
                 }));
+    }
+    private Component getBountyHelp() {
+        return Component.textOfChildren(Component.text("----==== ", NamedTextColor.WHITE)
+                        .append(Component.text("Bounties", NamedTextColor.RED))
+                        .append(Component.text("====----", NamedTextColor.WHITE)))
+                .append(Component.text("\n/bounty set <player> <amount>", NamedTextColor.YELLOW)
+                        .append(Component.text(" - Set a bounty on a player", NamedTextColor.WHITE)))
+                .append(Component.text("\n/bounty help", NamedTextColor.YELLOW)
+                        .append(Component.text(" - Shows this", NamedTextColor.WHITE)))
+                .append(Component.text("\n/bounty list", NamedTextColor.YELLOW)
+                        .append(Component.text(" - Shows all players with bountiesr", NamedTextColor.WHITE)))
+                .append(Component.text("\n/bounty mute", NamedTextColor.YELLOW)
+                        .append(Component.text(" - Mutes/Unmutes bounty messages except for bounties towards yourself", NamedTextColor.WHITE)));
     }
 }

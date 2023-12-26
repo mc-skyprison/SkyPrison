@@ -32,6 +32,7 @@ import net.skyprison.skyprisoncore.inventories.claims.ClaimFlags;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimFlagsMobs;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimMembers;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimPending;
+import net.skyprison.skyprisoncore.inventories.economy.BountiesList;
 import net.skyprison.skyprisoncore.inventories.mail.*;
 import net.skyprison.skyprisoncore.inventories.secrets.Secrets;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsCategoryEdit;
