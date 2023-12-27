@@ -28,16 +28,15 @@ public class BuyBack implements CustomInventory {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
     private final LinkedHashMap<Integer, SoldItem> soldItems = new LinkedHashMap<>();
-    record SoldItem(String itemType, int amount, double price, int id) {}
+    public record SoldItem(Material itemType, int amount, double price, int id) {}
 
     public void updateInventory(int id) {
         soldItems.remove(id);
         List<Integer> availableNums = new ArrayList<>(Arrays.asList(11, 12, 13, 14, 15));
+        availableNums.forEach(integer -> inventory.setItem(integer, null));
         for (SoldItem soldItem : soldItems.values()) {
             if(availableNums.isEmpty()) break;
-            Material itemType = Material.getMaterial(soldItem.itemType);
-            if (itemType == null) continue;
-            ItemStack iSold = getSoldItem(plugin, soldItem, itemType);
+            ItemStack iSold = getSoldItem(plugin, soldItem);
             inventory.setItem(availableNums.getFirst(), iSold);
             availableNums.removeFirst();
         }
@@ -47,11 +46,11 @@ public class BuyBack implements CustomInventory {
         this.db = db;
         this.inventory = plugin.getServer().createInventory(this, 27, Component.text("Buyback Shop", TextColor.fromHexString("#0fc3ff")));
 
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT recent_item, recent_amount, recent_price, recent_id FROM recent_sells WHERE user_id = ? SORT BY recent_id DESC")) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT recent_item, recent_amount, recent_price, recent_id FROM recent_sells WHERE user_id = ? ORDER BY recent_id DESC LIMIT 5")) {
             ps.setString(1, player.getUniqueId().toString());
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
-                soldItems.put(rs.getInt(4), new SoldItem(rs.getString(1), rs.getInt(2), rs.getFloat(3), rs.getInt(4)));
+                soldItems.put(rs.getInt(4), new SoldItem(Material.getMaterial(rs.getString(1)), rs.getInt(2), rs.getFloat(3), rs.getInt(4)));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -69,7 +68,8 @@ public class BuyBack implements CustomInventory {
             } else if(i == 22) {
                 ItemStack balance = new ItemStack(Material.NETHER_STAR);
                 balance.editMeta(meta -> {
-                    meta.displayName(Component.text("Your Balance", NamedTextColor.GOLD, TextDecoration.BOLD));
+                    meta.displayName(Component.text("Your Balance", NamedTextColor.GOLD, TextDecoration.BOLD)
+                            .decoration(TextDecoration.ITALIC, false));
                     meta.lore(Collections.singletonList(Component.text(PlaceholderAPI.setPlaceholders(player, "%cmi_user_balance_formatted%"),
                             NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)));
                 });
@@ -79,16 +79,14 @@ public class BuyBack implements CustomInventory {
         List<Integer> availableNums = new ArrayList<>(Arrays.asList(11, 12, 13, 14, 15));
         for (SoldItem soldItem : soldItems.values()) {
             if(availableNums.isEmpty()) break;
-            Material itemType = Material.getMaterial(soldItem.itemType);
-            if (itemType == null) continue;
-            ItemStack iSold = getSoldItem(plugin, soldItem, itemType);
+            ItemStack iSold = getSoldItem(plugin, soldItem);
             inventory.setItem(availableNums.getFirst(), iSold);
             availableNums.removeFirst();
         }
     }
     @NotNull
-    private static ItemStack getSoldItem(SkyPrisonCore plugin, SoldItem soldItem, Material itemType) {
-        ItemStack iSold = new ItemStack(itemType);
+    private static ItemStack getSoldItem(SkyPrisonCore plugin, SoldItem soldItem) {
+        ItemStack iSold = new ItemStack(soldItem.itemType);
         iSold.editMeta(meta -> {
             List<Component> lore = new ArrayList<>();
             double newPrice = soldItem.amount * 3;
@@ -98,17 +96,16 @@ public class BuyBack implements CustomInventory {
             lore.add(Component.text("Cost: ", NamedTextColor.YELLOW).append(Component.text(price,
                     NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
             meta.lore(lore);
-            NamespacedKey typeKey = new NamespacedKey(plugin, "sold-type");
-            NamespacedKey amountKey = new NamespacedKey(plugin, "sold-amount");
-            NamespacedKey priceKey = new NamespacedKey(plugin, "sold-price");
-            NamespacedKey idKey = new NamespacedKey(plugin, "sold-id");
-            meta.getPersistentDataContainer().set(typeKey, PersistentDataType.STRING, soldItem.itemType);
-            meta.getPersistentDataContainer().set(amountKey, PersistentDataType.INTEGER, soldItem.amount);
-            meta.getPersistentDataContainer().set(priceKey, PersistentDataType.DOUBLE, newPrice);
-            meta.getPersistentDataContainer().set(idKey, PersistentDataType.INTEGER, soldItem.id);
+            NamespacedKey key = new NamespacedKey(plugin, "sold-id");
+            meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, soldItem.id);
         });
         return iSold;
     }
+
+    public SoldItem getSoldItem(int id) {
+        return soldItems.get(id);
+    }
+
     @Override
     public ClickBehavior defaultClickBehavior() {
         return ClickBehavior.DISABLE_ALL;

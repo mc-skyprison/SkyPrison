@@ -95,11 +95,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.permshop
     permission-message: §4Error:§c You do not have permission to execute this command...
-  buyback:
-    description: Buyback items you sold
-    usage: /<command>
-    permission: skyprisoncore.command.buyback
-    permission-message: §4Error:§c You do not have permission to execute this command...
   daily:
     description: Opens the daily reward GUI
     usage: /<command>
@@ -199,8 +194,6 @@ permissions:
     description: Gives access to /permshop
   skyprisoncore.command.econcheck:
     description: Gives access to /econcheck
-  skyprisoncore.command.buyback:
-    description: Gives access to /buyback
   skyprisoncore.command.dontsell:
     description: Gives access to /dontsell
   skyprisoncore.command.endupgrade:

@@ -796,7 +796,6 @@ public class SkyPrisonCore extends JavaPlugin {
 
         Objects.requireNonNull(getCommand("ignoretp")).setExecutor(new IgnoreTeleport(this, db));
 
-        Objects.requireNonNull(getCommand("buyback")).setExecutor(new BuyBack(this, db));
         Objects.requireNonNull(getCommand("daily")).setExecutor(new Daily(this, db));
         Objects.requireNonNull(getCommand("shopban")).setExecutor(new ShopBan(db));
         Objects.requireNonNull(getCommand("removeitalics")).setExecutor(new RemoveItalics(this));
@@ -830,7 +829,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EntityPickupItem(this), this);
         pm.registerEvents(new InventoryClick(this, new EconomyCheck(this),
                 new Daily(this, db), new MoneyHistory(this),
-                new BuyBack(this, db), db, new Tags(this, db), particles, new CustomRecipes(this)), this);
+                db, new Tags(this, db), particles, new CustomRecipes(this)), this);
         pm.registerEvents(new InventoryOpen(this), this);
         pm.registerEvents(new LeavesDecay(), this);
         pm.registerEvents(new McMMOLevelUp(this), this);

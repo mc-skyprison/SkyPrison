@@ -24,7 +24,6 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.old.*;
-import net.skyprison.skyprisoncore.commands.old.economy.BuyBack;
 import net.skyprison.skyprisoncore.commands.old.economy.EconomyCheck;
 import net.skyprison.skyprisoncore.commands.old.economy.MoneyHistory;
 import net.skyprison.skyprisoncore.inventories.*;
@@ -33,6 +32,7 @@ import net.skyprison.skyprisoncore.inventories.claims.ClaimFlagsMobs;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimMembers;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimPending;
 import net.skyprison.skyprisoncore.inventories.economy.BountiesList;
+import net.skyprison.skyprisoncore.inventories.economy.BuyBack;
 import net.skyprison.skyprisoncore.inventories.mail.*;
 import net.skyprison.skyprisoncore.inventories.secrets.Secrets;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsCategoryEdit;
@@ -77,19 +77,17 @@ public class InventoryClick implements Listener {
     private final EconomyCheck econCheck;
     private final Daily daily;
     private final MoneyHistory moneyHistory;
-    private final BuyBack buyBack;
     private final DatabaseHook db;
     private final Tags tag;
     private final PlayerParticlesAPI particles;
     private final CustomRecipes customRecipes;
 
     public InventoryClick(SkyPrisonCore plugin, EconomyCheck econCheck, Daily daily, MoneyHistory moneyHistory,
-                          BuyBack buyBack, DatabaseHook db, Tags tag, PlayerParticlesAPI particles, CustomRecipes customRecipes) {
+                          DatabaseHook db, Tags tag, PlayerParticlesAPI particles, CustomRecipes customRecipes) {
         this.plugin = plugin;
         this.econCheck = econCheck;
         this.daily = daily;
         this.moneyHistory = moneyHistory;
-        this.buyBack = buyBack;
         this.db = db;
         this.tag = tag;
         this.particles = particles;
@@ -1784,6 +1782,34 @@ public class InventoryClick implements Listener {
                             }
                         }
                     }
+                } else if (customInv instanceof BuyBack inv) {
+                    if(currItem != null && Arrays.asList(11, 12, 13, 14, 15).contains(event.getSlot())) {
+                        NamespacedKey key = new NamespacedKey(plugin, "sold-id");
+                        PersistentDataContainer soldData = currItem.getPersistentDataContainer();
+                        int itemId = soldData.getOrDefault(key, PersistentDataType.INTEGER, -1);
+                        if(itemId == -1) return;
+                        BuyBack.SoldItem itemData = inv.getSoldItem(itemId);
+                        CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
+                        if (user.getBalance() >= itemData.price()) {
+                            ItemStack item = new ItemStack(itemData.itemType(), itemData.amount());
+                            HashMap<Integer, ItemStack> leftovers = player.getInventory().addItem(item);
+                            if(!leftovers.isEmpty()) {
+                                leftovers.values().forEach(left -> player.getWorld().dropItemNaturally(player.getLocation(), left).setOwner(player.getUniqueId()));
+                                player.sendMessage(Component.text("Not enough inventory space! Dropping remaining items..", NamedTextColor.RED));
+                            }
+                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                                    "DELETE FROM recent_sells WHERE recent_id = ?")) {
+                                ps.setInt(1, itemId);
+                                ps.executeUpdate();
+                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + itemData.price());
+                                inv.updateInventory(itemId);
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                            }
+                        } else {
+                            player.sendMessage(Component.text("You do not have enough money!", NamedTextColor.RED));
+                        }
+                    }
                 }
             } else {
                 CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
@@ -1817,43 +1843,6 @@ public class InventoryClick implements Listener {
                             if (clickCheck == 1) {
                                 event.setCancelled(true);
                                 switch (Objects.requireNonNull(guiType)) {
-                                    case "buyback":
-                                        NamespacedKey typeKey = new NamespacedKey(plugin, "sold-type");
-                                        ItemStack buyItem = event.getCurrentItem();
-                                        if (buyItem != null) {
-                                            ItemMeta buyMeta = buyItem.getItemMeta();
-                                            PersistentDataContainer buyData = buyMeta.getPersistentDataContainer();
-                                            if (buyData.has(typeKey, PersistentDataType.STRING)) {
-                                                NamespacedKey amKey = new NamespacedKey(plugin, "sold-amount");
-                                                NamespacedKey priKey = new NamespacedKey(plugin, "sold-price");
-                                                String itemType = buyData.get(typeKey, PersistentDataType.STRING);
-                                                int itemAmount = buyData.get(amKey, PersistentDataType.INTEGER);
-                                                Double itemPrice = buyData.get(priKey, PersistentDataType.DOUBLE);
-                                                ItemStack iSold = new ItemStack(Objects.requireNonNull(Material.getMaterial(Objects.requireNonNull(itemType))), itemAmount);
-                                                if (user.getInventory().canFit(iSold)) {
-                                                    if (user.getBalance() >= itemPrice) {
-                                                        NamespacedKey posKey = new NamespacedKey(plugin, "sold-id");
-                                                        int buyId = buyData.get(posKey, PersistentDataType.INTEGER);
-
-                                                        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                                                                "DELETE FROM recent_sells WHERE recent_id = ?")) {
-                                                            ps.setInt(1, buyId);
-                                                            ps.executeUpdate();
-                                                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "give " + player.getName() + " " + itemType + " " + itemAmount);
-                                                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + itemPrice);
-                                                            buyBack.openGUI(player);
-                                                        } catch (SQLException e) {
-                                                            e.printStackTrace();
-                                                        }
-                                                    } else {
-                                                        player.sendMessage(Component.text("You do not have enough money!", NamedTextColor.RED));
-                                                    }
-                                                } else {
-                                                    player.sendMessage(Component.text("You do not have enough space in your inventory!", NamedTextColor.RED));
-                                                }
-                                            }
-                                        }
-                                        break;
                                     case "recipes-main":
                                         if (event.getClickedInventory().getItem(event.getSlot()) != null) {
                                             Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
