@@ -66,12 +66,6 @@ commands:
     aliases: [killsinfo, killstats, pvpstats]
     permission: skyprisoncore.command.killinfo
     permission-message: §4Error:§c You do not have permission to execute this command...
-
-  dontsell:
-    description: Adds/removes an item from the dont sell list
-    usage: /<command>
-    permission: skyprisoncore.command.dontsell
-    permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Cheese?
   #
@@ -189,8 +183,6 @@ permissions:
     description: Gives access to /permshop
   skyprisoncore.command.econcheck:
     description: Gives access to /econcheck
-  skyprisoncore.command.dontsell:
-    description: Gives access to /dontsell
   skyprisoncore.command.endupgrade:
     description: Gives access to /endupgrade
   skyprisoncore.command.daily:

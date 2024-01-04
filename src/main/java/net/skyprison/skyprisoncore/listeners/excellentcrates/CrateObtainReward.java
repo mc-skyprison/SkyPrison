@@ -21,7 +21,8 @@ public class CrateObtainReward implements Listener {
     public void onCrateObtainReward(CrateObtainRewardEvent event) {
         Player player = event.getPlayer();
 
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO casino_opens (user_id, casino_name, opens_amount) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE opens_amount = opens_amount + VALUE(opens_amount)")) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                "INSERT INTO casino_opens (user_id, casino_name, opens_amount) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE opens_amount = opens_amount + VALUE(opens_amount)")) {
             ps.setString(1, player.getUniqueId().toString());
             ps.setString(2, event.getCrate().getId());
             ps.setInt(3, 1);

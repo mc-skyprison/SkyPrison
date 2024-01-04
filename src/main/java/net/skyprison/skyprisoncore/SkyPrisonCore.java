@@ -790,7 +790,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("econcheck")).setExecutor(new EconomyCheck(this));
         Objects.requireNonNull(getCommand("permshop")).setExecutor(new PermShop());
         Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, db));
-        Objects.requireNonNull(getCommand("dontsell")).setExecutor(new DontSell(db));
         Objects.requireNonNull(getCommand("killinfo")).setExecutor(new KillInfo(db));
         Objects.requireNonNull(getCommand("firstjointop")).setExecutor(new FirstjoinTop(this, db));
 

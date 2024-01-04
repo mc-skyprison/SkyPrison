@@ -4,11 +4,14 @@ import cloud.commandframework.Command;
 import cloud.commandframework.arguments.standard.DoubleArgument;
 import cloud.commandframework.arguments.standard.LongArgument;
 import cloud.commandframework.arguments.standard.StringArgument;
+import cloud.commandframework.bukkit.parsers.MaterialArgument;
 import cloud.commandframework.bukkit.parsers.PlayerArgument;
 import cloud.commandframework.paper.PaperCommandManager;
+import net.brcdev.shopgui.ShopGuiPlusApi;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.cacheddata.CachedPermissionData;
@@ -21,8 +24,10 @@ import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -30,8 +35,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +53,7 @@ public class EconomyCommands {
         this.db = db;
         this.manager = manager;
         createBountyCommands();
+        createShopCommands();
         createMiscCommands();
     }
     public static double round(double value, int places) {
@@ -127,6 +132,75 @@ public class EconomyCommands {
                     }
                 }));
     }
+
+    private void createShopCommands() {
+        Command.Builder<CommandSender> dontSell = manager.commandBuilder("bounty")
+                .senderType(Player.class)
+                .permission("skyprisoncore.command.dontsell")
+                .argument(MaterialArgument.optional("item"))
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    Optional<Material> item = c.getOptional("item");
+                    Material blockItem = player.getInventory().getItemInMainHand().getType();
+                    if(item.isPresent()) blockItem = item.get();
+
+                    if(!blockItem.isItem() || ShopGuiPlusApi.getItemStackShopItem(new ItemStack(blockItem)) == null) {
+                        player.sendMessage(Component.text("This item can't be sold!", NamedTextColor.RED));
+                        return;
+                    }
+
+                    List<String> blockedSales = getDontSells(player);
+                    boolean isBlocked = blockedSales.contains(blockItem.name());
+
+                    String sql = isBlocked ? "DELETE FROM block_sells WHERE user_id = ? AND block_item = ?" : "INSERT INTO block_sells (user_id, block_item) VALUES (?, ?)";
+                    Component msg = Component.text("Successfully ", NamedTextColor.GREEN).append(Component.text(isBlocked ? "REMOVED" : "ADDED",
+                                    NamedTextColor.GREEN, TextDecoration.BOLD)).append(Component.text("item from the dont sell list!", NamedTextColor.GREEN));
+
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+                        ps.setString(1, player.getUniqueId().toString());
+                        ps.setString(2, blockItem.name());
+                        ps.executeUpdate();
+                        player.sendMessage(msg);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                });
+        manager.command(dontSell);
+
+        manager.command(dontSell.literal("list")
+                .senderType(Player.class)
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    List<String> blockedSales = getDontSells(player);
+                    if(!blockedSales.isEmpty()) {
+                        Component blockMsg = Component.text("---=== ", NamedTextColor.AQUA).append(Component.text("Blocked Items", NamedTextColor.RED, TextDecoration.BOLD))
+                                .append(Component.text(" ===---", NamedTextColor.AQUA));
+                        for(String blockedSale : blockedSales) {
+                            blockMsg = blockMsg.append(Component.text("\n-", NamedTextColor.AQUA).append(Component.text(blockedSale, NamedTextColor.DARK_AQUA)));
+                        }
+                        player.sendMessage(blockMsg);
+                    } else {
+                        player.sendMessage(Component.text("You havn't blocked any items!", NamedTextColor.RED));
+                    }
+                }));
+    }
+
+    private List<String> getDontSells(Player player) {
+        List<String> blockedSales = new ArrayList<>();
+
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT block_item FROM block_sells WHERE user_id = ?")) {
+            ps.setString(1, player.getUniqueId().toString());
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()) {
+                blockedSales.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return blockedSales;
+    }
+
+
     private void createBountyCommands() {
         Command.Builder<CommandSender> bounty = manager.commandBuilder("bounty")
                 .permission("skyprisoncore.command.bounty")
