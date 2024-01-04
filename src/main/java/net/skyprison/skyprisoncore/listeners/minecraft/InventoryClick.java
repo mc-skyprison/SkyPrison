@@ -1798,8 +1798,9 @@ public class InventoryClick implements Listener {
                                 player.sendMessage(Component.text("Not enough inventory space! Dropping remaining items..", NamedTextColor.RED));
                             }
                             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                                    "DELETE FROM recent_sells WHERE recent_id = ?")) {
-                                ps.setInt(1, itemId);
+                                    "UPDATE logs_shop SET bought_back = ? WHERE id = ?")) {
+                                ps.setInt(1, 1);
+                                ps.setInt(2, itemId);
                                 ps.executeUpdate();
                                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + itemData.price());
                                 inv.updateInventory(itemId);

@@ -46,11 +46,15 @@ public class BuyBack implements CustomInventory {
         this.db = db;
         this.inventory = plugin.getServer().createInventory(this, 27, Component.text("Buyback Shop", TextColor.fromHexString("#0fc3ff")));
 
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT recent_item, recent_amount, recent_price, recent_id FROM recent_sells WHERE user_id = ? ORDER BY recent_id DESC LIMIT 5")) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                "SELECT id, item, amount, price, bought_back FROM logs_shop WHERE user_id = ? AND transaction_type != ? ORDER BY id DESC LIMIT 5")) {
             ps.setString(1, player.getUniqueId().toString());
+            ps.setString(2, "BUY");
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
-                soldItems.put(rs.getInt(4), new SoldItem(Material.getMaterial(rs.getString(1)), rs.getInt(2), rs.getFloat(3), rs.getInt(4)));
+                if(!rs.getBoolean(5)) {
+                    soldItems.put(rs.getInt(1), new SoldItem(Material.getMaterial(rs.getString(2)), rs.getInt(3), rs.getDouble(4), rs.getInt(1)));
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
