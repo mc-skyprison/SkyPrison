@@ -26,7 +26,6 @@ import java.util.*;
 public class BuyBack implements CustomInventory {
     private final Inventory inventory;
     private final SkyPrisonCore plugin;
-    private final DatabaseHook db;
     private final LinkedHashMap<Integer, SoldItem> soldItems = new LinkedHashMap<>();
     public record SoldItem(Material itemType, int amount, double price, int id) {}
 
@@ -43,7 +42,6 @@ public class BuyBack implements CustomInventory {
     }
     public BuyBack(SkyPrisonCore plugin, DatabaseHook db, Player player) {
         this.plugin = plugin;
-        this.db = db;
         this.inventory = plugin.getServer().createInventory(this, 27, Component.text("Buyback Shop", TextColor.fromHexString("#0fc3ff")));
 
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
