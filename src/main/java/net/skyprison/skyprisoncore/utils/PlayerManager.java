@@ -1,5 +1,6 @@
 package net.skyprison.skyprisoncore.utils;
 
+import com.Zrips.CMI.CMI;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
@@ -189,6 +190,10 @@ public class PlayerManager {
                 }
             }
         }
+    }
+
+    public static Double getBalance(Player player) {
+        return CMI.getInstance().getPlayerManager().getUser(player).getBalance();
     }
     public static boolean isGuardGear(ItemStack item) {
         boolean isGuardGear = false;

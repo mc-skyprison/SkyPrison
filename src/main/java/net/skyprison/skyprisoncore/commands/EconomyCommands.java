@@ -2,9 +2,10 @@ package net.skyprison.skyprisoncore.commands;
 
 import cloud.commandframework.Command;
 import cloud.commandframework.arguments.standard.DoubleArgument;
+import cloud.commandframework.arguments.standard.LongArgument;
 import cloud.commandframework.arguments.standard.StringArgument;
+import cloud.commandframework.bukkit.parsers.PlayerArgument;
 import cloud.commandframework.paper.PaperCommandManager;
-import com.Zrips.CMI.CMI;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -29,6 +30,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -63,6 +65,66 @@ public class EconomyCommands {
                 .handler(c -> {
                     Player player = (Player) c.getSender();
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new BuyBack(plugin, db, player).getInventory()));
+                }));
+
+        manager.command(manager.commandBuilder("casino")
+                .permission("skyprisoncore.command.casino")
+                .argument(PlayerArgument.of("player"))
+                .argument(StringArgument.of("key"))
+                .argument(DoubleArgument.of("price"))
+                .argument(LongArgument.of("cooldown"))
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    String key = c.get("key");
+                    double price = c.get("price");
+                    long cooldown = c.get("cooldown");
+
+                    if(PlayerManager.getBalance(player) < price) {
+                        player.sendMessage(Component.text("You do not have enough money..", NamedTextColor.RED));
+                        return;
+                    }
+
+                    if(!player.hasPermission("skyprisoncore.command.casino.bypass")) {
+                        HashMap<String, Long> casinoCools = new HashMap<>();
+                        try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT casino_name, casino_cooldown FROM casino_cooldowns WHERE user_id = ?")) {
+                            ps.setString(1, player.getUniqueId().toString());
+                            ResultSet rs = ps.executeQuery();
+                            while (rs.next()) {
+                                casinoCools.put(rs.getString(1), rs.getLong(2));
+                            }
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+                        if (!casinoCools.isEmpty() && casinoCools.containsKey(key) && casinoCools.get(key) > System.currentTimeMillis()) {
+                            long distance = casinoCools.get(key) - System.currentTimeMillis();
+                            int days = (int) (distance / (1000L * 60 * 60 * 24));
+                            int hours = (int) (distance / (1000L * 60 * 60) % 24);
+                            int minutes = (int) (distance / (1000L * 60) % 60);
+                            int seconds = (int) (distance / 1000L % 60);
+
+                            StringBuilder message = new StringBuilder("You are still on cooldown! Available in: ");
+                            if (days > 0) message.append(days).append("d ");
+                            if (hours > 0) message.append(hours).append("h ");
+                            if (minutes > 0) message.append(minutes).append("m ");
+                            message.append(seconds).append("s");
+
+                            player.sendMessage(Component.text(message.toString(), NamedTextColor.RED));
+                            return;
+                        }
+                    }
+
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + price);
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "crates key give " + player.getName() + " " + key + " 1");
+                    long nCooldown = (cooldown * 1000) + System.currentTimeMillis();
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                            "INSERT INTO casino_cooldowns (user_id, casino_name, casino_cooldown) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE casino_cooldown = VALUE(casino_cooldown)")) {
+                        ps.setString(1, player.getUniqueId().toString());
+                        ps.setString(2, key);
+                        ps.setLong(3, nCooldown);
+                        ps.executeUpdate();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
                 }));
     }
     private void createBountyCommands() {
@@ -128,7 +190,7 @@ public class EconomyCommands {
                     double prize = c.get("amount");
 
                     double bountyPrize = round(prize, 2);
-                    if (CMI.getInstance().getPlayerManager().getUser(player).getBalance() < bountyPrize) {
+                    if (PlayerManager.getBalance(player) < bountyPrize) {
                         player.sendMessage(Component.text("You do not have enough money..", NamedTextColor.RED));
                         return;
                     }

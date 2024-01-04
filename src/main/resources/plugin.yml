@@ -18,11 +18,6 @@ commands:
     aliases: [mhistory]
     permission: skyprisoncore.command.moneyhistory
     permission-message: §4Error:§c You do not have permission to execute this command...
-  casino:
-    description: Buying casino chips
-    usage: /<command>
-    permission: skyprisoncore.command.casino
-    permission-message: §4Error:§c You do not have permission to execute this command...
   tokens:
     description: Token related stuff
     usage: /<command>
@@ -212,8 +207,6 @@ permissions:
     description: Gives access to /tokens
   skyprisoncore.command.tokens.admin:
     description: Gives access to admin tokens commands
-  skyprisoncore.command.casino:
-    description: Gives access to /casino
   skyprisoncore.command.transportpass:
     description: Gives access to /transportpass
   skyprisoncore.command.moneyhistory:
