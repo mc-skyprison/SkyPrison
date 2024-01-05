@@ -94,14 +94,15 @@ public class MoneyHistory implements CustomInventory {
         } else {
             transToDisplay.addAll(transactions.stream().filter(transaction -> transaction.type().equalsIgnoreCase(getType())).map(Transaction::item).toList());
         }
-        updatePage(0);
+        sort = false;
+        updateSort();
     }
     public MoneyHistory(SkyPrisonCore plugin, DatabaseHook db, String playerId) {
         this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Transaction History", TextColor.fromHexString("#e03835")));
 
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
                 "SELECT sender_id, receiver_id, amount, logged_date, item FROM logs_transactions " +
-                        "WHERE sender_id = ? OR receiver_id = ? ORDER BY logged_date DESC")) {
+                        "WHERE sender_id = ? OR receiver_id = ? ORDER BY logged_date ASC")) {
             ps.setString(1, playerId);
             ps.setString(2, playerId);
             ResultSet rs = ps.executeQuery();
