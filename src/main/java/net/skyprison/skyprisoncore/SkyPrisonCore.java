@@ -787,7 +787,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("tokens")).setTabCompleter(new TabCompleter());
         Objects.requireNonNull(getCommand("token")).setTabCompleter(new TabCompleter());
-        Objects.requireNonNull(getCommand("econcheck")).setExecutor(new EconomyCheck(this));
         Objects.requireNonNull(getCommand("permshop")).setExecutor(new PermShop());
         Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, db));
         Objects.requireNonNull(getCommand("killinfo")).setExecutor(new KillInfo(db));
@@ -825,8 +824,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EntityDamageByEntity(this), this);
         pm.registerEvents(new EntityDeath(this, db, dailyMissions), this);
         pm.registerEvents(new EntityPickupItem(this), this);
-        pm.registerEvents(new InventoryClick(this, new EconomyCheck(this),
-                new Daily(this, db), new MoneyHistory(this),
+        pm.registerEvents(new InventoryClick(this, new Daily(this, db), new MoneyHistory(this),
                 db, new Tags(this, db), particles, new CustomRecipes(this)), this);
         pm.registerEvents(new InventoryOpen(this), this);
         pm.registerEvents(new LeavesDecay(), this);
@@ -979,6 +977,10 @@ public class SkyPrisonCore extends JavaPlugin {
             .build();
     public String formatNumber(double value) {
         DecimalFormat df = new DecimalFormat("###,###,###.##");
+        return df.format(value);
+    }
+    public String formatAmount(int value) {
+        DecimalFormat df = new DecimalFormat("###,###,###");
         return df.format(value);
     }
 }

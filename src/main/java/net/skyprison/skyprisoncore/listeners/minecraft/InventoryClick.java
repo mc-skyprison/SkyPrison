@@ -24,7 +24,6 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.old.*;
-import net.skyprison.skyprisoncore.commands.old.economy.EconomyCheck;
 import net.skyprison.skyprisoncore.commands.old.economy.MoneyHistory;
 import net.skyprison.skyprisoncore.inventories.*;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimFlags;
@@ -33,6 +32,7 @@ import net.skyprison.skyprisoncore.inventories.claims.ClaimMembers;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimPending;
 import net.skyprison.skyprisoncore.inventories.economy.BountiesList;
 import net.skyprison.skyprisoncore.inventories.economy.BuyBack;
+import net.skyprison.skyprisoncore.inventories.economy.EconomyCheck;
 import net.skyprison.skyprisoncore.inventories.mail.*;
 import net.skyprison.skyprisoncore.inventories.secrets.Secrets;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsCategoryEdit;
@@ -74,7 +74,6 @@ import java.util.concurrent.TimeUnit;
 
 public class InventoryClick implements Listener {
     private final SkyPrisonCore plugin;
-    private final EconomyCheck econCheck;
     private final Daily daily;
     private final MoneyHistory moneyHistory;
     private final DatabaseHook db;
@@ -82,10 +81,9 @@ public class InventoryClick implements Listener {
     private final PlayerParticlesAPI particles;
     private final CustomRecipes customRecipes;
 
-    public InventoryClick(SkyPrisonCore plugin, EconomyCheck econCheck, Daily daily, MoneyHistory moneyHistory,
+    public InventoryClick(SkyPrisonCore plugin, Daily daily, MoneyHistory moneyHistory,
                           DatabaseHook db, Tags tag, PlayerParticlesAPI particles, CustomRecipes customRecipes) {
         this.plugin = plugin;
-        this.econCheck = econCheck;
         this.daily = daily;
         this.moneyHistory = moneyHistory;
         this.db = db;
@@ -1811,6 +1809,26 @@ public class InventoryClick implements Listener {
                             player.sendMessage(Component.text("You do not have enough money!", NamedTextColor.RED));
                         }
                     }
+                } else if (customInv instanceof EconomyCheck inv) {
+                    if(event.getCurrentItem() != null) {
+                        switch (event.getSlot()) {
+                            case 46 -> {
+                                if (isPaper) {
+                                    inv.updatePage(-1);
+                                }
+                            }
+                            case 48 -> inv.updateSort(event.isLeftClick());
+                            case 50 -> {
+                                player.closeInventory();
+                                player.sendMessage(Component.text("/econcheck <player>", NamedTextColor.RED));
+                            }
+                            case 52 -> {
+                                if (isPaper) {
+                                    inv.updatePage(1);
+                                }
+                            }
+                        }
+                    }
                 }
             } else {
                 CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
@@ -2201,29 +2219,6 @@ public class InventoryClick implements Listener {
                                             }
                                         }
                                         break;
-                                    case "econcheck":
-                                        if (clickInv.getItem(event.getSlot()) != null) {
-                                            if (event.getCurrentItem().getType() == Material.PAPER) {
-                                                if (event.getSlot() == 46) {
-                                                    econCheck.openGUI((Player) event.getWhoClicked(), page - 1, "default");
-                                                } else if (event.getSlot() == 52) {
-                                                    econCheck.openGUI((Player) event.getWhoClicked(), page + 1, "default");
-                                                }
-                                            } else if (event.getCurrentItem().getType() == Material.BOOK) {
-                                                if (event.getSlot() == 47) {
-                                                    econCheck.openGUI((Player) event.getWhoClicked(), page, "amounttop");
-                                                } else if (event.getSlot() == 48) {
-                                                    econCheck.openGUI((Player) event.getWhoClicked(), page, "amountbottom");
-                                                } else if (event.getSlot() == 49) {
-                                                    event.getWhoClicked().closeInventory();
-                                                    event.getWhoClicked().sendMessage(Component.text("/econcheck player <player>", NamedTextColor.RED));
-                                                } else if (event.getSlot() == 50) {
-                                                    econCheck.openGUI((Player) event.getWhoClicked(), page, "moneybottom");
-                                                } else if (event.getSlot() == 51) {
-                                                    econCheck.openGUI((Player) event.getWhoClicked(), page, "moneytop");
-                                                }
-                                            }
-                                        }
                                     case "tags-new":
                                         if (clickInv.getItem(event.getSlot()) != null) {
                                             NamespacedKey key2 = new NamespacedKey(plugin, "tags-display");

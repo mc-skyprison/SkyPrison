@@ -20,6 +20,7 @@ import net.luckperms.api.model.user.UserManager;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.economy.BountiesList;
 import net.skyprison.skyprisoncore.inventories.economy.BuyBack;
+import net.skyprison.skyprisoncore.inventories.economy.EconomyCheck;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
@@ -134,37 +135,9 @@ public class EconomyCommands {
     }
 
     private void createShopCommands() {
-        Command.Builder<CommandSender> dontSell = manager.commandBuilder("bounty")
+        Command.Builder<CommandSender> dontSell = manager.commandBuilder("dontsell")
                 .senderType(Player.class)
-                .permission("skyprisoncore.command.dontsell")
-                .argument(MaterialArgument.optional("item"))
-                .handler(c -> {
-                    Player player = (Player) c.getSender();
-                    Optional<Material> item = c.getOptional("item");
-                    Material blockItem = player.getInventory().getItemInMainHand().getType();
-                    if(item.isPresent()) blockItem = item.get();
-
-                    if(!blockItem.isItem() || ShopGuiPlusApi.getItemStackShopItem(new ItemStack(blockItem)) == null) {
-                        player.sendMessage(Component.text("This item can't be sold!", NamedTextColor.RED));
-                        return;
-                    }
-
-                    List<String> blockedSales = getDontSells(player);
-                    boolean isBlocked = blockedSales.contains(blockItem.name());
-
-                    String sql = isBlocked ? "DELETE FROM block_sells WHERE user_id = ? AND block_item = ?" : "INSERT INTO block_sells (user_id, block_item) VALUES (?, ?)";
-                    Component msg = Component.text("Successfully ", NamedTextColor.GREEN).append(Component.text(isBlocked ? "REMOVED" : "ADDED",
-                                    NamedTextColor.GREEN, TextDecoration.BOLD)).append(Component.text("item from the dont sell list!", NamedTextColor.GREEN));
-
-                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-                        ps.setString(1, player.getUniqueId().toString());
-                        ps.setString(2, blockItem.name());
-                        ps.executeUpdate();
-                        player.sendMessage(msg);
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                });
+                .permission("skyprisoncore.command.dontsell");
         manager.command(dontSell);
 
         manager.command(dontSell.literal("list")
@@ -182,6 +155,58 @@ public class EconomyCommands {
                     } else {
                         player.sendMessage(Component.text("You havn't blocked any items!", NamedTextColor.RED));
                     }
+                }));
+
+        manager.command(dontSell.argument(MaterialArgument.optional("item"))
+                .senderType(Player.class)
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    Optional<Material> item = c.getOptional("item");
+                    Material blockItem = player.getInventory().getItemInMainHand().getType();
+                    if(item.isPresent()) blockItem = item.get();
+
+                    if(!blockItem.isItem() || ShopGuiPlusApi.getItemStackShopItem(new ItemStack(blockItem)) == null) {
+                        player.sendMessage(Component.text("This item can't be sold!", NamedTextColor.RED));
+                        return;
+                    }
+
+                    List<String> blockedSales = getDontSells(player);
+                    boolean isBlocked = blockedSales.contains(blockItem.name());
+
+                    String sql = isBlocked ? "DELETE FROM block_sells WHERE user_id = ? AND block_item = ?" : "INSERT INTO block_sells (user_id, block_item) VALUES (?, ?)";
+                    Component msg = Component.text("Successfully ", NamedTextColor.GREEN).append(Component.text(isBlocked ? "REMOVED" : "ADDED",
+                            NamedTextColor.GREEN, TextDecoration.BOLD)).append(Component.text(" item!", NamedTextColor.GREEN));
+
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+                        ps.setString(1, player.getUniqueId().toString());
+                        ps.setString(2, blockItem.name());
+                        ps.executeUpdate();
+                        player.sendMessage(msg);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }));
+
+        manager.command(manager.commandBuilder("econcheck")
+                .senderType(Player.class)
+                .permission("skyprisoncore.command.econcheck")
+                .argument(StringArgument.optional("player"))
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    Optional<String> target = c.getOptional("player");
+                    String targetName = target.orElse(null);
+
+                    if(targetName != null) {
+                        if(PlayerManager.getPlayerId(targetName) == null) {
+                            player.sendMessage(Component.text("Player doesn't exist!", NamedTextColor.RED));
+                            return;
+                        } else {
+                            targetName = PlayerManager.getPlayerId(targetName).toString();
+                        }
+                    }
+
+                    String finalTargetName = targetName;
+                    Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new EconomyCheck(plugin, db, finalTargetName).getInventory()));
                 }));
     }
 

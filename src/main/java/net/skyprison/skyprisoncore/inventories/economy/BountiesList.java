@@ -122,4 +122,3 @@ public class BountiesList implements CustomInventory {
         return this.inventory;
     }
 }
-

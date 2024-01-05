@@ -28,11 +28,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.tokens
     permission-message: §4Error:§c You do not have permission to execute this command...
-  econcheck:
-    description: Check the state of the economy
-    usage: /<command>
-    permission: skyprisoncore.command.econcheck
-    permission-message: §4Error:§c You do not have permission to execute this command...
   ignoretp:
     description: Ignore someones tpa requests
     aliases: [tpignore]
@@ -181,8 +176,6 @@ permissions:
     description: Gives access to /firstjointop
   skyprisoncore.command.permshop:
     description: Gives access to /permshop
-  skyprisoncore.command.econcheck:
-    description: Gives access to /econcheck
   skyprisoncore.command.endupgrade:
     description: Gives access to /endupgrade
   skyprisoncore.command.daily:
