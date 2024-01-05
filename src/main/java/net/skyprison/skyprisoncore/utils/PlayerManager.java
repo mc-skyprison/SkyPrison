@@ -198,6 +198,9 @@ public class PlayerManager {
     public static String getPrisonRank(Player player) {
         return CMI.getInstance().getPlayerManager().getUser(player).getRank().getName();
     }
+    public static String getPrisonRank(UUID player) {
+        return CMI.getInstance().getPlayerManager().getUser(player).getRank().getName();
+    }
     public static boolean isGuardGear(ItemStack item) {
         boolean isGuardGear = false;
         String name = item.hasDisplayName() ? item.displayName().toString() : "";

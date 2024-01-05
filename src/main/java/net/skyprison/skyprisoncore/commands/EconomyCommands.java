@@ -81,7 +81,7 @@ public class EconomyCommands {
                 .argument(DoubleArgument.of("price"))
                 .argument(LongArgument.of("cooldown"))
                 .handler(c -> {
-                    Player player = (Player) c.getSender();
+                    Player player = c.get("player");
                     String key = c.get("key");
                     double price = c.get("price");
                     long cooldown = c.get("cooldown");
@@ -119,9 +119,10 @@ public class EconomyCommands {
                             return;
                         }
                     }
-
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + price);
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "crates key give " + player.getName() + " " + key + " 1");
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + price);
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "crates key give " + player.getName() + " " + key + " 1");
+                    });
                     long nCooldown = (cooldown * 1000) + System.currentTimeMillis();
                     try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
                             "INSERT INTO casino_cooldowns (user_id, casino_name, casino_cooldown) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE casino_cooldown = VALUE(casino_cooldown)")) {

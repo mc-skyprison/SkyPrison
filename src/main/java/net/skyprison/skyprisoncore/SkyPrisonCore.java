@@ -821,7 +821,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new BlockPlace(this, dailyMissions, db), this);
         pm.registerEvents(new BrewDrink(db), this);
         pm.registerEvents(new CMIPlayerTeleportRequest(db), this);
-        pm.registerEvents(new CMIUserBalanceChange(this), this);
+        pm.registerEvents(new CMIUserBalanceChange(this, db), this);
         pm.registerEvents(new EntityDamageByEntity(this), this);
         pm.registerEvents(new EntityDeath(this, db, dailyMissions), this);
         pm.registerEvents(new EntityPickupItem(this), this);
@@ -841,7 +841,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new ShopPostTransaction(db, dailyMissions), this);
         pm.registerEvents(new ShopPreTransaction(db), this);
         pm.registerEvents(new ShopPurchase(db), this);
-        pm.registerEvents(new ShopSuccessPurchase(this), this);
+        pm.registerEvents(new ShopSuccessPurchase(db), this);
         pm.registerEvents(new UnsellRegion(), this);
         pm.registerEvents(new PlayerFish(dailyMissions), this);
         pm.registerEvents(new InventoryClose(), this);

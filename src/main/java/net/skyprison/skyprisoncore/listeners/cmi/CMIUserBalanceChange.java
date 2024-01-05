@@ -3,51 +3,40 @@ package net.skyprison.skyprisoncore.listeners.cmi;
 import com.Zrips.CMI.Containers.CMIUser;
 import com.Zrips.CMI.events.CMIUserBalanceChangeEvent;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class CMIUserBalanceChange implements Listener {
     private final SkyPrisonCore plugin;
+    private final DatabaseHook db;
 
-    public CMIUserBalanceChange(SkyPrisonCore plugin) {
+    public CMIUserBalanceChange(SkyPrisonCore plugin, DatabaseHook db) {
         this.plugin = plugin;
+        this.db = db;
     }
-
     @EventHandler
     public void onCMIUserBalanceChange(CMIUserBalanceChangeEvent event) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             CMIUser toUser = event.getUser();
             CMIUser fromUser = event.getSource();
-            if (toUser != null && fromUser != null) {
-                File f = new File(plugin.getDataFolder() + File.separator + "logs" + File.separator + "transactions" + File.separator + toUser.getUniqueId() + ".log");
-                FileWriter fData = null;
-                try {
-                    fData = new FileWriter(f, true);
-                } catch (IOException e) {
+            if (toUser != null && fromUser != null && event.getActionType().equalsIgnoreCase("deposit")) {
+                double amount = event.getTo() - event.getFrom();
+                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                        "INSERT INTO logs_transactions (sender_id, sender_rank, receiver_id, receiver_rank, amount) VALUES (?, ?, ?, ?, ?)")) {
+                    ps.setString(1, fromUser.getUniqueId().toString());
+                    ps.setString(2, fromUser.getRank().getName());
+                    ps.setString(3, toUser.getUniqueId().toString());
+                    ps.setString(4, toUser.getRank().getName());
+                    ps.setDouble(5, amount);
+                    ps.executeUpdate();
+                } catch (SQLException e) {
                     e.printStackTrace();
-                }
-                if(fData != null) {
-                    PrintWriter pData = new PrintWriter(fData);
-
-                    Date date = new Date();
-                    SimpleDateFormat dateFor = new SimpleDateFormat("yyyy/MM/dd hh:mm:ss");
-                    String stringDate = dateFor.format(date);
-                    double amount = event.getTo() - event.getFrom();
-                    if (event.getActionType().equalsIgnoreCase("withdraw")) {
-                        amount = event.getFrom() - event.getTo();
-                    }
-                    pData.println(stringDate + ";" + fromUser.getUniqueId() + ";" + event.getActionType().toLowerCase() + ";" + amount + ";false;null;null");
-
-                    pData.flush();
-                    pData.close();
                 }
             }
         });

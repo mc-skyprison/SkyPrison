@@ -63,19 +63,19 @@ public class MoneyHistory implements CustomInventory {
     }
     public void updateSort() {
         sort = !sort;
-        Collections.reverse(transactions);
+        Collections.reverse(transToDisplay);
         sortItem.editMeta(meta -> {
             ArrayList<Component> lore = new ArrayList<>();
             lore.add(Component.text("Current Sort: ", NamedTextColor.GOLD)
-                    .append(Component.text(sort ? "Oldest -> Newest" : "Newest -> Oldest", NamedTextColor.YELLOW, TextDecoration.BOLD))
+                    .append(Component.text(sort ? "Newest -> Oldest" : "Oldest -> Newest", NamedTextColor.YELLOW, TextDecoration.BOLD))
                     .decoration(TextDecoration.ITALIC, false));
             meta.lore(lore);
         });
-        inventory.setItem(49, sortItem);
+        inventory.setItem(48, sortItem);
         updatePage(0);
     }
     public void updateType(Boolean direction) {
-        if(direction != null) typePos = direction ? (typePos + 1) % transactions.size() : (typePos - 1 + transactions.size()) % transactions.size();
+        if(direction != null) typePos = direction ? (typePos + 1) % types.size() : (typePos - 1 + types.size()) % types.size();
         TextColor color = NamedTextColor.GRAY;
         TextColor selectedColor = TextColor.fromHexString("#0fffc3");
         typeItem.editMeta(meta -> {
@@ -87,7 +87,7 @@ public class MoneyHistory implements CustomInventory {
             });
             meta.lore(lore);
         });
-        inventory.setItem(48, typeItem);
+        inventory.setItem(50, typeItem);
         transToDisplay.clear();
         if(getType().equalsIgnoreCase("All Transactions")) {
             transToDisplay.addAll(transactions.stream().map(Transaction::item).toList());
@@ -136,7 +136,7 @@ public class MoneyHistory implements CustomInventory {
                     }
                     meta.lore(lore);
                 });
-                transactions.add(new Transaction(displayItem, receiver, sender, (item != null ? "payment" : "shop"), amount, date, item));
+                transactions.add(new Transaction(displayItem, receiver, sender, (item == null ? "Payments" : "Player Shops"), amount, date, item));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -150,7 +150,7 @@ public class MoneyHistory implements CustomInventory {
                     .decoration(TextDecoration.ITALIC, false));
             ArrayList<Component> lore = new ArrayList<>();
             lore.add(Component.text("Current Sort: ", NamedTextColor.GOLD)
-                    .append(Component.text(sort ? "Oldest -> Newest" : "Newest -> Oldest", NamedTextColor.YELLOW, TextDecoration.BOLD))
+                    .append(Component.text(sort ? "Newest -> Oldest" : "Oldest -> Newest", NamedTextColor.YELLOW, TextDecoration.BOLD))
                     .decoration(TextDecoration.ITALIC, false));
             meta.lore(lore);
         });
