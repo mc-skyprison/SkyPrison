@@ -58,7 +58,6 @@ import net.skyprison.skyprisoncore.listeners.advancedregionmarket.UnsellRegion;
 import net.skyprison.skyprisoncore.listeners.brewery.BrewDrink;
 import net.skyprison.skyprisoncore.listeners.cmi.CMIPlayerTeleportRequest;
 import net.skyprison.skyprisoncore.listeners.cmi.CMIUserBalanceChange;
-import net.skyprison.skyprisoncore.listeners.cmi.PlayerUnJail;
 import net.skyprison.skyprisoncore.listeners.discord.MessageCreate;
 import net.skyprison.skyprisoncore.listeners.discord.SlashCommandCreate;
 import net.skyprison.skyprisoncore.listeners.discord.UserRoleAdd;
@@ -835,7 +834,6 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PlayerPostRespawn(), this);
         pm.registerEvents(new PlayerTag(this), this);
         pm.registerEvents(new PlayerTeleport(this), this);
-        pm.registerEvents(new PlayerUnJail(), this);
         pm.registerEvents(new PlayerUntag(), this);
         pm.registerEvents(new ShopCreate(this), this);
         pm.registerEvents(new ShopPostTransaction(db, dailyMissions), this);

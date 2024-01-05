@@ -8,6 +8,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -46,7 +47,7 @@ public class BottledExpCommands {
                     boolean canWithdraw = canPlayerWithdraw(player, tAmount);
                     if(canWithdraw) {
                         if (getTotalExperience(player) >= tAmount) {
-                            if (CMI.getInstance().getPlayerManager().getUser(player).getBalance() >= tAmount * 0.25) {
+                            if (PlayerManager.getBalance(player) >= tAmount * 0.25) {
                                 createMultipleBottles(player, amount, bottles, tAmount);
                             } else {
                                 player.sendMessage(Component.text("You need $" + plugin.formatNumber(amount * 0.25)

@@ -1,7 +1,5 @@
 package net.skyprison.skyprisoncore.inventories.smith;
 
-import com.Zrips.CMI.CMI;
-import com.Zrips.CMI.Containers.CMIUser;
 import me.arcaniax.hdb.api.HeadDatabaseAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -11,6 +9,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.items.TreeFeller;
+import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
@@ -126,7 +125,7 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
                 lore.add(Component.text("Missing: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(hasMoney), NamedTextColor.RED, TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
                 lore.add(Component.text("                  ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH).decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(getBalance(player)), NamedTextColor.RED, TextDecoration.BOLD))
+                lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(PlayerManager.getBalance(player)), NamedTextColor.RED, TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
                 needMeta.lore(lore);
                 needMoney.setItemMeta(needMeta);
@@ -142,13 +141,8 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
         currRight.setAmount(currRight.getAmount()-1);
     }
     public double hasMoney(double cost) {
-        CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-        if(user.hasMoney(cost)) {
-            return 0;
-        } else {
-            double money = user.getBalance();
-            return cost - money;
-        }
+        double money = PlayerManager.getBalance(player);
+        return (money >= cost) ? 0 : cost - money;
     }
     public double getPrice() {
         double price = 0;
@@ -172,10 +166,6 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
             price = 50 * upgradedAmounts;
         }
         return price;
-    }
-    public double getBalance(Player player) {
-        CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-        return user.getBalance();
     }
     public void resetResult() {
         inventory.setItem(13, new ItemStack(Material.AIR));

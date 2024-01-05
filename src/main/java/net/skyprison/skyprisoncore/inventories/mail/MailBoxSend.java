@@ -1,7 +1,5 @@
 package net.skyprison.skyprisoncore.inventories.mail;
 
-import com.Zrips.CMI.CMI;
-import com.Zrips.CMI.Containers.CMIUser;
 import com.destroystokyo.paper.MaterialTags;
 import me.arcaniax.hdb.api.HeadDatabaseAPI;
 import net.kyori.adventure.text.Component;
@@ -13,6 +11,7 @@ import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.MailUtils;
 import net.skyprison.skyprisoncore.utils.NotificationsUtils;
+import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -284,8 +283,7 @@ public class MailBoxSend implements CustomInventory {
         updateCost();
     }
     public boolean canAfford() {
-        CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-        return user.getBalance() >= getCost();
+        return PlayerManager.getBalance(player) >= getCost();
     }
     public boolean getCanSendItems() {
         return this.canSendItems;

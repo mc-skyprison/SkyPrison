@@ -18,10 +18,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.items.Greg;
 import net.skyprison.skyprisoncore.utils.JailTimer;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
+import org.bukkit.*;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -331,7 +328,7 @@ public class JailCommands {
         }
         Location leaveLoc = new Location(Bukkit.getWorld("world_prison"), 0.5, 135, 0.5);
         player.teleportAsync(leaveLoc);
-
+        player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
         UUID senderId = null;
         if(sender instanceof Player playerSender) senderId = playerSender.getUniqueId();
         long currTime = System.currentTimeMillis();

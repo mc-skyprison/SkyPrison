@@ -1,7 +1,5 @@
 package net.skyprison.skyprisoncore.inventories.smith;
 
-import com.Zrips.CMI.CMI;
-import com.Zrips.CMI.Containers.CMIUser;
 import com.destroystokyo.paper.MaterialSetTag;
 import me.arcaniax.hdb.api.HeadDatabaseAPI;
 import net.kyori.adventure.text.Component;
@@ -11,6 +9,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
+import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -129,7 +128,7 @@ public class BlacksmithTrimmer implements CustomInventory {
                 lore.add(Component.text("Missing: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(hasMoney), NamedTextColor.RED, TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
                 lore.add(Component.text("                  ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH).decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(getBalance(player)), NamedTextColor.RED, TextDecoration.BOLD))
+                lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(PlayerManager.getBalance(player)), NamedTextColor.RED, TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
                 needMeta.lore(lore);
                 needMoney.setItemMeta(needMeta);
@@ -209,13 +208,8 @@ public class BlacksmithTrimmer implements CustomInventory {
         return false;
     }
     public double hasMoney(double cost) {
-        CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-        if(user.hasMoney(cost)) {
-            return 0;
-        } else {
-            double money = user.getBalance();
-            return cost - money;
-        }
+        double money = PlayerManager.getBalance(player);
+        return (money >= cost) ? 0 : cost - money;
     }
     public double getPrice() {
         double price = 0;
@@ -235,10 +229,6 @@ public class BlacksmithTrimmer implements CustomInventory {
             }
         }
         return price;
-    }
-    public double getBalance(Player player) {
-        CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-        return user.getBalance();
     }
     public TrimMaterial getTrimMaterial(Material type) {
         TrimMaterial mat = null;

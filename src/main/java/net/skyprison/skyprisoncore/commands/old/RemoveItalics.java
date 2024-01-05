@@ -1,13 +1,12 @@
 package net.skyprison.skyprisoncore.commands.old;
 
-import com.Zrips.CMI.CMI;
-import com.Zrips.CMI.Containers.CMIUser;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -50,10 +49,9 @@ public class RemoveItalics implements CommandExecutor {
 				if(confirmItalics.containsKey(player.getUniqueId())) {
 					player.sendMessage(Component.text("You're already removing italics from an item!", NamedTextColor.RED));
 				} else {
-					CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
 					ItemStack item = player.getInventory().getItemInMainHand();
 					ItemMeta iMeta = item.getItemMeta();
-					if (user.getBalance() >= 50000) {
+					if (PlayerManager.getBalance(player) >= 50000) {
 						if (iMeta.hasDisplayName()) {
 							if (!Objects.requireNonNull(iMeta.displayName()).hasDecoration(TextDecoration.ITALIC)) {
 								confirmItalics.put(player.getUniqueId(), item);

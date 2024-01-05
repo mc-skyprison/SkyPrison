@@ -639,8 +639,7 @@ public class InventoryClick implements Listener {
                                     if (useMoney) {
                                         boolean usingMoney = (!useTokens && !useVouchers) || event.isLeftClick() && !event.isShiftClick();
                                         if (usingMoney) {
-                                            CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-                                            if (moneyCost <= user.getBalance()) {
+                                            if (PlayerManager.getBalance(player) >= moneyCost) {
                                                 removeMoney = true;
                                             } else {
                                                 player.sendMessage(Component.text("You can't afford this!", NamedTextColor.RED));
@@ -1787,8 +1786,7 @@ public class InventoryClick implements Listener {
                         int itemId = soldData.getOrDefault(key, PersistentDataType.INTEGER, -1);
                         if(itemId == -1) return;
                         BuyBack.SoldItem itemData = inv.getSoldItem(itemId);
-                        CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-                        if (user.getBalance() >= itemData.price()) {
+                        if (PlayerManager.getBalance(player) >= itemData.price()) {
                             ItemStack item = new ItemStack(itemData.itemType(), itemData.amount());
                             HashMap<Integer, ItemStack> leftovers = player.getInventory().addItem(item);
                             if(!leftovers.isEmpty()) {
