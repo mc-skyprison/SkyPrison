@@ -21,6 +21,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.economy.BountiesList;
 import net.skyprison.skyprisoncore.inventories.economy.BuyBack;
 import net.skyprison.skyprisoncore.inventories.economy.EconomyCheck;
+import net.skyprison.skyprisoncore.inventories.economy.MoneyHistory;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
@@ -207,6 +208,28 @@ public class EconomyCommands {
 
                     String finalTargetName = targetName;
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new EconomyCheck(plugin, db, finalTargetName).getInventory()));
+                }));
+
+        Command.Builder<CommandSender> mHistory = manager.commandBuilder("moneyhistory", "mhistory")
+                .senderType(Player.class)
+                .permission("skyprisoncore.command.moneyhistory")
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new MoneyHistory(plugin, db, player.getUniqueId().toString()).getInventory()));
+                });
+        manager.command(mHistory);
+        manager.command(mHistory
+                .permission("skyprisoncore.command.moneyhistory.others")
+                .senderType(Player.class)
+                .argument(StringArgument.of("player"))
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    UUID pUUID = PlayerManager.getPlayerId(c.get("player"));
+                    if(pUUID != null) {
+                        Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new MoneyHistory(plugin, db, pUUID.toString()).getInventory()));
+                    } else {
+                        player.sendMessage(Component.text("Player not found!", NamedTextColor.RED));
+                    }
                 }));
     }
 

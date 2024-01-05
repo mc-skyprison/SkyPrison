@@ -83,7 +83,7 @@ public class EconomyCheck implements CustomInventory {
         record SoldData(String item, int amount, double price) {}
         LinkedHashMap<String, SoldData> soldDatas = new LinkedHashMap<>();
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                "SELECT item, amount, price FROM logs_shop " + "WHERE transaction_type != ? AND bought_back != ?" + (playerId != null ? " AND user_id = ? " : ""))) {
+                "SELECT item, amount, price FROM logs_shop WHERE transaction_type != ? AND bought_back != ?" + (playerId != null ? " AND user_id = ? " : ""))) {
             ps.setString(1, "BUY");
             ps.setInt(2, 1);
             if(playerId != null) ps.setString(3, playerId);
@@ -118,19 +118,19 @@ public class EconomyCheck implements CustomInventory {
                 meta.displayName(Component.text(item.replace("_", " "), NamedTextColor.YELLOW, TextDecoration.BOLD)
                         .decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Amount Sold: ", NamedTextColor.GRAY).append(Component.text(plugin.formatAmount(soldData.amount), NamedTextColor.YELLOW))
+                lore.add(Component.text("Amount Sold: ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(soldData.amount), NamedTextColor.YELLOW))
                         .decoration(TextDecoration.ITALIC, false));
                 lore.add(Component.text("Position: ", NamedTextColor.GRAY).append(Component.text(amountPos, NamedTextColor.GREEN))
                         .decoration(TextDecoration.ITALIC, false));
                 lore.add(Component.text( "-----", NamedTextColor.DARK_GRAY)
                         .decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Money Made: ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(soldData.price), NamedTextColor.YELLOW))
+                lore.add(Component.text("Money Made: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(soldData.price), NamedTextColor.YELLOW))
                         .decoration(TextDecoration.ITALIC, false));
                 lore.add(Component.text("Position: ", NamedTextColor.GRAY).append(Component.text(moneyPos, NamedTextColor.GREEN))
                         .decoration(TextDecoration.ITALIC, false));
                 meta.lore(lore);
             });
-            this.soldItems.put(itemStack, new SoldItem(soldData.amount(), amountPos, soldData.price(), moneyPos));
+            soldItems.put(itemStack, new SoldItem(soldData.amount(), amountPos, soldData.price(), moneyPos));
         });
 
         topSold.addAll(soldItems.entrySet().stream()
@@ -155,9 +155,9 @@ public class EconomyCheck implements CustomInventory {
             List<Component> lore = new ArrayList<>();
             int totalSold = soldItems.values().stream().mapToInt(SoldItem::amount).sum();
             double totalMoney = soldItems.values().stream().mapToDouble(SoldItem::price).sum();
-            lore.add(Component.text("Total Amount Sold: ", NamedTextColor.GRAY).append(Component.text(plugin.formatAmount(totalSold), NamedTextColor.YELLOW))
+            lore.add(Component.text("Total Amount Sold: ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(totalSold), NamedTextColor.YELLOW))
                     .decoration(TextDecoration.ITALIC, false));
-            lore.add(Component.text("Total Money Made: ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(totalMoney), NamedTextColor.YELLOW))
+            lore.add(Component.text("Total Money Made: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(totalMoney), NamedTextColor.YELLOW))
                     .decoration(TextDecoration.ITALIC, false));
             meta.lore(lore);
         });

@@ -40,7 +40,10 @@ import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.skyprison.skyprisoncore.commands.*;
 import net.skyprison.skyprisoncore.commands.old.*;
-import net.skyprison.skyprisoncore.commands.old.economy.*;
+import net.skyprison.skyprisoncore.commands.old.economy.PermShop;
+import net.skyprison.skyprisoncore.commands.old.economy.ShopBan;
+import net.skyprison.skyprisoncore.commands.old.economy.Tokens;
+import net.skyprison.skyprisoncore.commands.old.economy.TransportPass;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
 import net.skyprison.skyprisoncore.inventories.NewsMessageEdit;
@@ -799,7 +802,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("transportpass")).setExecutor(new TransportPass(this));
         Objects.requireNonNull(getCommand("skyplot")).setExecutor(new SkyPlot(this));
         Objects.requireNonNull(getCommand("plot")).setExecutor(new PlotTeleport(this));
-        Objects.requireNonNull(getCommand("moneyhistory")).setExecutor(new MoneyHistory(this));
         Objects.requireNonNull(getCommand("tags")).setExecutor(new Tags(this, db));
         Objects.requireNonNull(getCommand("minereset")).setExecutor(new MineReset(this));
         Objects.requireNonNull(getCommand("randomgive")).setExecutor(new RandomGive(this));
@@ -823,7 +825,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EntityDamageByEntity(this), this);
         pm.registerEvents(new EntityDeath(this, db, dailyMissions), this);
         pm.registerEvents(new EntityPickupItem(this), this);
-        pm.registerEvents(new InventoryClick(this, new Daily(this, db), new MoneyHistory(this),
+        pm.registerEvents(new InventoryClick(this, new Daily(this, db),
                 db, new Tags(this, db), particles, new CustomRecipes(this)), this);
         pm.registerEvents(new InventoryOpen(this), this);
         pm.registerEvents(new LeavesDecay(), this);
@@ -975,10 +977,6 @@ public class SkyPrisonCore extends JavaPlugin {
             .build();
     public String formatNumber(double value) {
         DecimalFormat df = new DecimalFormat("###,###,###.##");
-        return df.format(value);
-    }
-    public String formatAmount(int value) {
-        DecimalFormat df = new DecimalFormat("###,###,###");
         return df.format(value);
     }
 }
