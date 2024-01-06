@@ -40,7 +40,6 @@ import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.skyprison.skyprisoncore.commands.*;
 import net.skyprison.skyprisoncore.commands.old.*;
-import net.skyprison.skyprisoncore.commands.old.economy.Tokens;
 import net.skyprison.skyprisoncore.commands.old.economy.TransportPass;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
@@ -113,7 +112,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -127,7 +125,6 @@ public class SkyPrisonCore extends JavaPlugin {
     public HashMap<UUID, Boolean> flyPvP = new HashMap<>();
     public Map<Player, Map.Entry<Player, Long>> hitcd = new HashMap<>();
     public HashMap<UUID, Integer> teleportMove = new HashMap<>();
-    public Map<UUID, Integer> tokensData = new HashMap<>();
     public HashMap<UUID, String> userTags = new HashMap<>();
     public HashMap<UUID, ArrayList<String>> missions = new HashMap<>();
     public Map<String, Long> mineCools = new HashMap<>();
@@ -148,7 +145,6 @@ public class SkyPrisonCore extends JavaPlugin {
     public HashMap<UUID, Boolean>  customClaimShape = new HashMap<>();
     public HashMap<Material, Double> minPrice = new HashMap<>();
     public List<Location> shinyGrass = new ArrayList<>();
-    public Tokens tokens;
     private DiscordApi discApi;
     public DailyMissions dailyMissions;
     public ArrayList<Location> bombLocs = new ArrayList<>();
@@ -245,8 +241,6 @@ public class SkyPrisonCore extends JavaPlugin {
             }.runTaskTimerAsynchronously(this, 20 * 1800, 20 * 1800);
         }
 
-        tokens = new Tokens(this, db);
-
         dailyMissions = new DailyMissions(this, db);
 
         registerMinPrice();
@@ -333,11 +327,11 @@ public class SkyPrisonCore extends JavaPlugin {
             @Override
             public void run() {
                 checkOnlineDailies();
+                Map<UUID, Integer> tokensData = TokenUtils.getTokensData();
                 if(tokensData != null && !tokensData.isEmpty()) {
-                    Map<UUID, Integer> token = tokensData;
-                    for (UUID pUUID : token.keySet()) {
+                    for (UUID pUUID : tokensData.keySet()) {
                         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET tokens = ? WHERE user_id = ?")) {
-                            ps.setInt(1, token.get(pUUID));
+                            ps.setInt(1, tokensData.get(pUUID));
                             ps.setString(2, pUUID.toString());
                             ps.executeUpdate();
                         } catch (SQLException e) {
@@ -782,11 +776,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Permission bountyBypass = new Permission("skyprisoncore.command.bounty.bypass", PermissionDefault.FALSE);
         Bukkit.getPluginManager().addPermission(bountyBypass);
 
-
-        Objects.requireNonNull(getCommand("tokens")).setExecutor(tokens);
-        Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
-        Objects.requireNonNull(getCommand("tokens")).setTabCompleter(new TabCompleter());
-        Objects.requireNonNull(getCommand("token")).setTabCompleter(new TabCompleter());
         Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, db));
         Objects.requireNonNull(getCommand("killinfo")).setExecutor(new KillInfo(db));
         Objects.requireNonNull(getCommand("firstjointop")).setExecutor(new FirstjoinTop(this, db));
@@ -971,8 +960,4 @@ public class SkyPrisonCore extends JavaPlugin {
                     .build()
             )
             .build();
-    public String formatNumber(double value) {
-        DecimalFormat df = new DecimalFormat("###,###,###.##");
-        return df.format(value);
-    }
 }

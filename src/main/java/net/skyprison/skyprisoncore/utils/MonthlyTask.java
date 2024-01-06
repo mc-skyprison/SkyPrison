@@ -5,7 +5,6 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.commands.old.economy.Tokens;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -55,11 +54,11 @@ public class MonthlyTask extends TimerTask {
                             topVoter = playerName;
                             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + playerName + " permission set skyprisoncore.tag.85");
                         }
-                        new Tokens(plugin, db).addTokens(pUUID, 200, "monthly-top-voter", String.valueOf(i));
+                        TokenUtils.addTokens(pUUID, 200, "monthly-top-voter", String.valueOf(i));
                         topVote = topVote.appendNewline().append(Component.text(i + ". ", NamedTextColor.GRAY, TextDecoration.BOLD))
                                 .append(Component.text(playerName, NamedTextColor.RED, TextDecoration.BOLD))
                                 .append(Component.text(" » ", NamedTextColor.DARK_GRAY, TextDecoration.BOLD))
-                                .append(Component.text(plugin.formatNumber(rs.getInt("vote_count")) + " Votes",
+                                .append(Component.text(ChatUtils.formatNumber(rs.getInt("vote_count")) + " Votes",
                                         TextColor.fromHexString("#cccccc"), TextDecoration.BOLD));
                         i++;
                         Player player = Bukkit.getPlayer(pUUID);

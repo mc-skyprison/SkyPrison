@@ -8,6 +8,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -50,7 +51,7 @@ public class BottledExpCommands {
                             if (PlayerManager.getBalance(player) >= tAmount * 0.25) {
                                 createMultipleBottles(player, amount, bottles, tAmount);
                             } else {
-                                player.sendMessage(Component.text("You need $" + plugin.formatNumber(amount * 0.25)
+                                player.sendMessage(Component.text("You need $" + ChatUtils.formatNumber(amount * 0.25)
                                         + " to bottle that amount of experience!", NamedTextColor.RED));
                             }
                         } else {
@@ -70,7 +71,7 @@ public class BottledExpCommands {
                     if (CMI.getInstance().getPlayerManager().getUser(player).getBalance() >= getTotalExperience(player) * 0.25) {
                         createBottle(player, getTotalExperience(player));
                     } else {
-                        player.sendMessage(Component.text("You need $" + plugin.formatNumber(getTotalExperience(player) * 0.25)
+                        player.sendMessage(Component.text("You need $" + ChatUtils.formatNumber(getTotalExperience(player) * 0.25)
                                 + " to bottle that amount of experience!", NamedTextColor.RED));
                     }
                 }));
@@ -87,7 +88,7 @@ public class BottledExpCommands {
         if (player.getInventory().addItem(expBottle).isEmpty()) {
             player.giveExp(-amount);
             plugin.getServer().getScheduler().runTask(plugin, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + amount * 0.25));
-            player.sendMessage(Component.text("-" + plugin.formatNumber(amount) + " XP", NamedTextColor.DARK_RED, TextDecoration.BOLD));
+            player.sendMessage(Component.text("-" + ChatUtils.formatNumber(amount) + " XP", NamedTextColor.DARK_RED, TextDecoration.BOLD));
         } else {
             player.sendMessage(Component.text("You do not have space in your inventory!", NamedTextColor.RED));
         }
@@ -98,7 +99,7 @@ public class BottledExpCommands {
         expBottle.editMeta(meta -> {
             meta.displayName(Component.text("Experience Bottle ", NamedTextColor.DARK_PURPLE).append(Component.text("(Throw)", NamedTextColor.GRAY)));
             ArrayList<Component> lore = new ArrayList<>();
-            lore.add(Component.text("Experience: ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(amount), NamedTextColor.YELLOW)));
+            lore.add(Component.text("Experience: ", NamedTextColor.GRAY).append(Component.text(ChatUtils.formatNumber(amount), NamedTextColor.YELLOW)));
             meta.lore(lore);
             NamespacedKey key = new NamespacedKey(plugin, "exp-amount");
             meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, amount);
@@ -110,7 +111,7 @@ public class BottledExpCommands {
         if (player.getInventory().addItem(expBottle).isEmpty()) {
             player.giveExp(-tAmount);
             plugin.getServer().getScheduler().runTask(plugin, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + tAmount * 0.25));
-            player.sendMessage(Component.text("-" + plugin.formatNumber(tAmount) + " XP", NamedTextColor.DARK_RED, TextDecoration.BOLD));
+            player.sendMessage(Component.text("-" + ChatUtils.formatNumber(tAmount) + " XP", NamedTextColor.DARK_RED, TextDecoration.BOLD));
         } else {
             player.sendMessage(Component.text("You do not have space in your inventory!", NamedTextColor.RED));
         }

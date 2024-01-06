@@ -8,10 +8,10 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.commands.old.economy.Tokens;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
+import net.skyprison.skyprisoncore.utils.TokenUtils;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -79,7 +79,7 @@ public class Votifier implements Listener {
                             .append(Component.text("! ", TextColor.fromHexString("#0fff87"), TextDecoration.BOLD))
                             .append(Component.text("/Vote", TextColor.fromHexString("#2db4e1"), TextDecoration.BOLD));
                 }
-                new Tokens(plugin, db).addTokens(pUUID, tokens, "voting", serviceName);
+                TokenUtils.addTokens(pUUID, tokens, "voting", serviceName);
                 Player player = plugin.getServer().getPlayer(pUUID);
                 Audience receivers =  player != null ? plugin.getServer().filterAudience(audience -> !audience.equals(player)) : plugin.getServer();
                 receivers.sendMessage(everyoneMsg);

@@ -198,7 +198,7 @@ public class DailyMissions {
     public boolean isCompleted(OfflinePlayer player, String mission) {
         return getFullMission(player, mission).contains(":completed");
     }
-    
+
     public ArrayList<String> getMissions(OfflinePlayer player) {
         if(plugin.missions.containsKey(player.getUniqueId())) {
             ArrayList<String> missionType = new ArrayList<>();
@@ -276,7 +276,7 @@ public class DailyMissions {
             completed = 1;
             Random randInt = new Random();
             int reward = randInt.nextInt(25) + 25;
-            plugin.tokens.addTokens(player.getUniqueId(), reward, "Daily Mission", mSplit[0] + ":" + needed);
+            TokenUtils.addTokens(player.getUniqueId(), reward, "Daily Mission", mSplit[0] + ":" + needed);
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
 
             uMission = uMission + ":completed";

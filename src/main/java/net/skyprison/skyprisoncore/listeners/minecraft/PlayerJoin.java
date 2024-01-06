@@ -28,6 +28,7 @@ import net.skyprison.skyprisoncore.commands.JailCommands;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.MailUtils;
+import net.skyprison.skyprisoncore.utils.TokenUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -190,7 +191,7 @@ public class PlayerJoin implements Listener {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             EmbedBuilder embedJoin;
             plugin.blockBreaks.put(player.getUniqueId(), 0);
-            plugin.tokensData.put(player.getUniqueId(), 0);
+            TokenUtils.getTokensData().put(player.getUniqueId(), 0);
             if(!player.hasPlayedBefore()) {
                 embedJoin = new EmbedBuilder()
                         .setAuthor(player.getName() + " joined the server for the first time!", "",  "https://minotar.net/helm/" + player.getName())
@@ -264,7 +265,7 @@ public class PlayerJoin implements Listener {
                 ResultSet rs = ps.executeQuery();
                 if (rs.next()) {
                     plugin.blockBreaks.put(player.getUniqueId(), rs.getInt(1));
-                    plugin.tokensData.put(player.getUniqueId(), rs.getInt(2));
+                    TokenUtils.getTokensData().put(player.getUniqueId(), rs.getInt(2));
                     tag_id = rs.getInt(3);
                     logoutWorld = rs.getString(4);
                 }

@@ -3,6 +3,7 @@ package net.skyprison.skyprisoncore.commands.old.economy;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.TokenUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -26,10 +27,10 @@ public class TransportPass implements CommandExecutor {
             switch (args[1].toLowerCase()) {
                 case "bus" -> {
                     if (!player.hasPermission("skyprisoncore.command.transportpass.bus")) {
-                        if (plugin.tokensData.get(player.getUniqueId()) >= 250) {
-                            int uTokens = plugin.tokensData.get(player.getUniqueId()) - 250;
+                        if (TokenUtils.getTokensData().get(player.getUniqueId()) >= 250) {
+                            int uTokens = TokenUtils.getTokensData().get(player.getUniqueId()) - 250;
                             player.sendMessage(prefix.append(Component.text("250 tokens ", NamedTextColor.AQUA).append(Component.text("was removed from your balance", NamedTextColor.GRAY))));
-                            plugin.tokensData.put(player.getUniqueId(), uTokens);
+                            TokenUtils.getTokensData().put(player.getUniqueId(), uTokens);
                             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + player.getName() + " permission settemp skyprisoncore.command.transportpass.bus true 7d");
                         } else {
                             player.sendMessage(prefix.append(Component.text("You do not have enough tokens to buy this!", NamedTextColor.RED)));
@@ -40,10 +41,10 @@ public class TransportPass implements CommandExecutor {
                 }
                 case "train" -> {
                     if (!player.hasPermission("skyprisoncore.command.transportpass.train")) {
-                        if (plugin.tokensData.get(player.getUniqueId()) >= 500) {
-                            int uTokens = plugin.tokensData.get(player.getUniqueId()) - 500;
+                        if (TokenUtils.getTokensData().get(player.getUniqueId()) >= 500) {
+                            int uTokens = TokenUtils.getTokensData().get(player.getUniqueId()) - 500;
                             player.sendMessage(prefix.append(Component.text("500 tokens ", NamedTextColor.AQUA).append(Component.text("was removed from your balance", NamedTextColor.GRAY))));
-                            plugin.tokensData.put(player.getUniqueId(), uTokens);
+                            TokenUtils.getTokensData().put(player.getUniqueId(), uTokens);
                             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + player.getName() + " permission settemp skyprisoncore.command.transportpass.train true 7d");
                         } else {
                             player.sendMessage(prefix.append(Component.text("You do not have enough tokens to buy this!", NamedTextColor.RED)));

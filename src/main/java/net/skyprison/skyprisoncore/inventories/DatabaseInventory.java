@@ -7,6 +7,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -74,7 +75,7 @@ public class DatabaseInventory implements CustomInventory{
                 boolean useTokens = ((int) itemData.get("price_tokens") != 0);
                 boolean useVouchers = ((int) itemData.get("price_voucher") != 0 && !itemData.get("price_voucher_type").toString().equalsIgnoreCase("none"));
                 if (useMoney) {
-                    Component moneyComp = Component.text("Money: $" + plugin.formatNumber((int) itemData.get("price_money")), NamedTextColor.GRAY, TextDecoration.BOLD)
+                    Component moneyComp = Component.text("Money: $" + ChatUtils.formatNumber((int) itemData.get("price_money")), NamedTextColor.GRAY, TextDecoration.BOLD)
                             .decoration(TextDecoration.ITALIC, false);
                     if(useTokens || useVouchers) {
                         moneyComp = moneyComp.append(Component.text(" (Left Click)", NamedTextColor.GRAY, TextDecoration.ITALIC).decoration(TextDecoration.BOLD, false));
@@ -83,7 +84,7 @@ public class DatabaseInventory implements CustomInventory{
                     lore.add(moneyComp);
                 }
                 if (useTokens) {
-                    Component tokenComp = Component.text("Tokens: " + plugin.formatNumber((int) itemData.get("price_tokens")), NamedTextColor.GRAY, TextDecoration.BOLD);
+                    Component tokenComp = Component.text("Tokens: " + ChatUtils.formatNumber((int) itemData.get("price_tokens")), NamedTextColor.GRAY, TextDecoration.BOLD);
                     if(useMoney) {
                         tokenComp = tokenComp.append(Component.text(" (Right Click)", NamedTextColor.GRAY, TextDecoration.ITALIC).decoration(TextDecoration.BOLD, false));
                     } else if(useVouchers) {
@@ -93,7 +94,7 @@ public class DatabaseInventory implements CustomInventory{
                     lore.add(tokenComp);
                 }
                 if (useVouchers) {
-                    Component voucherComp = Component.text("Voucher: " + plugin.formatNumber((int) itemData.get("price_voucher")), NamedTextColor.GRAY, TextDecoration.BOLD);
+                    Component voucherComp = Component.text("Voucher: " + ChatUtils.formatNumber((int) itemData.get("price_voucher")), NamedTextColor.GRAY, TextDecoration.BOLD);
                     //voucherComp = voucherComp.append(Component.text(" (" + WordUtils.capitalize(itemData.get("price_voucher_type").toString().replace("-", "")) + ") ", NamedTextColor.GRAY));
                     if(useMoney && useTokens) {
                         voucherComp = voucherComp.append(Component.text(" (Shift Click)", NamedTextColor.GRAY, TextDecoration.ITALIC).decoration(TextDecoration.BOLD, false));

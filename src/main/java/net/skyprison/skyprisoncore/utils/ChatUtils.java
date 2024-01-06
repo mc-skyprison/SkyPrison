@@ -3,7 +3,6 @@ package net.skyprison.skyprisoncore.utils;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -12,6 +11,7 @@ import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.channel.TextChannel;
 
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.Objects;
 import java.util.regex.Matcher;
 
@@ -84,5 +84,9 @@ public class ChatUtils {
 			player.sendMessage(MiniMessage.miniMessage().deserialize(prefix + stickEnabled));
 			plugin.stickyChat.put(player.getUniqueId(), chatId + "-" + discordId);
 		}
+	}
+	public static String formatNumber(double value) {
+		DecimalFormat df = new DecimalFormat("###,###,###.##");
+		return df.format(value);
 	}
 }

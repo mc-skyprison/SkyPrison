@@ -7,6 +7,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
+import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;
@@ -94,7 +95,7 @@ public class BountiesList implements CustomInventory {
                 }
                 meta.displayName(Component.text(Objects.requireNonNullElse(name, "Name Not Found.."),
                         NamedTextColor.YELLOW, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
-                lore.addFirst(Component.text("Bounty: ", NamedTextColor.YELLOW).append(Component.text("$" + plugin.formatNumber(sortedMap.get(bountyPlayer)),
+                lore.addFirst(Component.text("Bounty: ", NamedTextColor.YELLOW).append(Component.text("$" + ChatUtils.formatNumber(sortedMap.get(bountyPlayer)),
                                 NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
                 meta.lore(lore);
             });

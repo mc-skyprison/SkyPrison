@@ -6,9 +6,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.mail.MailBox;
-import net.skyprison.skyprisoncore.utils.DailyMissions;
-import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.MailUtils;
+import net.skyprison.skyprisoncore.utils.*;
 import net.skyprison.skyprisoncore.utils.secrets.Secret;
 import net.skyprison.skyprisoncore.utils.secrets.SecretCategory;
 import net.skyprison.skyprisoncore.utils.secrets.SecretsUtils;
@@ -92,7 +90,7 @@ public class PlayerInteract implements Listener {
                                 switch (rewardType) {
                                     case "tokens" -> {
                                         int tokens = secret.reward();
-                                        plugin.tokens.addTokens(player.getUniqueId(), tokens, "secret", secret.name());
+                                        TokenUtils.addTokens(player.getUniqueId(), tokens, "secret", secret.name());
                                         secret.setPlayerCooldown(player.getUniqueId());
                                     }
                                 }
@@ -111,7 +109,7 @@ public class PlayerInteract implements Listener {
                                         switch (categoryRewardType) {
                                             case "tokens" -> {
                                                 int tokens = category.rewardAmount();
-                                                plugin.tokens.addTokens(player.getUniqueId(), tokens, "secret-category", category.name());
+                                                TokenUtils.addTokens(player.getUniqueId(), tokens, "secret-category", category.name());
                                             }
                                         }
                                         player.sendMessage(Component.text("You've found all the secrets in this category, and have received ", NamedTextColor.GREEN)
@@ -142,7 +140,7 @@ public class PlayerInteract implements Listener {
                     event.setCancelled(true);
                     int expToGive = clickedPers.get(expKey, PersistentDataType.INTEGER);
                     player.giveExp(expToGive);
-                    player.sendMessage(Component.text("+" + plugin.formatNumber(expToGive) + " XP", NamedTextColor.DARK_GREEN, TextDecoration.BOLD));
+                    player.sendMessage(Component.text("+" + ChatUtils.formatNumber(expToGive) + " XP", NamedTextColor.DARK_GREEN, TextDecoration.BOLD));
                     player.getInventory().removeItem(item.asOne());
                 } else if (clickedPers.has(voucherKey, PersistentDataType.STRING)) {
                     String voucherType = clickedPers.get(voucherKey, PersistentDataType.STRING);

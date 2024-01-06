@@ -1,15 +1,15 @@
-package net.skyprison.skyprisoncore.inventories.economy;
+package net.skyprison.skyprisoncore.inventories.economy.tokens;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
@@ -21,7 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.*;
 
-public class MoneyHistory implements CustomInventory {
+public class TokensHistory implements CustomInventory {
     private final Inventory inventory;
     private int page = 1;
     private final List<Transaction> transactions = new ArrayList<>();
@@ -32,8 +32,8 @@ public class MoneyHistory implements CustomInventory {
     private final ItemStack sortItem = new ItemStack(Material.CLOCK);
     private final ItemStack typeItem = new ItemStack(Material.COMPASS);
     private boolean sort = true;
-    private final List<String> types = Arrays.asList("All Transactions", "Payments", "Player Shops");
-    public record Transaction(ItemStack item, UUID receiver, UUID sender, String type, double amount, Date date, ItemStack itemSold) {}
+    private final List<String> types = Arrays.asList("All History", "Token Shop", "Other Removals", "From Secrets", "From Voting", "From Other");
+    public record Transaction(ItemStack item, String type, double amount, String source, String sourceData, Date date) {}
     private int typePos = 0;
     public void updatePage(int page) {
         List<ItemStack> transToShow = transToDisplay;
@@ -90,55 +90,74 @@ public class MoneyHistory implements CustomInventory {
         });
         inventory.setItem(50, typeItem);
         transToDisplay.clear();
-        if(getType().equalsIgnoreCase("All Transactions")) {
+        if(getType().equalsIgnoreCase("All History")) {
             transToDisplay.addAll(transactions.stream().map(Transaction::item).toList());
         } else {
-            transToDisplay.addAll(transactions.stream().filter(transaction -> transaction.type().equalsIgnoreCase(getType())).map(Transaction::item).toList());
+            transToDisplay.addAll(transactions.stream().filter(transaction -> {
+                switch (getType()) {
+                    case "Token Shop" -> {
+                        return transaction.source().equalsIgnoreCase("tokenshop");
+                    }
+                    case "Other Removals" -> {
+                        return !transaction.source().equalsIgnoreCase("tokenshop") && transaction.type().equalsIgnoreCase("remove");
+                    }
+                    case "From Secrets" -> {
+                        return transaction.source().equalsIgnoreCase("secret");
+                    }
+                    case "From Voting" -> {
+                        return transaction.source().equalsIgnoreCase("voting");
+                    }
+                    case "From Other" -> {
+                        return  transaction.type().equalsIgnoreCase("receive")
+                                && !transaction.source().equalsIgnoreCase("secret")
+                                && !transaction.source().equalsIgnoreCase("voting");
+                    }
+                    default -> {
+                        return false;
+                    }
+                }
+            }).map(Transaction::item).toList());
         }
         sort = false;
         updateSort();
     }
-    public MoneyHistory(SkyPrisonCore plugin, DatabaseHook db, String playerId) {
-        this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Transaction History", TextColor.fromHexString("#e03835")));
+    public TokensHistory(SkyPrisonCore plugin, DatabaseHook db, String playerId) {
+        this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Tokens History", TextColor.fromHexString("#e03835")));
 
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                "SELECT sender_id, receiver_id, amount, logged_date, item FROM logs_transactions " +
-                        "WHERE sender_id = ? OR receiver_id = ? ORDER BY logged_date ASC")) {
+                "SELECT type, amount, source, source_data, logged_date FROM logs_tokens WHERE user_id = ?")) {
             ps.setString(1, playerId);
-            ps.setString(2, playerId);
             ResultSet rs = ps.executeQuery();
             SimpleDateFormat dateFor = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
             while(rs.next()) {
-                UUID sender = UUID.fromString(rs.getString("sender_id"));
-                UUID receiver = UUID.fromString(rs.getString("receiver_id"));
-                String senderName = PlayerManager.getPlayerName(sender);
-                String receiverName = PlayerManager.getPlayerName(receiver);
-                double amount = rs.getDouble("amount");
+                String type = rs.getString("type");
+                int amount = rs.getInt("amount");
+                String source = rs.getString("source");
+                String sourceData = rs.getString("source_data");
                 Timestamp date = rs.getTimestamp("logged_date");
 
-                byte[] serializedItem =  rs.getBytes("item");
-                ItemStack item = serializedItem != null ? ItemStack.deserializeBytes(serializedItem) : null;
+                String visualType = switch (type) {
+                    case "receive" -> "Received Tokens";
+                    case "remove" -> "Removed Tokens";
+                    default -> "Set Tokens";
+                };
 
-                boolean isSender = sender.toString().equalsIgnoreCase(playerId);
                 ItemStack displayItem = new ItemStack(Material.OAK_SIGN);
                 displayItem.editMeta(meta -> {
                     meta.displayName(Component.text(dateFor.format(date), NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
                     ArrayList<Component> lore = new ArrayList<>();
-                    lore.add(Component.text("Type: ", NamedTextColor.GRAY).append(Component.text(isSender ? "Sent Money" : "Received Money", NamedTextColor.WHITE))
+                    lore.add(Component.text("Type: ", NamedTextColor.GRAY).append(Component.text(visualType, NamedTextColor.WHITE))
                             .decoration(TextDecoration.ITALIC, false));
-                    lore.add(Component.text((isSender ? "To" : "From") + ": ", NamedTextColor.GRAY)
-                            .append(Component.text((isSender ? receiverName : senderName), NamedTextColor.WHITE))
+                    lore.add(Component.text("From: ", NamedTextColor.GRAY)
+                            .append(Component.text(source, NamedTextColor.WHITE))
                             .decoration(TextDecoration.ITALIC, false));
-                    lore.add(Component.text("Amount: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(amount), NamedTextColor.WHITE))
+                    lore.add(Component.text("Amount: ", NamedTextColor.GRAY).append(Component.text(ChatUtils.formatNumber(amount) + " tokens", NamedTextColor.WHITE))
                             .decoration(TextDecoration.ITALIC, false));
-                    if (item != null) {
-                        lore.add(Component.text("Item" + (item.getAmount() > 1 ? "(s) " : " ") + (isSender ? "Bought" : "Sold") + ": ", NamedTextColor.GRAY)
-                                .append(Component.text(item.getType().toString().replace("_", " ") + " x " + item.getAmount(), NamedTextColor.WHITE))
-                                .decoration(TextDecoration.ITALIC, false));
-                    }
+                    lore.add(Component.text("Source: ", NamedTextColor.GRAY).append(MiniMessage.miniMessage().deserialize(sourceData != null ? sourceData : "None").colorIfAbsent(NamedTextColor.WHITE))
+                            .decoration(TextDecoration.ITALIC, false));
                     meta.lore(lore);
                 });
-                transactions.add(new Transaction(displayItem, receiver, sender, (item == null ? "Payments" : "Player Shops"), amount, date, item));
+                transactions.add(new Transaction(displayItem, type, amount, source, sourceData, date));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -189,3 +208,4 @@ public class MoneyHistory implements CustomInventory {
         return this.inventory;
     }
 }
+

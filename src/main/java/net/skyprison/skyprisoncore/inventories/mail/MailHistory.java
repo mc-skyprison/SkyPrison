@@ -6,6 +6,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
+import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.MailUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
@@ -110,7 +111,7 @@ public class MailHistory implements CustomInventory {
                     lore.add(Component.text("Sent by: ", NamedTextColor.GRAY).append(Component.text(Objects.requireNonNullElse(PlayerManager.getPlayerName(sender),
                                     "COULDN'T GET NAME"), NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false));
                     if(cost != 0) {
-                        lore.add(Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(cost), NamedTextColor.WHITE))
+                        lore.add(Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(cost), NamedTextColor.WHITE))
                                 .decoration(TextDecoration.ITALIC, false));
                     }
                     if(item.getType().equals(Material.WRITTEN_BOOK)) {

@@ -8,10 +8,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
-import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.MailUtils;
-import net.skyprison.skyprisoncore.utils.NotificationsUtils;
-import net.skyprison.skyprisoncore.utils.PlayerManager;
+import net.skyprison.skyprisoncore.utils.*;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -84,7 +81,7 @@ public class MailBoxSend implements CustomInventory {
                         .decoration(TextDecoration.ITALIC, false));
                 if (getCost() != 0) {
                     List<Component> lore = new ArrayList<>();
-                    lore.add(Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(getCost()), NamedTextColor.GREEN))
+                    lore.add(Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(ChatUtils.formatNumber(getCost()), NamedTextColor.GREEN))
                             .decoration(TextDecoration.ITALIC, false));
                     meta.lore(lore);
                 }
@@ -97,7 +94,7 @@ public class MailBoxSend implements CustomInventory {
                         .decoration(TextDecoration.ITALIC, false));
                 if (getCost() != 0) {
                     List<Component> lore = new ArrayList<>();
-                    lore.add(Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(plugin.formatNumber(getCost()), NamedTextColor.GREEN))
+                    lore.add(Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(ChatUtils.formatNumber(getCost()), NamedTextColor.GREEN))
                             .decoration(TextDecoration.ITALIC, false));
                     lore.add(Component.text("CAN'T AFFORD!", NamedTextColor.RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
                     meta.lore(lore);

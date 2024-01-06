@@ -2,6 +2,7 @@ package net.skyprison.skyprisoncore.commands;
 
 import cloud.commandframework.Command;
 import cloud.commandframework.arguments.standard.DoubleArgument;
+import cloud.commandframework.arguments.standard.IntegerArgument;
 import cloud.commandframework.arguments.standard.LongArgument;
 import cloud.commandframework.arguments.standard.StringArgument;
 import cloud.commandframework.bukkit.parsers.MaterialArgument;
@@ -14,26 +15,36 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.inventories.DatabaseInventory;
 import net.skyprison.skyprisoncore.inventories.economy.BountiesList;
 import net.skyprison.skyprisoncore.inventories.economy.BuyBack;
 import net.skyprison.skyprisoncore.inventories.economy.EconomyCheck;
 import net.skyprison.skyprisoncore.inventories.economy.MoneyHistory;
+import net.skyprison.skyprisoncore.inventories.economy.tokens.TokensCheck;
+import net.skyprison.skyprisoncore.inventories.economy.tokens.TokensHistory;
+import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
+import net.skyprison.skyprisoncore.utils.TokenUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.sql.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static net.skyprison.skyprisoncore.SkyPrisonCore.bountyCooldown;
 
@@ -50,6 +61,7 @@ public class EconomyCommands {
         createBountyCommands();
         createShopCommands();
         createMiscCommands();
+        createTokenCommands();
     }
     public static double round(double value, int places) {
         if (places < 0) throw new IllegalArgumentException();
@@ -128,7 +140,6 @@ public class EconomyCommands {
                     }
                 }));
     }
-
     private void createShopCommands() {
 
         // Dontsell
@@ -195,7 +206,7 @@ public class EconomyCommands {
                     Player player = (Player) c.getSender();
                     String shop = c.get("shop");
                     ShopManager shopManager = ShopGuiPlusApi.getPlugin().getShopManager();
-                    if(shopManager.getShopById(shop) != null) {
+                    if(shopManager.getShopById(shop) == null) {
                         player.sendMessage(Component.text("Not a valid shop!", NamedTextColor.RED));
                         return;
                     }
@@ -221,11 +232,12 @@ public class EconomyCommands {
                     String targetName = target.orElse(null);
 
                     if(targetName != null) {
-                        if(PlayerManager.getPlayerId(targetName) == null) {
+                        UUID targetId = PlayerManager.getPlayerId(targetName);
+                        if(targetId == null) {
                             player.sendMessage(Component.text("Player doesn't exist!", NamedTextColor.RED));
                             return;
                         } else {
-                            targetName = PlayerManager.getPlayerId(targetName).toString();
+                            targetName = targetId.toString();
                         }
                     }
 
@@ -261,7 +273,16 @@ public class EconomyCommands {
 
         Command.Builder<CommandSender> shopBan = manager.commandBuilder("shopban")
                 .senderType(Player.class)
-                .permission("skyprisoncore.command.shopban");
+                .permission("skyprisoncore.command.shopban")
+                .handler(c -> c.getSender().sendMessage(Component.text("----==== ", NamedTextColor.GRAY)
+                        .append(Component.text("ShopBan", NamedTextColor.GOLD))
+                        .append(Component.text(" ===---", NamedTextColor.GRAY))
+                        .append(Component.text("\n/shopban list", NamedTextColor.GRAY)
+                                .append(Component.text(" - Lists all players banned from your shops", NamedTextColor.WHITE)))
+                        .append(Component.text("\n/shopban add <player>", NamedTextColor.GRAY)
+                                .append(Component.text(" - Bans a player from your shops", NamedTextColor.WHITE)))
+                        .append(Component.text("\n/shopban remove <player>", NamedTextColor.GRAY)
+                                .append(Component.text(" - Unbans a player from your shops", NamedTextColor.WHITE)))));
         manager.command(shopBan);
 
         manager.command(shopBan.literal("list")
@@ -274,13 +295,14 @@ public class EconomyCommands {
                     }
                     Component bannedList = Component.text("---=== ", NamedTextColor.GRAY).append(Component.text("ShopBan", NamedTextColor.GOLD).append(Component.text(" ===---", NamedTextColor.GRAY)));
                     for(String bannedPlayer : bannedPlayers) {
-                        bannedList = bannedList.append(Component.text("\n-", NamedTextColor.DARK_GRAY)
-                                .append(Component.text(Objects.requireNonNullElse(PlayerManager.getPlayerName(UUID.fromString(bannedPlayer)), "Couldn't get name!"), NamedTextColor.DARK_AQUA)));
+                        bannedList = bannedList.append(Component.text("\n- ", NamedTextColor.GRAY)
+                                .append(Component.text(Objects.requireNonNullElse(PlayerManager.getPlayerName(UUID.fromString(bannedPlayer)), "Couldn't get name!"), NamedTextColor.WHITE)));
                     }
                     player.sendMessage(bannedList);
 
                 }));
         manager.command(shopBan.literal("add")
+                .argument(StringArgument.of("player"))
                 .handler(c -> {
                     Player player = (Player) c.getSender();
                     List<String> bannedPlayers = getShopBanned(player);
@@ -312,6 +334,7 @@ public class EconomyCommands {
 
                 }));
         manager.command(shopBan.literal("remove")
+                .argument(StringArgument.of("player"))
                 .handler(c -> {
                     Player player = (Player) c.getSender();
                     List<String> bannedPlayers = getShopBanned(player);
@@ -334,36 +357,222 @@ public class EconomyCommands {
                     }
                 }));
     }
+    private void createTokenCommands() {
+        Command.Builder<CommandSender> tokensMain = manager.commandBuilder("tokens", "token")
+                .permission("skyprisoncore.command.tokens")
+                .handler(c -> TokenUtils.sendTokensHelp(c.getSender()));
+        manager.command(tokensMain);
+        manager.command(tokensMain.literal("help")
+                .handler(c -> TokenUtils.sendTokensHelp(c.getSender())));
+        manager.command(tokensMain.literal("top")
+                .senderType(Player.class)
+                .handler(c -> Bukkit.getScheduler().runTask(plugin, () -> Bukkit.dispatchCommand(c.getSender(), "lb tokens"))));
+        Command<CommandSender> tokenShop = tokensMain.literal("shop")
+                .senderType(Player.class)
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    boolean canEdit = player.hasPermission("skyprisoncore.inventories.tokenshop.editing");
+                    Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new DatabaseInventory(plugin, db, player, canEdit, "tokenshop").getInventory()));
+                }).build();
+        manager.command(tokenShop);
 
-    private List<String> getDontSells(Player player) {
-        List<String> blockedSales = new ArrayList<>();
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT block_item FROM block_sells WHERE user_id = ?")) {
-            ps.setString(1, player.getUniqueId().toString());
-            ResultSet rs = ps.executeQuery();
-            while(rs.next()) {
-                blockedSales.add(rs.getString(1));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return blockedSales;
+        manager.command(manager.commandBuilder("tokenshop", "tshop")
+                .proxies(tokenShop));
+
+        manager.command(tokensMain.literal("balance", "bal")
+                .argument(StringArgument.optional("player"))
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    Optional<String> optionalTarget = c.getOptional("player");
+                    String target = optionalTarget.orElse(null);
+                    Map<UUID, Integer> tokensData = TokenUtils.getTokensData();
+                    Component prefix = TokenUtils.getPrefix();
+
+                    if (target != null && PlayerManager.getPlayerId(target) == null) {
+                        sender.sendMessage(prefix.append(Component.text("Player doesn't exist!", NamedTextColor.RED)));
+                        return;
+                    }
+                    if(target == null && !(sender instanceof Player)) {
+                        sender.sendMessage(prefix.append(Component.text("You must specify a player!", NamedTextColor.RED)));
+                        return;
+                    }
+
+                    UUID targetId = target != null ? PlayerManager.getPlayerId(target) : ((Player) sender).getUniqueId();
+                    int tokens = tokensData.getOrDefault(targetId, TokenUtils.getTokens(targetId));
+                    Component targetComp = Component.text((target != null ? target + "'s" : "Your") + " balance is ", NamedTextColor.GRAY);
+                    Component amountComp = Component.text(ChatUtils.formatNumber(tokens) + " tokens", NamedTextColor.AQUA);
+                    sender.sendMessage(prefix.append(targetComp).append(amountComp));
+                }));
+
+        manager.command(tokensMain.literal("set")
+                .permission("skyprisoncore.command.tokens.admin")
+                .argument(StringArgument.of("player"))
+                .argument(IntegerArgument.<CommandSender>builder("amount").withMin(0).asRequired().build())
+                .argument(StringArgument.optional("source"))
+                .argument(StringArgument.optional("source_data"))
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    String target = c.get("player");
+                    int amount = c.get("amount");
+                    String source = c.getOrDefault("source", "admin");
+                    String sourceData = c.getOrDefault("source_data", null);
+                    UUID targetId = PlayerManager.getPlayerId(target);
+                    Component prefix = TokenUtils.getPrefix();
+                    if (targetId == null) {
+                        sender.sendMessage(prefix.append(Component.text("Player doesn't exist!", NamedTextColor.RED)));
+                        return;
+                    }
+                    TokenUtils.setTokens(targetId, amount, source, sourceData);
+                    sender.sendMessage(TokenUtils.getPrefix().append(Component.text("Set " + PlayerManager.getPlayerName(targetId) + "'s tokens to ", NamedTextColor.GRAY)
+                            .append(Component.text(ChatUtils.formatNumber(amount), NamedTextColor.AQUA))));
+                }));
+        manager.command(tokensMain.literal("add")
+                .permission("skyprisoncore.command.tokens.admin")
+                .argument(StringArgument.of("player"))
+                .argument(IntegerArgument.<CommandSender>builder("amount").withMin(1).asRequired().build())
+                .argument(StringArgument.optional("source"))
+                .argument(StringArgument.optional("source_data"))
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    String target = c.get("player");
+                    int amount = c.get("amount");
+                    String source = c.getOrDefault("source", "admin");
+                    String sourceData = c.getOrDefault("source_data", null);
+                    UUID targetId = PlayerManager.getPlayerId(target);
+                    Component prefix = TokenUtils.getPrefix();
+                    if (targetId == null) {
+                        sender.sendMessage(prefix.append(Component.text("Player doesn't exist!", NamedTextColor.RED)));
+                        return;
+                    }
+                    TokenUtils.addTokens(targetId, amount, source, sourceData);
+                    sender.sendMessage(prefix.append(Component.text("Added ", NamedTextColor.GRAY).append(Component.text(ChatUtils.formatNumber(amount) + " tokens ",
+                            NamedTextColor.AQUA).append(Component.text("to " + PlayerManager.getPlayerName(targetId), NamedTextColor.GRAY)))));
+                }));
+        manager.command(tokensMain.literal("remove")
+                .permission("skyprisoncore.command.tokens.admin")
+                .argument(StringArgument.of("player"))
+                .argument(IntegerArgument.<CommandSender>builder("amount").withMin(1).asRequired().build())
+                .argument(StringArgument.optional("source", StringArgument.StringMode.QUOTED))
+                .argument(StringArgument.optional("source_data", StringArgument.StringMode.QUOTED))
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    String target = c.get("player");
+                    int amount = c.get("amount");
+                    String source = c.getOrDefault("source", "admin");
+                    String sourceData = c.getOrDefault("source_data", null);;
+                    UUID targetId = PlayerManager.getPlayerId(target);
+                    Component prefix = TokenUtils.getPrefix();
+                    if (targetId == null) {
+                        sender.sendMessage(prefix.append(Component.text("Player doesn't exist!", NamedTextColor.RED)));
+                        return;
+                    }
+                    TokenUtils.removeTokens(targetId, amount, source, sourceData);
+                    sender.sendMessage(prefix.append(Component.text("Removed ", NamedTextColor.GRAY).append(Component.text(ChatUtils.formatNumber(amount) + " tokens ",
+                            NamedTextColor.AQUA).append(Component.text("from " + PlayerManager.getPlayerName(targetId), NamedTextColor.GRAY)))));
+                }));
+        manager.command(tokensMain.literal("giveall")
+                .permission("skyprisoncore.command.tokens.admin")
+                .argument(IntegerArgument.of("amount"))
+                .argument(StringArgument.optional("source"))
+                .argument(StringArgument.optional("source_data"))
+                .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    int amount = c.get("amount");
+                    String source = c.getOrDefault("source", "admin").replace("_", " ");
+                    String sourceData = c.getOrDefault("source_data", null);
+                    if(sourceData != null) sourceData = sourceData.replace("_", " ");
+                    Component prefix = TokenUtils.getPrefix();
+                    String finalSourceData = sourceData;
+                    Bukkit.getOnlinePlayers().forEach(player -> TokenUtils.addTokens(player.getUniqueId(), amount, source, finalSourceData));
+                    sender.sendMessage(prefix.append(Component.text("Added ", NamedTextColor.GRAY).append(Component.text(ChatUtils.formatNumber(amount) + " tokens ",
+                            NamedTextColor.AQUA).append(Component.text("to everyone online!", NamedTextColor.GRAY)))));
+                }));
+        manager.command(tokensMain.literal("check")
+                .senderType(Player.class)
+                .permission("skyprisoncore.command.tokens.admin")
+                .argument(StringArgument.optional("player"))
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    Optional<String> target = c.getOptional("player");
+                    String targetName = target.orElse(null);
+
+                    if(targetName != null) {
+                        UUID targetId = PlayerManager.getPlayerId(targetName);
+                        if(targetId == null) {
+                            player.sendMessage(Component.text("Player doesn't exist!", NamedTextColor.RED));
+                            return;
+                        } else {
+                            targetName = targetId.toString();
+                        }
+                    }
+
+                    String finalTargetName = targetName;
+                    Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new TokensCheck(plugin, db, finalTargetName).getInventory()));
+                }));
+        Command.Builder<CommandSender> tokenHistory = tokensMain.literal("history")
+                .senderType(Player.class)
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new TokensHistory(plugin, db, player.getUniqueId().toString()).getInventory()));
+                });
+        manager.command(tokenHistory);
+        manager.command(tokenHistory
+                .senderType(Player.class)
+                .permission("skyprisoncore.command.tokens.admin")
+                .argument(StringArgument.of("player"))
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    UUID pUUID = PlayerManager.getPlayerId(c.get("player"));
+                    if(pUUID != null) {
+                        Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new TokensHistory(plugin, db, pUUID.toString()).getInventory()));
+                    } else {
+                        player.sendMessage(Component.text("Player not found!", NamedTextColor.RED));
+                    }
+                }));
+
+
+        manager.command(tokensMain.literal("whammo")
+                        .permission("skyprisoncore.command.tokens.whammo")
+                .handler(c -> {
+                    Path folder = Paths.get(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions");
+                    try(Stream<Path> paths = Files.list(folder)) {
+                        List<Path> files = paths.filter(Files::isRegularFile).toList();
+                        files.forEach(path -> {
+                            File f = path.toFile();
+                            String player = f.getName();
+                            Bukkit.getLogger().info("Processing " + player);
+                            try {
+                                BufferedReader read = new BufferedReader(new FileReader(f));
+                                String line;
+                                while ((line = read.readLine()) != null) {
+                                    String[] lineSplit = line.split(";");
+                                    String date = lineSplit[0];
+                                    String type = lineSplit[1];
+                                    String amount = lineSplit[2];
+                                    String source = lineSplit[3];
+                                    String source_data = lineSplit[4];
+                                    try(Connection conn1 = db.getConnection(); PreparedStatement ps1 = conn1.prepareStatement(
+                                            "INSERT INTO logs_tokens (user_id, type, amount, source, source_data, logged_date) VALUES (?, ?, ?, ?, ?, ?)")) {
+                                        ps1.setString(1, player.split("\\.")[0]);
+                                        ps1.setString(2, type);
+                                        ps1.setInt(3, Integer.parseInt(amount));
+                                        ps1.setString(4, source);
+                                        ps1.setString(5, source_data);
+                                        ps1.setTimestamp(6, new Timestamp(Long.parseLong(date)));
+                                        ps1.executeUpdate();
+                                    } catch (SQLException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                read.close();
+                            } catch (IOException ignored) {}
+                            Bukkit.getLogger().info("Finished processing " + player);
+                        });
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }));
     }
-
-    private List<String> getShopBanned(Player player) {
-        List<String> bannedUsers = new ArrayList<>();
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT banned_user FROM shop_banned WHERE user_id = ?")) {
-            ps.setString(1, player.getUniqueId().toString());
-            ResultSet rs = ps.executeQuery();
-            while(rs.next()) {
-                bannedUsers.add(rs.getString(1));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return bannedUsers;
-    }
-
-
     private void createBountyCommands() {
         Command.Builder<CommandSender> bounty = manager.commandBuilder("bounty")
                 .permission("skyprisoncore.command.bounty")
@@ -436,10 +645,10 @@ public class EconomyCommands {
 
                     if (hasBounty) {
                         bountyMsg = bountyMsg.append(Component.text(player.getName() + " has increased the bounty on " + targetName + " by ", NamedTextColor.YELLOW)
-                                .append(Component.text("$" + plugin.formatNumber(bountyPrize) + "!", NamedTextColor.GREEN)));
+                                .append(Component.text("$" + ChatUtils.formatNumber(bountyPrize) + "!", NamedTextColor.GREEN)));
 
                         targetMsg = targetMsg.append(Component.text(player.getName() + " has increased the bounty on you by ", NamedTextColor.YELLOW)
-                                .append(Component.text("$" + plugin.formatNumber(bountyPrize) + "!", NamedTextColor.GREEN)));
+                                .append(Component.text("$" + ChatUtils.formatNumber(bountyPrize) + "!", NamedTextColor.GREEN)));
 
                         bountiedBy += "," + player.getUniqueId();
 
@@ -453,11 +662,11 @@ public class EconomyCommands {
                         }
                     } else {
                         bountyMsg = bountyMsg.append(Component.text(player.getName() + " has put a ", NamedTextColor.YELLOW)
-                                .append(Component.text("$" + plugin.formatNumber(bountyPrize), NamedTextColor.GREEN))
+                                .append(Component.text("$" + ChatUtils.formatNumber(bountyPrize), NamedTextColor.GREEN))
                                 .append(Component.text(" bounty on " + targetName + "!", NamedTextColor.YELLOW)));
 
                         targetMsg = targetMsg.append(Component.text(player.getName() + " has put a ", NamedTextColor.YELLOW)
-                                .append(Component.text("$" + plugin.formatNumber(bountyPrize), NamedTextColor.GREEN))
+                                .append(Component.text("$" + ChatUtils.formatNumber(bountyPrize), NamedTextColor.GREEN))
                                 .append(Component.text(" bounty on you!", NamedTextColor.YELLOW)));
 
                         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO bounties (user_id, prize, bountied_by) VALUES (?, ?, ?)")) {
@@ -506,6 +715,32 @@ public class EconomyCommands {
                         player.sendMessage(bountyPrefix.append(Component.text("Bounty messages unmuted!", NamedTextColor.YELLOW)));
                     }
                 }));
+    }
+    private List<String> getDontSells(Player player) {
+        List<String> blockedSales = new ArrayList<>();
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT block_item FROM block_sells WHERE user_id = ?")) {
+            ps.setString(1, player.getUniqueId().toString());
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()) {
+                blockedSales.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return blockedSales;
+    }
+    private List<String> getShopBanned(Player player) {
+        List<String> bannedUsers = new ArrayList<>();
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT banned_user FROM shop_banned WHERE user_id = ?")) {
+            ps.setString(1, player.getUniqueId().toString());
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()) {
+                bannedUsers.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return bannedUsers;
     }
     private Component getBountyHelp() {
         return Component.textOfChildren(Component.text("----==== ", NamedTextColor.WHITE)

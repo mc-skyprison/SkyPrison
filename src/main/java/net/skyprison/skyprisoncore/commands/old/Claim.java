@@ -38,6 +38,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimFlags;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimMembers;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimPending;
+import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import org.apache.commons.lang.WordUtils;
@@ -2225,12 +2226,12 @@ public class Claim implements CommandExecutor {
                                             }
 
                                             player.sendMessage(prefix.append(Component.text("Successfully bought ", TextColor.fromHexString("#20df80"))
-                                                    .append(Component.text(plugin.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                                                    .append(Component.text(ChatUtils.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
                                                     .append(Component.text(" blocks for $", TextColor.fromHexString("#20df80")))
-                                                    .append(Component.text(plugin.formatNumber(price), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))));
+                                                    .append(Component.text(ChatUtils.formatNumber(price), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))));
                                         } else {
                                             long needed = (long) (price - user.getBalance());
-                                            player.sendMessage(prefix.append(Component.text("You don't have enough money! You need $" + plugin.formatNumber(needed) + " more..", NamedTextColor.RED)));
+                                            player.sendMessage(prefix.append(Component.text("You don't have enough money! You need $" + ChatUtils.formatNumber(needed) + " more..", NamedTextColor.RED)));
                                         }
                                     } else {
                                         player.sendMessage(prefix.append(Component.text("Incorrect Usage! /claim blocks buy <amount>", NamedTextColor.RED)));
@@ -2252,13 +2253,13 @@ public class Claim implements CommandExecutor {
                                                 }
 
                                                 player.sendMessage(prefix.append(Component.text("Successfully gave ", TextColor.fromHexString("#20df80"))
-                                                        .append(Component.text(plugin.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                                                        .append(Component.text(ChatUtils.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
                                                         .append(Component.text(" blocks to ", TextColor.fromHexString("#20df80")))
                                                         .append(Component.text(tUser.getName(), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))));
 
                                                 Component msg = prefix.append(Component.text(player.getName(), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
                                                         .append(Component.text(" has given you ", TextColor.fromHexString("#20df80")))
-                                                        .append(Component.text(plugin.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                                                        .append(Component.text(ChatUtils.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
                                                         .append(Component.text(" blocks!", TextColor.fromHexString("#20df80")));
 
                                                 if(tUser.isOnline()) {
@@ -2298,11 +2299,11 @@ public class Claim implements CommandExecutor {
                                                         player.sendMessage(prefix.append(Component.text("Successfully set ", TextColor.fromHexString("#20df80"))
                                                                         .append(Component.text(tUser.getName(), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD)))
                                                                 .append(Component.text(" blocks to ", TextColor.fromHexString("#20df80")))
-                                                                .append(Component.text(plugin.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD)));
+                                                                .append(Component.text(ChatUtils.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD)));
 
                                                         Component msg = prefix.append(Component.text(player.getName(), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
                                                                 .append(Component.text(" set your blocks to ", TextColor.fromHexString("#20df80")))
-                                                                .append(Component.text(plugin.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                                                                .append(Component.text(ChatUtils.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
                                                                 .append(Component.text("!", TextColor.fromHexString("#20df80")));
                                                         if (tUser.isOnline()) {
                                                             tUser.getPlayer().sendMessage(msg);
@@ -2343,13 +2344,13 @@ public class Claim implements CommandExecutor {
                                                     }
 
                                                     player.sendMessage(prefix.append(Component.text("Successfully took ", TextColor.fromHexString("#20df80"))
-                                                            .append(Component.text(plugin.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                                                            .append(Component.text(ChatUtils.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
                                                             .append(Component.text(" blocks from ", TextColor.fromHexString("#20df80")))
                                                             .append(Component.text(tUser.getName(), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))));
 
                                                     Component msg = prefix.append(Component.text(player.getName(), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
                                                             .append(Component.text(" took ", TextColor.fromHexString("#20df80")))
-                                                            .append(Component.text(plugin.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                                                            .append(Component.text(ChatUtils.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
                                                             .append(Component.text(" blocks from you!", TextColor.fromHexString("#20df80")));
 
                                                     if(tUser.isOnline()) {

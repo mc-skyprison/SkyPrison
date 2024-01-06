@@ -9,6 +9,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
+import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -173,7 +174,7 @@ public class EndBlacksmithUpgrade implements CustomInventory {
                 if(upgrade != null) {
                     ItemMeta upgradeMeta = upgrade.getItemMeta();
                     List<Component> lore = new ArrayList<>();
-                    lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(price),
+                    lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(price),
                             TextColor.fromHexString("#52fc28"), TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
                     upgradeMeta.lore(lore);
 
@@ -199,12 +200,12 @@ public class EndBlacksmithUpgrade implements CustomInventory {
                 ItemMeta needMeta = needMoney.getItemMeta();
                 needMeta.displayName(Component.text("Not Enough Money", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(price), TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
+                lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(price), TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Missing: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(hasMoney), NamedTextColor.RED, TextDecoration.BOLD))
+                lore.add(Component.text("Missing: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(hasMoney), NamedTextColor.RED, TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
                 lore.add(Component.text("                  ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH).decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("$" + plugin.formatNumber(PlayerManager.getBalance(player)), NamedTextColor.RED, TextDecoration.BOLD))
+                lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(PlayerManager.getBalance(player)), NamedTextColor.RED, TextDecoration.BOLD))
                         .decoration(TextDecoration.ITALIC, false));
                 needMeta.lore(lore);
                 needMoney.setItemMeta(needMeta);

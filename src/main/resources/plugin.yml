@@ -12,16 +12,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.transportpass
     permission-message: §4Error:§c You do not have permission to execute this command...
-  tokens:
-    description: Token related stuff
-    usage: /<command>
-    permission: skyprisoncore.command.tokens
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  token:
-    description: Token related stuff
-    usage: /<command>
-    permission: skyprisoncore.command.tokens
-    permission-message: §4Error:§c You do not have permission to execute this command...
   ignoretp:
     description: Ignore someones tpa requests
     aliases: [tpignore]
@@ -146,11 +136,6 @@ permissions:
   skyprisoncore.command.sponge:
     description: Gives acess to /sponge
   #
-  # Teleport Permissions
-  #
-  skyprisoncore.command.token:
-    description: Gives access to /tokenteleport
-  #
   # Killinfo Permissions
   #
   skyprisoncore.command.killinfo:
@@ -168,10 +153,6 @@ permissions:
     description: Gives access to /skyplot
   skyprisoncore.command.plotteleport:
     description: Gives access to /plot
-  skyprisoncore.command.tokens:
-    description: Gives access to /tokens
-  skyprisoncore.command.tokens.admin:
-    description: Gives access to admin tokens commands
   skyprisoncore.command.transportpass:
     description: Gives access to /transportpass
   skyprisoncore.command.tags:

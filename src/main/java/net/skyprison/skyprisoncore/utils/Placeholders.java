@@ -194,8 +194,8 @@ public class Placeholders extends PlaceholderExpansion {
 
 		if(identifier.equalsIgnoreCase("get_bribe_cooldown")) {
 			int cooldown = 0;
-			if(plugin.bribeCooldown.containsKey(player.getUniqueId())) {
-				long bribeCool = plugin.bribeCooldown.get(player.getUniqueId());
+			if(SkyPrisonCore.bribeCooldown.containsKey(player.getUniqueId())) {
+				long bribeCool = SkyPrisonCore.bribeCooldown.get(player.getUniqueId());
 				if(bribeCool > System.currentTimeMillis()) {
 					cooldown = 1;
 				}
@@ -208,7 +208,7 @@ public class Placeholders extends PlaceholderExpansion {
 		}
 
 		if(identifier.equalsIgnoreCase("bribe_amount_formatted")) {
-			return String.valueOf(plugin.formatNumber(getBribeAmount(player)));
+			return String.valueOf(ChatUtils.formatNumber(getBribeAmount(player)));
 		}
 
 		if(identifier.equalsIgnoreCase("is_jailed")) {
@@ -270,8 +270,8 @@ public class Placeholders extends PlaceholderExpansion {
 			int amount = dailyMissions.getMissionAmount(player, mission);
 			int needed = dailyMissions.getMissionNeeded(player, mission);
 
-			String amFormat = plugin.formatNumber(amount);
-			String neeFormat = plugin.formatNumber(needed);
+			String amFormat = ChatUtils.formatNumber(amount);
+			String neeFormat = ChatUtils.formatNumber(needed);
 
 			if(mSplit[0].equalsIgnoreCase("money")) {
 				amFormat = "$" + amFormat;
@@ -294,8 +294,8 @@ public class Placeholders extends PlaceholderExpansion {
 			int amount = dailyMissions.getMissionAmount(player, mission);
 			int needed = dailyMissions.getMissionNeeded(player, mission);
 
-			String amFormat = plugin.formatNumber(amount);
-			String neeFormat = plugin.formatNumber(needed);
+			String amFormat = ChatUtils.formatNumber(amount);
+			String neeFormat = ChatUtils.formatNumber(needed);
 
 			if(mSplit[0].equalsIgnoreCase("money")) {
 				amFormat = "$" + amFormat;
@@ -310,16 +310,16 @@ public class Placeholders extends PlaceholderExpansion {
 		}
 
 		if(identifier.equalsIgnoreCase("token_balance_formatted")) {
-			if(plugin.tokensData.containsKey(player.getUniqueId())) {
-				return plugin.formatNumber(plugin.tokensData.get(player.getUniqueId()));
+			if(TokenUtils.getTokensData().containsKey(player.getUniqueId())) {
+				return ChatUtils.formatNumber(TokenUtils.getTokensData().get(player.getUniqueId()));
 			} else {
 				return "0";
 			}
 		}
 
 		if(identifier.equalsIgnoreCase("token_balance")) {
-			if(plugin.tokensData.containsKey(player.getUniqueId())) {
-				return String.valueOf(plugin.tokensData.get(player.getUniqueId()));
+			if(TokenUtils.getTokensData().containsKey(player.getUniqueId())) {
+				return String.valueOf(TokenUtils.getTokensData().get(player.getUniqueId()));
 			} else {
 				return "0";
 			}

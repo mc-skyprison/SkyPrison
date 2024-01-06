@@ -6,6 +6,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.TokenUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -59,7 +60,7 @@ public class BlockDamage implements Listener {
                 try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET sponges_found = sponges_found + 1 WHERE user_id = ?")) {
                     ps.setString(1, player.getUniqueId().toString());
                     ps.executeUpdate();
-                    plugin.tokens.addTokens(player.getUniqueId(), 25, "Found Sponge", "");
+                    TokenUtils.addTokens(player.getUniqueId(), 25, "Found Sponge", "");
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }

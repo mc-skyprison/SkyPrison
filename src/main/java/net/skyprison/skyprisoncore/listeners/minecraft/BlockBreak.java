@@ -12,6 +12,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.MailUtils;
 import net.skyprison.skyprisoncore.utils.RandomReward;
+import net.skyprison.skyprisoncore.utils.TokenUtils;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -105,7 +106,7 @@ public class BlockBreak implements Listener {
                         plugin.blockBreaks.put(player.getUniqueId(), 0);
                         Random rand = new Random();
                         int tReward = rand.nextInt(25 - 10 + 1) + 10;
-                        plugin.tokens.addTokens(player.getUniqueId(), tReward, "2000 Blocks Broken", "");
+                        TokenUtils.addTokens(player.getUniqueId(), tReward, "2000 Blocks Broken", "");
                         player.sendMessage(Component.text("You've mined 2,000 blocks and have received some tokens!", NamedTextColor.GRAY));
                     } else {
                         plugin.blockBreaks.put(player.getUniqueId(), brokeBlocks + 1);

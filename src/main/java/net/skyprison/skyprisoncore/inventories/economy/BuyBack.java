@@ -8,6 +8,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
+import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -92,7 +93,7 @@ public class BuyBack implements CustomInventory {
         iSold.editMeta(meta -> {
             List<Component> lore = new ArrayList<>();
             double newPrice = soldItem.amount * 3;
-            String price = plugin.formatNumber(newPrice);
+            String price = ChatUtils.formatNumber(newPrice);
             lore.add(Component.text("Amount: ", NamedTextColor.YELLOW).append(Component.text(soldItem.amount,
                     NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
             lore.add(Component.text("Cost: ", NamedTextColor.YELLOW).append(Component.text(price,

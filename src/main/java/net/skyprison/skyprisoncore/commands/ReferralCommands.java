@@ -12,6 +12,7 @@ import net.skyprison.skyprisoncore.inventories.Referral;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
+import net.skyprison.skyprisoncore.utils.TokenUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -87,8 +88,8 @@ public class ReferralCommands {
                                                 player.sendMessage(Component.text("You sucessfully referred ", NamedTextColor.DARK_AQUA)
                                                         .append(Component.text(reffedPlayer.getName(), NamedTextColor.AQUA)).append(Component.text(" and have received ", NamedTextColor.DARK_AQUA))
                                                         .append(Component.text("50", NamedTextColor.GOLD)).append(Component.text(" tokens!", NamedTextColor.DARK_AQUA)));
-                                                plugin.tokens.addTokens(reffedPlayer.getUniqueId(), 250, "Referred Someone", player.getName());
-                                                plugin.tokens.addTokens(player.getUniqueId(), 50, "Was Referred", reffedPlayer.getName());
+                                                TokenUtils.addTokens(reffedPlayer.getUniqueId(), 250, "Referred Someone", player.getName());
+                                                TokenUtils.addTokens(player.getUniqueId(), 50, "Was Referred", reffedPlayer.getName());
                                             } else {
                                                 player.sendMessage(Component.text("/referral <player>", NamedTextColor.RED));
                                             }

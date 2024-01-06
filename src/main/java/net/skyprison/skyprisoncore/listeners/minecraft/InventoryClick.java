@@ -33,6 +33,8 @@ import net.skyprison.skyprisoncore.inventories.economy.BountiesList;
 import net.skyprison.skyprisoncore.inventories.economy.BuyBack;
 import net.skyprison.skyprisoncore.inventories.economy.EconomyCheck;
 import net.skyprison.skyprisoncore.inventories.economy.MoneyHistory;
+import net.skyprison.skyprisoncore.inventories.economy.tokens.TokensCheck;
+import net.skyprison.skyprisoncore.inventories.economy.tokens.TokensHistory;
 import net.skyprison.skyprisoncore.inventories.mail.*;
 import net.skyprison.skyprisoncore.inventories.secrets.Secrets;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsCategoryEdit;
@@ -653,7 +655,7 @@ public class InventoryClick implements Listener {
                                             usingTokens = true;
                                         }
                                         if (usingTokens) {
-                                            int tokens = plugin.tokens.getTokens(player.getUniqueId());
+                                            int tokens = TokenUtils.getTokens(player.getUniqueId());
                                             if (tokenCost <= tokens) {
                                                 removeTokens = true;
                                             } else {
@@ -708,7 +710,7 @@ public class InventoryClick implements Listener {
                                             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + moneyCost);
                                         }
                                         if(removeTokens) {
-                                            plugin.tokens.removeTokens(player.getUniqueId(), tokenCost, inv.getCategory(), clickedMat.toString());
+                                            TokenUtils.removeTokens(player.getUniqueId(), tokenCost, inv.getCategory(), clickedMat.toString());
                                         }
 
                                         if(removeVoucher) {
@@ -1843,6 +1845,45 @@ public class InventoryClick implements Listener {
                             }
                         }
                     }
+                } else if (customInv instanceof TokensCheck inv) {
+                    if(event.getCurrentItem() != null) {
+                        switch (event.getSlot()) {
+                            case 46 -> {
+                                if (isPaper) {
+                                    inv.updatePage(-1);
+                                }
+                            }
+                            case 48 -> inv.updateSort(event.isLeftClick());
+                            case 50 -> {
+                                player.closeInventory();
+                                player.sendMessage(Component.text("/econcheck <player>", NamedTextColor.RED));
+                            }
+                            case 52 -> {
+                                if (isPaper) {
+                                    inv.updatePage(1);
+                                }
+                            }
+                        }
+                    }
+                } else if (customInv instanceof TokensHistory inv) {
+                    if(event.getCurrentItem() != null) {
+                        switch (event.getSlot()) {
+                            case 46 -> {
+                                if (isPaper) {
+                                    inv.updatePage(-1);
+                                }
+                            }
+                            case 48 -> inv.updateSort();
+                            case 50 -> {
+                                inv.updateType(event.isLeftClick());
+                            }
+                            case 52 -> {
+                                if (isPaper) {
+                                    inv.updatePage(1);
+                                }
+                            }
+                        }
+                    }
                 }
             } else {
                 CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
@@ -1918,34 +1959,6 @@ public class InventoryClick implements Listener {
                                             }
                                         }
                                         break;
-                                    case "token-history":
-                                        if (event.getClickedInventory().getItem(event.getSlot()) != null) {
-                                            Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
-
-                                            NamespacedKey tKey = new NamespacedKey(plugin, "sort");
-                                            NamespacedKey tKey1 = new NamespacedKey(plugin, "toggle");
-                                            NamespacedKey tKey3 = new NamespacedKey(plugin, "lookup-user");
-                                            Boolean transSort = Boolean.parseBoolean(fData.get(tKey, PersistentDataType.STRING));
-                                            Integer transToggle = fData.get(tKey1, PersistentDataType.INTEGER);
-                                            String userId = fData.get(tKey3, PersistentDataType.STRING);
-                                            if (clickedMat.equals(Material.PAPER)) {
-                                                if (event.getSlot() == 45) {
-                                                    plugin.tokens.openHistoryGUI(player, transSort, transToggle, page - 1, userId);
-                                                } else if (event.getSlot() == 53) {
-                                                    plugin.tokens.openHistoryGUI(player, transSort, transToggle, page + 1, userId);
-                                                }
-                                            } else if (clickedMat.equals(Material.CLOCK)) {
-                                                plugin.tokens.openHistoryGUI(player, !transSort, transToggle, page, userId);
-                                            } else if (clickedMat.equals(Material.COMPASS)) {
-                                                if (transToggle == 6) {
-                                                    plugin.tokens.openHistoryGUI(player, transSort, 1, 1, userId);
-                                                } else {
-                                                    plugin.tokens.openHistoryGUI(player, transSort, transToggle + 1, 1, userId);
-                                                }
-
-                                            }
-                                        }
-                                        break;
                                     case "daily-reward":
                                         if (event.getClickedInventory().getItem(event.getSlot()).getType().equals(Material.MINECART)) {
                                             player.sendMessage(Component.text("You've already collected the daily reward!", NamedTextColor.RED));
@@ -1981,7 +1994,7 @@ public class InventoryClick implements Listener {
                                                 tReward = randInt;
                                             }
 
-                                            plugin.tokens.addTokens(player.getUniqueId(), tReward, "Daily Reward", currStreak + " Days");
+                                            TokenUtils.addTokens(player.getUniqueId(), tReward, "Daily Reward", currStreak + " Days");
 
                                             int nCurrStreak = currStreak + 1;
                                             int nTotalCollected = totalCollected + 1;
@@ -2174,30 +2187,6 @@ public class InventoryClick implements Listener {
                                                     player.sendMessage(Component.text("Successfully deleted tag!", NamedTextColor.GREEN));
                                                 } catch (SQLException e) {
                                                     e.printStackTrace();
-                                                }
-                                            }
-                                        }
-                                        break;
-                                    case "tokencheck":
-                                        if (clickInv.getItem(event.getSlot()) != null) {
-                                            if (event.getCurrentItem().getType() == Material.PAPER) {
-                                                if (event.getSlot() == 46) {
-                                                    plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page - 1, "default");
-                                                } else if (event.getSlot() == 52) {
-                                                    plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page + 1, "default");
-                                                }
-                                            } else if (event.getCurrentItem().getType() == Material.BOOK) {
-                                                if (event.getSlot() == 47) {
-                                                    plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page, "amounttop");
-                                                } else if (event.getSlot() == 48) {
-                                                    plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page, "amountbottom");
-                                                } else if (event.getSlot() == 49) {
-                                                    event.getWhoClicked().closeInventory();
-                                                    event.getWhoClicked().sendMessage(Component.text("/token check (player)", NamedTextColor.RED));
-                                                } else if (event.getSlot() == 50) {
-                                                    plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page, "usagebottom");
-                                                } else if (event.getSlot() == 51) {
-                                                    plugin.tokens.openCheckGUI((Player) event.getWhoClicked(), page, "usagetop");
                                                 }
                                             }
                                         }

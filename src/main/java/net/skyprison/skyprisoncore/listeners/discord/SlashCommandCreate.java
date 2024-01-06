@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.TokenUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.javacord.api.entity.message.MessageFlag;
@@ -73,7 +74,7 @@ public class SlashCommandCreate implements SlashCommandCreateListener {
 
                             if (!gottenReward) {
                                 msg += "\nYou've also received 500 tokens for having linked your discord!";
-                                plugin.tokens.addTokens(pUUID, 500, "Linking Discord", "");
+                                TokenUtils.addTokens(pUUID, 500, "Linking Discord", "");
                             }
 
                             command.createImmediateResponder()

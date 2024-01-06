@@ -4,6 +4,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.mail.MailBoxSend;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.TokenUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -52,7 +53,7 @@ public class PlayerQuit implements Listener {
 
             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET blocks_mined = ?, tokens = ?, logout_world = ? WHERE user_id = ?")) {
                 ps.setInt(1, plugin.blockBreaks.get(player.getUniqueId()));
-                ps.setInt(2, plugin.tokensData.get(player.getUniqueId()));
+                ps.setInt(2, TokenUtils.getTokensData().get(player.getUniqueId()));
                 ps.setString(3, player.getWorld().getName());
                 ps.setString(4, player.getUniqueId().toString());
                 ps.executeUpdate();

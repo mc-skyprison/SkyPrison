@@ -65,7 +65,6 @@ public class CustomInvUtils {
             }
         }
     }
-
     public static void addUses(UUID pUUID, int itemId, DatabaseHook db) {
         try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO gui_items_usage (item_id, user_id, uses) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE uses = uses + VALUE(uses)")) {
             ps.setInt(1, itemId);
@@ -76,7 +75,6 @@ public class CustomInvUtils {
             e.printStackTrace();
         }
     }
-
     public static boolean categoryExists(String category) {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id FROM gui_inventories WHERE id = ?")) {
             ps.setString(1, category);
@@ -89,8 +87,6 @@ public class CustomInvUtils {
         }
         return false;
     }
-
-
     public static void createCategory(String category, String display, String colour) {
         try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO gui_inventories (id, display, colour) VALUES (?, ?, ?)")) {
             ps.setString(1, category);
@@ -101,7 +97,6 @@ public class CustomInvUtils {
             e.printStackTrace();
         }
     }
-
     public static List<String> getList() {
         List<String> categories = new ArrayList<>();
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id FROM gui_inventories")) {
@@ -114,7 +109,6 @@ public class CustomInvUtils {
         }
         return categories;
     }
-
     public static Component getFormattedList(int page) {
         List<String> categories = getList();
         int totalPages = (int) Math.ceil(categories.size() / 10.0);

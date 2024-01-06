@@ -199,36 +199,16 @@ public class PlayerManager {
         }
     }
     public static void sendMessage(UUID pUUID, Component msg, String notifType) {
-        Player isOnline = Bukkit.getPlayer(pUUID);
-        if (isOnline != null) {
-            isOnline.sendMessage(msg);
-        } else {
-            NotificationsUtils.createNotification(notifType, null, String.valueOf(pUUID), msg, null, true);
-        }
+        sendMessage(pUUID, msg, notifType, null, null, true);
     }
     public static void sendMessage(UUID pUUID, Component msg, String notifType, String notifData) {
-        Player isOnline = Bukkit.getPlayer(pUUID);
-        if (isOnline != null) {
-            isOnline.sendMessage(msg);
-        } else {
-            NotificationsUtils.createNotification(notifType, notifData, String.valueOf(pUUID), msg, null, true);
-        }
+        sendMessage(pUUID, msg, notifType, notifData, null, true);
     }
     public static void sendMessage(UUID pUUID, Component msg, String notifType, boolean deleteOnView) {
-        Player isOnline = Bukkit.getPlayer(pUUID);
-        if (isOnline != null) {
-            isOnline.sendMessage(msg);
-        } else {
-            NotificationsUtils.createNotification(notifType, null, String.valueOf(pUUID), msg, null, deleteOnView);
-        }
+        sendMessage(pUUID, msg, notifType, null, null, deleteOnView);
     }
     public static void sendMessage(UUID pUUID, Component msg, String notifType, String notifData, boolean deleteOnView) {
-        Player isOnline = Bukkit.getPlayer(pUUID);
-        if (isOnline != null) {
-            isOnline.sendMessage(msg);
-        } else {
-            NotificationsUtils.createNotification(notifType, notifData, String.valueOf(pUUID), msg, null, deleteOnView);
-        }
+        sendMessage(pUUID, msg, notifType, notifData, null, deleteOnView);
     }
     public static void sendMessage(UUID pUUID, Component msg, String notifType, String notifData, String notifId, boolean deleteOnView) {
         Player isOnline = Bukkit.getPlayer(pUUID);

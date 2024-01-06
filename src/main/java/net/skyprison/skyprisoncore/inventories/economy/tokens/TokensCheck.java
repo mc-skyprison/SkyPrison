@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.inventories.economy;
+package net.skyprison.skyprisoncore.inventories.economy.tokens;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -21,20 +21,20 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
-public class EconomyCheck implements CustomInventory {
+public class TokensCheck implements CustomInventory {
     private final Inventory inventory;
     private int page = 1;
-    private final LinkedHashMap<ItemStack, SoldItem> soldItems = new LinkedHashMap<>();
-    private final List<ItemStack> topSold = new ArrayList<>();
-    private final List<ItemStack> leastSold = new ArrayList<>();
+    private final LinkedHashMap<ItemStack, TokenSource> tokenSources = new LinkedHashMap<>();
+    private final List<ItemStack> topUsed = new ArrayList<>();
+    private final List<ItemStack> leastUsed = new ArrayList<>();
     private final List<ItemStack> topMade = new ArrayList<>();
     private final List<ItemStack> leastMade = new ArrayList<>();
     private final ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
     private final ItemStack nextPage = new ItemStack(Material.PAPER);
     private final ItemStack prevPage = new ItemStack(Material.PAPER);
     private final ItemStack sortItem = new ItemStack(Material.BOOK);
-    private final List<String> sorts = Arrays.asList("Top Sold", "Least Sold", "Most Money Made", "Least Money Made");
-    public record SoldItem(int amount, int amPos, double price, int priPos) {}
+    private final List<String> sorts = Arrays.asList("Top Used", "Least Used", "Most Tokens Made", "Least Tokens Made");
+    public record TokenSource(int usage, int usagePos, double tokens, int tokenPos) {}
     private int sortPos = 0;
     public void updatePage(int page) {
         List<ItemStack> itemsToShow = getItemList();
@@ -79,23 +79,25 @@ public class EconomyCheck implements CustomInventory {
         inventory.setItem(48, sortItem);
         updatePage(0);
     }
-    public EconomyCheck(SkyPrisonCore plugin, DatabaseHook db, String playerId) {
-        this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Shop Log", TextColor.fromHexString("#e03835")));
-        record SoldData(String item, int amount, double price) {}
-        LinkedHashMap<String, SoldData> soldDatas = new LinkedHashMap<>();
+    public TokensCheck(SkyPrisonCore plugin, DatabaseHook db, String playerId) {
+        this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Tokens Log", TextColor.fromHexString("#e03835")));
+        record TokenData(String source, String source_data, int usage, int tokens) {}
+        LinkedHashMap<List<String>, TokenData> tokenDatas = new LinkedHashMap<>();
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                "SELECT item, amount, price FROM logs_shop WHERE transaction_type != ? AND bought_back != ?" + (playerId != null ? " AND user_id = ? " : ""))) {
-            ps.setString(1, "BUY");
-            ps.setInt(2, 1);
-            if(playerId != null) ps.setString(3, playerId);
+                "SELECT amount, source, source_data FROM logs_tokens WHERE type = ?" + (playerId != null ? " AND user_id = ? " : ""))) {
+            ps.setString(1, "receive");
+            if(playerId != null) ps.setString(2, playerId);
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
-                String item = rs.getString(1);
-                if(soldDatas.containsKey(item)) {
-                    SoldData soldItem = soldDatas.get(item);
-                    soldDatas.put(item, new SoldData(item, soldItem.amount() + rs.getInt(2), soldItem.price() + rs.getDouble(3)));
+                int tokens = rs.getInt(1);
+                String source = rs.getString(2);
+                String source_data = rs.getString(3);
+                List<String> key = Arrays.asList(source, source_data);
+                if(tokenDatas.containsKey(key)) {
+                    TokenData tokenData = tokenDatas.get(key);
+                    tokenDatas.put(key, new TokenData(source, source_data, tokenData.usage + 1, tokenData.tokens + tokens));
                 } else {
-                    soldDatas.put(item, new SoldData(item, rs.getInt(2), rs.getDouble(3)));
+                    tokenDatas.put(key, new TokenData(source, source_data, 1, tokens));
                 }
             }
         } catch (SQLException e) {
@@ -107,44 +109,44 @@ public class EconomyCheck implements CustomInventory {
         prevPage.editMeta(meta -> meta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)));
         sortItem.editMeta(meta -> meta.displayName(Component.text("Switch Sorting", NamedTextColor.GOLD, TextDecoration.BOLD)
                 .decoration(TextDecoration.ITALIC, false)));
-        List<SoldData> amountSort = new ArrayList<>(soldDatas.values());
-        amountSort.sort(Comparator.comparing(SoldData::amount).reversed());
-        List<SoldData> priceSort = new ArrayList<>(soldDatas.values());
-        priceSort.sort(Comparator.comparing(SoldData::price).reversed());
-        soldDatas.forEach((item, soldData) -> {
-            ItemStack itemStack = new ItemStack(Objects.requireNonNull(Material.getMaterial(item)));
-            int amountPos = amountSort.indexOf(soldData) + 1;
-            int moneyPos = priceSort.indexOf(soldData) + 1;
+        List<TokenData> usageSort = new ArrayList<>(tokenDatas.values());
+        usageSort.sort(Comparator.comparing(TokenData::usage).reversed());
+        List<TokenData> tokenSort = new ArrayList<>(tokenDatas.values());
+        tokenSort.sort(Comparator.comparing(TokenData::tokens).reversed());
+        tokenDatas.forEach((item, tokenData) -> {
+            ItemStack itemStack = new ItemStack(Material.OAK_SIGN);
+            int usagePos = usageSort.indexOf(tokenData) + 1;
+            int tokenPos = tokenSort.indexOf(tokenData) + 1;
             itemStack.editMeta(meta -> {
-                meta.displayName(Component.text(item.replace("_", " "), NamedTextColor.YELLOW, TextDecoration.BOLD)
+                meta.displayName(Component.text(item.getFirst() + " - " + item.getLast(), NamedTextColor.YELLOW, TextDecoration.BOLD)
                         .decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Amount Sold: ", NamedTextColor.GRAY).append(Component.text(ChatUtils.formatNumber(soldData.amount), NamedTextColor.YELLOW))
+                lore.add(Component.text("Times Used: ", NamedTextColor.GRAY).append(Component.text(ChatUtils.formatNumber(tokenData.usage), NamedTextColor.YELLOW))
                         .decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Position: ", NamedTextColor.GRAY).append(Component.text(amountPos, NamedTextColor.GREEN))
+                lore.add(Component.text("Position: ", NamedTextColor.GRAY).append(Component.text(usagePos, NamedTextColor.GREEN))
                         .decoration(TextDecoration.ITALIC, false));
                 lore.add(Component.text( "-----", NamedTextColor.DARK_GRAY)
                         .decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Money Made: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(soldData.price), NamedTextColor.YELLOW))
+                lore.add(Component.text("Tokens Made: ", NamedTextColor.GRAY).append(Component.text(ChatUtils.formatNumber(tokenData.tokens), NamedTextColor.YELLOW))
                         .decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Position: ", NamedTextColor.GRAY).append(Component.text(moneyPos, NamedTextColor.GREEN))
+                lore.add(Component.text("Position: ", NamedTextColor.GRAY).append(Component.text(tokenPos, NamedTextColor.GREEN))
                         .decoration(TextDecoration.ITALIC, false));
                 meta.lore(lore);
             });
-            soldItems.put(itemStack, new SoldItem(soldData.amount(), amountPos, soldData.price(), moneyPos));
+            tokenSources.put(itemStack, new TokenSource(tokenData.usage, usagePos, tokenData.tokens, tokenPos));
         });
 
-        topSold.addAll(soldItems.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue(Comparator.comparingInt(SoldItem::amount).reversed()))
+        topUsed.addAll(tokenSources.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.comparingInt(TokenSource::usage).reversed()))
                 .map(Map.Entry::getKey).toList());
-        leastSold.addAll(soldItems.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue(Comparator.comparingInt(SoldItem::amount)))
+        leastUsed.addAll(tokenSources.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.comparingInt(TokenSource::usage)))
                 .map(Map.Entry::getKey).toList());
-        topMade.addAll(soldItems.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue(Comparator.comparingDouble(SoldItem::price).reversed()))
+        topMade.addAll(tokenSources.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.comparingDouble(TokenSource::tokens).reversed()))
                 .map(Map.Entry::getKey).toList());
-        leastMade.addAll(soldItems.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue(Comparator.comparingDouble(SoldItem::price)))
+        leastMade.addAll(tokenSources.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.comparingDouble(TokenSource::tokens)))
                 .map(Map.Entry::getKey).toList());
 
         ItemStack playerSearch = new ItemStack(Material.PLAYER_HEAD);
@@ -154,11 +156,11 @@ public class EconomyCheck implements CustomInventory {
         statsItem.editMeta(meta -> {
             meta.displayName(Component.text("Stats", NamedTextColor.YELLOW, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
             List<Component> lore = new ArrayList<>();
-            int totalSold = soldItems.values().stream().mapToInt(SoldItem::amount).sum();
-            double totalMoney = soldItems.values().stream().mapToDouble(SoldItem::price).sum();
-            lore.add(Component.text("Total Amount Sold: ", NamedTextColor.GRAY).append(Component.text(ChatUtils.formatNumber(totalSold), NamedTextColor.YELLOW))
+            int totalUsed = tokenSources.values().stream().mapToInt(TokenSource::usage).sum();
+            double totalTokens = tokenSources.values().stream().mapToDouble(TokenSource::tokens).sum();
+            lore.add(Component.text("Total Sources Used: ", NamedTextColor.GRAY).append(Component.text(ChatUtils.formatNumber(totalUsed), NamedTextColor.YELLOW))
                     .decoration(TextDecoration.ITALIC, false));
-            lore.add(Component.text("Total Money Made: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(totalMoney), NamedTextColor.YELLOW))
+            lore.add(Component.text("Total Tokens Made: ", NamedTextColor.GRAY).append(Component.text(ChatUtils.formatNumber(totalTokens), NamedTextColor.YELLOW))
                     .decoration(TextDecoration.ITALIC, false));
             meta.lore(lore);
         });
@@ -180,10 +182,10 @@ public class EconomyCheck implements CustomInventory {
     }
     public List<ItemStack> getItemList() {
         return switch (getSort()) {
-            case "Top Sold" -> topSold;
-            case "Least Sold" -> leastSold;
-            case "Most Money Made" -> topMade;
-            case "Least Money Made" -> leastMade;
+            case "Top Used" -> topUsed;
+            case "Least Used" -> leastUsed;
+            case "Most Tokens Made" -> topMade;
+            case "Least Tokens Made" -> leastMade;
             default -> new ArrayList<>();
         };
     }
@@ -203,3 +205,4 @@ public class EconomyCheck implements CustomInventory {
         return this.inventory;
     }
 }
+
