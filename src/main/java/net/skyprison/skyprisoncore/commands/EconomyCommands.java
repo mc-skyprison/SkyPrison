@@ -139,6 +139,29 @@ public class EconomyCommands {
                         e.printStackTrace();
                     }
                 }));
+
+        manager.command(manager.commandBuilder("transportpass")
+                .permission("skyprisoncore.command.transportpass")
+                .argument(PlayerArgument.of("player"))
+                .argument(StringArgument.<CommandSender>builder("type").withSuggestionsProvider((c, s) -> List.of("bus", "train")).asRequired().build())
+                .handler(c -> {
+                    Player player = c.get("player");
+                    String type = c.get("type");
+                    int amount = type.equalsIgnoreCase("bus") ? 250 : 500;
+                    if(player.hasPermission("skyprisoncore.command.transportpass." + type)) {
+                        player.sendMessage(Component.text("You already have a " + type + " pass!", NamedTextColor.RED));
+                        return;
+                    }
+                    if(TokenUtils.getTokens(player.getUniqueId()) < amount) {
+                        player.sendMessage(Component.text("You do not have enough money..", NamedTextColor.RED));
+                        return;
+                    }
+                    TokenUtils.removeTokens(player.getUniqueId(), amount, "transportpass", type);
+                    Bukkit.getScheduler().runTask(plugin, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
+                            "lp user " + player.getName() + " permission settemp skyprisoncore.command.transportpass." + type + " true 7d"));
+                    player.sendMessage(Component.text("You have bought a " + type + " pass!", NamedTextColor.GREEN));
+                }));
+
     }
     private void createShopCommands() {
 

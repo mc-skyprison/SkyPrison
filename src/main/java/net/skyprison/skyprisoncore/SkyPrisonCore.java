@@ -40,7 +40,6 @@ import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.skyprison.skyprisoncore.commands.*;
 import net.skyprison.skyprisoncore.commands.old.*;
-import net.skyprison.skyprisoncore.commands.old.economy.TransportPass;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
 import net.skyprison.skyprisoncore.inventories.NewsMessageEdit;
@@ -784,7 +783,6 @@ public class SkyPrisonCore extends JavaPlugin {
 
         Objects.requireNonNull(getCommand("daily")).setExecutor(new Daily(this, db));
         Objects.requireNonNull(getCommand("removeitalics")).setExecutor(new RemoveItalics(this));
-        Objects.requireNonNull(getCommand("transportpass")).setExecutor(new TransportPass(this));
         Objects.requireNonNull(getCommand("skyplot")).setExecutor(new SkyPlot(this));
         Objects.requireNonNull(getCommand("plot")).setExecutor(new PlotTeleport(this));
         Objects.requireNonNull(getCommand("tags")).setExecutor(new Tags(this, db));

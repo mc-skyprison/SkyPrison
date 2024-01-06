@@ -54,7 +54,6 @@ public class TokenUtils {
                     .append(Component.text("was removed from your balance", NamedTextColor.GRAY))));
         } else {
             int tokens = getTokens(pUUID);
-
             tokens -= amount;
             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET tokens = ? WHERE user_id = ?")) {
                 ps.setInt(1, Math.max(tokens, 0));
