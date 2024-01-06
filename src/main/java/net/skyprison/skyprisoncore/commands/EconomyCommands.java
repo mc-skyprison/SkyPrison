@@ -222,15 +222,16 @@ public class EconomyCommands {
         // Permshop
 
         manager.command(manager.commandBuilder("permshop")
-                .senderType(Player.class)
                 .permission("skyprisoncore.command.permshop")
+                .argument(PlayerArgument.of("player"))
                 .argument(StringArgument.of("shop"))
                 .handler(c -> {
-                    Player player = (Player) c.getSender();
+                    CommandSender sender = c.getSender();
+                    Player player = c.get("player");
                     String shop = c.get("shop");
                     ShopManager shopManager = ShopGuiPlusApi.getPlugin().getShopManager();
                     if(shopManager.getShopById(shop) == null) {
-                        player.sendMessage(Component.text("Not a valid shop!", NamedTextColor.RED));
+                        sender.sendMessage(Component.text("Not a valid shop!", NamedTextColor.RED));
                         return;
                     }
                     if(!player.hasPermission("shopguiplus.shops." + shop) && !player.isOp()) {

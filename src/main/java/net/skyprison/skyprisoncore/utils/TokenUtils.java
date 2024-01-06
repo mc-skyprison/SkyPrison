@@ -69,8 +69,8 @@ public class TokenUtils {
         Player player = Bukkit.getPlayer(pUUID);
         if(player != null && player.isOnline()) {
             tokensData.put(pUUID, amount);
-            player.sendMessage(prefix.append(Component.text("Your token balance has been set to ", NamedTextColor.AQUA)
-                    .append(Component.text(ChatUtils.formatNumber(amount), NamedTextColor.GRAY))));
+            player.sendMessage(prefix.append(Component.text("Your token balance has been set to ", NamedTextColor.GRAY)
+                    .append(Component.text(ChatUtils.formatNumber(amount), NamedTextColor.AQUA))));
         } else {
             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET tokens = ? WHERE user_id = ?")) {
                 ps.setInt(1, amount);
