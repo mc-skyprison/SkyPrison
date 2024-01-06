@@ -41,11 +41,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.endupgrade
     permission-message: §4Error:§c You do not have permission to execute this command...
-  shopban:
-    description: Shopban commands
-    usage: /<command>
-    permission: skyprisoncore.command.shopban
-    permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Killinfo Commands
   #
@@ -67,11 +62,6 @@ commands:
     description: firstjointop
     usage: /<command>
     permission: skyprisoncore.command.firstjointop
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  permshop:
-    description: permshop
-    usage: /<command>
-    permission: skyprisoncore.command.permshop
     permission-message: §4Error:§c You do not have permission to execute this command...
   daily:
     description: Opens the daily reward GUI
@@ -168,14 +158,10 @@ permissions:
 
   skyprisoncore.command.firstjointop:
     description: Gives access to /firstjointop
-  skyprisoncore.command.permshop:
-    description: Gives access to /permshop
   skyprisoncore.command.endupgrade:
     description: Gives access to /endupgrade
   skyprisoncore.command.daily:
     description: Gives access to /daily
-  skyprisoncore.command.shopban:
-    description: Gives access to /shopban
   skyprisoncore.command.removeitalics:
     description: Gives access to /removeitalics
   skyprisoncore.command.skyplot:

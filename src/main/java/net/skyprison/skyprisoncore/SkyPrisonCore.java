@@ -40,8 +40,6 @@ import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.skyprison.skyprisoncore.commands.*;
 import net.skyprison.skyprisoncore.commands.old.*;
-import net.skyprison.skyprisoncore.commands.old.economy.PermShop;
-import net.skyprison.skyprisoncore.commands.old.economy.ShopBan;
 import net.skyprison.skyprisoncore.commands.old.economy.Tokens;
 import net.skyprison.skyprisoncore.commands.old.economy.TransportPass;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
@@ -789,7 +787,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("token")).setExecutor(tokens);
         Objects.requireNonNull(getCommand("tokens")).setTabCompleter(new TabCompleter());
         Objects.requireNonNull(getCommand("token")).setTabCompleter(new TabCompleter());
-        Objects.requireNonNull(getCommand("permshop")).setExecutor(new PermShop());
         Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, db));
         Objects.requireNonNull(getCommand("killinfo")).setExecutor(new KillInfo(db));
         Objects.requireNonNull(getCommand("firstjointop")).setExecutor(new FirstjoinTop(this, db));
@@ -797,7 +794,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("ignoretp")).setExecutor(new IgnoreTeleport(this, db));
 
         Objects.requireNonNull(getCommand("daily")).setExecutor(new Daily(this, db));
-        Objects.requireNonNull(getCommand("shopban")).setExecutor(new ShopBan(db));
         Objects.requireNonNull(getCommand("removeitalics")).setExecutor(new RemoveItalics(this));
         Objects.requireNonNull(getCommand("transportpass")).setExecutor(new TransportPass(this));
         Objects.requireNonNull(getCommand("skyplot")).setExecutor(new SkyPlot(this));

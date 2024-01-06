@@ -1,6 +1,12 @@
 package net.skyprison.skyprisoncore.utils;
 
 import com.Zrips.CMI.CMI;
+import net.kyori.adventure.text.Component;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.cacheddata.CachedPermissionData;
+import net.luckperms.api.model.user.User;
+import net.luckperms.api.model.user.UserManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
@@ -20,6 +26,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static net.skyprison.skyprisoncore.SkyPrisonCore.db;
 
@@ -175,7 +183,6 @@ public class PlayerManager {
             }
         }
     }
-
     public static void checkTotalPurchases(Player player, double total) {
         if (total >= 10.0) {
             if (!player.hasPermission("group.donor1")) {
@@ -191,7 +198,68 @@ public class PlayerManager {
             }
         }
     }
-
+    public static void sendMessage(UUID pUUID, Component msg, String notifType) {
+        Player isOnline = Bukkit.getPlayer(pUUID);
+        if (isOnline != null) {
+            isOnline.sendMessage(msg);
+        } else {
+            NotificationsUtils.createNotification(notifType, null, String.valueOf(pUUID), msg, null, true);
+        }
+    }
+    public static void sendMessage(UUID pUUID, Component msg, String notifType, String notifData) {
+        Player isOnline = Bukkit.getPlayer(pUUID);
+        if (isOnline != null) {
+            isOnline.sendMessage(msg);
+        } else {
+            NotificationsUtils.createNotification(notifType, notifData, String.valueOf(pUUID), msg, null, true);
+        }
+    }
+    public static void sendMessage(UUID pUUID, Component msg, String notifType, boolean deleteOnView) {
+        Player isOnline = Bukkit.getPlayer(pUUID);
+        if (isOnline != null) {
+            isOnline.sendMessage(msg);
+        } else {
+            NotificationsUtils.createNotification(notifType, null, String.valueOf(pUUID), msg, null, deleteOnView);
+        }
+    }
+    public static void sendMessage(UUID pUUID, Component msg, String notifType, String notifData, boolean deleteOnView) {
+        Player isOnline = Bukkit.getPlayer(pUUID);
+        if (isOnline != null) {
+            isOnline.sendMessage(msg);
+        } else {
+            NotificationsUtils.createNotification(notifType, notifData, String.valueOf(pUUID), msg, null, deleteOnView);
+        }
+    }
+    public static void sendMessage(UUID pUUID, Component msg, String notifType, String notifData, String notifId, boolean deleteOnView) {
+        Player isOnline = Bukkit.getPlayer(pUUID);
+        if (isOnline != null) {
+            isOnline.sendMessage(msg);
+        } else {
+            NotificationsUtils.createNotification(notifType, notifData, String.valueOf(pUUID), msg, notifId, deleteOnView);
+        }
+    }
+    public static boolean hasPermission(UUID pUUID, String permission) {
+        boolean hasPerm = false;
+        Player isOnline = Bukkit.getPlayer(pUUID);
+        if(isOnline != null) {
+            if(isOnline.hasPermission(permission)) {
+                hasPerm = true;
+            }
+        } else {
+            LuckPerms luckAPI = LuckPermsProvider.get();
+            UserManager userManager = luckAPI.getUserManager();
+            CompletableFuture<User> userFuture = userManager.loadUser(pUUID);
+            try {
+                hasPerm = userFuture.thenApplyAsync(user -> {
+                    CachedPermissionData permissionData = user.getCachedData().getPermissionData();
+                    return permissionData.checkPermission(permission).asBoolean();
+                }).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return hasPerm;
+    }
     public static Double getBalance(Player player) {
         return CMI.getInstance().getPlayerManager().getUser(player).getBalance();
     }
