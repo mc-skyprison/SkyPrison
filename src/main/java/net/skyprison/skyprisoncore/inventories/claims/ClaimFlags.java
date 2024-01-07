@@ -17,6 +17,7 @@ import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.NewsUtils;
 import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
+import net.skyprison.skyprisoncore.utils.claims.ClaimData;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -32,7 +33,7 @@ public class ClaimFlags implements CustomInventory {
 
     private final Inventory inventory;
 
-    private final String category;
+    private String category = "";
 
     private final boolean canEdit;
 
@@ -40,10 +41,10 @@ public class ClaimFlags implements CustomInventory {
 
     private final String world;
 
-    private final int page;
+    private int page = 1;
     private final boolean hasPurchased;
 
-    public ClaimFlags(SkyPrisonCore plugin, String claimId, String world, boolean canEdit, boolean hasPurchased, String category, int page) {
+    public ClaimFlags(SkyPrisonCore plugin, ClaimData claim, boolean canEdit, boolean hasPurchased) {
         RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
         RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld(world))));
         assert regionManager != null;
@@ -51,8 +52,6 @@ public class ClaimFlags implements CustomInventory {
         assert region != null;
         this.claimId = claimId;
         this.world = world;
-        this.page = page;
-        this.category = category;
         this.canEdit = canEdit;
         this.hasPurchased = hasPurchased;
         this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Claim Flags", TextColor.fromHexString("#0fc3ff")));

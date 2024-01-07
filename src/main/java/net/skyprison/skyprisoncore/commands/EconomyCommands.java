@@ -32,19 +32,14 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 import static net.skyprison.skyprisoncore.SkyPrisonCore.bountyCooldown;
 
@@ -551,49 +546,6 @@ public class EconomyCommands {
                         Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new TokensHistory(plugin, db, pUUID.toString()).getInventory()));
                     } else {
                         player.sendMessage(Component.text("Player not found!", NamedTextColor.RED));
-                    }
-                }));
-
-
-        manager.command(tokensMain.literal("whammo")
-                        .permission("skyprisoncore.command.tokens.whammo")
-                .handler(c -> {
-                    Path folder = Paths.get(plugin.getDataFolder() + File.separator + "logs" + File.separator + "token-transactions");
-                    try(Stream<Path> paths = Files.list(folder)) {
-                        List<Path> files = paths.filter(Files::isRegularFile).toList();
-                        files.forEach(path -> {
-                            File f = path.toFile();
-                            String player = f.getName();
-                            Bukkit.getLogger().info("Processing " + player);
-                            try {
-                                BufferedReader read = new BufferedReader(new FileReader(f));
-                                String line;
-                                while ((line = read.readLine()) != null) {
-                                    String[] lineSplit = line.split(";");
-                                    String date = lineSplit[0];
-                                    String type = lineSplit[1];
-                                    String amount = lineSplit[2];
-                                    String source = lineSplit[3];
-                                    String source_data = lineSplit[4];
-                                    try(Connection conn1 = db.getConnection(); PreparedStatement ps1 = conn1.prepareStatement(
-                                            "INSERT INTO logs_tokens (user_id, type, amount, source, source_data, logged_date) VALUES (?, ?, ?, ?, ?, ?)")) {
-                                        ps1.setString(1, player.split("\\.")[0]);
-                                        ps1.setString(2, type);
-                                        ps1.setInt(3, Integer.parseInt(amount));
-                                        ps1.setString(4, source);
-                                        ps1.setString(5, source_data);
-                                        ps1.setTimestamp(6, new Timestamp(Long.parseLong(date)));
-                                        ps1.executeUpdate();
-                                    } catch (SQLException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                                read.close();
-                            } catch (IOException ignored) {}
-                            Bukkit.getLogger().info("Finished processing " + player);
-                        });
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
                     }
                 }));
     }

@@ -12,7 +12,6 @@ import com.sk89q.worldguard.session.handler.Handler;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 
@@ -25,9 +24,8 @@ public class FlyFlagHandler extends FlagValueChangeHandler<State> {
         }
     }
     public FlyFlagHandler(Session session) {
-        super(session, SkyPrisonCore.FLY);
+        super(session, ClaimUtils.FLY);
     }
-
     @Override
     protected void onInitialValue(LocalPlayer player, ApplicableRegionSet set, State value) {
         Player p = BukkitAdapter.adapt(player);
@@ -41,7 +39,6 @@ public class FlyFlagHandler extends FlagValueChangeHandler<State> {
             }
         }
     }
-
     @Override
     protected boolean onSetValue(LocalPlayer player, Location from, Location to, ApplicableRegionSet toSet, State currentValue, State lastValue, MoveType moveType) {
         Player p = BukkitAdapter.adapt(player);

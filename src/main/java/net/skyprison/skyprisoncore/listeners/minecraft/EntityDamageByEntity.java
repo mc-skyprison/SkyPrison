@@ -9,6 +9,7 @@ import com.sk89q.worldguard.protection.regions.RegionQuery;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.claims.ClaimUtils;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
@@ -39,7 +40,7 @@ public class EntityDamageByEntity implements Listener {
             RegionQuery query = container.createQuery();
             if (plugin.flyPvP.containsKey(damager.getUniqueId()) && !plugin.flyPvP.containsKey(damagee.getUniqueId())) {
                 plugin.flyPvP.remove(damager.getUniqueId());
-            } else if (query.testState(damagerLoc, localDamager, SkyPrisonCore.FLY) && !query.testState(damageeLoc, localDamagee, SkyPrisonCore.FLY)) {
+            } else if (query.testState(damagerLoc, localDamager, ClaimUtils.FLY) && !query.testState(damageeLoc, localDamagee, ClaimUtils.FLY)) {
                 plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> plugin.flyPvP.remove(damager.getUniqueId()), 1L);
             }
             if (damager.hasPermission("skyprisoncore.guard.onduty") && damagee.hasPermission("skyprisoncore.guard.onduty")) {
@@ -61,7 +62,7 @@ public class EntityDamageByEntity implements Listener {
                 RegionQuery query = container.createQuery();
                 if (plugin.flyPvP.containsKey(damager.getUniqueId()) && !plugin.flyPvP.containsKey(damagee.getUniqueId())) {
                     plugin.flyPvP.remove(damager.getUniqueId());
-                } else if (query.testState(damagerLoc, localDamager, SkyPrisonCore.FLY) && !query.testState(damageeLoc, localDamagee, SkyPrisonCore.FLY)) {
+                } else if (query.testState(damagerLoc, localDamager, ClaimUtils.FLY) && !query.testState(damageeLoc, localDamagee, ClaimUtils.FLY)) {
                     plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> plugin.flyPvP.remove(damager.getUniqueId()), 1L);
                 }
                 if (damager.hasPermission("skyprisoncore.guard.onduty") && damagee.hasPermission("skyprisoncore.guard.onduty")) {

@@ -8,6 +8,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.NotificationsUtils;
+import net.skyprison.skyprisoncore.utils.claims.ClaimData;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -22,13 +23,11 @@ import java.util.*;
 
 public class ClaimPending implements CustomInventory {
     private final Inventory inventory;
-    private final String category;
-    private final HashMap<String, HashMap<String, Object>> claimIds;
-    private final int page;
-    public ClaimPending(SkyPrisonCore plugin, HashMap<String, HashMap<String, Object>> claimIds, String category, int page) {
-        this.claimIds = claimIds;
-        this.category = category;
-        this.page = page;
+    private String category = "";
+    private final List<ClaimData> claims;
+    private int page = 1;
+    public ClaimPending(SkyPrisonCore plugin, List<ClaimData> claims) {
+        this.claims = claims;
 
         this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Pending Claim Descisions", TextColor.fromHexString("#0fc3ff")));
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);

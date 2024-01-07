@@ -45,7 +45,7 @@ public class JailCommands {
         createJailCommands();
     }
     private void createJailCommands() {
-        this.manager.command(this.manager.commandBuilder("jail")
+        manager.command(manager.commandBuilder("jail")
                 .permission("skyprisoncore.command.jail")
                 .argument(PlayerArgument.of("player"))
                 .argument(StringArgument.optional("reason", StringArgument.StringMode.GREEDY))
@@ -56,7 +56,7 @@ public class JailCommands {
 
                     setJail(sender, player, message, TimeUnit.MINUTES.toMillis(5), true);
                 }));
-        this.manager.command(this.manager.commandBuilder("unjail")
+        manager.command(manager.commandBuilder("unjail")
                 .permission("skyprisoncore.command.unjail")
                 .argument(PlayerArgument.<CommandSender>builder("player")
                         .withSuggestionsProvider((commandSenderCommandContext, s) -> currentlyJailed.keySet().stream().map(Bukkit::getPlayer).filter(Objects::nonNull).map(Player::getName).toList()))
@@ -67,7 +67,7 @@ public class JailCommands {
                     final String message = c.getOrDefault("reason", null);
                     setUnjail(sender, player, message, "unjail");
                 }));
-        this.manager.command(this.manager.commandBuilder("bribe")
+        manager.command(manager.commandBuilder("bribe")
                 .permission("skyprisoncore.command.bribe")
                 .argument(PlayerArgument.<CommandSender>builder("player")
                         .withSuggestionsProvider((commandSenderCommandContext, s) -> currentlyJailed.keySet().stream().map(Bukkit::getPlayer).filter(Objects::nonNull).map(Player::getName).toList()))
@@ -91,7 +91,7 @@ public class JailCommands {
                         extendJail(player);
                     }
                 }));
-        this.manager.command(this.manager.commandBuilder("bow")
+        manager.command(manager.commandBuilder("bow")
                 .permission("skyprisoncore.command.bow")
                 .argument(PlayerArgument.of("player"))
                 .argument(StringArgument.optional("reason", StringArgument.StringMode.GREEDY))
@@ -101,7 +101,7 @@ public class JailCommands {
                     final String message = c.getOrDefault("reason", "Bow / Crossbow");
                     contrabandMessager(sender, player, "bow", message);
                 }));
-        this.manager.command(this.manager.commandBuilder("sword")
+        manager.command(manager.commandBuilder("sword")
                 .permission("skyprisoncore.command.sword")
                 .argument(PlayerArgument.of("player"))
                 .argument(StringArgument.optional("reason", StringArgument.StringMode.GREEDY))
@@ -111,7 +111,7 @@ public class JailCommands {
                     final String message = c.getOrDefault("reason", "Sword");
                     contrabandMessager(sender, player, "sword", message);
                 }));
-        this.manager.command(this.manager.commandBuilder("contraband")
+        manager.command(manager.commandBuilder("contraband")
                 .permission("skyprisoncore.command.contraband")
                 .argument(PlayerArgument.of("player"))
                 .argument(StringArgument.optional("reason", StringArgument.StringMode.GREEDY))
@@ -121,7 +121,7 @@ public class JailCommands {
                     final String message = c.getOrDefault("reason", "Contraband");
                     contrabandMessager(sender, player, "contraband", message);
                 }));
-        this.manager.command(this.manager.commandBuilder("safezone")
+        manager.command(manager.commandBuilder("safezone")
                 .permission("skyprisoncore.command.safezone")
                 .argument(PlayerArgument.of("player"))
                 .argument(StringArgument.optional("reason", StringArgument.StringMode.GREEDY))
@@ -146,7 +146,7 @@ public class JailCommands {
                         sender.sendMessage(Component.text("You can't /safezone yourself!", NamedTextColor.RED));
                     }
                 }));
-        this.manager.command(this.manager.commandBuilder("guardduty")
+        manager.command(manager.commandBuilder("guardduty")
                 .permission("skyprisoncore.command.guardduty")
                 .senderType(Player.class)
                 .handler(c -> {

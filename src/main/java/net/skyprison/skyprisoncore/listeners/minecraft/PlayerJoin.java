@@ -29,6 +29,7 @@ import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.MailUtils;
 import net.skyprison.skyprisoncore.utils.TokenUtils;
+import net.skyprison.skyprisoncore.utils.claims.ClaimUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -77,7 +78,7 @@ public class PlayerJoin implements Listener {
         Location loc = player.getLocation();
         World world = player.getWorld();
         com.sk89q.worldedit.world.World weWorld = BukkitAdapter.adapt(world);
-        if(plugin.customClaimShape.containsKey(player.getUniqueId())) {
+        if(ClaimUtils.customClaimShape.contains(player.getUniqueId())) {
             LocalSession session = WorldEdit.getInstance().getSessionManager().get(BukkitAdapter.adapt(player));
             RegionSelector newSelector = new CuboidRegionSelector(session.getRegionSelector(weWorld));
             session.setDefaultRegionSelector(RegionSelectorType.CUBOID);
@@ -254,7 +255,7 @@ public class PlayerJoin implements Listener {
             LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
             RegionQuery query = container.createQuery();
             if(!player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
-                player.setAllowFlight(query.testState(locWE, localPlayer, SkyPrisonCore.FLY));
+                player.setAllowFlight(query.testState(locWE, localPlayer, ClaimUtils.FLY));
             }
 
             int tag_id = 0;

@@ -8,7 +8,6 @@ import com.sk89q.worldguard.session.MoveType;
 import com.sk89q.worldguard.session.Session;
 import com.sk89q.worldguard.session.handler.FlagValueChangeHandler;
 import com.sk89q.worldguard.session.handler.Handler;
-import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
 
 import java.util.Objects;
@@ -22,7 +21,7 @@ public class ConsoleCommandFlagHandler extends FlagValueChangeHandler<String> {
         }
     }
     public ConsoleCommandFlagHandler(Session session) {
-        super(session, SkyPrisonCore.CONSOLECMD);
+        super(session, ClaimUtils.CONSOLECMD);
     }
 
     @Override

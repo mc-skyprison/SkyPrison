@@ -35,13 +35,13 @@ public class ReferralCommands {
         createReferralCommands();
     }
     private void createReferralCommands() {
-        Command.Builder<CommandSender> referral = this.manager.commandBuilder("referral", "ref", "refer")
+        Command.Builder<CommandSender> referral = manager.commandBuilder("referral", "ref", "refer")
                 .permission("skyprisoncore.command.referral")
                 .handler(c -> c.getSender().sendMessage(Component.text("If a player referred you to our server, you can do \n/referral <player> to give them some tokens!", NamedTextColor.GREEN)));
 
         manager.command(referral);
 
-        this.manager.command((referral.literal("player"))
+        manager.command((referral.literal("player"))
                 .permission("skyprisoncore.command.referral.player")
                 .argument(StringArgument.optional("player"))
                 .handler(c -> {
@@ -116,11 +116,11 @@ public class ReferralCommands {
                         sender.sendMessage(Component.text("Can only be used by a player!", NamedTextColor.RED));
                     }
                 }));
-        this.manager.command(referral.literal("help")
+        manager.command(referral.literal("help")
                 .permission("skyprisoncore.command.referral.help")
                 .handler(c -> c.getSender().sendMessage(Component.text("If a player referred you to our server, you can do \n/referral <player> to give them some tokens!", NamedTextColor.GREEN))));
 
-        this.manager.command(referral.literal("history", "list")
+        manager.command(referral.literal("history", "list")
                 .permission("skyprisoncore.command.referral.history")
                 .handler(c -> {
                     CommandSender sender = c.getSender();
@@ -130,7 +130,7 @@ public class ReferralCommands {
                         sender.sendMessage(Component.text("Can only be used by a player!"));
                     }
                 }));
-        this.manager.command(referral.literal("history", "list")
+        manager.command(referral.literal("history", "list")
                 .permission("skyprisoncore.command.referral.history.others")
                 .argument(StringArgument.optional("player"))
                 .handler(c -> {

@@ -8,6 +8,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.claims.ClaimData;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -27,17 +28,14 @@ import java.util.*;
 
 public class ClaimMembers implements CustomInventory {
     private final Inventory inventory;
-    private final String category;
-    private final String claimName;
+    private String category = "";
+    private final ClaimData claim;
     private final HashMap<UUID, String> members;
-    private final int page;
+    private int page = 1;
     private final DatabaseHook db;
-    public ClaimMembers(SkyPrisonCore plugin, DatabaseHook db, String claimName, HashMap<UUID, String> members, String category, int page) {
+    public ClaimMembers(SkyPrisonCore plugin, DatabaseHook db, ClaimData claim) {
         this.db = db;
-        this.claimName = claimName;
-        this.members = members;
-        this.category = category;
-        this.page = page;
+        this.claim = claim;
         this.inventory = plugin.getServer().createInventory(this, 54, Component.text(claimName, TextColor.fromHexString("#0fc3ff")));
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
         ItemMeta redMeta = redPane.getItemMeta();

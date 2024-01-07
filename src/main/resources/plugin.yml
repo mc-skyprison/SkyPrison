@@ -84,30 +84,25 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.customrecipes
     permission-message: §4Error:§c You do not have permission to execute this command...
-  claim:
-    description: Claim commands
-    usage: /<command>
-    permission: skyprisoncore.command.claim
-    permission-message: §4Error:§c You do not have permission to execute this command...
   namecolour:
-    description: Claim commands
+    description: namecolour commands
     usage: /<command>
     aliases: [namecolor, multicolour, multicolor, nc]
     permission: skyprisoncore.command.namecolour
     permission-message: §4Error:§c You do not have permission to execute this command...
   rename:
-    description: Claim commands
+    description: rename commands
     usage: /<command>
     permission: skyprisoncore.command.rename
     permission-message: §4Error:§c You do not have permission to execute this command...
   itemlore:
-    description: Claim commands
+    description: itemlore commands
     usage: /<command>
     aliases: [ilore]
     permission: skyprisoncore.command.itemlore
     permission-message: §4Error:§c You do not have permission to execute this command...
   news:
-    description: Claim commands
+    description: news commands
     usage: /<command>
     permission: skyprisoncore.command.news
     permission-message: §4Error:§c You do not have permission to execute this command...
@@ -153,8 +148,6 @@ permissions:
   skyprisoncore.command.tags.admin:
     description: Gives access to tags stuff
   skyprisoncore.command.customrecipes:
-    description: Gives access to tags stuff
-  skyprisoncore.command.claim:
     description: Gives access to tags stuff
   skyprisoncore.command.namecolour:
     description: Gives access to tags stuff

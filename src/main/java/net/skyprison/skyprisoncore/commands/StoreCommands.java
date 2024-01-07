@@ -37,7 +37,7 @@ public class StoreCommands {
         createStoreCommands();
     }
     private void createStoreCommands() {
-        this.manager.command(this.manager.commandBuilder("donoradd")
+        manager.command(manager.commandBuilder("donoradd")
                 .permission("skyprisoncore.command.donoradd")
                 .argument(StringArgument.of("player"))
                 .argument(StringArgument.of("currency"))
@@ -83,14 +83,14 @@ public class StoreCommands {
                     }
 
                 }));
-        this.manager.command(this.manager.commandBuilder("purchases")
+        manager.command(manager.commandBuilder("purchases")
                 .senderType(Player.class)
                 .permission("skyprisoncore.command.purchases")
                 .handler(c -> {
                     Player player = (Player) c.getSender();
                     getPurchases(player, player.getUniqueId(), 1);
                 }));
-        this.manager.command(this.manager.commandBuilder("purchases")
+        manager.command(manager.commandBuilder("purchases")
                 .permission("skyprisoncore.command.purchases.others")
                 .argument(StringArgument.of("player"))
                 .handler(c -> {

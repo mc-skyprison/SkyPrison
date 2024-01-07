@@ -56,13 +56,13 @@ public class NotificationsUtils {
     }
 
 
-    public static List<String> hasNotifications(String type, List<String> extraData, OfflinePlayer player) {
+    public static List<String> hasNotifications(String type, List<String> extraData, UUID player) {
         List<String> notifications = new ArrayList<>();
         if(extraData.isEmpty()) return notifications;
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT extra_data FROM notifications WHERE type = ? AND user_id = ? AND extra_data IN "
                 + SkyPrisonCore.getQuestionMarks(extraData))) {
             ps.setString(1, type);
-            ps.setString(2, player.getUniqueId().toString());
+            ps.setString(2, player.toString());
 
             for (int i = 0; i < extraData.size(); i++) {
                 ps.setString(i + 3, extraData.get(i));

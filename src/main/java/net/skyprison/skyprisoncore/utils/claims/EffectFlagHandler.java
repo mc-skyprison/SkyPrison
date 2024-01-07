@@ -8,7 +8,6 @@ import com.sk89q.worldguard.session.MoveType;
 import com.sk89q.worldguard.session.Session;
 import com.sk89q.worldguard.session.handler.FlagValueChangeHandler;
 import com.sk89q.worldguard.session.handler.Handler;
-import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -23,7 +22,7 @@ public class EffectFlagHandler extends FlagValueChangeHandler<String> {
         }
     }
     public EffectFlagHandler(Session session) {
-        super(session, SkyPrisonCore.EFFECTS);
+        super(session, ClaimUtils.EFFECTS);
     }
 
     @Override

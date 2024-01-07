@@ -76,6 +76,7 @@ import net.skyprison.skyprisoncore.listeners.quickshop.ShopSuccessPurchase;
 import net.skyprison.skyprisoncore.listeners.shopguiplus.ShopPostTransaction;
 import net.skyprison.skyprisoncore.listeners.shopguiplus.ShopPreTransaction;
 import net.skyprison.skyprisoncore.utils.*;
+import net.skyprison.skyprisoncore.utils.claims.ClaimUtils;
 import net.skyprison.skyprisoncore.utils.claims.ConsoleCommandFlagHandler;
 import net.skyprison.skyprisoncore.utils.claims.EffectFlagHandler;
 import net.skyprison.skyprisoncore.utils.claims.FlyFlagHandler;
@@ -136,12 +137,8 @@ public class SkyPrisonCore extends JavaPlugin {
     public List<UUID> cancelMailSendConfirm = new ArrayList<>();
     public List<UUID> kickMemberMailbox = new ArrayList<>();
     public HashMap<UUID, MailBoxSend> writingMail = new HashMap<>();
-    public List<UUID> inviteMailBox = new ArrayList<>();
-    public List<UUID> deleteClaim = new ArrayList<>();
-    public List<UUID> transferClaim = new ArrayList<>();
     public HashMap<UUID, String> stickyChat = new HashMap<>();
-    public HashMap<UUID, Boolean> customClaimHeight = new HashMap<>();
-    public HashMap<UUID, Boolean>  customClaimShape = new HashMap<>();
+    public List<UUID> inviteMailBox = new ArrayList<>();
     public HashMap<Material, Double> minPrice = new HashMap<>();
     public List<Location> shinyGrass = new ArrayList<>();
     private DiscordApi discApi;
@@ -159,9 +156,6 @@ public class SkyPrisonCore extends JavaPlugin {
     public List<UUID> secretCategoryChanges = new ArrayList<>();
     public HashMap<UUID, MailBoxSend> mailSend = new HashMap<>();
     public static DatabaseHook db;
-    public static StateFlag FLY;
-    public static StringFlag EFFECTS;
-    public static StringFlag CONSOLECMD;
     public HashMap<UUID, LinkedHashMap<String, Integer>> shopLogAmountPlayer = new HashMap<>();
     public HashMap<UUID, LinkedHashMap<String, Double>> shopLogPricePlayer = new HashMap<>();
     public HashMap<UUID, LinkedHashMap<String, Integer>> shopLogPagePlayer = new HashMap<>();
@@ -189,9 +183,9 @@ public class SkyPrisonCore extends JavaPlugin {
             registry.register(flyFlag);
             registry.register(effectsFlag);
             registry.register(consoleFlag);
-            FLY = flyFlag;
-            EFFECTS = effectsFlag;
-            CONSOLECMD = consoleFlag;
+            ClaimUtils.FLY = flyFlag;
+            ClaimUtils.EFFECTS = effectsFlag;
+            ClaimUtils.CONSOLECMD = consoleFlag;
             getLogger().info("Loaded Custom Flags");
         } catch (FlagConflictException ignored) {
         }
@@ -243,6 +237,8 @@ public class SkyPrisonCore extends JavaPlugin {
         dailyMissions = new DailyMissions(this, db);
 
         registerMinPrice();
+
+        new ClaimUtils(this, db).initializeData();
 
         final Function<CommandTree<CommandSender>, CommandExecutionCoordinator<CommandSender>> executionCoordinatorFunction =
                 AsynchronousCommandExecutionCoordinator.<CommandSender>builder().build();
@@ -771,6 +767,7 @@ public class SkyPrisonCore extends JavaPlugin {
         new CustomInvCommands(this, db, manager);
         new BottledExpCommands(this, manager);
         new EconomyCommands(this, db, manager);
+        new ClaimCommands(this, db, manager);
 
         Permission bountyBypass = new Permission("skyprisoncore.command.bounty.bypass", PermissionDefault.FALSE);
         Bukkit.getPluginManager().addPermission(bountyBypass);
@@ -789,7 +786,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("minereset")).setExecutor(new MineReset(this));
         Objects.requireNonNull(getCommand("randomgive")).setExecutor(new RandomGive(this));
         Objects.requireNonNull(getCommand("customrecipes")).setExecutor(new CustomRecipes(this));
-        Objects.requireNonNull(getCommand("claim")).setExecutor(new Claim(this, db));
 
         Objects.requireNonNull(getCommand("rename")).setExecutor(new Rename());
         Objects.requireNonNull(getCommand("itemlore")).setExecutor(new ItemLore(this));
@@ -944,7 +940,7 @@ public class SkyPrisonCore extends JavaPlugin {
             }
         }
     }
-    public static String getQuestionMarks(List<String> list) {
+    public static String getQuestionMarks(List<?> list) {
         if(!list.isEmpty()) {
             return "(" + list.stream().map(id -> "?").collect(Collectors.joining(",")) + ")";
         } else {

@@ -2,7 +2,6 @@ package net.skyprison.skyprisoncore.utils.claims;
 
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.Flags;
-import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Material;
 
 import java.util.Arrays;
@@ -330,7 +329,7 @@ public enum AvailableFlags {
         FlagState.BOOLEAN
     ),
     FLY(
-        Collections.singletonList(SkyPrisonCore.FLY),
+        Collections.singletonList(ClaimUtils.FLY),
         "Flight",
         "",
         "ENABLED",
@@ -421,15 +420,15 @@ public enum AvailableFlags {
     public String getDescription() {
         return this.desc;
     }
-    
+
     public String getAllowed() {
         return this.allowed;
     }
-    
+
     public String getDenied() {
         return this.denied;
     }
-    
+
     public String getNotSet() {
         return this.notSet;
     }
