@@ -30,13 +30,12 @@ public class ClaimMembers implements CustomInventory {
     private final Inventory inventory;
     private String category = "";
     private final ClaimData claim;
-    private final HashMap<UUID, String> members;
     private int page = 1;
     private final DatabaseHook db;
     public ClaimMembers(SkyPrisonCore plugin, DatabaseHook db, ClaimData claim) {
         this.db = db;
         this.claim = claim;
-        this.inventory = plugin.getServer().createInventory(this, 54, Component.text(claimName, TextColor.fromHexString("#0fc3ff")));
+        this.inventory = plugin.getServer().createInventory(this, 54, Component.text(claim.getName(), TextColor.fromHexString("#0fc3ff")));
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
         ItemMeta redMeta = redPane.getItemMeta();
         redMeta.displayName(Component.text(" "));
@@ -125,7 +124,6 @@ public class ClaimMembers implements CustomInventory {
             }
         }.runTaskAsynchronously(plugin);
     }
-
     public String getNextCategory(String category) {
         String nextCat = "";
         switch (category) {
@@ -136,37 +134,26 @@ public class ClaimMembers implements CustomInventory {
         }
         return nextCat;
     }
-
-    public String getClaimName() {
-        return this.claimName;
+    public ClaimData getClaim() {
+        return this.claim;
     }
-
-    public HashMap<UUID, String> getMembers() {
-        return this.members;
-    }
-
     public String getCategory() {
         return this.category;
     }
-
     public DatabaseHook getDatabase() {
         return this.db;
     }
-
     @Override
     public ClickBehavior defaultClickBehavior() {
         return ClickBehavior.DISABLE_ALL;
     }
-
     @Override
     public List<Object> customClickList() {
         return null;
     }
-
     public int getPage() {
         return this.page;
     }
-
     @Override
     public @NotNull Inventory getInventory() {
         return this.inventory;

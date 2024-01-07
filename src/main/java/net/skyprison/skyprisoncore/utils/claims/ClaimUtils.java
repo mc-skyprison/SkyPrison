@@ -32,6 +32,7 @@ import net.luckperms.api.model.user.UserManager;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimFlags;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimMembers;
+import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
@@ -239,8 +240,10 @@ public class ClaimUtils {
                 .append(Component.text(claim.getName(), TextColor.fromHexString("#20df80"), TextDecoration.BOLD))));
 
         if(!Objects.equals(executorPlayer.getUniqueId(), targetPlayer)) {
-            Component targetMsg = prefix.append(Component.text("Your claim ", TextColor.fromHexString("#20df80"))).append(Component.text(claim.getName(), TextColor.fromHexString("#20df80"), TextDecoration.BOLD))
-                    .append(Component.text(" was deleted by ", TextColor.fromHexString("#20df80"))).append(Component.text(executorPlayer.getName(), TextColor.fromHexString("#20df80"), TextDecoration.BOLD));
+            Component targetMsg = prefix.append(Component.text("Your claim ", TextColor.fromHexString("#20df80")))
+                    .append(Component.text(claim.getName(), TextColor.fromHexString("#20df80"), TextDecoration.BOLD))
+                    .append(Component.text(" was deleted by ", TextColor.fromHexString("#20df80")))
+                    .append(Component.text(executorPlayer.getName(), TextColor.fromHexString("#20df80"), TextDecoration.BOLD));
             PlayerManager.sendMessage(targetPlayer, targetMsg, "claim-delete");
         }
     }
@@ -316,7 +319,8 @@ public class ClaimUtils {
 
             if (pBlocks.total < newUsedBlocks) {
                 player.sendMessage(prefix.append(Component.text("You don't have enough claim blocks for this! You need ", NamedTextColor.RED))
-                        .append(Component.text(pBlocks.used + claimBlocks - pBlocks.total, NamedTextColor.RED, TextDecoration.BOLD)).append(Component.text(" blocks more", NamedTextColor.RED)));
+                        .append(Component.text(pBlocks.used + claimBlocks - pBlocks.total, NamedTextColor.RED, TextDecoration.BOLD))
+                        .append(Component.text(" blocks more", NamedTextColor.RED)));
                 return;
             }
 
@@ -332,7 +336,8 @@ public class ClaimUtils {
 
             updateUsedBlocks(player.getUniqueId(), newUsedBlocks);
 
-            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO claims (claim_id, claim_name, parent_id, world, blocks_used) VALUES (?, ?, ?, ?, ?)")) {
+            try(Connection conn = db.getConnection();
+                PreparedStatement ps = conn.prepareStatement("INSERT INTO claims (claim_id, claim_name, parent_id, world, blocks_used) VALUES (?, ?, ?, ?, ?)")) {
                 ps.setString(1, region.getId());
                 ps.setString(2, claimName);
                 ps.setString(3, parentId);
@@ -463,7 +468,8 @@ public class ClaimUtils {
                         long blocksLeft = pBlocks.total - pBlocks.used;
 
                         if(blocksLeft - additionalBlocksUsed >= 0) {
-                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks_used = claim_blocks_used + ? WHERE user_id = ?")) {
+                            try(Connection conn = db.getConnection();
+                                PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks_used = claim_blocks_used + ? WHERE user_id = ?")) {
                                 ps.setLong(1, additionalBlocksUsed);
                                 ps.setString(2, targetPlayer.toString());
                                 ps.executeUpdate();
@@ -472,7 +478,8 @@ public class ClaimUtils {
                             }
 
 
-                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE claims SET blocks_used = blocks_used + ? WHERE claim_id = ?")) {
+                            try(Connection conn = db.getConnection();
+                                PreparedStatement ps = conn.prepareStatement("UPDATE claims SET blocks_used = blocks_used + ? WHERE claim_id = ?")) {
                                 ps.setLong(1, additionalBlocksUsed);
                                 ps.setString(2, claim.getId());
                                 ps.executeUpdate();
@@ -511,28 +518,35 @@ public class ClaimUtils {
                 .append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
         if (page == 1) {
             msg = msg
-                    .append(Component.text("\n/claim list " + (hasPerm ? "(player) (page)" :  "(page)"), TextColor.fromHexString("#20df80"))).append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text("\n/claim list " + (hasPerm ? "(player) (page)" :  "(page)"), TextColor.fromHexString("#20df80")))
+                    .append(Component.text(" - ", NamedTextColor.GRAY))
                     .append(Component.text("List of all claims you're in", TextColor.fromHexString("#dbb976")))
 
-                    .append(Component.text("\n/claim info (claim)" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text("\n/claim info (claim)" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80"))
+                            .append(Component.text(" - ", NamedTextColor.GRAY))
                             .append(Component.text("Get info about a claim", TextColor.fromHexString("#dbb976"))))
 
-                    .append(Component.text("\n/claim blocks " + (hasPerm ? "buy/give/take/set <player> <amount>" : "buy <amount>"), TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text("\n/claim blocks " + (hasPerm ? "buy/give/take/set <player> <amount>" : "buy <amount>"), TextColor.fromHexString("#20df80"))
+                            .append(Component.text(" - ", NamedTextColor.GRAY))
                             .append(Component.text("Buy more claimblocks", TextColor.fromHexString("#dbb976"))))
 
                     .append(Component.text("\n/claim create <claim>", TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
                             .append(Component.text("Create a new claim", TextColor.fromHexString("#dbb976"))))
 
-                    .append(Component.text("\n/claim delete <claim>" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text("\n/claim delete <claim>" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80"))
+                            .append(Component.text(" - ", NamedTextColor.GRAY))
                             .append(Component.text("delete a claim", TextColor.fromHexString("#dbb976"))))
 
-                    .append(Component.text("\n/claim flags (claim)" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text("\n/claim flags (claim)" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80"))
+                            .append(Component.text(" - ", NamedTextColor.GRAY))
                             .append(Component.text("View/edit flags", TextColor.fromHexString("#dbb976"))))
 
-                    .append(Component.text("\n/claim invite <player> (claim)" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text("\n/claim invite <player> (claim)" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80"))
+                            .append(Component.text(" - ", NamedTextColor.GRAY))
                             .append(Component.text("Invite a player to your claim", TextColor.fromHexString("#dbb976"))))
 
-                    .append(Component.text("\n/claim kick <player> (claim)" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text("\n/claim kick <player> (claim)" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80"))
+                            .append(Component.text(" - ", NamedTextColor.GRAY))
                             .append(Component.text("Kick a member from your claim", TextColor.fromHexString("#dbb976"))))
 
                     .append(Component.text("\n/claim wand", TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
@@ -543,25 +557,31 @@ public class ClaimUtils {
 
                     .append(Component.text("\n" + page, TextColor.fromHexString("#266d27")).append(Component.text("/", NamedTextColor.GRAY)
                             .append(Component.text("2", TextColor.fromHexString("#266d27")))).append(Component.text(" Next --->", NamedTextColor.GRAY)
-                            .hoverEvent(HoverEvent.showText(Component.text(">>>", NamedTextColor.GRAY))).clickEvent(ClickEvent.runCommand("/claim help 2"))).decorate(TextDecoration.BOLD));
+                            .hoverEvent(HoverEvent.showText(Component.text(">>>", NamedTextColor.GRAY)))
+                            .clickEvent(ClickEvent.runCommand("/claim help 2"))).decorate(TextDecoration.BOLD));
         } else if (page == 2) {
             msg = msg
-                    .append(Component.text("\n/claim promote <player> (claim)" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text("\n/claim promote <player> (claim)" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80"))
+                            .append(Component.text(" - ", NamedTextColor.GRAY))
                             .append(Component.text("Promote a member of your claim", TextColor.fromHexString("#dbb976")))).decoration(TextDecoration.STRIKETHROUGH, false)
 
-                    .append(Component.text("\n/claim demote <player> (claim)" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text("\n/claim demote <player> (claim)" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80"))
+                            .append(Component.text(" - ", NamedTextColor.GRAY))
                             .append(Component.text("Demote a co-owner of your claim", TextColor.fromHexString("#dbb976"))))
 
-                    .append(Component.text("\n/claim transfer <player> (claim)" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text("\n/claim transfer <player> (claim)" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80"))
+                            .append(Component.text(" - ", NamedTextColor.GRAY))
                             .append(Component.text("Transfer claim to another player", TextColor.fromHexString("#dbb976"))))
 
-                    .append(Component.text("\n/claim rename <claim> <newName>" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text("\n/claim rename <claim> <newName>" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80"))
+                            .append(Component.text(" - ", NamedTextColor.GRAY))
                             .append(Component.text("Rename your claim", TextColor.fromHexString("#dbb976"))))
 
                     .append(Component.text("\n/claim expand <amount>", TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
                             .append(Component.text("Expand a claim in the direction you are facing", TextColor.fromHexString("#dbb976"))))
 
-                    .append(Component.text("\n/claim pending (claim)" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text("\n/claim pending (claim)" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80"))
+                            .append(Component.text(" - ", NamedTextColor.GRAY))
                             .append(Component.text("See all pending invites/transfers", TextColor.fromHexString("#dbb976"))))
 
                     .append(Component.text("\n/claim customheight", TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
@@ -571,7 +591,8 @@ public class ClaimUtils {
                             .append(Component.text("Enable/disable custom shape on claim create.", TextColor.fromHexString("#dbb976"))))
 
                     .append(Component.text("\n<--- Prev ", NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text("<<<", NamedTextColor.GRAY)))
-                            .clickEvent(ClickEvent.runCommand("/claim help 1")).append(Component.text(page, TextColor.fromHexString("#266d27")).append(Component.text("/", NamedTextColor.GRAY)
+                            .clickEvent(ClickEvent.runCommand("/claim help 1")).append(Component.text(page, TextColor.fromHexString("#266d27"))
+                                    .append(Component.text("/", NamedTextColor.GRAY)
                                     .append(Component.text("2", TextColor.fromHexString("#266d27"))))).decorate(TextDecoration.BOLD));
         }
 
@@ -588,11 +609,11 @@ public class ClaimUtils {
                 .append(Component.text(" Claims List ", TextColor.fromHexString("#0fc3ff"), TextDecoration.BOLD))
                 .append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
 
-        long totalBlocksUsed = 0;
-        msg = msg.append(Component.text("\nTotal Blocks In Use", TextColor.fromHexString("#0fffc3")).append(Component.text(" ⇒ ", NamedTextColor.GRAY)
-                .append(Component.text(totalBlocksUsed, TextColor.fromHexString("#ffba75")))));
-
         List<ClaimData> claimsToShow = new ArrayList<>(claimData);
+        long totalBlocksUsed = claimsToShow.stream().mapToLong(ClaimData::getBlocks).sum();
+        msg = msg.append(Component.text("\nTotal Blocks In Use", TextColor.fromHexString("#0fffc3")).append(Component.text(" ⇒ ", NamedTextColor.GRAY)
+                .append(Component.text(ChatUtils.formatNumber(totalBlocksUsed), TextColor.fromHexString("#ffba75")))));
+
         int totalPages = (int) Math.ceil((double) claimsToShow.size() / 10);
 
         if (page > totalPages) {
@@ -615,7 +636,8 @@ public class ClaimUtils {
             }
             msg = msg.append(Component.text("\n- ", NamedTextColor.WHITE).append(Component.text(claim.getName(), TextColor.fromHexString("#0fffc3"))
                             .append(claim.getParent() != null ? Component.text(" (Child)", TextColor.fromHexString("#ffba75")) : Component.text("")))
-                    .hoverEvent(HoverEvent.showText(Component.text("").append(Component.text("⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯", NamedTextColor.WHITE, TextDecoration.STRIKETHROUGH))
+                    .hoverEvent(HoverEvent.showText(Component.text("")
+                            .append(Component.text("⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯", NamedTextColor.WHITE, TextDecoration.STRIKETHROUGH))
                             .append(parentInfo)
                             .append(Component.text("\nCoords", TextColor.fromHexString("#0fffc3")).append(Component.text(" ⇒ ", NamedTextColor.GRAY))
                                     .append(Component.text("X " + coords.get(0) + " Y " + coords.get(1), TextColor.fromHexString("#ffba75"))))
@@ -660,7 +682,7 @@ public class ClaimUtils {
         ClaimBlocks pBlocks =  getPlayerBlocks(targetPlayer);
 
         msg = msg.append(Component.text("\nTotal Blocks", TextColor.fromHexString("#0fffc3")).append(Component.text(" ⇒ ", NamedTextColor.GRAY)
-                .append(Component.text(pBlocks.used + "/" + pBlocks.total, TextColor.fromHexString("#ffba75")))));
+                .append(Component.text(ChatUtils.formatNumber(pBlocks.used) + "/" + ChatUtils.formatNumber(pBlocks.total), TextColor.fromHexString("#ffba75")))));
         if (!claims.isEmpty()) {
             int totalPages = (int) Math.ceil((double) claims.size() / 10);
 
@@ -680,7 +702,8 @@ public class ClaimUtils {
 
             for (ClaimData claim : claimsToShow) {
                 if (i == 10) break;
-                ClaimMember member = claim.getMembers().stream().filter(m -> m.getUniqueId().equals(targetPlayer)).findFirst().orElse(new ClaimMember(claim.getId(), targetPlayer, "Unknown"));
+                ClaimMember member = claim.getMembers().stream().filter(m -> m.getUniqueId().equals(targetPlayer))
+                        .findFirst().orElse(new ClaimMember(claim.getId(), targetPlayer, "Unknown"));
 
                 List<Integer> coords = getClaimCoords(claim);
 
@@ -691,7 +714,8 @@ public class ClaimUtils {
                 }
                 msg = msg.append(Component.text("\n- ", NamedTextColor.WHITE).append(Component.text(claim.getName(), TextColor.fromHexString("#0fffc3"))
                                 .append(claim.getParent() != null ? Component.text(" (Child)", TextColor.fromHexString("#ffba75")) : Component.text("")))
-                        .hoverEvent(HoverEvent.showText(Component.text("").append(Component.text("⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯", NamedTextColor.WHITE, TextDecoration.STRIKETHROUGH))
+                        .hoverEvent(HoverEvent.showText(Component.text("")
+                                .append(Component.text("⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯", NamedTextColor.WHITE, TextDecoration.STRIKETHROUGH))
                                 .append(!ownClaims ? Component.text("\nRank", TextColor.fromHexString("#0fffc3")).append(Component.text(" ⇒ ", NamedTextColor.GRAY))
                                         .append(Component.text(member.getRank(), TextColor.fromHexString("#ffba75"))) : Component.empty())
                                 .append(parentInfo)
@@ -869,7 +893,8 @@ public class ClaimUtils {
                 .append(Component.text("\nACCEPT INVITE", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.runCommand("/claim accept invite " + notifId)))
                 .append(Component.text("     "))
                 .append(Component.text("DECLINE INVITE", NamedTextColor.RED, TextDecoration.BOLD).clickEvent(ClickEvent.runCommand("/claim decline invite " + notifId)));
-        executorPlayer.sendMessage(prefix.append(Component.text("Successfully invited " + PlayerManager.getPlayerName(targetPlayer) + " to the claim!", TextColor.fromHexString("#20df80"))));
+        executorPlayer.sendMessage(prefix.append(Component.text("Successfully invited " +
+                PlayerManager.getPlayerName(targetPlayer) + " to the claim!", TextColor.fromHexString("#20df80"))));
         PlayerManager.sendMessage(targetPlayer, msg, "claim-invite", claim.getId(), notifId, false);
     }
     public void inviteDecline(Player player, ClaimData claim, String notifId) {
@@ -1148,7 +1173,8 @@ public class ClaimUtils {
         }
 
         for(ClaimData child : claim.getChildren()) {
-            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO claims_members (user_id, claim_id, user_rank) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE user_rank = VALUE(user_rank)")) {
+            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                    "INSERT INTO claims_members (user_id, claim_id, user_rank) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE user_rank = VALUE(user_rank)")) {
                 ps.setString(1, transferPlayer.getUniqueId().toString());
                 ps.setString(2, child.getId());
                 ps.setString(3, "owner");
@@ -1203,7 +1229,8 @@ public class ClaimUtils {
         for(ClaimData claim : claims) {
             info = info.append(Component.text("\n- ", NamedTextColor.WHITE).append(Component.text(claim.getName(), TextColor.fromHexString("#0fffc3")))
                     .append(claim.getParent() != null ? Component.text(" (Child)" , TextColor.fromHexString("#0fffc3")) : Component.text(""))
-                    .append(Component.text(" ⇒ ", NamedTextColor.GRAY)).append(Component.text("Owner: " + PlayerManager.getPlayerName(claim.getOwner()), TextColor.fromHexString("#ffba75")))
+                    .append(Component.text(" ⇒ ", NamedTextColor.GRAY))
+                    .append(Component.text("Owner: " + PlayerManager.getPlayerName(claim.getOwner()), TextColor.fromHexString("#ffba75")))
                     .hoverEvent(HoverEvent.showText(Component.text("Click here to view flags for " + claim.getName(), NamedTextColor.GRAY)))
                     .clickEvent(ClickEvent.callback(audience -> claimFlags(executorPlayer, targetPlayer, claim))));
         }

@@ -20,6 +20,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimPending;
+import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
@@ -31,6 +32,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.*;
 
 public class ClaimCommands {
@@ -49,7 +53,6 @@ public class ClaimCommands {
         ClaimUtils claim = new ClaimUtils(plugin, db);
 
         Command.Builder<CommandSender> claimMain = manager.commandBuilder("claim")
-                .senderType(Player.class)
                 .permission("skyprisoncore.command.claim")
                 .handler(c -> claim.helpMessage(c.getSender(), 1));
 
@@ -662,25 +665,163 @@ public class ClaimCommands {
         manager.command(claimBlocks.literal("buy")
                 .argument(IntegerArgument.<CommandSender>builder("amount").withMin(1).asRequired())
                 .handler(c -> {
-
+                    Player player = (Player) c.getSender();
+                    long blocks = c.get("amount");
+                    double price = 40 * blocks;
+                    if(PlayerManager.getBalance(player) < price) {
+                        long needed = (long) (price - PlayerManager.getBalance(player));
+                        player.sendMessage(prefix.append(Component.text("You don't have enough money! You need $" + ChatUtils.formatNumber(needed) + " more..", NamedTextColor.RED)));
+                        return;
+                    }
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks = claim_blocks + ? WHERE user_id = ?")) {
+                        ps.setLong(1, blocks);
+                        ps.setString(2, player.getUniqueId().toString());
+                        ps.executeUpdate();
+                        Bukkit.getScheduler().runTask(plugin, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "cmi money take " + player.getName() + " " + price));
+                        player.sendMessage(prefix.append(Component.text("Successfully bought ", TextColor.fromHexString("#20df80"))
+                                .append(Component.text(ChatUtils.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                                .append(Component.text(" blocks for $", TextColor.fromHexString("#20df80")))
+                                .append(Component.text(ChatUtils.formatNumber(price), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))));
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
                 }));
         manager.command(claimBlocks.literal("give")
                 .permission("skyprisoncore.command.claim.admin")
                 .argument(StringArgument.of("player"))
+                .argument(IntegerArgument.<CommandSender>builder("amount").withMin(1).asRequired())
                 .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    String target = c.get("player");
+                    long blocks = c.get("amount");
+                    UUID targetId = PlayerManager.getPlayerId(target);
+                    if(targetId == null) {
+                        sender.sendMessage(prefix.append(Component.text("Player not found!", NamedTextColor.RED)));
+                        return;
+                    }
 
+                    try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks = claim_blocks + ? WHERE user_id = ?")) {
+                        ps.setLong(1, blocks);
+                        ps.setString(2, targetId.toString());
+                        ps.executeUpdate();
+                        sender.sendMessage(prefix.append(Component.text("Successfully gave ", TextColor.fromHexString("#20df80"))
+                                .append(Component.text(ChatUtils.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                                .append(Component.text(" blocks to ", TextColor.fromHexString("#20df80")))
+                                .append(Component.text(Objects.requireNonNullElse(PlayerManager.getPlayerName(targetId), "Couldn't get name!"),
+                                        TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))));
+                        Component msg = prefix.append(Component.text(sender.getName(), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                                .append(Component.text(" has given you ", TextColor.fromHexString("#20df80")))
+                                .append(Component.text(ChatUtils.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                                .append(Component.text(" blocks!", TextColor.fromHexString("#20df80")));
+                        PlayerManager.sendMessage(targetId, msg, "claim-give");
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
                 }));
         manager.command(claimBlocks.literal("set")
                 .permission("skyprisoncore.command.claim.admin")
                 .argument(StringArgument.of("player"))
+                .argument(IntegerArgument.<CommandSender>builder("amount").withMin(0).asRequired())
                 .handler(c -> {
-
+                    CommandSender sender = c.getSender();
+                    long blocks = c.get("amount");
+                    String target = c.get("player");
+                    UUID targetId = PlayerManager.getPlayerId(target);
+                    if(targetId == null) {
+                        sender.sendMessage(prefix.append(Component.text("Player not found!", NamedTextColor.RED)));
+                        return;
+                    }
+                    ClaimUtils.ClaimBlocks pBlocks = claim.getPlayerBlocks(targetId);
+                    if(pBlocks.used() < blocks) {
+                        sender.sendMessage(prefix.append(Component.text("This would put the player's total blocks below their used blocks!", NamedTextColor.RED)));
+                        return;
+                    }
+                    try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks = ? WHERE user_id = ?")) {
+                        ps.setLong(1, blocks);
+                        ps.setString(2, targetId.toString());
+                        ps.executeUpdate();
+                        sender.sendMessage(prefix.append(Component.text("Successfully set ", TextColor.fromHexString("#20df80"))
+                                        .append(Component.text(Objects.requireNonNullElse(PlayerManager.getPlayerName(targetId), "Couldn't get name!"),
+                                                TextColor.fromHexString("#ffba75"), TextDecoration.BOLD)))
+                                .append(Component.text(" blocks to ", TextColor.fromHexString("#20df80")))
+                                .append(Component.text(ChatUtils.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD)));
+                        Component msg = prefix.append(Component.text(sender.getName(), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                                .append(Component.text(" set your blocks to ", TextColor.fromHexString("#20df80")))
+                                .append(Component.text(ChatUtils.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                                .append(Component.text("!", TextColor.fromHexString("#20df80")));
+                        PlayerManager.sendMessage(targetId, msg, "claim-set");
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
                 }));
         manager.command(claimBlocks.literal("take")
                 .permission("skyprisoncore.command.claim.admin")
                 .argument(StringArgument.of("player"))
+                .argument(IntegerArgument.<CommandSender>builder("amount").withMin(1).asRequired())
                 .handler(c -> {
+                    CommandSender sender = c.getSender();
+                    long blocks = c.get("amount");
+                    String target = c.get("player");
+                    UUID targetId = PlayerManager.getPlayerId(target);
+                    if(targetId == null) {
+                        sender.sendMessage(prefix.append(Component.text("Player not found!", NamedTextColor.RED)));
+                        return;
+                    }
+                    ClaimUtils.ClaimBlocks pBlocks = claim.getPlayerBlocks(targetId);
+                    if(pBlocks.used() < blocks) {
+                        sender.sendMessage(prefix.append(Component.text("This would put the player's total blocks below their used blocks!", NamedTextColor.RED)));
+                        return;
+                    }
+                    try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET claim_blocks = claim_blocks - ? WHERE user_id = ?")) {
+                        ps.setLong(1, blocks);
+                        ps.setString(2, targetId.toString());
+                        ps.executeUpdate();
+                        sender.sendMessage(prefix.append(Component.text("Successfully took ", TextColor.fromHexString("#20df80"))
+                                .append(Component.text(ChatUtils.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                                .append(Component.text(" blocks from ", TextColor.fromHexString("#20df80")))
+                                .append(Component.text(Objects.requireNonNullElse(PlayerManager.getPlayerName(targetId), "Couldn't get name!"),
+                                        TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))));
+                        Component msg = prefix.append(Component.text(sender.getName(), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                                .append(Component.text(" took ", TextColor.fromHexString("#20df80")))
+                                .append(Component.text(ChatUtils.formatNumber(blocks), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                                .append(Component.text(" blocks from you!", TextColor.fromHexString("#20df80")));
+                        PlayerManager.sendMessage(targetId, msg, "claim-take");
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }));
 
+        manager.command(claimMain.literal("accept")
+                .argument(StringArgument.of("type"))
+                .argument(StringArgument.of("id"))
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    String type = c.get("type");
+                    String id = c.get("id");
+                    String claimId = NotificationsUtils.hasNotification(id, player);
+                    if(claimId == null || claimId.isEmpty()) return;
+                    ClaimData claimData = claim.getClaim(claimId);
+                    if (type.equalsIgnoreCase("invite")) {
+                        claim.inviteAccept(player, claimData, id);
+                    } else if (type.equalsIgnoreCase("transfer")) {
+                        claim.transferAccept(player, claimData, id);
+                    }
+                }));
+        manager.command(claimMain.literal("decline")
+                .argument(StringArgument.of("type"))
+                .argument(StringArgument.of("id"))
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    String type = c.get("type");
+                    String id = c.get("id");
+                    String claimId = NotificationsUtils.hasNotification(id, player);
+                    if(claimId == null || claimId.isEmpty()) return;
+                    ClaimData claimData = claim.getClaim(claimId);
+                    if (type.equalsIgnoreCase("invite")) {
+                        claim.inviteDecline(player, claimData, id);
+                    } else if (type.equalsIgnoreCase("transfer")) {
+                        claim.transferDecline(player, claimData, id);
+                    }
                 }));
     }
     private void updateName(Player player, UUID targetPlayerId, String claimName, String newName, ClaimUtils claim) {

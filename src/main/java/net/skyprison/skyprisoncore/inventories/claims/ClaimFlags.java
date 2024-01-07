@@ -30,29 +30,21 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class ClaimFlags implements CustomInventory {
-
     private final Inventory inventory;
-
     private String category = "";
-
+    private final ClaimData claim;
     private final boolean canEdit;
-
-    private final String claimId;
-
-    private final String world;
-
     private int page = 1;
     private final boolean hasPurchased;
 
     public ClaimFlags(SkyPrisonCore plugin, ClaimData claim, boolean canEdit, boolean hasPurchased) {
         RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-        RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld(world))));
+        RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld(claim.getWorld()))));
         assert regionManager != null;
-        ProtectedRegion region = regionManager.getRegion(claimId);
+        ProtectedRegion region = regionManager.getRegion(claim.getId());
         assert region != null;
-        this.claimId = claimId;
-        this.world = world;
         this.canEdit = canEdit;
+        this.claim = claim;
         this.hasPurchased = hasPurchased;
         this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Claim Flags", TextColor.fromHexString("#0fc3ff")));
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
@@ -185,7 +177,6 @@ public class ClaimFlags implements CustomInventory {
             }
         }
     }
-
     public String getNextCategory(String category) {
         String nextCat = "";
         switch (category) {
@@ -197,43 +188,30 @@ public class ClaimFlags implements CustomInventory {
         }
         return nextCat;
     }
-
-
     @Override
     public @NotNull Inventory getInventory() {
         return this.inventory;
     }
-
-    public String getClaimId() {
-        return this.claimId;
+    public ClaimData getClaim() {
+        return this.claim;
     }
-
-    public String getWorld() {
-        return this.world;
-    }
-
     public String getCategory() {
         return this.category;
     }
-
     public boolean getCanEdit() {
         return this.canEdit;
     }
-
     public boolean getHasPurchased() {
         return this.hasPurchased;
     }
-
     @Override
     public ClickBehavior defaultClickBehavior() {
         return ClickBehavior.DISABLE_ALL;
     }
-
     @Override
     public List<Object> customClickList() {
         return null;
     }
-
     @Override
     public int getPage() {
         return this.page;

@@ -24,7 +24,6 @@ import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.model.user.UserManager;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.commands.old.Claim;
 import net.skyprison.skyprisoncore.commands.old.ItemLore;
 import net.skyprison.skyprisoncore.commands.old.Tags;
 import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
