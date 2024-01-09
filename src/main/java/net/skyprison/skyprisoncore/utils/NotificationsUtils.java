@@ -10,7 +10,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,32 +29,25 @@ public class NotificationsUtils {
         }
         return notification;
     }
-
-    public static HashMap<Integer, List<String>> getNotificationsFromExtra(List<String> extraData) {
-        HashMap<Integer, List<String>> notifications = new HashMap<>();
+    public record Notification(String id, String type, String extraData, UUID player, String message, boolean deleteOnView) {}
+    public static List<Notification> getNotificationsFromExtra(List<String> extraData) {
+        List<Notification> notifications = new ArrayList<>();
         if(extraData.isEmpty()) return notifications;
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                "SELECT type, extra_data, user_id FROM notifications WHERE extra_data IN " + SkyPrisonCore.getQuestionMarks(extraData))) {
+                "SELECT id, type, extra_data, user_id, message, delete_on_view FROM notifications WHERE extra_data IN " + SkyPrisonCore.getQuestionMarks(extraData))) {
             for (int i = 0; i < extraData.size(); i++) {
                 ps.setString(i + 1, extraData.get(i));
             }
             ResultSet rs = ps.executeQuery();
-            int i = 0;
             while (rs.next()) {
-                List<String> data = new ArrayList<>();
-                data.add(rs.getString(1)); // type
-                data.add(rs.getString(2)); // data
-                data.add(rs.getString(3)); // uuid
-                notifications.put(i, data);
-                i++;
+                notifications.add(new Notification(rs.getString(1), rs.getString(2), rs.getString(3),
+                        UUID.fromString(rs.getString(4)), rs.getString(5), rs.getBoolean(6)));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return notifications;
     }
-
-
     public static List<String> hasNotifications(String type, List<String> extraData, UUID player) {
         List<String> notifications = new ArrayList<>();
         if(extraData.isEmpty()) return notifications;
@@ -76,9 +68,6 @@ public class NotificationsUtils {
         }
         return notifications;
     }
-
-
-
     public static void scheduleForOnline(UUID pUUID, String type, String content) {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO schedule_online (user_id, type, content) VALUES (?, ?, ?)")) {
             ps.setString(1, pUUID.toString());
@@ -89,14 +78,14 @@ public class NotificationsUtils {
             e.printStackTrace();
         }
     }
-
-    public static void createNotification(String type, String extraData, String pUUID, Component msg, String id, boolean deleteOnView) {
+    public static void createNotification(String type, String extraData, UUID pUUID, Component msg, String id, boolean deleteOnView) {
         if(id == null || id.isEmpty()) id = UUID.randomUUID().toString();
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO notifications (id, type, extra_data, user_id, message, delete_on_view) VALUES (?, ?, ?, ?, ?, ?)")) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                "INSERT INTO notifications (id, type, extra_data, user_id, message, delete_on_view) VALUES (?, ?, ?, ?, ?, ?)")) {
             ps.setString(1, id);
             ps.setString(2, type);
             ps.setString(3, extraData);
-            ps.setString(4, pUUID);
+            ps.setString(4, pUUID.toString());
             ps.setString(5, GsonComponentSerializer.gson().serialize(msg));
             ps.setInt(6, deleteOnView ? 1 : 0);
             ps.executeUpdate();
@@ -104,7 +93,6 @@ public class NotificationsUtils {
             e.printStackTrace();
         }
     }
-
     public static void deleteNotification(String id) {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM notifications WHERE id = ?")) {
             ps.setString(1, id);
@@ -113,7 +101,6 @@ public class NotificationsUtils {
             e.printStackTrace();
         }
     }
-
     public static void deleteNotification(String type, String extraData, OfflinePlayer player) {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM notifications WHERE extra_data = ? AND user_id = ? AND type = ?")) {
             ps.setString(1, extraData);

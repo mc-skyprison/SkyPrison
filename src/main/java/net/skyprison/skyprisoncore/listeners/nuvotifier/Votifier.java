@@ -87,7 +87,7 @@ public class Votifier implements Listener {
                 if (player != null) {
                     player.sendMessage(playerMsg);
                 } else {
-                    NotificationsUtils.createNotification("vote", String.valueOf(id), pUUID.toString(), playerMsg, null, true);
+                    NotificationsUtils.createNotification("vote", String.valueOf(id), pUUID, playerMsg, null, true);
                 }
 
                 net.skyprison.skyprisoncore.utils.Vote.checkVoteMilestones(pUUID);

@@ -15,197 +15,177 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
+import net.skyprison.skyprisoncore.utils.claims.ClaimData;
+import net.skyprison.skyprisoncore.utils.claims.ClaimFlagMob;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ClaimFlagsMobs implements CustomInventory {
     private final Inventory inventory;
-    private final String category;
-    private final boolean isAllowed;
+    private int page = 1;
+    private final List<ClaimFlagMob> mobs = new ArrayList<>();
+    private final List<ItemStack> mobsToDisplay = new ArrayList<>();
+    private final List<EntityType> deniedMobs = new ArrayList<>();
+    private final ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+    private final ItemStack nextPage = new ItemStack(Material.PAPER);
+    private final ItemStack prevPage = new ItemStack(Material.PAPER);
+    private final ItemStack typePane = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
+    private final ItemStack typeItem = new ItemStack(Material.LIME_CONCRETE);
+    private final ItemStack allSpawn = new ItemStack(Material.SPAWNER);
+    private final ProtectedRegion region;
+    private boolean isAllowed = true;
+    private final ClaimData claim;
     private final boolean canEdit;
-    private final String claimId;
-    private final String world;
-    private final int page;
     private final boolean hasPurchased;
+    public void updatePage(int page) {
+        List<ItemStack> mobsToShow = mobsToDisplay;
 
-    public ClaimFlagsMobs(SkyPrisonCore plugin, String claimId, String world, boolean canEdit, boolean hasPurchased, boolean isAllowed, String category, int page) {
+        int totalPages = (int) Math.ceil((double) mobsToShow.size() / 45);
+
+        this.page += page;
+        if(this.page > totalPages) {
+            this.page = 1;
+        }
+
+        for(int i = 0; i < 45; i++) {
+            inventory.setItem(i, null);
+        }
+
+        inventory.setItem(46, this.page == 1 ? blackPane : prevPage);
+        inventory.setItem(52, totalPages < 2 || this.page == totalPages ? blackPane : nextPage);
+
+        int toRemove = 45 * (this.page - 1);
+        if(toRemove != 0) {
+            mobsToShow = mobsToShow.subList(toRemove, mobsToShow.size());
+        }
+        Iterator<ItemStack> itemIterator = mobsToShow.iterator();
+        for(int i = 0; i < 45; i++) {
+            if(itemIterator.hasNext()) {
+                ItemStack item = inventory.getItem(i);
+                if(item == null)
+                    inventory.setItem(i, itemIterator.next());
+            } else break;
+        }
+    }
+    public void updateType(boolean changeDirection) {
+        if(changeDirection) isAllowed = !isAllowed;
+        typeItem.editMeta(meta -> meta.displayName(Component.text("Switch view to ", NamedTextColor.GRAY)
+                .append(Component.text(isAllowed ? "DISABLED" : "ENABLED", isAllowed ? NamedTextColor.RED : NamedTextColor.GREEN, TextDecoration.BOLD))
+                .append(Component.text(" mob spawns", NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false)));
+        inventory.setItem(49, typeItem);
+        for(int i = 36; i < 45; i++) {
+            typePane.setType(!isAllowed ? Material.LIME_STAINED_GLASS_PANE : Material.RED_STAINED_GLASS_PANE);
+            inventory.setItem(i, typePane);
+        }
+        mobsToDisplay.clear();
+
+        mobsToDisplay.addAll(mobs.stream().filter(mob -> mob.isEnabled() == isAllowed).map(ClaimFlagMob::getItem).toList());
+
+        if(changeDirection) page = 1;
+        updatePage(0);
+    }
+    public void updateMob(ItemStack item) {
+        ClaimFlagMob mob = mobs.stream().filter(m -> m.getItem().equals(item)).findFirst().orElse(null);
+        if(mob == null) return;
+        boolean isAllowed = !mob.isEnabled();
+        mob.setEnabled(isAllowed);
+        ItemStack displayItem = mob.getItem();
+        displayItem.editMeta(meta -> {
+            String mobName = WordUtils.capitalize(mob.getType().name().toLowerCase().replace("_", " "));
+            meta.displayName(Component.text(mobName, isAllowed ? NamedTextColor.GREEN : NamedTextColor.RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+
+            List<Component> lore = new ArrayList<>();
+            lore.add(Component.empty());
+            Component mobState = Component.text(isAllowed ? "DISABLE" : "ENABLE", isAllowed ? NamedTextColor.RED : NamedTextColor.GREEN, TextDecoration.BOLD);
+            lore.add(Component.text("Click to ", NamedTextColor.GRAY).append(mobState)
+                    .append(Component.text(" spawning for ", NamedTextColor.GRAY))
+                    .append(Component.text(mobName, NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
+            meta.lore(lore);
+        });
+        mob.setItem(displayItem);
+        if(isAllowed) deniedMobs.remove(mob.getType());
+        else deniedMobs.add(mob.getType());
+        region.setFlag(Flags.DENY_SPAWN, deniedMobs.stream().map(BukkitAdapter::adapt).collect(Collectors.toSet()));
+        updateType(false);
+    }
+    public void updateAllSpawn() {
+        allSpawn.editMeta(meta -> {
+            meta.displayName(Component.text("All Mobs", NamedTextColor.GRAY, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+            List<Component> lore = new ArrayList<>();
+            lore.add(Component.text("Enable/disable ", NamedTextColor.GRAY).append(Component.text("ALL", NamedTextColor.GRAY, TextDecoration.BOLD))
+                    .append(Component.text(" mob spawning", NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
+            lore.add(Component.text("Disclaimer: Will override per mob spawning if disabled!", NamedTextColor.RED));
+            lore.add(Component.empty());
+            Object allSpawning = StateFlag.State.ALLOW;
+            if(region.getFlag(Flags.MOB_SPAWNING) != null) allSpawning = region.getFlag(Flags.MOB_SPAWNING);
+            TextColor allSpawnColor = Objects.equals(allSpawning, StateFlag.State.ALLOW) ? NamedTextColor.GREEN : NamedTextColor.RED;
+            String allSpawnState = Objects.equals(allSpawning, StateFlag.State.ALLOW) ? "ENABLED" : "DISABLED";
+            lore.add(Component.text("Mob spawning is ", allSpawnColor)
+                    .append(Component.text(allSpawnState, allSpawnColor, TextDecoration.BOLD))
+                    .decoration(TextDecoration.ITALIC, false));
+            meta.lore(lore);
+            meta.addItemFlags(ItemFlag.HIDE_ITEM_SPECIFICS);
+        });
+        inventory.setItem(48, allSpawn);
+    }
+    public ClaimFlagsMobs(SkyPrisonCore plugin, ClaimData claim, boolean canEdit, boolean hasPurchased) {
         RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-        RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld(world))));
+        RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld(claim.getWorld()))));
         assert regionManager != null;
-        ProtectedRegion region = regionManager.getRegion(claimId);
-        assert region != null;
-        this.claimId = claimId;
-        this.world = world;
-        this.page = page;
-        this.category = category;
+        region = regionManager.getRegion(claim.getId());
+        this.claim = claim;
         this.canEdit = canEdit;
-        this.isAllowed = isAllowed;
         this.hasPurchased = hasPurchased;
         this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Mob Spawns", TextColor.fromHexString("#0fc3ff")));
-        ItemStack redPane = new ItemStack(isAllowed ? Material.LIME_STAINED_GLASS_PANE : Material.RED_STAINED_GLASS_PANE);
-        ItemMeta redMeta = redPane.getItemMeta();
-        redMeta.displayName(Component.text(" "));
-        redPane.setItemMeta(redMeta);
 
-        ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta blackMeta = blackPane.getItemMeta();
-        blackMeta.displayName(Component.text(" "));
-        blackPane.setItemMeta(blackMeta);
+        if(region == null) return;
 
-        ItemStack nextPage = new ItemStack(Material.PAPER);
-        ItemMeta nextMeta = nextPage.getItemMeta();
-        nextMeta.displayName(Component.text("Next Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
-        nextPage.setItemMeta(nextMeta);
-        ItemStack prevPage = new ItemStack(Material.PAPER);
-        ItemMeta prevMeta = prevPage.getItemMeta();
-        prevMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
-        prevPage.setItemMeta(prevMeta);
-
-        List<EntityType> mobs = new ArrayList<>();
-        List<EntityType> deniedMobs = new ArrayList<>();
+        List<EntityType> entities = Arrays.stream(EntityType.values()).filter(entity -> entity.isAlive() && entity.isSpawnable()
+                && !entity.equals(EntityType.PLAYER) && !entity.equals(EntityType.ARMOR_STAND)).toList();
         Set<com.sk89q.worldedit.world.entity.EntityType> deniedEntities = region.getFlag(Flags.DENY_SPAWN);
         if(deniedEntities != null && !deniedEntities.isEmpty()) {
-            deniedEntities.forEach(entity -> deniedMobs.add(BukkitAdapter.adapt(entity)));
+            deniedMobs.addAll(deniedEntities.stream().map(BukkitAdapter::adapt).toList());
         }
-        if(isAllowed) {
-            EntityType[] allEntities = EntityType.values();
-            for (EntityType entity : allEntities) {
-                if(!deniedMobs.contains(entity) && entity.isAlive() && entity.isSpawnable() && !entity.equals(EntityType.PLAYER) && !entity.equals(EntityType.ARMOR_STAND))
-                    mobs.add(entity);
-            }
-        } else {
-            mobs = deniedMobs;
-        }
-
-        int totalPages = (int) Math.ceil((double) mobs.size() / 36);
-
-        if(page > totalPages) {
-            page = 1;
-        }
-        int toRemove = 36 * (page - 1);
-        if(toRemove != 0) {
-            mobs = mobs.subList(toRemove, mobs.size());
-        }
-
-        Iterator<EntityType> mobsIterate = mobs.iterator();
-
-        TextColor mobColor = !isAllowed ? NamedTextColor.GREEN : NamedTextColor.RED;
-        Component mobState = Component.text(!isAllowed ? "ENABLE" : "DISABLE", mobColor, TextDecoration.BOLD);
         HeadDatabaseAPI hAPI = new HeadDatabaseAPI();
-        for(int i = 0; i < this.inventory.getSize();i++) {
-            if (i == 47 && page != 1) {
-                this.inventory.setItem(i, prevPage);
-            } else if (i == 51 && page != totalPages) {
-                this.inventory.setItem(i, nextPage);
-            } else if (i == 45) {
-                ItemStack returnItem = hAPI.getItemHead("10306");
-                ItemMeta returnMeta = returnItem.getItemMeta();
-                TextColor color = NamedTextColor.GRAY;
-                returnMeta.displayName(Component.text("Return to Flags", color).decoration(TextDecoration.ITALIC, false));
-                returnItem.setItemMeta(returnMeta);
-                this.inventory.setItem(i, returnItem);
-            } else if (i == 48) {
-                ItemStack allItem = new ItemStack(Material.SPAWNER);
-                ItemMeta allMeta = allItem.getItemMeta();
-                TextColor color = NamedTextColor.GRAY;
-                allMeta.displayName(Component.text("All Mobs", color).decoration(TextDecoration.ITALIC, false));
+        for(EntityType entity : entities) {
+            ItemStack mobItem = getMobHead(entity) != null ? hAPI.getItemHead(getMobHead(entity)) : new ItemStack(Material.PLAYER_HEAD);
+            boolean isAllowed = !deniedMobs.contains(entity);
+            mobItem.editMeta(meta -> {
+                String mobName = WordUtils.capitalize(entity.name().toLowerCase().replace("_", " "));
+                meta.displayName(Component.text(mobName, isAllowed ? NamedTextColor.GREEN : NamedTextColor.RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
 
                 List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Enable/disable ", NamedTextColor.GRAY).append(Component.text("ALL", NamedTextColor.GRAY, TextDecoration.BOLD))
-                        .append(Component.text(" mob spawning", NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Disclaimer: Will override per mob spawning if disabled!", NamedTextColor.RED));
                 lore.add(Component.empty());
-                Object allSpawning = StateFlag.State.ALLOW;
-                if(region.getFlag(Flags.MOB_SPAWNING) != null) allSpawning = region.getFlag(Flags.MOB_SPAWNING);
-                TextColor allSpawnColor = Objects.equals(allSpawning, StateFlag.State.ALLOW) ? NamedTextColor.GREEN : NamedTextColor.RED;
-                String allSpawnState = Objects.equals(allSpawning, StateFlag.State.ALLOW) ? "ENABLED" : "DISABLED";
-
-                lore.add(Component.text("Mob spawning is ", allSpawnColor)
-                        .append(Component.text(allSpawnState, allSpawnColor, TextDecoration.BOLD))
-                        .decoration(TextDecoration.ITALIC, false));
-                allMeta.lore(lore);
-
-                allMeta.addItemFlags(ItemFlag.HIDE_ITEM_SPECIFICS);
-
-                allItem.setItemMeta(allMeta);
-                this.inventory.setItem(i, allItem);
-            } else if (i == 49) {
-                ItemStack returnItem = new ItemStack(isAllowed ? Material.LIME_CONCRETE : Material.RED_CONCRETE);
-                ItemMeta returnMeta = returnItem.getItemMeta();
-                returnMeta.displayName(Component.text("Switch view to ", NamedTextColor.GRAY)
-                        .append(Component.text(!isAllowed ? "ENABLED" : "DISABLED", mobColor, TextDecoration.BOLD))
-                        .append(Component.text(" mob spawns", NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
-
-                returnItem.setItemMeta(returnMeta);
-                this.inventory.setItem(i, returnItem);
-            }
-            else if (i > 35 && i < 45) {
-                this.inventory.setItem(i, redPane);
-            } else if (i > 45 && i < 54) {
-                this.inventory.setItem(i, blackPane);
-            } else {
-                if (mobsIterate.hasNext()) {
-                    EntityType mob = mobsIterate.next();
-                    ItemStack mobItem = getMobHead(mob) != null ? hAPI.getItemHead(getMobHead(mob)) : new ItemStack(Material.PLAYER_HEAD);
-                    ItemMeta mobMeta = mobItem.getItemMeta();
-
-                    String mobName = WordUtils.capitalize(mob.name().toLowerCase().replace("_", " "));
-                    mobMeta.displayName(Component.text(mobName, mobColor, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
-
-                    List<Component> lore = new ArrayList<>();
-                    lore.add(Component.text(""));
-                    lore.add(Component.text("Click to ", NamedTextColor.GRAY).append(mobState)
-                            .append(Component.text(" spawning for ", NamedTextColor.GRAY))
-                            .append(Component.text(mobName, NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
-                    mobMeta.lore(lore);
-
-                    NamespacedKey mobKey = new NamespacedKey(plugin, "mob");
-                    mobMeta.getPersistentDataContainer().set(mobKey, PersistentDataType.STRING, mob.name());
-
-                    mobItem.setItemMeta(mobMeta);
-                    this.inventory.setItem(i, mobItem);
-                }
-            }
+                Component mobState = Component.text(isAllowed ? "DISABLE" : "ENABLE", isAllowed ? NamedTextColor.RED : NamedTextColor.GREEN, TextDecoration.BOLD);
+                lore.add(Component.text("Click to ", NamedTextColor.GRAY).append(mobState)
+                        .append(Component.text(" spawning for ", NamedTextColor.GRAY))
+                        .append(Component.text(mobName, NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
+                meta.lore(lore);
+            });
+            mobs.add(new ClaimFlagMob(mobItem, claim, entity, isAllowed));
         }
-    }
 
-    public String getNextCategory(String category) {
-        String nextCat = "";
-        switch (category) {
-            case "" -> nextCat = "monsters";
-            case "monsters" -> nextCat = "animals";
-            case "animals" -> nextCat = "underwater";
-            case "underwater" -> nextCat = "";
+        blackPane.editMeta(meta -> meta.displayName(Component.text(" ")));
+        nextPage.editMeta(meta -> meta.displayName(Component.text("Next Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)));
+        prevPage.editMeta(meta -> meta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)));
+        typePane.editMeta(meta -> meta.displayName(Component.text(" ")));
+        ItemStack returnItem = hAPI.getItemHead("10306");
+        returnItem.editMeta(meta -> meta.displayName(Component.text("Return to Flags", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)));
+        for(int i = 45; i < 54; i++) {
+            if(i == 45) inventory.setItem(i, returnItem);
+            else inventory.setItem(i, blackPane);
         }
-        return nextCat;
-    }
-
-    @Override
-    public @NotNull Inventory getInventory() {
-        return this.inventory;
-    }
-
-    public String getClaimId() {
-        return this.claimId;
-    }
-
-    public String getWorld() {
-        return this.world;
-    }
-
-    public String getCategory() {
-        return this.category;
+        updateAllSpawn();
+        updateType(false);
     }
     public boolean getIsAllowed() {
         return this.isAllowed;
@@ -216,20 +196,11 @@ public class ClaimFlagsMobs implements CustomInventory {
     public boolean getHasPurchased() {
         return this.hasPurchased;
     }
-
-    @Override
-    public ClickBehavior defaultClickBehavior() {
-        return ClickBehavior.DISABLE_ALL;
+    public ClaimData getClaim() {
+        return this.claim;
     }
-
-    @Override
-    public List<Object> customClickList() {
-        return null;
-    }
-
-    @Override
-    public int getPage() {
-        return this.page;
+    public ProtectedRegion getRegion() {
+        return this.region;
     }
     public String getMobHead(EntityType entity) {
         return switch (entity.name().toUpperCase()) {
@@ -312,5 +283,21 @@ public class ClaimFlagsMobs implements CustomInventory {
             case "WARDEN" -> "47668";
             default -> null;
         };
+    }
+    @Override
+    public @NotNull Inventory getInventory() {
+        return this.inventory;
+    }
+    @Override
+    public ClickBehavior defaultClickBehavior() {
+        return ClickBehavior.DISABLE_ALL;
+    }
+    @Override
+    public List<Object> customClickList() {
+        return null;
+    }
+    @Override
+    public int getPage() {
+        return this.page;
     }
 }

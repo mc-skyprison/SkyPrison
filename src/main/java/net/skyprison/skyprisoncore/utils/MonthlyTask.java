@@ -66,7 +66,7 @@ public class MonthlyTask extends TimerTask {
                         if(player != null) {
                             player.sendMessage(voterMsg);
                         } else {
-                            NotificationsUtils.createNotification("vote-monthly-top", null, pUUID.toString(), voterMsg, null, true);
+                            NotificationsUtils.createNotification("vote-monthly-top", null, pUUID, voterMsg, null, true);
                         }
                     }
                 } catch (Exception ignored) {}

@@ -323,7 +323,7 @@ public class ClaimCommands {
                     kickPlayer(player, targetId, claims, claim);
                 });
         manager.command(kick);
-        Command.Builder<CommandSender> kickClaim = invite.argument(StringArgument.of("claim"))
+        Command.Builder<CommandSender> kickClaim = kick.argument(StringArgument.of("claim"))
                 .handler(c -> {
                     Player player = (Player) c.getSender();
                     String target = c.get("player");
@@ -373,7 +373,7 @@ public class ClaimCommands {
                     promotePlayer(player, targetId, claims, claim);
                 });
         manager.command(promote);
-        Command.Builder<CommandSender> promoteClaim = invite.argument(StringArgument.of("claim"))
+        Command.Builder<CommandSender> promoteClaim = promote.argument(StringArgument.of("claim"))
                 .handler(c -> {
                     Player player = (Player) c.getSender();
                     String target = c.get("player");
@@ -423,7 +423,7 @@ public class ClaimCommands {
                     demotePlayer(player, targetId, claims, claim);
                 });
         manager.command(demote);
-        Command.Builder<CommandSender> demoteClaim = invite.argument(StringArgument.of("claim"))
+        Command.Builder<CommandSender> demoteClaim = demote.argument(StringArgument.of("claim"))
                 .handler(c -> {
                     Player player = (Player) c.getSender();
                     String target = c.get("player");
@@ -462,7 +462,7 @@ public class ClaimCommands {
         Command.Builder<CommandSender> pending = claimMain.literal("pending")
                 .handler(c -> {
                     Player player = (Player) c.getSender();
-                    List<ClaimData> claims = claim.getClaimsFromloc(player.getLocation(), player);
+                    List<ClaimData> claims = claim.getPlayerClaims(player.getUniqueId(), Arrays.asList("owner", "co-owner"));
                     pendingData(player, claims, claim);
                 });
         manager.command(pending);
@@ -471,28 +471,18 @@ public class ClaimCommands {
                 .handler(c -> {
                     Player player = (Player) c.getSender();
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new ClaimPending(plugin, claim.getAllClaims()).getInventory()));
-
                 }));
-        Command.Builder<CommandSender> pendingClaim = invite.argument(StringArgument.of("claim"))
-                .handler(c -> {
-                    Player player = (Player) c.getSender();
-                    String claimName = c.get("claim");
-                    List<ClaimData> claims = claim.getPlayerClaims(player.getUniqueId(), claimName, Arrays.asList("owner", "co-owner"));
-                    pendingData(player, claims, claim);
-                });
-        manager.command(pendingClaim);
-        manager.command(pendingClaim.argument(StringArgument.of("target"))
+        manager.command(pending.argument(StringArgument.of("player"))
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
                     Player player = (Player) c.getSender();
-                    String claimName = c.get("claim");
-                    String targetPlayer = c.get("target");
-                    UUID targetPlayerId = PlayerManager.getPlayerId(targetPlayer);
-                    if(targetPlayerId == null) {
-                        player.sendMessage(prefix.append(Component.text("Target player not found!", NamedTextColor.RED)));
+                    String target = c.get("player");
+                    UUID targetId = PlayerManager.getPlayerId(target);
+                    if(targetId == null) {
+                        player.sendMessage(prefix.append(Component.text("Player not found!", NamedTextColor.RED)));
                         return;
                     }
-                    List<ClaimData> claims = claim.getPlayerClaims(targetPlayerId, claimName, Arrays.asList("owner", "co-owner"));
+                    List<ClaimData> claims = claim.getPlayerClaims(targetId, Arrays.asList("owner", "co-owner"));
                     pendingData(player, claims, claim);
                 }));
         // Claim Management
@@ -508,7 +498,7 @@ public class ClaimCommands {
                     }
                 });
         manager.command(flags);
-        Command.Builder<CommandSender> flagsClaim = invite.argument(StringArgument.of("claim"))
+        Command.Builder<CommandSender> flagsClaim = flags.argument(StringArgument.of("claim"))
                 .handler(c -> {
                     Player player = (Player) c.getSender();
                     String claimName = c.get("claim");
@@ -612,7 +602,7 @@ public class ClaimCommands {
                     transferClaim(player, targetId, parentClaim, claim);
                 });
         manager.command(transfer);
-        Command.Builder<CommandSender> transferClaim = invite.argument(StringArgument.of("claim"))
+        Command.Builder<CommandSender> transferClaim = transfer.argument(StringArgument.of("claim"))
                 .handler(c -> {
                     Player player = (Player) c.getSender();
                     String target = c.get("player");

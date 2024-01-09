@@ -212,6 +212,10 @@ public class ClaimUtils {
     public List<ClaimData> getPlayerClaims(UUID player) {
         return claimData.stream().filter(claim -> claim.getMembers().stream().filter(member -> member.getUniqueId().equals(player)).count() == 1).toList();
     }
+    public List<ClaimData> getPlayerClaims(UUID player, List<String> ranks) {
+        return claimData.stream().filter(claim -> claim.getMembers().stream().filter(member -> member.getUniqueId().equals(player)
+                && ranks.contains(member.getRank())).count() == 1).toList();
+    }
     public void deleteClaim(Player executorPlayer, UUID targetPlayer, String claimName) {
         if(!Objects.equals(executorPlayer.getUniqueId(), targetPlayer) && !hasPerm(executorPlayer)) return;
         ClaimData claim = getPlayerClaim(targetPlayer, claimName, "owner");
@@ -833,7 +837,7 @@ public class ClaimUtils {
 
         info = info.append(Component.text("\n\nVIEW MEMBERS", TextColor.fromHexString("#0fffc3"))
                 .hoverEvent(HoverEvent.showText(Component.text("View members", NamedTextColor.GRAY)))
-                .clickEvent(ClickEvent.callback(audience -> player.openInventory(new ClaimMembers(plugin, db, claim).getInventory())))
+                .clickEvent(ClickEvent.callback(audience -> player.openInventory(new ClaimMembers(plugin, claim).getInventory())))
                 .decorate(TextDecoration.BOLD));
 
         boolean finalCanEdit = canEdit;
@@ -886,6 +890,7 @@ public class ClaimUtils {
     public void invitePlayer(Player executorPlayer, UUID targetPlayer, ClaimData claim) {
         if(!Objects.equals(executorPlayer.getUniqueId(), targetPlayer) && !hasPerm(executorPlayer)) return;
         String notifId = UUID.randomUUID().toString();
+        String targetName = PlayerManager.getPlayerName(targetPlayer);
         Component msg = prefix.append(Component.text("You've been invited to the claim ", TextColor.fromHexString("#20df80"))
                         .append(Component.text(claim.getName(), TextColor.fromHexString("#20df80"), TextDecoration.BOLD))
                         .append(Component.text(" by ", TextColor.fromHexString("#20df80")))
@@ -894,8 +899,13 @@ public class ClaimUtils {
                 .append(Component.text("     "))
                 .append(Component.text("DECLINE INVITE", NamedTextColor.RED, TextDecoration.BOLD).clickEvent(ClickEvent.runCommand("/claim decline invite " + notifId)));
         executorPlayer.sendMessage(prefix.append(Component.text("Successfully invited " +
-                PlayerManager.getPlayerName(targetPlayer) + " to the claim!", TextColor.fromHexString("#20df80"))));
-        PlayerManager.sendMessage(targetPlayer, msg, "claim-invite", claim.getId(), notifId, false);
+                targetName + " to the claim!", TextColor.fromHexString("#20df80"))));
+        NotificationsUtils.createNotification("claim-invite", claim.getId(), targetPlayer, msg, notifId, false);
+        Player isOnline = Bukkit.getPlayer(targetPlayer);
+        if (isOnline != null) {
+            isOnline.sendMessage(msg);
+        }
+        executorPlayer.sendMessage(prefix.append(Component.text("Successfully sent a transfer request to " + targetName + "!", TextColor.fromHexString("#20df80"))));
     }
     public void inviteDecline(Player player, ClaimData claim, String notifId) {
         if(NotificationsUtils.hasNotification(notifId, player).isEmpty()) return;
@@ -1077,7 +1087,7 @@ public class ClaimUtils {
                 .append(Component.text("\nACCEPT TRANSFER", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.runCommand("/claim accept transfer " + notifId)))
                 .append(Component.text("     "))
                 .append(Component.text("DECLINE TRANSFER", NamedTextColor.RED, TextDecoration.BOLD).clickEvent(ClickEvent.runCommand("/claim decline transfer " + notifId)));
-        NotificationsUtils.createNotification("claim-transfer", claim.getId(), String.valueOf(targetPlayer), msg, notifId, false);
+        NotificationsUtils.createNotification("claim-transfer", claim.getId(), targetPlayer.getUniqueId(), msg, notifId, false);
         Player isOnline = Bukkit.getPlayer(targetPlayer.getUniqueId());
         if (isOnline != null) {
             isOnline.sendMessage(msg);

@@ -6,7 +6,6 @@ import com.sk89q.worldedit.world.weather.WeatherTypes;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.Flags;
-import com.sk89q.worldguard.protection.flags.RegistryFlag;
 import com.sk89q.worldguard.protection.flags.StringFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
@@ -34,11 +33,12 @@ import net.skyprison.skyprisoncore.inventories.mail.MailBoxSend;
 import net.skyprison.skyprisoncore.inventories.mail.MailBoxSettings;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsCategoryEdit;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsEdit;
+import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.NewsUtils;
 import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
-import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
+import net.skyprison.skyprisoncore.utils.claims.ClaimFlag;
+import net.skyprison.skyprisoncore.utils.claims.ClaimUtils;
 import net.skyprison.skyprisoncore.utils.secrets.SecretsUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -92,60 +92,50 @@ public class AsyncChat implements Listener {
                 boolean removeChatLock = true;
                 List<Object> chatLock = plugin.chatLock.get(player.getUniqueId());
                 Object lockType = chatLock.get(0);
-                if(lockType instanceof AvailableFlags flag) {
-                    // flag, claimId, world, canEdit, category, page
+                if(lockType instanceof ClaimFlags inv) {
                     RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
-                    RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld((String) chatLock.get(2)))));
-                    if(regionManager != null) {
-                        ProtectedRegion region = regionManager.getRegion((String) chatLock.get(1));
-                        Component prefix = new Claim(plugin, db).prefix;
-                        if(region != null) {
-                            Flag<?> wgFlag = flag.getFlags().get(0);
-                            if (wgFlag instanceof StringFlag stringFlag) {
-                                if (stringFlag.equals(Flags.GREET_MESSAGE)) {
-                                    region.setFlag(Flags.GREET_MESSAGE, msg);
-                                } else if (stringFlag.equals(Flags.GREET_TITLE)) {
-                                    region.setFlag(Flags.GREET_TITLE, msg);
-                                } else if (stringFlag.equals(Flags.FAREWELL_MESSAGE)) {
-                                    region.setFlag(Flags.FAREWELL_MESSAGE, msg);
-                                } else if (stringFlag.equals(Flags.FAREWELL_TITLE)) {
-                                    region.setFlag(Flags.FAREWELL_TITLE, msg);
-                                } else if (stringFlag.equals(Flags.TIME_LOCK)) {
-                                    String regex = "([01]?[0-9]|2[0-3]):[0-5][0-9]";
-                                    Pattern p = Pattern.compile(regex);
-                                    if(p.matcher(msg).matches()) {
-                                        region.setFlag(Flags.TIME_LOCK, String.valueOf(NewsUtils.timeToTicks(msg)));
-                                    } else {
-                                        if(!msg.equalsIgnoreCase("cancel")) {
-                                            player.sendMessage(prefix.append(
-                                                    Component.text("Incorrect Time! Time must be specified in 24:00 format. Type 'cancel' to cancel.", NamedTextColor.RED)));
-                                            removeChatLock = false;
-                                        } else {
-                                            player.sendMessage(prefix.append(Component.text("Cancelling..", NamedTextColor.GRAY)));
-                                        }
-                                    }
-                                }
-                            } else if (wgFlag instanceof RegistryFlag<?> registryFlag) {
-                                if (registryFlag.equals(Flags.WEATHER_LOCK)) {
-                                    if(WeatherTypes.get(msg) != null) {
-                                        region.setFlag(Flags.WEATHER_LOCK, WeatherTypes.get(msg));
-                                    } else {
-                                        if(!msg.equalsIgnoreCase("cancel")) {
-                                            player.sendMessage(prefix.append(
-                                                    Component.text("Incorrect Weather Type! Available types are 'Clear', 'Rain', 'Thunder'. Type 'cancel' to cancel.", NamedTextColor.RED)));
-                                            removeChatLock = false;
-                                        } else {
-                                            player.sendMessage(prefix.append(Component.text("Cancelling..", NamedTextColor.GRAY)));
-                                        }
-                                    }
-                                }
-                            }
-                            if(removeChatLock) {
-                                ClaimFlags claimFlags = new ClaimFlags(plugin, (String) chatLock.get(1), (String) chatLock.get(2), (boolean) chatLock.get(3), (boolean) chatLock.get(6), (String) chatLock.get(4), (int) chatLock.get(5));
-                                player.openInventory(claimFlags.getInventory());
-                            }
-                        }
+                    RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld(inv.getClaim().getWorld()))));
+                    if(regionManager == null) return;
+
+                    ProtectedRegion region = regionManager.getRegion(inv.getClaim().getId());
+                    Component prefix = ClaimUtils.getPrefix();
+                    if(region == null) return;
+                    ClaimFlag flagData = (ClaimFlag) chatLock.get(1);
+                    Flag<?> flag = flagData.getFlag().getFlags().getFirst();
+
+                    if(msg.equalsIgnoreCase("unset")) {
+                        region.setFlag(flag, null);
+                        inv.updateFlag(flagData, null);
+                        player.openInventory(inv.getInventory());
+                        return;
                     }
+                    if(msg.equalsIgnoreCase("cancel")) {
+                        player.sendMessage(prefix.append(Component.text("Cancelling..", NamedTextColor.GRAY)));
+                        return;
+                    }
+
+                    String finalValue = msg;
+                    if(flag.equals(Flags.TIME_LOCK)) {
+                        String regex = "([01]?[0-9]|2[0-3]):[0-5][0-9]";
+                        Pattern p = Pattern.compile(regex);
+                        if(!p.matcher(msg).matches()) {
+                            player.sendMessage(prefix.append(Component.text("Incorrect Time! Time must be specified in 24:00 format. Type 'cancel' to cancel.", NamedTextColor.RED)));
+                            return;
+                        }
+                        finalValue = String.valueOf(ChatUtils.timeToTicks(msg));
+                        region.setFlag(Flags.TIME_LOCK, finalValue);
+                    } else if(flag.equals(Flags.WEATHER_LOCK)) {
+                        if(WeatherTypes.get(msg) == null) {
+                            player.sendMessage(prefix.append(Component.text("Incorrect Weather Type! Available types are 'Clear', 'Rain', 'Thunder'. Type 'cancel' to cancel.", NamedTextColor.RED)));
+                            return;
+                        }
+                        region.setFlag(Flags.WEATHER_LOCK, WeatherTypes.get(msg));
+                    } else {
+                        finalValue = miniMsg;
+                        region.setFlag((StringFlag) flag, miniMsg);
+                    }
+                    inv.updateFlag(flagData, finalValue);
+                    player.openInventory(inv.getInventory());
                 } else if(lockType instanceof String lockedString) {
                     switch (lockedString.toLowerCase()) {
                         case "tags-display" -> { // ID
@@ -523,7 +513,7 @@ public class AsyncChat implements Listener {
                                                             if (player.isOnline()) {
                                                                 player.sendMessage(playerMsg);
                                                             } else {
-                                                                NotificationsUtils.createNotification("mailbox-invite-accepted", null, player.getUniqueId().toString(), playerMsg, null, true);
+                                                                NotificationsUtils.createNotification("mailbox-invite-accepted", null, player.getUniqueId(), playerMsg, null, true);
                                                             }
                                                         }
                                                     })))
@@ -537,7 +527,7 @@ public class AsyncChat implements Listener {
                                                             if (player.isOnline()) {
                                                                 player.sendMessage(inviteDecline);
                                                             } else {
-                                                                NotificationsUtils.createNotification("mailbox-invite-declined", null, player.getUniqueId().toString(), inviteDecline, null, true);
+                                                                NotificationsUtils.createNotification("mailbox-invite-declined", null, player.getUniqueId(), inviteDecline, null, true);
                                                             }
                                                         }
                                                     })));

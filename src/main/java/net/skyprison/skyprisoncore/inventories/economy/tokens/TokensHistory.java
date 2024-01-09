@@ -119,6 +119,7 @@ public class TokensHistory implements CustomInventory {
             }).map(Transaction::item).toList());
         }
         sort = false;
+        page = 1;
         updateSort();
     }
     public TokensHistory(SkyPrisonCore plugin, DatabaseHook db, String playerId) {

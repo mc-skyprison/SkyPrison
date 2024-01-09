@@ -83,7 +83,7 @@ public class ReferralCommands {
                                                 if (reffedPlayer.isOnline()) {
                                                     reffedPlayer.getPlayer().sendMessage(beenReffed);
                                                 } else {
-                                                    NotificationsUtils.createNotification("referred", player.getName(), reffedPlayer.getUniqueId().toString(), beenReffed, null, true);
+                                                    NotificationsUtils.createNotification("referred", player.getName(), reffedPlayer.getUniqueId(), beenReffed, null, true);
                                                 }
                                                 player.sendMessage(Component.text("You sucessfully referred ", NamedTextColor.DARK_AQUA)
                                                         .append(Component.text(reffedPlayer.getName(), NamedTextColor.AQUA)).append(Component.text(" and have received ", NamedTextColor.DARK_AQUA))

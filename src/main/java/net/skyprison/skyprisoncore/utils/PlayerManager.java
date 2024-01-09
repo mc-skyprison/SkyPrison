@@ -215,7 +215,7 @@ public class PlayerManager {
         if (isOnline != null) {
             isOnline.sendMessage(msg);
         } else {
-            NotificationsUtils.createNotification(notifType, notifData, String.valueOf(pUUID), msg, notifId, deleteOnView);
+            NotificationsUtils.createNotification(notifType, notifData, pUUID, msg, notifId, deleteOnView);
         }
     }
     public static boolean hasPermission(UUID pUUID, String permission) {

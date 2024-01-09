@@ -109,7 +109,7 @@ public class NameColour implements CommandExecutor { // /namecolour <coloured na
                             player.customName(null);
                             player.sendMessage(colourChange);
                         } else {
-                            NotificationsUtils.createNotification("namecolour-update", null, pUUID, colourChange, null, true);
+                            NotificationsUtils.createNotification("namecolour-update", null, UUID.fromString(pUUID), colourChange, null, true);
                             NotificationsUtils.scheduleForOnline(UUID.fromString(pUUID), "namecolour", "remove");
                         }
                     }
@@ -133,7 +133,7 @@ public class NameColour implements CommandExecutor { // /namecolour <coloured na
                                     player.customName(nickName);
                                     player.sendMessage(colourChange);
                                 } else {
-                                    NotificationsUtils.createNotification("namecolour-update", null, pUUID, colourChange, null, true);
+                                    NotificationsUtils.createNotification("namecolour-update", null, UUID.fromString(pUUID), colourChange, null, true);
                                     NotificationsUtils.scheduleForOnline(UUID.fromString(pUUID), "namecolour", GsonComponentSerializer.gson().serialize(nickName));
                                 }
                             }
@@ -168,7 +168,7 @@ public class NameColour implements CommandExecutor { // /namecolour <coloured na
                                 player.customName(nickName);
                                 player.sendMessage(colourChange);
                             } else {
-                                NotificationsUtils.createNotification("namecolour-update", null, pUUID, colourChange, null, true);
+                                NotificationsUtils.createNotification("namecolour-update", null, UUID.fromString(pUUID), colourChange, null, true);
                                 NotificationsUtils.scheduleForOnline(UUID.fromString(pUUID), "namecolour", GsonComponentSerializer.gson().serialize(nickName));
                             }
                         }

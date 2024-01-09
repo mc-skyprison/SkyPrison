@@ -89,4 +89,23 @@ public class ChatUtils {
 		DecimalFormat df = new DecimalFormat("###,###,###.##");
 		return df.format(value);
 	}
+	public static int timeToTicks(String time) {
+		String[] split = time.split(":");
+		return (int) ((Integer.parseInt(split[0]) * 1000) + ((Math.rint(Integer.parseInt(split[1]) / 60.0 * 100.0) / 100.0) * 1000));
+	}
+	public static  String ticksToTime(int ticks) { // 500 -> 24:00
+		String time = String.valueOf(ticks / 1000.0);
+		String[] split = time.split("\\.");
+		int minutes = (Integer.parseInt(split[1]) * 60) % 60;
+		int hours = Integer.parseInt(split[0]);
+		String sMinutes = String.valueOf(minutes);
+		String sHours = String.valueOf(hours);
+		if(minutes < 10) {
+			sMinutes = "0" + sMinutes;
+		}
+		if(hours < 10) {
+			sHours = "0" + sHours;
+		}
+		return sHours + ":" + sMinutes;
+	}
 }
