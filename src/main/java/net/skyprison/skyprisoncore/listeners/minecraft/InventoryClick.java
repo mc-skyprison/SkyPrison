@@ -179,7 +179,7 @@ public class InventoryClick implements Listener {
                                 }
                                 default -> {
                                     boolean isPane = MaterialTags.STAINED_GLASS_PANES.isTagged(currItem);
-                                    if (isPane || currItem.getType().isAir()) return;
+                                    if (isPane || currItem.getType().isAir() || !inv.getCanEdit()) return;
                                     ClaimFlag flagData = inv.getFlag(currItem);
 
                                     if (flagData.getFlag().getGroup().equalsIgnoreCase("purchased") && !inv.getHasPurchased()) {
@@ -206,6 +206,7 @@ public class InventoryClick implements Listener {
                                         StateFlag.State flagState = regionHas ? (isAllowed ? (isDisabled ? null : StateFlag.State.DENY) : null) : (isSet ? StateFlag.State.DENY : StateFlag.State.ALLOW);
                                         player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
                                         inv.updateFlag(flagData, flagState);
+                                        flags.forEach(f -> region.setFlag((StateFlag) f, flagState));
                                         return;
                                     }
 
@@ -237,6 +238,7 @@ public class InventoryClick implements Listener {
                                     }
                                 }
                                 case 48 -> {
+                                    if(!inv.getCanEdit()) return;
                                     ProtectedRegion region = inv.getRegion();
                                     if (region.getFlag(Flags.MOB_SPAWNING) != null) {
                                         region.setFlag(Flags.MOB_SPAWNING, null);
@@ -253,7 +255,7 @@ public class InventoryClick implements Listener {
                                     }
                                 }
                                 default -> {
-                                    if (!currItem.getType().equals(Material.PLAYER_HEAD)) return;
+                                    if (!currItem.getType().equals(Material.PLAYER_HEAD) || !inv.getCanEdit()) return;
                                     inv.updateMob(currItem);
                                     player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
                                 }

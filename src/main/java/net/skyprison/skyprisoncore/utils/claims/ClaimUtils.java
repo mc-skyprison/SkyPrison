@@ -5,6 +5,7 @@ import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Polygonal2DRegion;
+import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.regions.RegionSelector;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
@@ -140,7 +141,7 @@ public class ClaimUtils {
             ps.setString(1, pUUID.toString());
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                pBlocks = new ClaimBlocks(pUUID, rs.getLong(2), rs.getLong(3));
+                pBlocks = new ClaimBlocks(pUUID, rs.getLong(1), rs.getLong(2));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -227,10 +228,11 @@ public class ClaimUtils {
         }
         long claimBlocksUsed = claim.getBlocks() + claim.getChildren().stream().mapToLong(ClaimData::getBlocks).sum();
 
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM claims WHERE claim_id = ? OR parent_id = ?")) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM claims WHERE claim_id = ?")) {
             ps.setString(1, claim.getId());
             ps.setString(2, claim.getId());
             ps.executeUpdate();
+            claimData.removeAll(claim.getChildren());
             claimData.remove(claim);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -269,18 +271,19 @@ public class ClaimUtils {
             }
 
             ProtectedRegion region;
-            long claimBlocks;
+            Region blockRegion;
 
-            if (customClaimHeight.contains(player.getUniqueId())) {
+            if (customClaimShape.contains(player.getUniqueId())) {
                 Polygonal2DRegion regionSel = (Polygonal2DRegion) regionSelector.getRegion();
                 region = new ProtectedPolygonalRegion(claimId, regionSel.getPoints(), minY, maxY);
-                claimBlocks = new Polygonal2DRegion(BukkitAdapter.adapt(player.getWorld()), regionSel.getPoints(), 1, 1).getVolume();
+                blockRegion = new Polygonal2DRegion(BukkitAdapter.adapt(player.getWorld()), regionSel.getPoints(), 1, 1);
             } else {
                 BlockVector3 p1 = regionSelector.getRegion().getMinimumPoint();
                 BlockVector3 p2 = regionSelector.getRegion().getMaximumPoint();
                 region = new ProtectedCuboidRegion(claimId, BlockVector3.at(p1.getBlockX(), minY, p1.getBlockZ()), BlockVector3.at(p2.getBlockX(), maxY, p2.getBlockZ()));
-                claimBlocks = new CuboidRegion(BlockVector3.at(p1.getBlockX(), 1, p1.getBlockZ()), BlockVector3.at(p2.getBlockX(), 1, p2.getBlockZ())).getVolume();
+                blockRegion = new CuboidRegion(BlockVector3.at(p1.getBlockX(), 1, p1.getBlockZ()), BlockVector3.at(p2.getBlockX(), 1, p2.getBlockZ()));
             }
+            long claimBlocks = blockRegion.getVolume();
 
             ProtectedRegion parentRegion = null;
 
@@ -291,7 +294,7 @@ public class ClaimUtils {
                 for (ProtectedRegion overlapClaim : regionOverlaps) {
                     ClaimData overlap = getClaim(overlapClaim.getId());
                     if(!overlap.getId().startsWith("claim_")) {
-                        player.sendMessage(prefix.append(Component.text("Can't Expand! Claim would overlap an admin claim!", NamedTextColor.RED)));
+                        player.sendMessage(prefix.append(Component.text("Can't create claim! Claim would overlap an admin claim!", NamedTextColor.RED)));
                         return;
                     }
                     if(!overlap.getOwner().equals(player.getUniqueId()) || overlap.getParent() != null) {
@@ -301,19 +304,24 @@ public class ClaimUtils {
                     BlockVector3 regionMin = region.getMinimumPoint();
                     BlockVector3 regionMax = region.getMaximumPoint();
 
-                    if (!overlapClaim.contains(regionMax) || !overlapClaim.contains(regionMin)) {
+                    if ((!overlapClaim.contains(regionMax) && overlapClaim.contains(regionMin)) || (!overlapClaim.contains(regionMin) && overlapClaim.contains(regionMax))) {
                         player.sendMessage(prefix.append(Component.text("Your selection is partially outside the parent claim!", NamedTextColor.RED)));
+                        return;
+                    }
+                    if(!overlapClaim.contains(regionMax) || !overlapClaim.contains(regionMin)) {
+                        overlapIds.add(overlap);
                         continue;
                     }
                     parentRegion = overlapClaim;
                 }
                 if(!overlapIds.isEmpty()) {
-                    claimOverlapMessage(player, overlapIds);
+                    claimOverlapMessage(player, overlapIds, "create");
                     return;
                 }
             }
 
-            if (claimBlocks < 36 && region.getMinimumPoint().distance(region.getMaximumPoint()) <= 8) {
+            int height = region.getMaximumPoint().getBlockY() - region.getMinimumPoint().getBlockY();
+            if (claimBlocks < 36 || blockRegion.getMinimumPoint().distance(blockRegion.getMaximumPoint()) <= 7 || height < 5) {
                 player.sendMessage(prefix.append(Component.text("Selected area is too small! Claims must be atleast 6x6x6 blocks in size.", NamedTextColor.RED)));
                 return;
             }
@@ -457,7 +465,7 @@ public class ClaimUtils {
                                 }
                             }
                             if(!overlapIds.isEmpty()) {
-                                claimOverlapMessage(executorPlayer, overlapIds);
+                                claimOverlapMessage(executorPlayer, overlapIds, "expand");
                                 return;
                             }
                         }
@@ -522,7 +530,7 @@ public class ClaimUtils {
                 .append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
         if (page == 1) {
             msg = msg
-                    .append(Component.text("\n/claim list " + (hasPerm ? "(player) (page)" :  "(page)"), TextColor.fromHexString("#20df80")))
+                    .append(Component.text("\n/claim list " + (hasPerm ? "(page) (all/player)" :  "(page)"), TextColor.fromHexString("#20df80")))
                     .append(Component.text(" - ", NamedTextColor.GRAY))
                     .append(Component.text("List of all claims you're in", TextColor.fromHexString("#dbb976")))
 
@@ -755,12 +763,13 @@ public class ClaimUtils {
         msg = msg.decoration(TextDecoration.ITALIC, false);
         sender.sendMessage(msg);
     }
-    public void claimOverlapMessage(Player player, List<ClaimData> claims) {
+    public void claimOverlapMessage(Player player, List<ClaimData> claims, String type) {
         Component info = Component.text("");
         info = info.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
                 .append(Component.text(" Claim Overlaps ", TextColor.fromHexString("#0fc3ff"), TextDecoration.BOLD))
                 .append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
-        info = info.append(Component.text("\nCan't expand! Claim would overlap these claims: ", NamedTextColor.GRAY));
+        info = info.append(Component.text(
+                "\nCan't " + (type.equalsIgnoreCase("create") ? "create claim" : "expand claim") + "! Claim would overlap these claims: ", NamedTextColor.GRAY));
 
         for(ClaimData claim : claims) {
             String  ownerName = PlayerManager.getPlayerName(claim.getOwner());
@@ -905,7 +914,6 @@ public class ClaimUtils {
         if (isOnline != null) {
             isOnline.sendMessage(msg);
         }
-        executorPlayer.sendMessage(prefix.append(Component.text("Successfully sent a transfer request to " + targetName + "!", TextColor.fromHexString("#20df80"))));
     }
     public void inviteDecline(Player player, ClaimData claim, String notifId) {
         if(NotificationsUtils.hasNotification(notifId, player).isEmpty()) return;
@@ -1000,7 +1008,6 @@ public class ClaimUtils {
                 .append(Component.text(executorPlayer.getName(), TextColor.fromHexString("#20df80"), TextDecoration.BOLD)));
         PlayerManager.sendMessage(targetPlayer.getUniqueId(), msg, "claim-kick", claim.getId());
     }
-
     public void promotePlayerMultiple(Player executorPlayer, UUID targetPlayer, List<ClaimData> claims) {
         if(!Objects.equals(executorPlayer.getUniqueId(), targetPlayer) && !hasPerm(executorPlayer)) return;
         Component info = Component.text("");
@@ -1041,6 +1048,23 @@ public class ClaimUtils {
                 .append(Component.text(" in the claim ", TextColor.fromHexString("#20df80")))
                 .append(Component.text(claim.getName(), TextColor.fromHexString("#20df80"), TextDecoration.BOLD))));
         PlayerManager.sendMessage(targetPlayer.getUniqueId(), msg, "claim-promote", claim.getId());
+    }
+    public void demotePlayerMultiple(Player executorPlayer, UUID targetPlayer, List<ClaimData> claims) {
+        if(!Objects.equals(executorPlayer.getUniqueId(), targetPlayer) && !hasPerm(executorPlayer)) return;
+        Component info = Component.text("");
+        info = info.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
+                .append(Component.text(" Claim Demote ", TextColor.fromHexString("#0fc3ff"), TextDecoration.BOLD))
+                .append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
+        info = info.append(Component.text("\nMore than 1 claim found! Please pick the one to demote player in: ", NamedTextColor.GRAY));
+
+        for(ClaimData claim : claims) {
+            info = info.append(Component.text("\n- ", NamedTextColor.WHITE).append(Component.text(claim.getName(), TextColor.fromHexString("#0fffc3")))
+                    .append(claim.getParent() != null ? Component.text(" (Child)" , TextColor.fromHexString("#0fffc3")) : Component.text(""))
+                    .append(Component.text(" ⇒ ", NamedTextColor.GRAY))
+                    .append(Component.text("Owner: " + PlayerManager.getPlayerName(claim.getOwner()), TextColor.fromHexString("#ffba75")))
+                    .hoverEvent(HoverEvent.showText(Component.text("Click here to demote player in " + claim.getName(), NamedTextColor.GRAY)))
+                    .clickEvent(ClickEvent.callback(audience -> demotePlayer(executorPlayer, claim.getMember(targetPlayer), claim))));
+        }
     }
     public void demotePlayer(Player executorPlayer, ClaimMember targetPlayer, ClaimData claim) {
         if(!Objects.equals(executorPlayer.getUniqueId(), targetPlayer) && !hasPerm(executorPlayer)) return;
@@ -1168,6 +1192,7 @@ public class ClaimUtils {
             ps.setString(3, claim.getId());
             ps.executeUpdate();
             claim.getMembers().stream().filter(m -> m.getUniqueId().equals(transferPlayer.getUniqueId())).findFirst().ifPresent(m -> m.setRank("owner"));
+            claim.setOwner(transferPlayer.getUniqueId());
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -1231,7 +1256,7 @@ public class ClaimUtils {
         if(!Objects.equals(executorPlayer.getUniqueId(), targetPlayer) && !hasPerm(executorPlayer)) return;
         Component info = Component.text("");
         info = info.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
-                .append(Component.text(" Claim Promote ", TextColor.fromHexString("#0fc3ff"), TextDecoration.BOLD))
+                .append(Component.text(" Claim Flags ", TextColor.fromHexString("#0fc3ff"), TextDecoration.BOLD))
                 .append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
         info = info.append(Component.text("\nMore than 1 claim found! Please pick the one to promote the player in: ", NamedTextColor.GRAY));
 

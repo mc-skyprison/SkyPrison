@@ -136,6 +136,9 @@ public class AsyncChat implements Listener {
                     }
                     inv.updateFlag(flagData, finalValue);
                     player.openInventory(inv.getInventory());
+                    event.setCancelled(true);
+                    plugin.chatLock.remove(player.getUniqueId());
+                    return;
                 } else if(lockType instanceof String lockedString) {
                     switch (lockedString.toLowerCase()) {
                         case "tags-display" -> { // ID

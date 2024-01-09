@@ -2,6 +2,7 @@ package net.skyprison.skyprisoncore.commands;
 
 import cloud.commandframework.Command;
 import cloud.commandframework.arguments.standard.IntegerArgument;
+import cloud.commandframework.arguments.standard.LongArgument;
 import cloud.commandframework.arguments.standard.StringArgument;
 import cloud.commandframework.paper.PaperCommandManager;
 import com.sk89q.worldedit.LocalSession;
@@ -68,7 +69,7 @@ public class ClaimCommands {
                 .handler(c -> {
                     Player player = (Player) c.getSender();
                     String claimName = c.get("name");
-                    if (player.getWorld().getName().equalsIgnoreCase("world_free")) {
+                    if (!player.getWorld().getName().equalsIgnoreCase("world_free")) {
                         player.sendMessage(prefix.append(Component.text("Claiming is not allowed in this world!", NamedTextColor.RED)));
                         return;
                     }
@@ -130,7 +131,7 @@ public class ClaimCommands {
                         player.sendMessage(prefix.append(Component.text("Player not found!", NamedTextColor.RED)));
                         return;
                     }
-                    deleteClaim(player, player.getUniqueId(), claimName, claim);
+                    deleteClaim(player, targetId, claimName, claim);
                 }));
 
 
@@ -191,7 +192,7 @@ public class ClaimCommands {
                     }
                 });
         manager.command(info);
-        Command.Builder<CommandSender> infoSpecific = list.argument(StringArgument.of("claim"))
+        Command.Builder<CommandSender> infoSpecific = info.argument(StringArgument.of("claim"))
                 .handler(c -> {
                     Player player = (Player) c.getSender();
                     String claimName = c.get("claim");
@@ -503,6 +504,10 @@ public class ClaimCommands {
                     Player player = (Player) c.getSender();
                     String claimName = c.get("claim");
                     List<ClaimData> claims = claim.getPlayerClaims(player.getUniqueId(), claimName, Arrays.asList("owner", "co-owner", "member"));
+                    if(claims.isEmpty()) {
+                        player.sendMessage(notFound);
+                        return;
+                    }
                     if (claims.size() == 1) {
                         claim.claimFlags(player, player.getUniqueId(), claims.getFirst());
                     } else {
@@ -522,6 +527,10 @@ public class ClaimCommands {
                         return;
                     }
                     List<ClaimData> claims = claim.getPlayerClaims(targetPlayerId, claimName, Arrays.asList("owner", "co-owner", "member"));
+                    if(claims.isEmpty()) {
+                        player.sendMessage(notFound);
+                        return;
+                    }
                     if (claims.size() == 1) {
                         claim.claimFlags(player, targetPlayerId, claims.getFirst());
                     } else {
@@ -653,7 +662,7 @@ public class ClaimCommands {
                 });
         manager.command(claimBlocks);
         manager.command(claimBlocks.literal("buy")
-                .argument(IntegerArgument.<CommandSender>builder("amount").withMin(1).asRequired())
+                .argument(LongArgument.<CommandSender>builder("amount").withMin(1).asRequired())
                 .handler(c -> {
                     Player player = (Player) c.getSender();
                     long blocks = c.get("amount");
@@ -679,7 +688,7 @@ public class ClaimCommands {
         manager.command(claimBlocks.literal("give")
                 .permission("skyprisoncore.command.claim.admin")
                 .argument(StringArgument.of("player"))
-                .argument(IntegerArgument.<CommandSender>builder("amount").withMin(1).asRequired())
+                .argument(LongArgument.<CommandSender>builder("amount").withMin(1).asRequired())
                 .handler(c -> {
                     CommandSender sender = c.getSender();
                     String target = c.get("player");
@@ -711,7 +720,7 @@ public class ClaimCommands {
         manager.command(claimBlocks.literal("set")
                 .permission("skyprisoncore.command.claim.admin")
                 .argument(StringArgument.of("player"))
-                .argument(IntegerArgument.<CommandSender>builder("amount").withMin(0).asRequired())
+                .argument(LongArgument.<CommandSender>builder("amount").withMin(0).asRequired())
                 .handler(c -> {
                     CommandSender sender = c.getSender();
                     long blocks = c.get("amount");
@@ -747,7 +756,7 @@ public class ClaimCommands {
         manager.command(claimBlocks.literal("take")
                 .permission("skyprisoncore.command.claim.admin")
                 .argument(StringArgument.of("player"))
-                .argument(IntegerArgument.<CommandSender>builder("amount").withMin(1).asRequired())
+                .argument(LongArgument.<CommandSender>builder("amount").withMin(1).asRequired())
                 .handler(c -> {
                     CommandSender sender = c.getSender();
                     long blocks = c.get("amount");
@@ -827,6 +836,10 @@ public class ClaimCommands {
             return;
         }
         claim.updateClaimName(claimData, newName);
+        player.sendMessage(prefix.append(Component.text("Successfully renamed ", TextColor.fromHexString("#20df80"))
+                .append(Component.text(claimData.getName(), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                .append(Component.text(" to ", TextColor.fromHexString("#20df80")))
+                .append(Component.text(newName, TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))));
     }
     private void pendingData(Player player, List<ClaimData> claims, ClaimUtils claim) {
         claims = claims.stream().filter(claimData -> {
@@ -936,7 +949,7 @@ public class ClaimCommands {
 
         if (claims.size() == 1) {
             ClaimData claimData = claims.getFirst();
-            claim.promotePlayer(player, claimData.getMember(targetId), claimData);
+            claim.demotePlayer(player, claimData.getMember(targetId), claimData);
         } else {
             claim.promotePlayerMultiple(player, targetId, claims);
         }
@@ -1010,8 +1023,7 @@ public class ClaimCommands {
         ClaimUtils.deleteClaim.add(player.getUniqueId());
         Component msg = prefix.append(Component.text("Are you sure you want to delete the claim ", TextColor.fromHexString("#20df80"))
                         .append(Component.text(claimData.getName(), TextColor.fromHexString("#20df80"), TextDecoration.BOLD))
-                        .append(Component.text("?", TextColor.fromHexString("#20df80")))
-                        .append(Component.text(player.getName(), TextColor.fromHexString("#20df80"), TextDecoration.BOLD)))
+                        .append(Component.text("?", TextColor.fromHexString("#20df80"))))
                 .append(Component.text("\nDELETE CLAIM", NamedTextColor.RED, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
                     if (ClaimUtils.deleteClaim.contains(player.getUniqueId())) {
                         ClaimUtils.deleteClaim.remove(player.getUniqueId());

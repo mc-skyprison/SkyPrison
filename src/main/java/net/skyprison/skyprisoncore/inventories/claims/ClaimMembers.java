@@ -105,8 +105,8 @@ public class ClaimMembers implements CustomInventory {
                     name = PlayerManager.getPlayerName(member.getUniqueId());
                 }
                 meta.displayName(Component.text(Objects.requireNonNullElse(name, "Name Not Found.."), TextColor.fromHexString("#0fffc3"), TextDecoration.BOLD)
-                        .append(Component.text("(", NamedTextColor.DARK_GRAY, TextDecoration.BOLD))
-                        .append(Component.text(member.getRank(), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                        .append(Component.text(" (", NamedTextColor.DARK_GRAY, TextDecoration.BOLD))
+                        .append(Component.text(WordUtils.capitalize(member.getRank()), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
                         .append(Component.text(")", NamedTextColor.DARK_GRAY, TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
             });
             members.add(new Member(displayItem, member));
