@@ -12,6 +12,7 @@ import org.javacord.api.entity.channel.TextChannel;
 
 import java.io.File;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.Objects;
 import java.util.regex.Matcher;
 
@@ -88,6 +89,10 @@ public class ChatUtils {
 	public static String formatNumber(double value) {
 		DecimalFormat df = new DecimalFormat("###,###,###.##");
 		return df.format(value);
+	}
+	public static String formatDate(long time) {
+		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+		return sdf.format(time);
 	}
 	public static int timeToTicks(String time) {
 		String[] split = time.split(":");

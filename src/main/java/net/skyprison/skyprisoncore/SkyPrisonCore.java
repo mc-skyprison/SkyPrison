@@ -768,13 +768,13 @@ public class SkyPrisonCore extends JavaPlugin {
         new BottledExpCommands(this, manager);
         new EconomyCommands(this, db, manager);
         new ClaimCommands(this, db, manager);
+        new MiscCommands(this, db, manager);
 
         Permission bountyBypass = new Permission("skyprisoncore.command.bounty.bypass", PermissionDefault.FALSE);
         Bukkit.getPluginManager().addPermission(bountyBypass);
 
         Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, db));
         Objects.requireNonNull(getCommand("killinfo")).setExecutor(new KillInfo(db));
-        Objects.requireNonNull(getCommand("firstjointop")).setExecutor(new FirstjoinTop(this, db));
 
         Objects.requireNonNull(getCommand("ignoretp")).setExecutor(new IgnoreTeleport(this, db));
 

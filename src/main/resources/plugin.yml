@@ -43,11 +43,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.removeitalics
     permission-message: §4Error:§c You do not have permission to execute this command...
-  firstjointop:
-    description: firstjointop
-    usage: /<command>
-    permission: skyprisoncore.command.firstjointop
-    permission-message: §4Error:§c You do not have permission to execute this command...
   daily:
     description: Opens the daily reward GUI
     usage: /<command>
@@ -130,9 +125,6 @@ permissions:
   #
   skyprisoncore.command.killinfo:
     description: Gives access to /killinfo
-
-  skyprisoncore.command.firstjointop:
-    description: Gives access to /firstjointop
   skyprisoncore.command.endupgrade:
     description: Gives access to /endupgrade
   skyprisoncore.command.daily:

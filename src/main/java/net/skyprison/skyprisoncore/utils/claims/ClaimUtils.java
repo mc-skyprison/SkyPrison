@@ -592,9 +592,9 @@ public class ClaimUtils {
                     .append(Component.text("\n/claim expand <amount>", TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
                             .append(Component.text("Expand a claim in the direction you are facing", TextColor.fromHexString("#dbb976"))))
 
-                    .append(Component.text("\n/claim pending (claim)" + (hasPerm ? " (player)" : ""), TextColor.fromHexString("#20df80"))
+                    .append(Component.text("\n/claim pending" + (hasPerm ? " (player/all)" : ""), TextColor.fromHexString("#20df80"))
                             .append(Component.text(" - ", NamedTextColor.GRAY))
-                            .append(Component.text("See all pending invites/transfers", TextColor.fromHexString("#dbb976"))))
+                            .append(Component.text("See pending invites/transfers", TextColor.fromHexString("#dbb976"))))
 
                     .append(Component.text("\n/claim customheight", TextColor.fromHexString("#20df80")).append(Component.text(" - ", NamedTextColor.GRAY))
                             .append(Component.text("Enable/disable custom height on claim create", TextColor.fromHexString("#dbb976"))))
