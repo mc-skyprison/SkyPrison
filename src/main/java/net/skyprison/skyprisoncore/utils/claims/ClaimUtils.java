@@ -897,7 +897,6 @@ public class ClaimUtils {
         executorPlayer.sendMessage(info);
     }
     public void invitePlayer(Player executorPlayer, UUID targetPlayer, ClaimData claim) {
-        if(!Objects.equals(executorPlayer.getUniqueId(), targetPlayer) && !hasPerm(executorPlayer)) return;
         String notifId = UUID.randomUUID().toString();
         String targetName = PlayerManager.getPlayerName(targetPlayer);
         Component msg = prefix.append(Component.text("You've been invited to the claim ", TextColor.fromHexString("#20df80"))
@@ -961,7 +960,6 @@ public class ClaimUtils {
         members.forEach(m -> PlayerManager.sendMessage(m.getUniqueId(), msg, "claim-invite-accepted", claim.getId()));
     }
     public void kickPlayerMultiple(Player executorPlayer, UUID targetPlayer, List<ClaimData> claims) {
-        if(!Objects.equals(executorPlayer.getUniqueId(), targetPlayer) && !hasPerm(executorPlayer)) return;
         Component info = Component.text("");
         info = info.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
                 .append(Component.text(" Claim Kick ", TextColor.fromHexString("#0fc3ff"), TextDecoration.BOLD))
@@ -981,8 +979,6 @@ public class ClaimUtils {
         executorPlayer.sendMessage(info);
     }
     public void kickPlayer(Player executorPlayer, ClaimMember targetPlayer, ClaimData claim) {
-        if(!Objects.equals(executorPlayer.getUniqueId(), targetPlayer.getUniqueId()) && !hasPerm(executorPlayer)) return;
-
         final RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
         final RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld(claim.getWorld()))));
         assert regionManager != null;
@@ -1009,7 +1005,6 @@ public class ClaimUtils {
         PlayerManager.sendMessage(targetPlayer.getUniqueId(), msg, "claim-kick", claim.getId());
     }
     public void promotePlayerMultiple(Player executorPlayer, UUID targetPlayer, List<ClaimData> claims) {
-        if(!Objects.equals(executorPlayer.getUniqueId(), targetPlayer) && !hasPerm(executorPlayer)) return;
         Component info = Component.text("");
         info = info.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
                 .append(Component.text(" Claim Promote ", TextColor.fromHexString("#0fc3ff"), TextDecoration.BOLD))
@@ -1026,7 +1021,6 @@ public class ClaimUtils {
         }
     }
     public void promotePlayer(Player executorPlayer, ClaimMember targetPlayer, ClaimData claim) {
-        if(!Objects.equals(executorPlayer.getUniqueId(), targetPlayer.getUniqueId()) && !hasPerm(executorPlayer)) return;
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE claims_members SET user_rank = ? WHERE user_id = ? AND claim_id = ?")) {
             ps.setString(1, "co-owner");
             ps.setString(2, targetPlayer.getUniqueId().toString());
@@ -1050,7 +1044,6 @@ public class ClaimUtils {
         PlayerManager.sendMessage(targetPlayer.getUniqueId(), msg, "claim-promote", claim.getId());
     }
     public void demotePlayerMultiple(Player executorPlayer, UUID targetPlayer, List<ClaimData> claims) {
-        if(!Objects.equals(executorPlayer.getUniqueId(), targetPlayer) && !hasPerm(executorPlayer)) return;
         Component info = Component.text("");
         info = info.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
                 .append(Component.text(" Claim Demote ", TextColor.fromHexString("#0fc3ff"), TextDecoration.BOLD))
@@ -1067,7 +1060,6 @@ public class ClaimUtils {
         }
     }
     public void demotePlayer(Player executorPlayer, ClaimMember targetPlayer, ClaimData claim) {
-        if(!Objects.equals(executorPlayer.getUniqueId(), targetPlayer) && !hasPerm(executorPlayer)) return;
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE claims_members SET user_rank = ? WHERE user_id = ? AND claim_id = ?")) {
             ps.setString(1, "member");
             ps.setString(2, targetPlayer.getUniqueId().toString());
@@ -1090,7 +1082,7 @@ public class ClaimUtils {
         PlayerManager.sendMessage(targetPlayer.getUniqueId(), msg, "claim-demote", claim.getId());
     }
     public void transferClaim(Player executorPlayer, ClaimMember targetPlayer, ClaimData claim) {
-        if(!Objects.equals(executorPlayer.getUniqueId(), targetPlayer.getUniqueId()) && !hasPerm(executorPlayer)) return;
+        if(!Objects.equals(executorPlayer.getUniqueId(), claim.getOwner()) && !hasPerm(executorPlayer)) return;
         long claimBlocks = claim.getBlocks() + claim.getChildren().stream().mapToLong(ClaimData::getBlocks).sum();
 
         ClaimBlocks pBlocks = getPlayerBlocks(targetPlayer.getUniqueId());
