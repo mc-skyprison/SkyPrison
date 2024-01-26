@@ -64,13 +64,13 @@ public class MiscCommands {
                                 rs.getLong(3), ChatUtils.formatDate(rs.getLong(3))));
                     }
                 }
+                firstJoins.sort(Comparator.comparingLong(o -> o.firstJoin));
                 MiscCommands.firstJoins = new FirstJoins(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(10), firstJoins);
             } catch (SQLException e) {
                 e.printStackTrace();
             }
         } else firstJoins = new ArrayList<>(MiscCommands.firstJoins.joins());
 
-        firstJoins.sort(Comparator.comparingLong(o -> o.firstJoin));
         int totalPages = (int) Math.ceil(firstJoins.size() / 10.0);
         if(page > totalPages) page = 1;
         Component msg = Component.empty();
@@ -87,13 +87,14 @@ public class MiscCommands {
         }
         int i = 0;
 
-        TextColor pColour = TextColor.fromHexString("#266d27");
+        TextColor pColour = TextColor.fromHexString("#99d3fc");
+        TextColor oColour = TextColor.fromHexString("#d4dddd");
         for (FirstJoin firstJoin : joinsToShow) {
             if (i == 10) break;
             boolean isPlayer = sender instanceof Player player && player.getUniqueId().equals(firstJoin.uuid);
             msg = msg.appendNewline().append(Component.text(firstJoins.indexOf(firstJoin) + 1 + ". ", isPlayer ? pColour : NamedTextColor.GRAY, TextDecoration.BOLD))
-                    .append(Component.text(firstJoin.name, isPlayer ? pColour : NamedTextColor.WHITE)).append(Component.text(" - ", isPlayer ? pColour : NamedTextColor.GRAY)
-                    .append(Component.text(firstJoin.date, isPlayer ? pColour : NamedTextColor.WHITE)));
+                    .append(Component.text(firstJoin.name, isPlayer ? pColour : oColour)).append(Component.text(" - ", isPlayer ? pColour : NamedTextColor.GRAY)
+                    .append(Component.text(firstJoin.date, isPlayer ? pColour : oColour)));
 
             i++;
         }
