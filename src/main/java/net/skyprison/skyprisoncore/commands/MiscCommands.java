@@ -9,6 +9,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.inventories.recipes.CustomMain;
 import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.command.CommandSender;
@@ -28,6 +29,7 @@ public class MiscCommands {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
     private final PaperCommandManager<CommandSender> manager;
+    public final static CustomMain customMain = new CustomMain();
     private static FirstJoins firstJoins = null;
     public MiscCommands(SkyPrisonCore plugin, DatabaseHook db, PaperCommandManager<CommandSender> manager) {
         this.plugin = plugin;

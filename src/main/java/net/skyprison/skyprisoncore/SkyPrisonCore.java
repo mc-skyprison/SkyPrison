@@ -292,6 +292,8 @@ public class SkyPrisonCore extends JavaPlugin {
             getLogger().info("Placeholders registered");
         }
 
+        new Recipes(this);
+
         Timer dayTimer = new Timer();
         Calendar tommorow = Calendar.getInstance();
         tommorow.add(Calendar.DAY_OF_YEAR, 1);
