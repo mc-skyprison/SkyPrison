@@ -12,6 +12,7 @@ import java.util.List;
 
 public class Recipes {
     public final static List<Recipe> customRecipes = new ArrayList<>();
+    public final static List<Material> blockedRecipes = new ArrayList<>();
     private final SkyPrisonCore plugin;
     public Recipes(SkyPrisonCore plugin) {
         this.plugin = plugin;
@@ -33,8 +34,32 @@ public class Recipes {
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("iron_leggings"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("iron_boots"));
 
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_helmet"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_chestplate"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_leggings"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_boots"));
+
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("anvil"));
 
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("hopper"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("beacon"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
+        plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
     }
 }
