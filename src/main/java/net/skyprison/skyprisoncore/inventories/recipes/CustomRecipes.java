@@ -1,17 +1,17 @@
 package net.skyprison.skyprisoncore.inventories.recipes;
 
-import me.wolfyscript.customcrafting.CustomCrafting;
-import me.wolfyscript.customcrafting.recipes.CustomRecipe;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
+import net.skyprison.skyprisoncore.utils.Recipes;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -19,20 +19,11 @@ import java.util.List;
 
 public class CustomRecipes implements CustomInventory {
     private final Inventory inventory;
-    private final List<Recipe> recipes = new ArrayList<>();
-    public record Recipe(ItemStack item, CustomRecipe<?> recipe) {}
     public CustomRecipes() {
         inventory = Bukkit.getServer().createInventory(this, 54, Component.text("Recipes - Main", TextColor.fromHexString("#0fc3ff")));
 
-        List<CustomRecipe<?>> customRecipes = CustomCrafting.inst().getRegistries().getRecipes().getAvailable();
-
-        for(CustomRecipe<?> recipe : customRecipes) {
-            ItemStack item = recipe.getResult().getItemStack();
-            item.setAmount(1);
-            recipes.add(new Recipe(item, recipe));
-        }
-
         int b = 0;
+        List<Recipe> recipes = new ArrayList<>(Recipes.customRecipes);
         for(int i = 0; i < inventory.getSize(); i++) {
             if(i == 45) {
                 ItemStack back = new ItemStack(Material.PAPER);
@@ -49,14 +40,14 @@ public class CustomRecipes implements CustomInventory {
             } else {
                 if(recipes.size() > b) {
                     Recipe recipe = recipes.get(b);
-                    inventory.setItem(i, recipe.item);
+                    inventory.setItem(i, recipe.getResult());
                     b++;
                 }
             }
         }
     }
     public Recipe getRecipe(ItemStack item) {
-        return recipes.stream().filter(recipe -> recipe.item().equals(item)).findFirst().orElse(null);
+        return Recipes.customRecipes.stream().filter(recipe -> recipe.getResult().equals(item)).findFirst().orElse(null);
     }
     @Override
     public @NotNull Inventory getInventory() {
