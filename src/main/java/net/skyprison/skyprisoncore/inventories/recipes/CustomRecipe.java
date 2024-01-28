@@ -23,24 +23,24 @@ public class CustomRecipe implements CustomInventory {
         if (recipe instanceof ShapedRecipe shapedRecipe) {
             Map<Character, RecipeChoice> ingredientMap = shapedRecipe.getChoiceMap();
             String[] shape = shapedRecipe.getShape();
-            int slotIndex = 11; // Starting slot for the 3x3 grid in your GUI
+            int slotIndex = 11;
             for (String row : shape) {
                 for (char ingredientChar : row.toCharArray()) {
                     RecipeChoice choice = ingredientMap.get(ingredientChar);
-                    if (choice instanceof RecipeChoice.ExactChoice exactChoice) {
-                        inventory.setItem(slotIndex, exactChoice.getItemStack());
+                    if (choice instanceof RecipeChoice.MaterialChoice matChoice) {
+                        inventory.setItem(slotIndex, matChoice.getItemStack());
                     }
                     slotIndex++;
                 }
-                slotIndex += 7; // Move to the next row in the GUI
+                slotIndex += 7;
             }
         } else if (recipe instanceof ShapelessRecipe shapelessRecipe) {
-            int slotIndex = 11; // Starting slot for the 3x3 grid in your GUI
+            int slotIndex = 11;
             for (RecipeChoice choice : shapelessRecipe.getChoiceList()) {
-                if (choice instanceof RecipeChoice.ExactChoice exactChoice) {
-                    inventory.setItem(slotIndex, exactChoice.getItemStack());
+                if (choice instanceof RecipeChoice.MaterialChoice matChoice) {
+                    inventory.setItem(slotIndex, matChoice.getItemStack());
                     slotIndex++;
-                    if (slotIndex == 14 || slotIndex == 23) slotIndex += 7; // Skip to the next row
+                    if (slotIndex == 14 || slotIndex == 23) slotIndex += 7;
                 }
             }
         }

@@ -28,10 +28,10 @@ public class CustomMain implements CustomInventory {
                 });
                 inventory.setItem(i, blocked);
             } else if (i == 14) {
-                ItemStack custom = new ItemStack(Material.BARRIER);
+                ItemStack custom = new ItemStack(Material.KNOWLEDGE_BOOK);
                 custom.editMeta(meta -> {
-                    meta.displayName(Component.text("Blocked Recipes", NamedTextColor.DARK_RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
-                    meta.lore(List.of(Component.text("Click to view blocked recipes", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)));
+                    meta.displayName(Component.text("Custom Recipes", TextColor.fromHexString("#50C878"), TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+                    meta.lore(List.of(Component.text("Click to view custom recipes", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)));
                 });
                 inventory.setItem(i, custom);
             } else if (i == 0 || i == 8 || i == 9 || i == 17 || i == 18 || i == 26) {

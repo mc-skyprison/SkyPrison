@@ -787,7 +787,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("tags")).setExecutor(new Tags(this, db));
         Objects.requireNonNull(getCommand("minereset")).setExecutor(new MineReset(this));
         Objects.requireNonNull(getCommand("randomgive")).setExecutor(new RandomGive(this));
-        Objects.requireNonNull(getCommand("customrecipes")).setExecutor(new CustomRecipes(this));
 
         Objects.requireNonNull(getCommand("rename")).setExecutor(new Rename());
         Objects.requireNonNull(getCommand("itemlore")).setExecutor(new ItemLore(this));
@@ -807,7 +806,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EntityDeath(this, db, dailyMissions), this);
         pm.registerEvents(new EntityPickupItem(this), this);
         pm.registerEvents(new InventoryClick(this, new Daily(this, db),
-                db, new Tags(this, db), particles, new CustomRecipes(this)), this);
+                db, new Tags(this, db), particles), this);
         pm.registerEvents(new InventoryOpen(this), this);
         pm.registerEvents(new LeavesDecay(), this);
         pm.registerEvents(new McMMOLevelUp(this), this);

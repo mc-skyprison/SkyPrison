@@ -25,7 +25,6 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.commands.old.CustomRecipes;
 import net.skyprison.skyprisoncore.commands.old.Daily;
 import net.skyprison.skyprisoncore.commands.old.News;
 import net.skyprison.skyprisoncore.commands.old.Tags;
@@ -41,6 +40,10 @@ import net.skyprison.skyprisoncore.inventories.economy.MoneyHistory;
 import net.skyprison.skyprisoncore.inventories.economy.tokens.TokensCheck;
 import net.skyprison.skyprisoncore.inventories.economy.tokens.TokensHistory;
 import net.skyprison.skyprisoncore.inventories.mail.*;
+import net.skyprison.skyprisoncore.inventories.recipes.BlockedRecipes;
+import net.skyprison.skyprisoncore.inventories.recipes.CustomMain;
+import net.skyprison.skyprisoncore.inventories.recipes.CustomRecipe;
+import net.skyprison.skyprisoncore.inventories.recipes.CustomRecipes;
 import net.skyprison.skyprisoncore.inventories.secrets.Secrets;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsCategoryEdit;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsEdit;
@@ -63,6 +66,7 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.inventory.CraftingRecipe;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -86,15 +90,13 @@ public class InventoryClick implements Listener {
     private final DatabaseHook db;
     private final Tags tag;
     private final PlayerParticlesAPI particles;
-    private final CustomRecipes customRecipes;
 
-    public InventoryClick(SkyPrisonCore plugin, Daily daily, DatabaseHook db, Tags tag, PlayerParticlesAPI particles, CustomRecipes customRecipes) {
+    public InventoryClick(SkyPrisonCore plugin, Daily daily, DatabaseHook db, Tags tag, PlayerParticlesAPI particles) {
         this.plugin = plugin;
         this.daily = daily;
         this.db = db;
         this.tag = tag;
         this.particles = particles;
-        this.customRecipes = customRecipes;
     }
     public boolean isStick(ItemStack i) {
         if (i != null) {
@@ -1778,7 +1780,7 @@ public class InventoryClick implements Listener {
                         }
                     }
                     case TokensCheck inv -> {
-                        if (event.getCurrentItem() != null) {
+                        if (currItem != null) {
                             switch (event.getSlot()) {
                                 case 46 -> {
                                     if (isPaper) {
@@ -1799,7 +1801,7 @@ public class InventoryClick implements Listener {
                         }
                     }
                     case TokensHistory inv -> {
-                        if (event.getCurrentItem() != null) {
+                        if (currItem != null) {
                             switch (event.getSlot()) {
                                 case 46 -> {
                                     if (isPaper) {
@@ -1813,6 +1815,41 @@ public class InventoryClick implements Listener {
                                         inv.updatePage(1);
                                     }
                                 }
+                            }
+                        }
+                    }
+                    case CustomMain inv -> {
+                        if (currItem != null) {
+                            switch (event.getSlot()) {
+                                case 12 -> player.openInventory(new BlockedRecipes().getInventory());
+                                case 14 -> player.openInventory(new CustomRecipes().getInventory());
+                            }
+                        }
+                    }
+                    case BlockedRecipes ignored -> {
+                        if (currItem != null) {
+                            if (event.getSlot() == 45) {
+                                player.openInventory(new CustomMain().getInventory());
+                            }
+                        }
+                    }
+                    case CustomRecipes inv -> {
+                        if (currItem != null) {
+                            if(event.getSlot() == 45) {
+                                player.openInventory(new CustomMain().getInventory());
+                            } else if(!MaterialTags.STAINED_GLASS_PANES.isTagged(currItem.getType())) {
+                                CraftingRecipe recipe = inv.getRecipe(currItem);
+                                if(recipe != null) {
+                                    player.openInventory(new CustomRecipe(recipe).getInventory());
+                                }
+
+                            }
+                        }
+                    }
+                    case CustomRecipe ignored -> {
+                        if (currItem != null) {
+                            if (event.getSlot() == 35) {
+                                player.openInventory(new CustomRecipes().getInventory());
                             }
                         }
                     }
@@ -1851,48 +1888,6 @@ public class InventoryClick implements Listener {
                             if (clickCheck == 1) {
                                 event.setCancelled(true);
                                 switch (Objects.requireNonNull(guiType)) {
-                                    case "recipes-main":
-                                        if (event.getClickedInventory().getItem(event.getSlot()) != null) {
-                                            Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
-                                            if (clickedMat.equals(Material.BARRIER)) {
-                                                customRecipes.openDisabledGUI(player);
-                                            } else if (clickedMat.equals(Material.KNOWLEDGE_BOOK)) {
-                                                customRecipes.openCustomGUI(player);
-                                            }
-                                        }
-                                        break;
-                                    case "recipes-custom":
-                                        if (event.getClickedInventory().getItem(event.getSlot()) != null) {
-                                            ItemStack cItem = event.getClickedInventory().getItem(event.getSlot());
-                                            ItemMeta cMeta = cItem.getItemMeta();
-                                            Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
-                                            if (clickedMat.equals(Material.PAPER)) {
-                                                customRecipes.openMainGUI(player);
-                                            } else {
-                                                NamespacedKey recipeKey = new NamespacedKey(plugin, "custom-recipe");
-                                                if (cMeta.getPersistentDataContainer().has(recipeKey, PersistentDataType.STRING)) {
-                                                    String recipe = cMeta.getPersistentDataContainer().get(recipeKey, PersistentDataType.STRING);
-                                                    customRecipes.openSpecificGUI(player, recipe);
-                                                }
-                                            }
-                                        }
-                                        break;
-                                    case "recipes-disabled":
-                                        if (event.getClickedInventory().getItem(event.getSlot()) != null) {
-                                            Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
-                                            if (clickedMat.equals(Material.PAPER)) {
-                                                customRecipes.openMainGUI(player);
-                                            }
-                                        }
-                                        break;
-                                    case "recipes-specific":
-                                        if (event.getClickedInventory().getItem(event.getSlot()) != null) {
-                                            Material clickedMat = event.getClickedInventory().getItem(event.getSlot()).getType();
-                                            if (clickedMat.equals(Material.PAPER)) {
-                                                customRecipes.openCustomGUI(player);
-                                            }
-                                        }
-                                        break;
                                     case "daily-reward":
                                         if (event.getClickedInventory().getItem(event.getSlot()).getType().equals(Material.MINECART)) {
                                             player.sendMessage(Component.text("You've already collected the daily reward!", NamedTextColor.RED));

@@ -9,6 +9,7 @@ import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.Recipes;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.inventory.CraftingRecipe;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
@@ -20,10 +21,10 @@ import java.util.List;
 public class CustomRecipes implements CustomInventory {
     private final Inventory inventory;
     public CustomRecipes() {
-        inventory = Bukkit.getServer().createInventory(this, 54, Component.text("Recipes - Main", TextColor.fromHexString("#0fc3ff")));
+        inventory = Bukkit.getServer().createInventory(this, 54, Component.text("Recipes - Custom", TextColor.fromHexString("#0fc3ff")));
 
         int b = 0;
-        List<Recipe> recipes = new ArrayList<>(Recipes.customRecipes);
+        List<CraftingRecipe> recipes = new ArrayList<>(Recipes.customRecipes);
         for(int i = 0; i < inventory.getSize(); i++) {
             if(i == 45) {
                 ItemStack back = new ItemStack(Material.PAPER);
@@ -46,7 +47,7 @@ public class CustomRecipes implements CustomInventory {
             }
         }
     }
-    public Recipe getRecipe(ItemStack item) {
+    public CraftingRecipe getRecipe(ItemStack item) {
         return Recipes.customRecipes.stream().filter(recipe -> recipe.getResult().equals(item)).findFirst().orElse(null);
     }
     @Override

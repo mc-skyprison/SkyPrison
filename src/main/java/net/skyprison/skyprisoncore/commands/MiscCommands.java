@@ -12,6 +12,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.recipes.CustomMain;
 import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -29,7 +30,6 @@ public class MiscCommands {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
     private final PaperCommandManager<CommandSender> manager;
-    public final static CustomMain customMain = new CustomMain();
     private static FirstJoins firstJoins = null;
     public MiscCommands(SkyPrisonCore plugin, DatabaseHook db, PaperCommandManager<CommandSender> manager) {
         this.plugin = plugin;
@@ -47,6 +47,13 @@ public class MiscCommands {
                     CommandSender sender = c.getSender();
                     int page = c.get("page");
                     sendFirstjoin(sender, page);
+                }));
+        manager.command(manager.commandBuilder("customrecipes")
+                .senderType(Player.class)
+                .permission("skyprisoncore.command.customrecipes")
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new CustomMain().getInventory()));
                 }));
     }
     private void sendFirstjoin(CommandSender sender, int page) {
