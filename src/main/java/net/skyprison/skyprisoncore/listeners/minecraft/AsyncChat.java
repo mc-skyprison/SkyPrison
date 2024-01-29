@@ -625,7 +625,7 @@ public class AsyncChat implements Listener {
                                 Material sign = Material.valueOf(msg.toUpperCase());
                                 if(sign != null){
                                     if (MaterialTags.SIGNS.isTagged(sign)) {
-                                        plugin.giveItem(player, SecretsUtils.getSign(plugin, inv.getSecretsId(), inv.getName(), sign));
+                                        PlayerManager.giveItems(player, SecretsUtils.getSign(plugin, inv.getSecretsId(), inv.getName(), sign));
                                         player.openInventory(inv.getInventory());
                                     } else {
                                         player.sendMessage(Component.text("That's mot a sign! Try again..", NamedTextColor.RED));

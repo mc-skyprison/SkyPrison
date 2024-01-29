@@ -8,6 +8,7 @@ import net.luckperms.api.cacheddata.CachedPermissionData;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.model.user.UserManager;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
@@ -25,6 +26,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -67,6 +70,12 @@ public class PlayerManager {
         }
         return discordId;
     }
+    public static void giveItems(HumanEntity player, ItemStack... items) {
+        HashMap<Integer, ItemStack> didntFit = player.getInventory().addItem(Arrays.stream(items).filter(item -> item != null && item.getType().isItem()).toArray(ItemStack[]::new));
+        for(ItemStack dropItem : didntFit.values()) {
+            player.getWorld().dropItemNaturally(player.getLocation(), dropItem).setOwner(player.getUniqueId());
+        }
+    }
     public static String toBase64(Inventory inv) throws IllegalStateException {
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -88,7 +97,8 @@ public class PlayerManager {
         try {
             ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64Coder.decodeLines(data));
             BukkitObjectInputStream dataInput = new BukkitObjectInputStream(inputStream);
-            Inventory inv = dataInput.readInt() != 41 ? Bukkit.getServer().createInventory(null, InventoryType.ENDER_CHEST) : Bukkit.getServer().createInventory(null, InventoryType.PLAYER);
+            Inventory inv = dataInput.readInt() != 41 ? Bukkit.getServer().createInventory(null, InventoryType.ENDER_CHEST) :
+                    Bukkit.getServer().createInventory(null, InventoryType.PLAYER);
 
             try {
                 for (int i = 0; i < inv.getSize(); i++) {
@@ -242,6 +252,15 @@ public class PlayerManager {
     }
     public static Double getBalance(Player player) {
         return CMI.getInstance().getPlayerManager().getUser(player).getBalance();
+    }
+    public static long getPlaytime(Player player) {
+        return CMI.getInstance().getPlayerManager().getUser(player).getTotalPlayTime();
+    }
+    public static String getLastIp(Player player) {
+        return CMI.getInstance().getPlayerManager().getUser(player).getLastIp();
+    }
+    public static String getLastIp(UUID player) {
+        return CMI.getInstance().getPlayerManager().getUser(player).getLastIp();
     }
     public static String getPrisonRank(Player player) {
         return CMI.getInstance().getPlayerManager().getUser(player).getRank().getName();

@@ -8,7 +8,6 @@ import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -66,13 +65,13 @@ public class Referral implements CustomInventory {
         inventory.setItem(49, sortItem);
         updatePage(0);
     }
-    public Referral(SkyPrisonCore plugin, DatabaseHook db, Player player) {
+    public Referral(SkyPrisonCore plugin, DatabaseHook db, UUID targetId) {
         this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Referral List", NamedTextColor.RED));
 
         SimpleDateFormat dateFor = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         LinkedHashMap<UUID, List<String>> reffedBy = new LinkedHashMap<>();
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT referred_by, refer_date FROM referrals WHERE user_id = ? ORDER BY refer_Date ASC")) {
-            ps.setString(1, player.getUniqueId().toString());
+            ps.setString(1, targetId.toString());
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
                 List<String> reffedData = new ArrayList<>();

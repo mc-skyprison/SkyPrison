@@ -564,13 +564,6 @@ public class SkyPrisonCore extends JavaPlugin {
         }
     }
 
-    public void giveItem(Player player, ItemStack item) {
-        HashMap<Integer, ItemStack> didntFit = player.getInventory().addItem(item);
-        for(ItemStack dropItem : didntFit.values()) {
-            player.getWorld().dropItemNaturally(player.getLocation(), dropItem).setOwner(player.getUniqueId());
-        }
-    }
-
     public void registerCommands() {
         manager.command(
                 manager.commandBuilder("spc")
@@ -601,7 +594,7 @@ public class SkyPrisonCore extends JavaPlugin {
                         } else {
                             treeItem = TreeFeller.getUpgradeItem(this, type, amount);
                         }
-                        giveItem(player, treeItem);
+                        PlayerManager.giveItems(player, treeItem);
                         c.getSender().sendMessage(Component.text("Successfully sent!"));
                     }
                 }));
@@ -641,7 +634,7 @@ public class SkyPrisonCore extends JavaPlugin {
                             final int amount = c.get("amount");
                             ItemStack voucherItem = Vouchers.getVoucherFromType(this, voucherType, amount);
                             if(voucherItem != null) {
-                                giveItem(player, voucherItem);
+                                PlayerManager.giveItems(player, voucherItem);
                                 c.getSender().sendMessage(Component.text("Successfully sent!"));
                             }
                         }));
@@ -663,7 +656,7 @@ public class SkyPrisonCore extends JavaPlugin {
                     if(gregOptions.contains(type.toLowerCase())) {
                         ItemStack item = Greg.getItemFromType(this, type, amount);
                         if (item != null) {
-                            giveItem(player, item);
+                            PlayerManager.giveItems(player, item);
                             c.getSender().sendMessage(Component.text("Successfully sent!"));
                         }
                     }
@@ -685,7 +678,7 @@ public class SkyPrisonCore extends JavaPlugin {
                     if(endSmithOptions.contains(type.toLowerCase())) {
                         ItemStack item = BlacksmithEnd.getItemFromType(this, type, "", amount);
                         if (item != null) {
-                            giveItem(player, item);
+                            PlayerManager.giveItems(player, item);
                             c.getSender().sendMessage(Component.text("Successfully sent!"));
                         }
                     }
@@ -704,7 +697,7 @@ public class SkyPrisonCore extends JavaPlugin {
                     if(templateOptions.contains(type.toLowerCase())) {
                         ItemStack item = BlacksmithEnd.getItemFromType(this, "upgrade-template", type, amount);
                         if (item != null) {
-                            giveItem(player, item);
+                            PlayerManager.giveItems(player, item);
                             c.getSender().sendMessage(Component.text("Successfully sent!"));
                         }
                     }
@@ -725,7 +718,7 @@ public class SkyPrisonCore extends JavaPlugin {
                     final int amount = c.get("amount");
                     if(bombOptions.contains(type.toLowerCase())) {
                         ItemStack item = BombUtils.getBomb(this, type, amount);
-                        giveItem(player, item);
+                        PlayerManager.giveItems(player, item);
                         c.getSender().sendMessage(Component.text("Successfully sent!"));
                     }
                 }));

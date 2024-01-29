@@ -3,7 +3,6 @@ package net.skyprison.skyprisoncore.commands;
 import cloud.commandframework.Command;
 import cloud.commandframework.arguments.standard.IntegerArgument;
 import cloud.commandframework.paper.PaperCommandManager;
-import com.Zrips.CMI.CMI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -68,7 +67,7 @@ public class BottledExpCommands {
                 .senderType(Player.class)
                 .handler(c -> {
                     Player player = (Player) c.getSender();
-                    if (CMI.getInstance().getPlayerManager().getUser(player).getBalance() >= getTotalExperience(player) * 0.25) {
+                    if (PlayerManager.getBalance(player) >= getTotalExperience(player) * 0.25) {
                         createBottle(player, getTotalExperience(player));
                     } else {
                         player.sendMessage(Component.text("You need $" + ChatUtils.formatNumber(getTotalExperience(player) * 0.25)

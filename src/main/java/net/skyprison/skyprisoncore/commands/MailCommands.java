@@ -50,7 +50,7 @@ public class MailCommands {
                     if(postOfficeOptions.contains(type.toLowerCase())) {
                         ItemStack item = PostOffice.getItemFromType(plugin, type, amount);
                         if (item != null) {
-                            plugin.giveItem(player, item);
+                            PlayerManager.giveItems(player, item);
                             c.getSender().sendMessage(Component.text("Successfully sent!"));
                         }
                     }

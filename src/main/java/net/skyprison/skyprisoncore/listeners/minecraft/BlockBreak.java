@@ -1,7 +1,5 @@
 package net.skyprison.skyprisoncore.listeners.minecraft;
 
-import com.Zrips.CMI.CMI;
-import com.Zrips.CMI.Containers.CMIUser;
 import dev.esophose.playerparticles.api.PlayerParticlesAPI;
 import net.alex9849.arm.AdvancedRegionMarket;
 import net.coreprotect.CoreProtect;
@@ -9,10 +7,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.utils.DailyMissions;
-import net.skyprison.skyprisoncore.utils.MailUtils;
-import net.skyprison.skyprisoncore.utils.RandomReward;
-import net.skyprison.skyprisoncore.utils.TokenUtils;
+import net.skyprison.skyprisoncore.utils.*;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -127,12 +122,7 @@ public class BlockBreak implements Listener {
                                     particles.removeFixedEffectsInRange(shinyLoc, 1);
                                     player.sendMessage(Component.text("Buried amidst the leafy foliage, you discover an unexpected treasure!", NamedTextColor.GRAY, TextDecoration.ITALIC));
                                     item = RandomReward.getRandomReward(plugin);
-                                    CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-                                    if (user.getInventory().canFit(item)) {
-                                        player.getInventory().addItem(item);
-                                    } else {
-                                        player.getLocation().getWorld().dropItem(player.getLocation(), item);
-                                    }
+                                    PlayerManager.giveItems(player, item);
                                     break;
                                 }
                             }
