@@ -22,7 +22,7 @@ public class BlockedRecipes implements CustomInventory {
         inventory = Bukkit.getServer().createInventory(this, 54, Component.text("Recipes - Blocked", TextColor.fromHexString("#0fc3ff")));
 
         int b = 0;
-        List<Material> blockedRecipes = new ArrayList<>(Recipes.blockedRecipes);
+        List<ItemStack> blockedRecipes = new ArrayList<>(Recipes.blockedRecipes);
         for(int i = 0; i < inventory.getSize(); i++) {
             if(i == 45) {
                 ItemStack back = new ItemStack(Material.PAPER);
@@ -38,8 +38,7 @@ public class BlockedRecipes implements CustomInventory {
                 inventory.setItem(i, blackPane);
             } else {
                 if(blockedRecipes.size() > b) {
-                    Material blocked = blockedRecipes.get(b);
-                    inventory.setItem(i, new ItemStack(blocked));
+                    inventory.setItem(i, blockedRecipes.get(b));
                     b++;
                 }
             }

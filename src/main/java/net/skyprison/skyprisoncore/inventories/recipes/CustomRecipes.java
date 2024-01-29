@@ -9,10 +9,7 @@ import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.Recipes;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.inventory.CraftingRecipe;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.Recipe;
+import org.bukkit.inventory.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -41,14 +38,19 @@ public class CustomRecipes implements CustomInventory {
             } else {
                 if(recipes.size() > b) {
                     Recipe recipe = recipes.get(b);
-                    inventory.setItem(i, recipe.getResult());
+                    ItemStack item = recipe.getResult();
+                    item.editMeta(meta -> {
+                        meta.lore(List.of(Component.text("Click to view recipe", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)));
+                        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+                    });
+                    inventory.setItem(i, item);
                     b++;
                 }
             }
         }
     }
     public CraftingRecipe getRecipe(ItemStack item) {
-        return Recipes.customRecipes.stream().filter(recipe -> recipe.getResult().equals(item)).findFirst().orElse(null);
+        return Recipes.customRecipes.stream().filter(recipe -> recipe.getResult().getType().equals(item.getType())).findFirst().orElse(null);
     }
     @Override
     public @NotNull Inventory getInventory() {

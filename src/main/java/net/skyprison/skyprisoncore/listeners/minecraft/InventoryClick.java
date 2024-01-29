@@ -1848,7 +1848,7 @@ public class InventoryClick implements Listener {
                     }
                     case CustomRecipe ignored -> {
                         if (currItem != null) {
-                            if (event.getSlot() == 35) {
+                            if (event.getSlot() == 36) {
                                 player.openInventory(new CustomRecipes().getInventory());
                             }
                         }

@@ -36,7 +36,7 @@ public class ServerLoad implements Listener {
                     for (int y = 130; y <= 174; y++) {
                         Block block = prisonWorld.getBlockAt(x, y, z);
                         Material bType = block.getType();
-                        if (bType.equals(Material.TALL_GRASS) || bType.equals(Material.GRASS) || bType.equals(Material.LARGE_FERN) || bType.equals(Material.FERN)) {
+                        if (bType.equals(Material.TALL_GRASS) || bType.equals(Material.SHORT_GRASS) || bType.equals(Material.LARGE_FERN) || bType.equals(Material.FERN)) {
                             plugin.grassLocations.add(block);
                         }
                     }

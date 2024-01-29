@@ -1,27 +1,42 @@
 package net.skyprison.skyprisoncore.utils;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.inventory.CraftingRecipe;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.ShapedRecipe;
-import org.bukkit.inventory.ShapelessRecipe;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.*;
 import org.bukkit.inventory.recipe.CraftingBookCategory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Recipes {
     public final static List<CraftingRecipe> customRecipes = new ArrayList<>();
-    public final static List<Material> blockedRecipes = new ArrayList<>();
+    public final static List<NamespacedKey> infoRecipes = new ArrayList<>();
+    public final static List<ItemStack> blockedRecipes = new ArrayList<>();
     private final SkyPrisonCore plugin;
     public Recipes(SkyPrisonCore plugin) {
         this.plugin = plugin;
         loadRecipes();
+        loadInfoRecipes();
         removeRecipes();
         addBlockedRecipes();
     }
+
+    public static void discoverIronRecipes(Player player) {
+        List<NamespacedKey> ironRecipes = customRecipes.stream().filter(recipe -> recipe.getKey().getKey().startsWith("iron")
+                || recipe.getKey().getKey().startsWith("anvil")).map(CraftingRecipe::getKey).toList();
+        player.discoverRecipes(ironRecipes);
+    }
+
+    public static void discoverRecipe(Player player, NamespacedKey key) {
+        player.discoverRecipe(key);
+    }
+
     private void loadRecipes() {
 
         // Iron Gear
@@ -78,24 +93,17 @@ public class Recipes {
         customRecipes.add(netherWart);
     }
     private void removeRecipes() {
-
-        // Iron Gear
-
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("iron_sword"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("iron_helmet"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("iron_chestplate"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("iron_leggings"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("iron_boots"));
 
-        // Diamond Gear
-
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_sword"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_helmet"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_chestplate"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_leggings"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("diamond_boots"));
-
-        // Netherite Gear
 
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("netherite_sword"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("netherite_helmet"));
@@ -107,15 +115,11 @@ public class Recipes {
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("netherite_shovel"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("netherite_hoe"));
 
-        // Misc Items
-
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("anvil"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("hopper"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("beacon"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("recovery_compass"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("shulker_box"));
-
-        // Netherite Templates
 
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("netherite_upgrade_smithing_template"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("netherite_sword_smithing"));
@@ -127,8 +131,6 @@ public class Recipes {
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("netherite_chestplate_smithing"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("netherite_leggings_smithing"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("netherite_boots_smithing"));
-
-        // Trim Templates
 
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("shaper_armor_trim_smithing_template"));
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("ward_armor_trim_smithing_template"));
@@ -148,22 +150,147 @@ public class Recipes {
         plugin.getServer().removeRecipe(NamespacedKey.minecraft("spire_armor_trim_smithing_template"));
     }
     private void addBlockedRecipes() {
-        blockedRecipes.add(Material.IRON_SWORD);
-        blockedRecipes.add(Material.IRON_HELMET);
-        blockedRecipes.add(Material.IRON_CHESTPLATE);
-        blockedRecipes.add(Material.IRON_LEGGINGS);
-        blockedRecipes.add(Material.IRON_BOOTS);
+        ItemStack diamondSword = new ItemStack(Material.DIAMOND_SWORD);
+        diamondSword.editMeta(meta -> {
+            meta.displayName(Component.text("Diamond Sword", NamedTextColor.WHITE, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+            List<Component> lore = new ArrayList<>();
+            lore.add(Component.text("(UNOBTAINABLE)", NamedTextColor.DARK_RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+            lore.add(Component.text("Can only be used by guards.", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+            meta.lore(lore);
+            meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        });
+        blockedRecipes.add(diamondSword);
+        ItemStack diamondHelmet = new ItemStack(Material.DIAMOND_HELMET);
+        diamondHelmet.editMeta(meta -> {
+            meta.displayName(Component.text("Diamond Helmet", NamedTextColor.WHITE, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+            List<Component> lore = new ArrayList<>();
+            lore.add(Component.text("Acquired from /tshop & Citizens+ Slots", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+            meta.lore(lore);
+            meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        });
+        blockedRecipes.add(diamondHelmet);
+        ItemStack diamondChestplate = new ItemStack(Material.DIAMOND_CHESTPLATE);
+        diamondChestplate.editMeta(meta -> {
+            meta.displayName(Component.text("Diamond Chestplate", NamedTextColor.WHITE, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+            List<Component> lore = new ArrayList<>();
+            lore.add(Component.text("Acquired from /tshop & Citizens+ Slots", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+            meta.lore(lore);
+            meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        });
+        blockedRecipes.add(diamondChestplate);
+        ItemStack diamondLeggings = new ItemStack(Material.DIAMOND_LEGGINGS);
+        diamondLeggings.editMeta(meta -> {
+            meta.displayName(Component.text("Diamond Leggings", NamedTextColor.WHITE, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+            List<Component> lore = new ArrayList<>();
+            lore.add(Component.text("Acquired from /tshop & Citizens+ Slots", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+            meta.lore(lore);
+            meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        });
+        blockedRecipes.add(diamondLeggings);
+        ItemStack diamondBoots = new ItemStack(Material.DIAMOND_BOOTS);
+        diamondBoots.editMeta(meta -> {
+            meta.displayName(Component.text("Diamond Boots", NamedTextColor.WHITE, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+            List<Component> lore = new ArrayList<>();
+            lore.add(Component.text("Acquired from /tshop & Citizens+ Slots", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+            meta.lore(lore);
+            meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        });
+        blockedRecipes.add(diamondBoots);
+        ItemStack hopper = new ItemStack(Material.HOPPER);
+        hopper.editMeta(meta -> {
+            meta.displayName(Component.text("Hopper", NamedTextColor.WHITE, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+            List<Component> lore = new ArrayList<>();
+            lore.add(Component.text("Acquired from /tshop, Vote/Event Crate & Citizens+ Slots", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+            meta.lore(lore);
+        });
+        blockedRecipes.add(hopper);
+        ItemStack beacon = new ItemStack(Material.BEACON);
+        beacon.editMeta(meta -> {
+            meta.displayName(Component.text("Beacon", NamedTextColor.WHITE, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+            List<Component> lore = new ArrayList<>();
+            lore.add(Component.text("Acquired from /tshop, Vote/Event Crate & Citizens+ Slots", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+            meta.lore(lore);
+        });
+        blockedRecipes.add(beacon);
+        ItemStack recoveryCompass = new ItemStack(Material.RECOVERY_COMPASS);
+        recoveryCompass.editMeta(meta -> {
+            meta.displayName(Component.text("Recovery Compass", NamedTextColor.WHITE, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+            List<Component> lore = new ArrayList<>();
+            lore.add(Component.text("Acquired from Vote Crate", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+            meta.lore(lore);
+        });
+        blockedRecipes.add(recoveryCompass);
+        ItemStack shulkerBox = new ItemStack(Material.SHULKER_BOX);
+        shulkerBox.editMeta(meta -> {
+            meta.displayName(Component.text("Shulker Box", NamedTextColor.WHITE, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+            List<Component> lore = new ArrayList<>();
+            lore.add(Component.text("Acquired from /tshop, Vote Crate & Citizens+ Slots", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+            meta.lore(lore);
+        });
+        blockedRecipes.add(shulkerBox);
+    }
+    private void loadInfoRecipes() {
+        addInfoRecipe("iron_sword", "I", "I", "S");
+        addInfoRecipe("iron_helmet", "III", "I I");
+        addInfoRecipe("iron_chestplate", "I I", "III", "III");
+        addInfoRecipe("iron_leggings", "III", "I I", "I I");
+        addInfoRecipe("iron_boots", "I I", "I I");
 
-        blockedRecipes.add(Material.DIAMOND_SWORD);
-        blockedRecipes.add(Material.DIAMOND_HELMET);
-        blockedRecipes.add(Material.DIAMOND_CHESTPLATE);
-        blockedRecipes.add(Material.DIAMOND_LEGGINGS);
-        blockedRecipes.add(Material.DIAMOND_BOOTS);
+        addInfoRecipe("diamond_sword", "D", "D", "S");
+        addInfoRecipe("diamond_helmet", "DDD", "D D");
+        addInfoRecipe("diamond_chestplate", "D D", "DDD", "DDD");
+        addInfoRecipe("diamond_leggings", "DDD", "D D", "D D");
+        addInfoRecipe("diamond_boots", "D D", "D D");
 
-        blockedRecipes.add(Material.ANVIL);
-        blockedRecipes.add(Material.HOPPER);
-        blockedRecipes.add(Material.BEACON);
-        blockedRecipes.add(Material.RECOVERY_COMPASS);
-        blockedRecipes.add(Material.SHULKER_BOX);
+        addInfoRecipe("anvil", "BBB", " I ", "III");
+        addInfoRecipe("hopper", "I I", "ICI", " I ");
+        addInfoRecipe("beacon", "GGG", "GNG", "OOO");
+        addInfoRecipe("recovery_compass", "EEE", "ECE", "EEE");
+        addInfoRecipe("shulker_box", "L", "C", "L");
+    }
+    private void addInfoRecipe(String keyName, String... shape) {
+        ItemStack infoItem = new ItemStack(Material.DIRT);
+        infoItem.editMeta(meta -> {
+            meta.displayName(Component.text("Recipe Removed!", NamedTextColor.DARK_RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+            List<Component> lore = new ArrayList<>();
+            lore.add(Component.text("This recipe has been removed.", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+            lore.add(Component.text("Check /customrecipes for alternatives.", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+            meta.lore(lore);
+        });
+        NamespacedKey key = new NamespacedKey(plugin, "info_" + keyName);
+        ShapedRecipe infoRecipe = new ShapedRecipe(key, infoItem);
+        infoRecipe.shape(shape);
+        if (Arrays.stream(shape).anyMatch(s -> s.contains("I"))) {
+            infoRecipe.setIngredient('I', Material.IRON_INGOT);
+        }
+        if (Arrays.stream(shape).anyMatch(s -> s.contains("B"))) {
+            infoRecipe.setIngredient('B', Material.IRON_BLOCK);
+        }
+        if (Arrays.stream(shape).anyMatch(s -> s.contains("D"))) {
+            infoRecipe.setIngredient('D', Material.DIAMOND);
+        }
+        if (Arrays.stream(shape).anyMatch(s -> s.contains("S"))) {
+            infoRecipe.setIngredient('S', Material.STICK);
+        }
+        if (Arrays.stream(shape).anyMatch(s -> s.contains("C"))) {
+            infoRecipe.setIngredient('C', Material.CHEST);
+        }
+        if (Arrays.stream(shape).anyMatch(s -> s.contains("L"))) {
+            infoRecipe.setIngredient('L', Material.SHULKER_SHELL);
+        }
+        if (Arrays.stream(shape).anyMatch(s -> s.contains("G"))) {
+            infoRecipe.setIngredient('G', Material.GLASS);
+        }
+        if (Arrays.stream(shape).anyMatch(s -> s.contains("O"))) {
+            infoRecipe.setIngredient('O', Material.OBSIDIAN);
+        }
+        if (Arrays.stream(shape).anyMatch(s -> s.contains("N"))) {
+            infoRecipe.setIngredient('N', Material.NETHER_STAR);
+        }
+        if (Arrays.stream(shape).anyMatch(s -> s.contains("E"))) {
+            infoRecipe.setIngredient('E', Material.ECHO_SHARD);
+        }
+        plugin.getServer().addRecipe(infoRecipe);
+        infoRecipes.add(key);
     }
 }

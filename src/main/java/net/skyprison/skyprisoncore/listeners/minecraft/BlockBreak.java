@@ -118,7 +118,7 @@ public class BlockBreak implements Listener {
                     if (bType.equals(Material.SUGAR_CANE) && notCell) {
                         if (block.getRelative(BlockFace.DOWN, 1).getType().equals(Material.SUGAR_CANE))
                             event.setCancelled(false);
-                    } else if (bType.equals(Material.TALL_GRASS) || bType.equals(Material.GRASS) || bType.equals(Material.LARGE_FERN) || bType.equals(Material.FERN)) {
+                    } else if (bType.equals(Material.TALL_GRASS) || bType.equals(Material.SHORT_GRASS) || bType.equals(Material.LARGE_FERN) || bType.equals(Material.FERN)) {
                         List<Location> shinyLocs = plugin.shinyGrass;
                         if (!shinyLocs.isEmpty()) {
                             for (Location shinyLoc : shinyLocs) {

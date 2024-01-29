@@ -842,6 +842,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PlayerItemConsume(this), this);
         pm.registerEvents(new Votifier(this, db), this);
         pm.registerEvents(new PlayerSwapHandItems(this), this);
+        pm.registerEvents(new CraftItem(), this);
 
         pm.registerEvents(new AsyncChat(this, discApi, db, new Tags(this, db), new ItemLore(this)), this);
         pm.registerEvents(new PlayerQuit(this, db, discApi, dailyMissions), this);

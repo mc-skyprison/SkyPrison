@@ -58,7 +58,6 @@ public class BlockPlace implements Listener {
         this.dm = dm;
         this.db = db;
     }
-
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
         Player player = event.getPlayer();

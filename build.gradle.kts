@@ -35,7 +35,7 @@ dependencies {
     implementation("cloud.commandframework", "cloud-paper", "1.8.4")
     implementation("cloud.commandframework", "cloud-minecraft-extras", "1.8.4")
     compileOnly("org.jetbrains:annotations:24.0.0")
-    compileOnly("org.purpurmc.purpur:purpur-api:1.20.2-R0.1-SNAPSHOT")
+    compileOnly("org.purpurmc.purpur:purpur-api:1.20.4-R0.1-SNAPSHOT")
     compileOnly("net.luckperms:api:5.4")
     compileOnly("me.neznamy:tab-api:4.0.2") // Used for PvP
     compileOnly("com.github.DieReicheErethons:Brewery:3.1.1")

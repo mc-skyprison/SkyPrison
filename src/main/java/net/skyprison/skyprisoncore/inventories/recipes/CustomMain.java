@@ -38,7 +38,7 @@ public class CustomMain implements CustomInventory {
                 ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
                 redPane.editMeta(meta -> meta.displayName(Component.text(" ")));
                 inventory.setItem(i, redPane);
-            } else if (i < 8 || i > 45 && i < 53) {
+            } else if (i < 8 || i > 18 && i < 26) {
                 ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
                 blackPane.editMeta(meta -> meta.displayName(Component.text(" ")));
                 inventory.setItem(i, blackPane);
