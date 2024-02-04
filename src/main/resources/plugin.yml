@@ -15,11 +15,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.sponge
     permission-message: §4Error:§c You do not have permission to execute this command...
-  endupgrade:
-    description: Opens the end upgrade GUI
-    usage: /<command>
-    permission: skyprisoncore.command.endupgrade
-    permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Killinfo Commands
   #
@@ -37,13 +32,8 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.removeitalics
     permission-message: §4Error:§c You do not have permission to execute this command...
-  daily:
-    description: Opens the daily reward GUI
-    usage: /<command>
-    permission: skyprisoncore.command.daily
-    permission-message: §4Error:§c You do not have permission to execute this command...
   skyplot:
-    description: Opens the daily reward GUI
+    description: Opens the skyplot GUI
     usage: /<command>
     permission: skyprisoncore.command.skyplot
     permission-message: §4Error:§c You do not have permission to execute this command...
@@ -114,10 +104,6 @@ permissions:
   #
   skyprisoncore.command.killinfo:
     description: Gives access to /killinfo
-  skyprisoncore.command.endupgrade:
-    description: Gives access to /endupgrade
-  skyprisoncore.command.daily:
-    description: Gives access to /daily
   skyprisoncore.command.removeitalics:
     description: Gives access to /removeitalics
   skyprisoncore.command.skyplot:

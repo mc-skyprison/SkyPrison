@@ -1,9 +1,11 @@
-package net.skyprison.skyprisoncore.inventories;
+package net.skyprison.skyprisoncore.inventories.misc;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.inventories.ClickBehavior;
+import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;

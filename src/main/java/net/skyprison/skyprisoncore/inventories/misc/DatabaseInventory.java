@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.inventories;
+package net.skyprison.skyprisoncore.inventories.misc;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -7,6 +7,8 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.inventories.ClickBehavior;
+import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Material;
@@ -23,7 +25,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
-public class DatabaseInventory implements CustomInventory{
+public class DatabaseInventory implements CustomInventory {
     private final Inventory inventory;
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;

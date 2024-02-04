@@ -9,7 +9,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.inventories.DatabaseInventory;
+import net.skyprison.skyprisoncore.inventories.misc.DatabaseInventory;
 import net.skyprison.skyprisoncore.utils.CustomInvUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;

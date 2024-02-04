@@ -15,13 +15,14 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.inventories.DatabaseInventory;
 import net.skyprison.skyprisoncore.inventories.economy.BountiesList;
 import net.skyprison.skyprisoncore.inventories.economy.BuyBack;
 import net.skyprison.skyprisoncore.inventories.economy.EconomyCheck;
 import net.skyprison.skyprisoncore.inventories.economy.MoneyHistory;
 import net.skyprison.skyprisoncore.inventories.economy.tokens.TokensCheck;
 import net.skyprison.skyprisoncore.inventories.economy.tokens.TokensHistory;
+import net.skyprison.skyprisoncore.inventories.misc.Daily;
+import net.skyprison.skyprisoncore.inventories.misc.DatabaseInventory;
 import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
@@ -66,6 +67,13 @@ public class EconomyCommands {
         return bd.doubleValue();
     }
     private void createMiscCommands() {
+        manager.command(manager.commandBuilder("daily")
+                .senderType(Player.class)
+                .permission("skyprisoncore.command.daily")
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new Daily(db, player).getInventory()));
+                }));
         manager.command(manager.commandBuilder("buyback")
                 .senderType(Player.class)
                 .permission("skyprisoncore.command.buyback")

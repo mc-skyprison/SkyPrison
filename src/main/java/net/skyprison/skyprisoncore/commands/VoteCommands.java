@@ -9,7 +9,7 @@ import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.inventories.VoteHistory;
+import net.skyprison.skyprisoncore.inventories.misc.VoteHistory;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;

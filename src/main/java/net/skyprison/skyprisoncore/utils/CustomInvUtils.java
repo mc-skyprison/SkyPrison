@@ -6,7 +6,7 @@ import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
+import net.skyprison.skyprisoncore.inventories.misc.DatabaseInventoryEdit;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

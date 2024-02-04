@@ -41,9 +41,9 @@ import net.luckperms.api.LuckPermsProvider;
 import net.skyprison.skyprisoncore.commands.*;
 import net.skyprison.skyprisoncore.commands.old.*;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
-import net.skyprison.skyprisoncore.inventories.DatabaseInventoryEdit;
-import net.skyprison.skyprisoncore.inventories.NewsMessageEdit;
 import net.skyprison.skyprisoncore.inventories.mail.MailBoxSend;
+import net.skyprison.skyprisoncore.inventories.misc.DatabaseInventoryEdit;
+import net.skyprison.skyprisoncore.inventories.misc.NewsMessageEdit;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsCategoryEdit;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsEdit;
 import net.skyprison.skyprisoncore.inventories.smith.BlacksmithTrimmer;
@@ -771,7 +771,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, db));
         Objects.requireNonNull(getCommand("killinfo")).setExecutor(new KillInfo(db));
 
-        Objects.requireNonNull(getCommand("daily")).setExecutor(new Daily(this, db));
         Objects.requireNonNull(getCommand("removeitalics")).setExecutor(new RemoveItalics(this));
         Objects.requireNonNull(getCommand("skyplot")).setExecutor(new SkyPlot(this));
         Objects.requireNonNull(getCommand("plot")).setExecutor(new PlotTeleport(this));
@@ -796,8 +795,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EntityDamageByEntity(this), this);
         pm.registerEvents(new EntityDeath(this, db, dailyMissions), this);
         pm.registerEvents(new EntityPickupItem(this), this);
-        pm.registerEvents(new InventoryClick(this, new Daily(this, db),
-                db, new Tags(this, db), particles), this);
+        pm.registerEvents(new InventoryClick(this, db, new Tags(this, db), particles), this);
         pm.registerEvents(new InventoryOpen(this), this);
         pm.registerEvents(new LeavesDecay(), this);
         pm.registerEvents(new McMMOLevelUp(this), this);

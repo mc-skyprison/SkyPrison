@@ -25,10 +25,9 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.commands.old.Daily;
 import net.skyprison.skyprisoncore.commands.old.News;
 import net.skyprison.skyprisoncore.commands.old.Tags;
-import net.skyprison.skyprisoncore.inventories.*;
+import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimFlags;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimFlagsMobs;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimMembers;
@@ -40,6 +39,7 @@ import net.skyprison.skyprisoncore.inventories.economy.MoneyHistory;
 import net.skyprison.skyprisoncore.inventories.economy.tokens.TokensCheck;
 import net.skyprison.skyprisoncore.inventories.economy.tokens.TokensHistory;
 import net.skyprison.skyprisoncore.inventories.mail.*;
+import net.skyprison.skyprisoncore.inventories.misc.*;
 import net.skyprison.skyprisoncore.inventories.recipes.BlockedRecipes;
 import net.skyprison.skyprisoncore.inventories.recipes.CustomMain;
 import net.skyprison.skyprisoncore.inventories.recipes.CustomRecipe;
@@ -86,14 +86,12 @@ import java.util.concurrent.TimeUnit;
 
 public class InventoryClick implements Listener {
     private final SkyPrisonCore plugin;
-    private final Daily daily;
     private final DatabaseHook db;
     private final Tags tag;
     private final PlayerParticlesAPI particles;
 
-    public InventoryClick(SkyPrisonCore plugin, Daily daily, DatabaseHook db, Tags tag, PlayerParticlesAPI particles) {
+    public InventoryClick(SkyPrisonCore plugin, DatabaseHook db, Tags tag, PlayerParticlesAPI particles) {
         this.plugin = plugin;
-        this.daily = daily;
         this.db = db;
         this.tag = tag;
         this.particles = particles;
@@ -1853,6 +1851,49 @@ public class InventoryClick implements Listener {
                             }
                         }
                     }
+                    case Daily inv -> {
+                        if(event.getSlot() != 13 || currItem == null || !currItem.getType().equals(Material.CHEST_MINECART)) return;
+
+                        int currStreak = inv.getCurrStreak();
+                        int highestStreak = inv.getHighestStreak();
+                        int totalCollected = inv.getTotalCollected();
+                        String lastColl = inv.getLastCollected();
+
+                        int tReward = new Random().nextInt(25) + 25;
+                        if ((currStreak + 1) % 7 == 0) {
+                            tReward = 250;
+                        }
+
+                        int randInt = new Random().nextInt(1000);
+                        if (randInt == 666) {
+                            tReward = randInt;
+                        }
+
+                        int nCurrStreak = currStreak + 1;
+                        int nTotalCollected = totalCollected + 1;
+
+                        Date date = new Date();
+                        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+                        String currDate = formatter.format(date);
+
+                        boolean newHigh = lastColl.isEmpty() || currStreak >= highestStreak;
+                        String sql = !lastColl.isEmpty() ? "UPDATE dailies SET current_streak = ?, total_collected = ?, last_collected = ?" +
+                                (newHigh ? ", highest_streak = ?" : "") + " WHERE user_id = ?"
+                                : "INSERT INTO dailies (current_streak, total_collected, last_collected, highest_streak, user_id) VALUES (?, ?, ?, ?, ?)";
+
+                        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+                            ps.setInt(1, nCurrStreak);
+                            ps.setInt(2, nTotalCollected);
+                            ps.setString(3, currDate);
+                            if(newHigh) ps.setInt(4, nCurrStreak);
+                            ps.setString(newHigh ? 5 : 4, player.getUniqueId().toString());
+                            ps.executeUpdate();
+                            TokenUtils.addTokens(player.getUniqueId(), tReward, "Daily Reward", currStreak + " Days");
+                            player.openInventory(new Daily(db, player).getInventory());
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+                    }
                     default -> {
                     }
                 }
@@ -1888,91 +1929,6 @@ public class InventoryClick implements Listener {
                             if (clickCheck == 1) {
                                 event.setCancelled(true);
                                 switch (Objects.requireNonNull(guiType)) {
-                                    case "daily-reward":
-                                        if (event.getClickedInventory().getItem(event.getSlot()).getType().equals(Material.MINECART)) {
-                                            player.sendMessage(Component.text("You've already collected the daily reward!", NamedTextColor.RED));
-                                        } else if (event.getClickedInventory().getItem(event.getSlot()).getType().equals(Material.CHEST_MINECART)) {
-                                            int currStreak = 0;
-                                            int highestStreak = 0;
-                                            int totalCollected = 0;
-                                            String lastColl = "";
-                                            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
-                                                    "SELECT current_streak, highest_streak, total_collected, last_collected FROM dailies WHERE user_id = ?")) {
-                                                ps.setString(1, player.getUniqueId().toString());
-                                                ResultSet rs = ps.executeQuery();
-                                                while (rs.next()) {
-                                                    currStreak = rs.getInt(1);
-                                                    highestStreak = rs.getInt(2);
-                                                    totalCollected = rs.getInt(3);
-                                                    lastColl = rs.getString(4);
-                                                }
-                                            } catch (SQLException e) {
-                                                e.printStackTrace();
-                                            }
-
-                                            Random rand = new Random();
-                                            int tReward = rand.nextInt(25) + 25;
-
-                                            if ((currStreak + 1) % 7 == 0) {
-                                                tReward = 250;
-                                            }
-
-                                            Random rand2 = new Random();
-                                            int randInt = rand2.nextInt(1000) + 1;
-                                            if (randInt == 666) {
-                                                tReward = randInt;
-                                            }
-
-                                            TokenUtils.addTokens(player.getUniqueId(), tReward, "Daily Reward", currStreak + " Days");
-
-                                            int nCurrStreak = currStreak + 1;
-                                            int nTotalCollected = totalCollected + 1;
-
-                                            Date date = new Date();
-                                            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-                                            String currDate = formatter.format(date);
-
-                                            if (!lastColl.isEmpty()) {
-                                                if (currStreak >= highestStreak) {
-                                                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE dailies " +
-                                                            "SET current_streak = ?, highest_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?")) {
-                                                        ps.setInt(1, nCurrStreak);
-                                                        ps.setInt(2, nCurrStreak);
-                                                        ps.setString(3, currDate);
-                                                        ps.setInt(4, nTotalCollected);
-                                                        ps.setString(5, user.getUniqueId().toString());
-                                                        ps.executeUpdate();
-                                                    } catch (SQLException e) {
-                                                        e.printStackTrace();
-                                                    }
-                                                } else {
-                                                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE dailies " +
-                                                            "SET current_streak = ?, last_collected = ?, total_collected = ? WHERE user_id = ?")) {
-                                                        ps.setInt(1, nCurrStreak);
-                                                        ps.setString(2, currDate);
-                                                        ps.setInt(3, nTotalCollected);
-                                                        ps.setString(4, user.getUniqueId().toString());
-                                                        ps.executeUpdate();
-                                                    } catch (SQLException e) {
-                                                        e.printStackTrace();
-                                                    }
-                                                }
-                                            } else {
-                                                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO dailies " +
-                                                        "(user_id, current_streak, total_collected, highest_streak, last_collected) VALUES (?, ?, ?, ?, ?)")) {
-                                                    ps.setString(1, user.getUniqueId().toString());
-                                                    ps.setInt(2, nCurrStreak);
-                                                    ps.setInt(3, nTotalCollected);
-                                                    ps.setInt(4, nCurrStreak);
-                                                    ps.setString(5, currDate);
-                                                    ps.executeUpdate();
-                                                } catch (SQLException e) {
-                                                    e.printStackTrace();
-                                                }
-                                            }
-                                            daily.openGUI(player);
-                                        }
-                                        break;
                                     case "plotteleport":
                                         if (clickInv.getItem(event.getSlot()) != null) {
                                             ItemStack itemClick = clickInv.getItem(event.getSlot());

@@ -6,7 +6,7 @@ import cloud.commandframework.paper.PaperCommandManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.inventories.Referral;
+import net.skyprison.skyprisoncore.inventories.misc.Referral;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import net.skyprison.skyprisoncore.utils.TokenUtils;
