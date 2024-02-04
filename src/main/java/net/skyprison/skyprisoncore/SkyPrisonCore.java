@@ -771,8 +771,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, db));
         Objects.requireNonNull(getCommand("killinfo")).setExecutor(new KillInfo(db));
 
-        Objects.requireNonNull(getCommand("ignoretp")).setExecutor(new IgnoreTeleport(this, db));
-
         Objects.requireNonNull(getCommand("daily")).setExecutor(new Daily(this, db));
         Objects.requireNonNull(getCommand("removeitalics")).setExecutor(new RemoveItalics(this));
         Objects.requireNonNull(getCommand("skyplot")).setExecutor(new SkyPlot(this));

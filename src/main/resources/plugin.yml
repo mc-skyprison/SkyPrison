@@ -7,12 +7,6 @@ api-version: "$apiVersion"
 website: https://skyprison.net/
 depend: [WorldGuard, WorldEdit, PlaceholderAPI, CMI, Parkour, ShopGUIPlus, CoreProtect, PvPManager, AdvancedRegionMarket]
 commands:
-  ignoretp:
-    description: Ignore someones tpa requests
-    aliases: [tpignore]
-    usage: /<command>
-    permission: skyprisoncore.command.ignoretp
-    permission-message: §4Error:§c You do not have permission to execute this command...
   #
   # Minigame Commands
   #

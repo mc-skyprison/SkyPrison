@@ -176,7 +176,7 @@ public class EconomyCommands {
                         Component blockMsg = Component.text("---=== ", NamedTextColor.AQUA).append(Component.text("Blocked Items", NamedTextColor.RED, TextDecoration.BOLD))
                                 .append(Component.text(" ===---", NamedTextColor.AQUA));
                         for(String blockedSale : blockedSales) {
-                            blockMsg = blockMsg.append(Component.text("\n-", NamedTextColor.AQUA).append(Component.text(blockedSale, NamedTextColor.DARK_AQUA)));
+                            blockMsg = blockMsg.append(Component.text("\n- ", NamedTextColor.AQUA).append(Component.text(blockedSale, NamedTextColor.DARK_AQUA)));
                         }
                         player.sendMessage(blockMsg);
                     } else {

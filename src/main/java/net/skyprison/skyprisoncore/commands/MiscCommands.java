@@ -1,6 +1,8 @@
 package net.skyprison.skyprisoncore.commands;
 
+import cloud.commandframework.Command;
 import cloud.commandframework.arguments.standard.IntegerArgument;
+import cloud.commandframework.arguments.standard.StringArgument;
 import cloud.commandframework.paper.PaperCommandManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -12,6 +14,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.recipes.CustomMain;
 import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -20,10 +23,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class MiscCommands {
@@ -55,6 +55,77 @@ public class MiscCommands {
                     Player player = (Player) c.getSender();
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new CustomMain().getInventory()));
                 }));
+
+        Command.Builder<CommandSender> ignoreTp = manager.commandBuilder("ignoreteleport", "ignoretp")
+                .senderType(Player.class)
+                .permission("skyprisoncore.command.ignoretp");
+        manager.command(ignoreTp);
+
+        manager.command(ignoreTp.literal("list")
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    List<UUID> ignoredPlayers = getIgnoredTps(player);
+                    if(!ignoredPlayers.isEmpty()) {
+                        Component ignoreMsg = Component.text("---=== ", NamedTextColor.AQUA).append(Component.text("Ignoring Teleports", NamedTextColor.RED, TextDecoration.BOLD))
+                                .append(Component.text(" ===---", NamedTextColor.AQUA));
+                        for(UUID ignoredPlayer : ignoredPlayers) {
+                            ignoreMsg = ignoreMsg.append(Component.text("\n- ", NamedTextColor.AQUA).append(Component.text(
+                                    Objects.requireNonNullElse(PlayerManager.getPlayerName(ignoredPlayer), "NULL"), NamedTextColor.DARK_AQUA)));
+                        }
+                        player.sendMessage(ignoreMsg);
+                    } else {
+                        player.sendMessage(Component.text("You havn't ignored any players!", NamedTextColor.RED));
+                    }
+                }));
+
+        manager.command(ignoreTp.argument(StringArgument.of("player"))
+                .handler(c -> {
+                    Player player = (Player) c.getSender();
+                    String target = c.get("player");
+                    if(target.equalsIgnoreCase(player.getName())) {
+                        player.sendMessage(Component.text("You can't ignore yourself!", NamedTextColor.RED));
+                        return;
+                    }
+                    UUID targetId = PlayerManager.getPlayerId(target);
+                    if(targetId == null) {
+                        player.sendMessage(Component.text("Player not found!", NamedTextColor.RED));
+                        return;
+                    }
+                    if(PlayerManager.hasPermission(targetId, "skyprisoncore.command.ignoreteleport.bypass")) {
+                        player.sendMessage(Component.text("You can't ignore this player!", NamedTextColor.RED));
+                        return;
+                    }
+                    List<UUID> ignoredPlayers = getIgnoredTps(player);
+
+                    boolean isIgnored = ignoredPlayers.contains(targetId);
+
+                    String sql = isIgnored ? "DELETE FROM teleport_ignore WHERE user_id = ? AND ignore_id = ?" : "INSERT INTO teleport_ignore (user_id, ignore_id) VALUES (?, ?)";
+                    Component msg = Component.text("Successfully ", NamedTextColor.GREEN).append(Component.text(isIgnored ? "REMOVED" : "ADDED",
+                            NamedTextColor.GREEN, TextDecoration.BOLD)).append(Component.text(" " + target, NamedTextColor.GREEN))
+                            .append(Component.text((isIgnored ? " from" : " to") + " your teleport ignore list!", NamedTextColor.GREEN));
+
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+                        ps.setString(1, player.getUniqueId().toString());
+                        ps.setString(2, targetId.toString());
+                        ps.executeUpdate();
+                        player.sendMessage(msg);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }));
+    }
+    private List<UUID> getIgnoredTps(Player player) {
+        List<UUID> ignoredPlayers = new ArrayList<>();
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT ignore_id FROM teleport_ignore WHERE user_id = ?")) {
+            ps.setString(1, player.getUniqueId().toString());
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                ignoredPlayers.add(UUID.fromString(rs.getString(1)));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return ignoredPlayers;
     }
     private void sendFirstjoin(CommandSender sender, int page) {
         List<FirstJoin> firstJoins = new ArrayList<>();
