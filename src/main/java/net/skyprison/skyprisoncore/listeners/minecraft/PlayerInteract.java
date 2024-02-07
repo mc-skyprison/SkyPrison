@@ -156,7 +156,7 @@ public class PlayerInteract implements Listener {
                         if (Boolean.parseBoolean(types[0])) {
                             PotionMeta potionMeta = (PotionMeta) item.getItemMeta();
                             if (Boolean.parseBoolean(types[1])) {
-                                player.addPotionEffect(potionMeta.getCustomEffects().get(0));
+                                player.addPotionEffect(potionMeta.getCustomEffects().getFirst());
                                 player.sendMessage(Component.text("The bottle breaks in your hands before you throw it.. Ouch!", NamedTextColor.GRAY, TextDecoration.ITALIC));
                                 player.getInventory().setItemInMainHand(null);
                                 event.setCancelled(true);

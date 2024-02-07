@@ -16,22 +16,8 @@ commands:
     permission: skyprisoncore.command.sponge
     permission-message: §4Error:§c You do not have permission to execute this command...
   #
-  # Killinfo Commands
-  #
-  killinfo:
-    description: Shows info about PvP
-    usage: /<command>
-    aliases: [killsinfo, killstats, pvpstats]
-    permission: skyprisoncore.command.killinfo
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  #
   # Cheese?
   #
-  removeitalics:
-    description: Removes italics from item
-    usage: /<command>
-    permission: skyprisoncore.command.removeitalics
-    permission-message: §4Error:§c You do not have permission to execute this command...
   skyplot:
     description: Opens the skyplot GUI
     usage: /<command>
@@ -48,42 +34,7 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.tags
     permission-message: §4Error:§c You do not have permission to execute this command...
-  minereset:
-    description: Tags command
-    usage: /<command>
-    permission: skyprisoncore.command.minereset
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  randomgive:
-    description: Randomgive command
-    usage: /<command>
-    permission: skyprisoncore.command.randomgive
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  namecolour:
-    description: namecolour commands
-    usage: /<command>
-    aliases: [namecolor, multicolour, multicolor, nc]
-    permission: skyprisoncore.command.namecolour
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  rename:
-    description: rename commands
-    usage: /<command>
-    permission: skyprisoncore.command.rename
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  itemlore:
-    description: itemlore commands
-    usage: /<command>
-    aliases: [ilore]
-    permission: skyprisoncore.command.itemlore
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  news:
-    description: news commands
-    usage: /<command>
-    permission: skyprisoncore.command.news
-    permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
-  skyprisoncore.command.minereset:
-    description: Gives access to minereset
-
   #
   # Guard Permissions
   #
@@ -99,13 +50,6 @@ permissions:
   #
   skyprisoncore.command.sponge:
     description: Gives acess to /sponge
-  #
-  # Killinfo Permissions
-  #
-  skyprisoncore.command.killinfo:
-    description: Gives access to /killinfo
-  skyprisoncore.command.removeitalics:
-    description: Gives access to /removeitalics
   skyprisoncore.command.skyplot:
     description: Gives access to /skyplot
   skyprisoncore.command.plotteleport:
@@ -113,12 +57,4 @@ permissions:
   skyprisoncore.command.tags:
     description: Gives access to /tags
   skyprisoncore.command.tags.admin:
-    description: Gives access to tags stuff
-  skyprisoncore.command.namecolour:
-    description: Gives access to tags stuff
-  skyprisoncore.command.rename:
-    description: Gives access to tags stuff
-  skyprisoncore.command.itemlore:
-    description: Gives access to tags stuff
-  skyprisoncore.command.news:
     description: Gives access to tags stuff

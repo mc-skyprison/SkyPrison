@@ -23,7 +23,6 @@ import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.model.user.UserManager;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.commands.old.ItemLore;
 import net.skyprison.skyprisoncore.commands.old.Tags;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimFlags;
 import net.skyprison.skyprisoncore.inventories.mail.MailBoxMembers;
@@ -33,10 +32,7 @@ import net.skyprison.skyprisoncore.inventories.misc.DatabaseInventoryEdit;
 import net.skyprison.skyprisoncore.inventories.misc.NewsMessageEdit;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsCategoryEdit;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsEdit;
-import net.skyprison.skyprisoncore.utils.ChatUtils;
-import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.NotificationsUtils;
-import net.skyprison.skyprisoncore.utils.PlayerManager;
+import net.skyprison.skyprisoncore.utils.*;
 import net.skyprison.skyprisoncore.utils.claims.ClaimFlag;
 import net.skyprison.skyprisoncore.utils.claims.ClaimUtils;
 import net.skyprison.skyprisoncore.utils.secrets.SecretsUtils;
@@ -70,14 +66,12 @@ public class AsyncChat implements Listener {
     private final DiscordApi discApi;
     private final DatabaseHook db;
     private final Tags tag;
-    private final ItemLore itemLore;
 
-    public AsyncChat(SkyPrisonCore plugin, DiscordApi discApi, DatabaseHook db, Tags tag, ItemLore itemLore) {
+    public AsyncChat(SkyPrisonCore plugin, DiscordApi discApi, DatabaseHook db, Tags tag) {
         this.plugin = plugin;
         this.discApi = discApi;
         this.db = db;
         this.tag = tag;
-        this.itemLore = itemLore;
     }
 
     @EventHandler (priority = EventPriority.LOWEST)
@@ -91,7 +85,7 @@ public class AsyncChat implements Listener {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 boolean removeChatLock = true;
                 List<Object> chatLock = plugin.chatLock.get(player.getUniqueId());
-                Object lockType = chatLock.get(0);
+                Object lockType = chatLock.getFirst();
                 if(lockType instanceof ClaimFlags inv) {
                     RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
                     RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(Objects.requireNonNull(Bukkit.getWorld(inv.getClaim().getWorld()))));
@@ -209,12 +203,12 @@ public class AsyncChat implements Listener {
 
                                 if (heldItem.equals(currHeldItem)) {
                                     player.getInventory().getItemInMainHand().lore(lore);
-                                    itemLore.displayLore(player);
+                                    new ItemLore(plugin).displayLore(player);
                                 } else {
                                     player.sendMessage(Component.text("Item in hand has changed! Cancelling..", NamedTextColor.RED));
                                 }
                             } else {
-                                itemLore.displayLore(player);
+                                new ItemLore(plugin).displayLore(player);
                             }
                         }
                         case "edit-lore" -> {
@@ -227,12 +221,12 @@ public class AsyncChat implements Listener {
                                     assert lore != null;
                                     lore.set(line - 1, MiniMessage.miniMessage().deserialize(miniMsg).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
                                     player.getInventory().getItemInMainHand().lore(lore);
-                                    itemLore.displayLore(player);
+                                    new ItemLore(plugin).displayLore(player);
                                 } else {
                                     player.sendMessage(Component.text("Item in hand has changed! Cancelling..", NamedTextColor.RED));
                                 }
                             } else {
-                                itemLore.displayLore(player);
+                                new ItemLore(plugin).displayLore(player);
                             }
                         }
                         case "news-title" -> {

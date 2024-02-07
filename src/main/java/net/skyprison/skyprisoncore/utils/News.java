@@ -1,30 +1,13 @@
-package net.skyprison.skyprisoncore.commands.old;
+package net.skyprison.skyprisoncore.utils;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.misc.NewsMessageEdit;
-import net.skyprison.skyprisoncore.inventories.misc.NewsMessages;
-import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class News implements CommandExecutor {
-    private final SkyPrisonCore plugin;
-    private final DatabaseHook db;
-    public News(SkyPrisonCore plugin, DatabaseHook db) {
-        this.plugin = plugin;
-        this.db = db;
-    }
-
-    public boolean saveMessage(NewsMessageEdit newsEdit) {
+public class News {
+    public static boolean saveNewsMessage(NewsMessageEdit newsEdit, DatabaseHook db) {
         if(newsEdit.getNewsMessage() != 0) {
             try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE news SET title = ?, content = ?, hover = ?, click_type = ?, click_data = ?,  " +
                     "permission = ?, priority = ?, last_updated = ?, limited_time = ?, limited_start = ?, limited_end = ? WHERE id = ?")) {
@@ -68,14 +51,5 @@ public class News implements CommandExecutor {
                 return false;
             }
         }
-    }
-
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
-        if(sender instanceof Player player) {
-            player.openInventory(new NewsMessages(plugin, db, player.hasPermission("skyprisoncore.command.news.edit"), 1).getInventory());
-        } else {
-            sender.sendMessage(Component.text("This command can only be used in game!", NamedTextColor.RED));
-        }
-        return true;
     }
 }

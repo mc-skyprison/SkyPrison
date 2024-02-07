@@ -1,19 +1,5 @@
 package net.skyprison.skyprisoncore;
 
-import cloud.commandframework.Command;
-import cloud.commandframework.CommandTree;
-import cloud.commandframework.arguments.standard.IntegerArgument;
-import cloud.commandframework.arguments.standard.StringArgument;
-import cloud.commandframework.bukkit.CloudBukkitCapabilities;
-import cloud.commandframework.bukkit.parsers.PlayerArgument;
-import cloud.commandframework.execution.AsynchronousCommandExecutionCoordinator;
-import cloud.commandframework.execution.CommandExecutionCoordinator;
-import cloud.commandframework.execution.FilteringCommandSuggestionProcessor;
-import cloud.commandframework.extra.confirmation.CommandConfirmationManager;
-import cloud.commandframework.minecraft.extras.AudienceProvider;
-import cloud.commandframework.minecraft.extras.MinecraftExceptionHandler;
-import cloud.commandframework.minecraft.extras.MinecraftHelp;
-import cloud.commandframework.paper.PaperCommandManager;
 import com.Zrips.CMI.CMI;
 import com.Zrips.CMI.Containers.CMIUser;
 import com.sk89q.worldguard.WorldGuard;
@@ -39,7 +25,10 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.skyprison.skyprisoncore.commands.*;
-import net.skyprison.skyprisoncore.commands.old.*;
+import net.skyprison.skyprisoncore.commands.old.PlotTeleport;
+import net.skyprison.skyprisoncore.commands.old.SkyPlot;
+import net.skyprison.skyprisoncore.commands.old.Sponge;
+import net.skyprison.skyprisoncore.commands.old.Tags;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.inventories.mail.MailBoxSend;
 import net.skyprison.skyprisoncore.inventories.misc.DatabaseInventoryEdit;
@@ -86,7 +75,6 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -95,6 +83,13 @@ import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.incendo.cloud.Command;
+import org.incendo.cloud.bukkit.CloudBukkitCapabilities;
+import org.incendo.cloud.execution.ExecutionCoordinator;
+import org.incendo.cloud.minecraft.extras.MinecraftExceptionHandler;
+import org.incendo.cloud.minecraft.extras.MinecraftHelp;
+import org.incendo.cloud.paper.PaperCommandManager;
+import org.incendo.cloud.suggestion.SuggestionProvider;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.intent.Intent;
@@ -107,7 +102,8 @@ import org.javacord.api.interaction.SlashCommandOption;
 import org.javacord.api.interaction.SlashCommandOptionType;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -117,9 +113,11 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static org.incendo.cloud.bukkit.parser.PlayerParser.playerParser;
+import static org.incendo.cloud.parser.standard.IntegerParser.integerParser;
+import static org.incendo.cloud.parser.standard.StringParser.stringParser;
 
 public class SkyPrisonCore extends JavaPlugin {
     public HashMap<UUID, Boolean> flyPvP = new HashMap<>();
@@ -156,18 +154,11 @@ public class SkyPrisonCore extends JavaPlugin {
     public List<UUID> secretCategoryChanges = new ArrayList<>();
     public HashMap<UUID, MailBoxSend> mailSend = new HashMap<>();
     public static DatabaseHook db;
-    public HashMap<UUID, LinkedHashMap<String, Integer>> shopLogAmountPlayer = new HashMap<>();
-    public HashMap<UUID, LinkedHashMap<String, Double>> shopLogPricePlayer = new HashMap<>();
-    public HashMap<UUID, LinkedHashMap<String, Integer>> shopLogPagePlayer = new HashMap<>();
-    public HashMap<UUID, LinkedHashMap<String, Integer>> tokenLogUsagePlayer = new HashMap<>();
-    public HashMap<UUID, LinkedHashMap<String, Integer>> tokenLogAmountPlayer = new HashMap<>();
-    public HashMap<UUID, LinkedHashMap<String, Integer>> tokenLogPagePlayer = new HashMap<>();
     private final ScheduledExecutorService dailyExecutor = Executors.newSingleThreadScheduledExecutor();
     public static final HashMap<UUID, JailTimer> currentlyJailed = new HashMap<>();
     public static final HashMap<Audience, Audience> lastMessaged = new HashMap<>();
     private PaperCommandManager<CommandSender> manager;
     private MinecraftHelp<CommandSender> minecraftHelp;
-    private CommandConfirmationManager<CommandSender> confirmationManager;
     public static final HashMap<UUID, Long> bribeCooldown = new HashMap<>();
     public static final HashMap<UUID, Long> bountyCooldown = new HashMap<>();
     public static final HashMap<UUID, Integer> safezoneViolators = new HashMap<>();
@@ -240,49 +231,23 @@ public class SkyPrisonCore extends JavaPlugin {
 
         new ClaimUtils(this, db).initializeData();
 
-        final Function<CommandTree<CommandSender>, CommandExecutionCoordinator<CommandSender>> executionCoordinatorFunction =
-                AsynchronousCommandExecutionCoordinator.<CommandSender>builder().build();
+        manager = PaperCommandManager.createNative(this, ExecutionCoordinator.simpleCoordinator());
 
-        final Function<CommandSender, CommandSender> mapperFunction = Function.identity();
-        try {
-            manager = new PaperCommandManager<>(this, executionCoordinatorFunction, mapperFunction, mapperFunction);
-        } catch (final Exception e) {
-            getLogger().severe("Failed to initialize the command manager!");
-            getServer().getPluginManager().disablePlugin(this);
-            return;
-        }
 
-        manager.commandSuggestionProcessor(new FilteringCommandSuggestionProcessor<>(
-                FilteringCommandSuggestionProcessor.Filter.<CommandSender>contains(true).andTrimBeforeLastSpace()
-        ));
-
-        minecraftHelp = new MinecraftHelp<>( "/spc help", AudienceProvider.nativeAudience(), manager);
-
-        if (manager.hasCapability(CloudBukkitCapabilities.BRIGADIER)) {
+        if (manager.hasCapability(CloudBukkitCapabilities.NATIVE_BRIGADIER)) {
             manager.registerBrigadier();
-        }
-
-        if (manager.hasCapability(CloudBukkitCapabilities.ASYNCHRONOUS_COMPLETION)) {
+        } else if (manager.hasCapability(CloudBukkitCapabilities.ASYNCHRONOUS_COMPLETION)) {
             manager.registerAsynchronousCompletions();
         }
+        minecraftHelp = MinecraftHelp.createNative("/spc help", manager);
 
-        confirmationManager = new CommandConfirmationManager<>(30L, TimeUnit.SECONDS,
-                context -> context.getCommandContext().getSender().sendMessage(Component.text("Confirmation required. Confirm using /example confirm.", NamedTextColor.RED)),
-                sender -> sender.sendMessage(Component.text("You don't have any pending commands.", NamedTextColor.RED))
-        );
-
-        confirmationManager.registerConfirmationProcessor(manager);
-
-        new MinecraftExceptionHandler<CommandSender>()
-                .withInvalidSenderHandler()
-                .withNoPermissionHandler()
-                .withArgumentParsingHandler()
-                .withCommandExecutionHandler()
-                .withDecorator(component -> Component.text()
-                        .append(pluginPrefix)
-                        .append(Component.text(" » ", NamedTextColor.DARK_GRAY))
-                        .append(component).build()
-                ).apply(manager, AudienceProvider.nativeAudience());
+        MinecraftExceptionHandler.<CommandSender>createNative()
+                .defaultHandlers()
+                .decorator(component -> Component.text()
+                                .append(pluginPrefix)
+                                .append(Component.text(" » ", NamedTextColor.DARK_GRAY))
+                                .append(component).build()
+                ).registerTo(manager);
 
         registerCommands();
         registerEvents();
@@ -412,7 +377,7 @@ public class SkyPrisonCore extends JavaPlugin {
     @Override
     public void onDisable() {
         if(!shinyGrass.isEmpty()) {
-            particles.removeFixedEffectsInRange(shinyGrass.get(0), 1000);
+            particles.removeFixedEffectsInRange(shinyGrass.getFirst(), 1000);
         }
         if(discApi != null && discApi.getServerTextChannelById("788108242797854751").isPresent()) {
             try {
@@ -565,22 +530,14 @@ public class SkyPrisonCore extends JavaPlugin {
     }
 
     public void registerCommands() {
-        manager.command(
-                manager.commandBuilder("spc")
-                        .literal("help")
-                        .argument(StringArgument.optional("query", StringArgument.StringMode.GREEDY))
-                        .handler(context -> minecraftHelp.queryCommands(context.getOrDefault("query", ""), context.getSender()))
-        );
-
         Command.Builder<CommandSender> treefeller = manager.commandBuilder("treefeller")
                 .permission("skyprisoncore.command.treefeller");
         List<String> treefellerOptions = List.of("axe", "speed", "cooldown", "durability", "repair");
         manager.command(treefeller.literal("give")
                 .permission("skyprisoncore.command.treefeller.give")
-                .argument(PlayerArgument.of("player"))
-                .argument(StringArgument.<CommandSender>builder("type")
-                        .withSuggestionsProvider((commandSenderCommandContext, s) -> treefellerOptions))
-                .argument(IntegerArgument.of("amount"))
+                .required("player", playerParser())
+                .required("type", stringParser(), SuggestionProvider.suggestingStrings(treefellerOptions))
+                .required("amount", integerParser(1))
                 .handler(c -> {
                     final Player player = c.get("player");
                     final String type = c.get("type");
@@ -595,49 +552,51 @@ public class SkyPrisonCore extends JavaPlugin {
                             treeItem = TreeFeller.getUpgradeItem(this, type, amount);
                         }
                         PlayerManager.giveItems(player, treeItem);
-                        c.getSender().sendMessage(Component.text("Successfully sent!"));
+                        c.sender().sendMessage(Component.text("Successfully sent!"));
                     }
                 }));
 
         List<String> blacksmithOptions = List.of("astrid", "end", "trim");
         manager.command(manager.commandBuilder("blacksmith")
                 .permission("skyprisoncore.command.blacksmith")
-                .argument(StringArgument.<CommandSender>builder("blacksmith")
-                        .withSuggestionsProvider((commandSenderCommandContext, s) -> blacksmithOptions))
-                .argument(PlayerArgument.optional("player"))
+                .required("blacksmith", stringParser(), SuggestionProvider.suggestingStrings(blacksmithOptions))
+                .optional("player", playerParser())
                 .handler(c -> Bukkit.getScheduler().runTask(this, () -> {
-                    Player player = c.getOptional("player").isPresent() ? (Player) c.getOptional("player").get() : c.getSender() instanceof Player ? (Player) c.getSender() : null;
+                    Player player = c.getOrDefault("player", null);
+                    if(player == null && c.sender() instanceof Player) {
+                        player = (Player) c.sender();
+                    }
+
                     if(player != null) {
                         final String blacksmith = c.get("blacksmith");
                         CustomInventory inv = openBlacksmith(blacksmith, player);
                         if (inv != null) {
                             player.openInventory(inv.getInventory());
                         } else {
-                            c.getSender().sendMessage(Component.text("Invalid Usage! /blacksmith <blacksmith> (player)", NamedTextColor.RED));
+                            c.sender().sendMessage(Component.text("Invalid Usage! /blacksmith <blacksmith> (player)", NamedTextColor.RED));
                         }
                     } else {
-                        c.getSender().sendMessage(Component.text("Invalid Usage! /blacksmith <blacksmith> <player>", NamedTextColor.RED));
+                        c.sender().sendMessage(Component.text("Invalid Usage! /blacksmith <blacksmith> <player>", NamedTextColor.RED));
                     }
                 })));
 
         Command.Builder<CommandSender> voucher = manager.commandBuilder("voucher")
                 .permission("skyprisoncore.command.voucher");
         manager.command(voucher.literal("give")
-                        .permission("skyprisoncore.command.voucher.give")
-                        .argument(PlayerArgument.of("player"))
-                        .argument(StringArgument.<CommandSender>builder("voucher")
-                                .withSuggestionsProvider((commandSenderCommandContext, s) -> List.of("token-shop", "mine-reset", "single-use-enderchest")))
-                        .argument(IntegerArgument.of("amount"))
-                        .handler(c -> {
-                            final Player player = c.get("player");
-                            final String voucherType = c.get("voucher");
-                            final int amount = c.get("amount");
-                            ItemStack voucherItem = Vouchers.getVoucherFromType(this, voucherType, amount);
-                            if(voucherItem != null) {
-                                PlayerManager.giveItems(player, voucherItem);
-                                c.getSender().sendMessage(Component.text("Successfully sent!"));
-                            }
-                        }));
+                .permission("skyprisoncore.command.voucher.give")
+                .required("player", playerParser())
+                .required("voucher", stringParser(), SuggestionProvider.suggestingStrings(List.of("token-shop", "mine-reset", "single-use-enderchest")))
+                .required("amount", integerParser())
+                .handler(c -> {
+                    final Player player = c.get("player");
+                    final String voucherType = c.get("voucher");
+                    final int amount = c.get("amount");
+                    ItemStack voucherItem = Vouchers.getVoucherFromType(this, voucherType, amount);
+                    if(voucherItem != null) {
+                        PlayerManager.giveItems(player, voucherItem);
+                        c.sender().sendMessage(Component.text("Successfully sent!"));
+                    }
+                }));
 
         Command.Builder<CommandSender> greg = manager.commandBuilder("greg")
                 .permission("skyprisoncore.command.greg");
@@ -645,10 +604,9 @@ public class SkyPrisonCore extends JavaPlugin {
                 "release-papers", "fake-release-papers");
         manager.command(greg.literal("give")
                 .permission("skyprisoncore.command.greg.give")
-                .argument(PlayerArgument.of("player"))
-                .argument(StringArgument.<CommandSender>builder("type")
-                        .withSuggestionsProvider((commandSenderCommandContext, s) -> gregOptions))
-                .argument(IntegerArgument.of("amount"))
+                .required("player", playerParser())
+                .required("type", stringParser(), SuggestionProvider.suggestingStrings(gregOptions))
+                .required("amount", integerParser())
                 .handler(c -> {
                     final Player player = c.get("player");
                     final String type = c.get("type");
@@ -657,7 +615,7 @@ public class SkyPrisonCore extends JavaPlugin {
                         ItemStack item = Greg.getItemFromType(this, type, amount);
                         if (item != null) {
                             PlayerManager.giveItems(player, item);
-                            c.getSender().sendMessage(Component.text("Successfully sent!"));
+                            c.sender().sendMessage(Component.text("Successfully sent!"));
                         }
                     }
                 }));
@@ -667,10 +625,9 @@ public class SkyPrisonCore extends JavaPlugin {
         List<String> endSmithOptions = List.of("reset-repair", "keep-enchants", "keep-trims");
         manager.command(endSmith.literal("addon")
                 .permission("skyprisoncore.command.endsmith.give")
-                .argument(PlayerArgument.of("player"))
-                .argument(StringArgument.<CommandSender>builder("type")
-                        .withSuggestionsProvider((commandSenderCommandContext, s) -> endSmithOptions))
-                .argument(IntegerArgument.of("amount"))
+                .required("player", playerParser())
+                .required("type", stringParser(), SuggestionProvider.suggestingStrings(endSmithOptions))
+                .required("amount", integerParser())
                 .handler(c -> {
                     final Player player = c.get("player");
                     final String type = c.get("type");
@@ -679,17 +636,16 @@ public class SkyPrisonCore extends JavaPlugin {
                         ItemStack item = BlacksmithEnd.getItemFromType(this, type, "", amount);
                         if (item != null) {
                             PlayerManager.giveItems(player, item);
-                            c.getSender().sendMessage(Component.text("Successfully sent!"));
+                            c.sender().sendMessage(Component.text("Successfully sent!"));
                         }
                     }
                 }));
         List<String> templateOptions = List.of("helmet", "chestplate", "leggings", "boots", "axe", "pickaxe", "shovel", "hoe");
         manager.command(endSmith.literal("template")
                 .permission("skyprisoncore.command.endsmith.give")
-                .argument(PlayerArgument.of("player"))
-                .argument(StringArgument.<CommandSender>builder("type")
-                        .withSuggestionsProvider((commandSenderCommandContext, s) -> templateOptions))
-                .argument(IntegerArgument.of("amount"))
+                .required("player", playerParser())
+                .required("type", stringParser(), SuggestionProvider.suggestingStrings(templateOptions))
+                .required("amount", integerParser())
                 .handler(c -> {
                     final Player player = c.get("player");
                     final String type = c.get("type");
@@ -698,7 +654,7 @@ public class SkyPrisonCore extends JavaPlugin {
                         ItemStack item = BlacksmithEnd.getItemFromType(this, "upgrade-template", type, amount);
                         if (item != null) {
                             PlayerManager.giveItems(player, item);
-                            c.getSender().sendMessage(Component.text("Successfully sent!"));
+                            c.sender().sendMessage(Component.text("Successfully sent!"));
                         }
                     }
                 }));
@@ -708,10 +664,9 @@ public class SkyPrisonCore extends JavaPlugin {
         List<String> bombOptions = List.of("small", "medium", "large", "massive", "nuke");
         manager.command(bomb.literal("give")
                 .permission("skyprisoncore.command.bomb.give")
-                .argument(PlayerArgument.of("player"))
-                .argument(StringArgument.<CommandSender>builder("type")
-                        .withSuggestionsProvider((commandSenderCommandContext, s) -> bombOptions))
-                .argument(IntegerArgument.of("amount"))
+                .required("player", playerParser())
+                .required("type", stringParser(), SuggestionProvider.suggestingStrings(bombOptions))
+                .required("amount", integerParser())
                 .handler(c -> {
                     final Player player = c.get("player");
                     final String type = c.get("type");
@@ -719,7 +674,7 @@ public class SkyPrisonCore extends JavaPlugin {
                     if(bombOptions.contains(type.toLowerCase())) {
                         ItemStack item = BombUtils.getBomb(this, type, amount);
                         PlayerManager.giveItems(player, item);
-                        c.getSender().sendMessage(Component.text("Successfully sent!"));
+                        c.sender().sendMessage(Component.text("Successfully sent!"));
                     }
                 }));
 
@@ -727,7 +682,7 @@ public class SkyPrisonCore extends JavaPlugin {
                 .senderType(Player.class)
                 .permission("skyprisoncore.command.enchtable")
                 .handler(c -> {
-                    Player player = (Player) c.getSender();
+                    Player player = c.sender();
                     Location loc;
                     String worldName = player.getWorld().getName();
 
@@ -746,11 +701,7 @@ public class SkyPrisonCore extends JavaPlugin {
                 .build()
         );
 
-        manager.command(manager.commandBuilder("invconvert")
-                .senderType(ConsoleCommandSender.class)
-                .permission("skyprisoncore.command.invconvert")
-                .handler(c -> new InventoryLoader().loadInventories(getDataFolder() + File.separator + "data")));
-
+        new AdminCommands(this, manager);
         new ChatCommands(this, manager, discApi);
         new JailCommands(this, manager);
         new SecretsCommands(this, manager);
@@ -769,19 +720,10 @@ public class SkyPrisonCore extends JavaPlugin {
         Bukkit.getPluginManager().addPermission(bountyBypass);
 
         Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, db));
-        Objects.requireNonNull(getCommand("killinfo")).setExecutor(new KillInfo(db));
 
-        Objects.requireNonNull(getCommand("removeitalics")).setExecutor(new RemoveItalics(this));
         Objects.requireNonNull(getCommand("skyplot")).setExecutor(new SkyPlot(this));
         Objects.requireNonNull(getCommand("plot")).setExecutor(new PlotTeleport(this));
         Objects.requireNonNull(getCommand("tags")).setExecutor(new Tags(this, db));
-        Objects.requireNonNull(getCommand("minereset")).setExecutor(new MineReset(this));
-        Objects.requireNonNull(getCommand("randomgive")).setExecutor(new RandomGive(this));
-
-        Objects.requireNonNull(getCommand("rename")).setExecutor(new Rename());
-        Objects.requireNonNull(getCommand("itemlore")).setExecutor(new ItemLore(this));
-        Objects.requireNonNull(getCommand("namecolour")).setExecutor(new NameColour(this, db));
-        Objects.requireNonNull(getCommand("news")).setExecutor(new News(this, db));
     }
 
     public void registerEvents() {
@@ -833,7 +775,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PlayerSwapHandItems(this), this);
         pm.registerEvents(new CraftItem(), this);
 
-        pm.registerEvents(new AsyncChat(this, discApi, db, new Tags(this, db), new ItemLore(this)), this);
+        pm.registerEvents(new AsyncChat(this, discApi, db, new Tags(this, db)), this);
         pm.registerEvents(new PlayerQuit(this, db, discApi, dailyMissions), this);
         pm.registerEvents(new PlayerJoin(this, db, discApi, dailyMissions, particles), this);
 
@@ -930,6 +872,12 @@ public class SkyPrisonCore extends JavaPlugin {
                 player.sendMessage(Component.text("You can collect your ", NamedTextColor.GREEN).append(Component.text("/daily!", NamedTextColor.GREEN, TextDecoration.BOLD)));
             }
         }
+    }
+    public static double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+        BigDecimal bd = BigDecimal.valueOf(value);
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
     }
     public static String getQuestionMarks(List<?> list) {
         if(!list.isEmpty()) {

@@ -105,8 +105,8 @@ public class PlotTeleport implements CommandExecutor {
 					pers.set(key3, PersistentDataType.STRING, "world_skycity");
 				});
 
-				plotsGUI.setItem(availableNums.get(0), plotItem);
-				availableNums.remove(0);
+				plotsGUI.setItem(availableNums.getFirst(), plotItem);
+				availableNums.removeFirst();
 			}
 
 			player.openInventory(plotsGUI);

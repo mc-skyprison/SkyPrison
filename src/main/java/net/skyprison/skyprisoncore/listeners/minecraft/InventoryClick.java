@@ -25,7 +25,6 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.commands.old.News;
 import net.skyprison.skyprisoncore.commands.old.Tags;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.inventories.claims.ClaimFlags;
@@ -83,6 +82,8 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+
+import static net.skyprison.skyprisoncore.utils.News.saveNewsMessage;
 
 public class InventoryClick implements Listener {
     private final SkyPrisonCore plugin;
@@ -486,7 +487,7 @@ public class InventoryClick implements Listener {
                                     Component msg = Component.text("Are you sure you want to save this news message?", NamedTextColor.GRAY)
                                             .append(Component.text("\nSAVE NEWS MESSAGE", NamedTextColor.GREEN, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
                                                 if (plugin.newsMessageChanges.contains(player.getUniqueId())) {
-                                                    if (new News(plugin, db).saveMessage(inv)) {
+                                                    if (saveNewsMessage(inv, db)) {
                                                         plugin.newsMessageChanges.remove(player.getUniqueId());
                                                         HashMap<Integer, NewsMessageEdit> newsEdits = plugin.newsEditing.get(player.getUniqueId());
                                                         newsEdits.remove(inv.getNewsMessage());
@@ -837,8 +838,8 @@ public class InventoryClick implements Listener {
                                                 currItem.editMeta(meta -> {
                                                     List<Component> lore = meta.lore();
                                                     if (lore != null) {
-                                                        lore.remove(0);
-                                                        lore.remove(0);
+                                                        lore.removeFirst();
+                                                        lore.removeFirst();
                                                         meta.lore(lore);
                                                     }
                                                 });
@@ -846,8 +847,8 @@ public class InventoryClick implements Listener {
                                                     cursor.editMeta(meta -> {
                                                         List<Component> lore = meta.lore();
                                                         if (lore != null) {
-                                                            lore.remove(0);
-                                                            lore.remove(0);
+                                                            lore.removeFirst();
+                                                            lore.removeFirst();
                                                             meta.lore(lore);
                                                         }
                                                     });
@@ -1170,7 +1171,7 @@ public class InventoryClick implements Listener {
                                                     "(Type 'cancel' to cancel & type player's name again to remove)", NamedTextColor.YELLOW));
                                         } else {
                                             if (inv.getSendingType()) {
-                                                UUID receiver = inv.getSendTo().keySet().stream().toList().get(0);
+                                                UUID receiver = inv.getSendTo().keySet().stream().toList().getFirst();
                                                 String name = inv.getSendTo().get(receiver);
                                                 inv.removeSendTo(receiver);
                                                 player.sendMessage(Component.text("Removed " + name + " from send list!", NamedTextColor.GREEN));

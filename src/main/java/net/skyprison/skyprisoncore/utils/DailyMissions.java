@@ -71,7 +71,7 @@ public class DailyMissions {
         Collections.shuffle(missions);
 
         ArrayList<String> twoMissions = new ArrayList<>();
-        twoMissions.add(missions.get(0));
+        twoMissions.add(missions.getFirst());
         twoMissions.add(missions.get(1));
 
         ArrayList<String> missionsToGive = new ArrayList<>();

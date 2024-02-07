@@ -34,7 +34,7 @@ public class ShinyGrassTask extends TimerTask {
                     blocks.add(plugin.grassLocations.get(i));
                 }
                 if (!plugin.shinyGrass.isEmpty()) {
-                    particles.removeFixedEffectsInRange(plugin.shinyGrass.get(0), 1000);
+                    particles.removeFixedEffectsInRange(plugin.shinyGrass.getFirst(), 1000);
                     plugin.shinyGrass = new ArrayList<>();
                 }
                 for (Block block : blocks) {

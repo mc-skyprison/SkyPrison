@@ -1,8 +1,5 @@
 package net.skyprison.skyprisoncore.commands;
 
-import cloud.commandframework.Command;
-import cloud.commandframework.arguments.standard.IntegerArgument;
-import cloud.commandframework.paper.PaperCommandManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -16,9 +13,14 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
+import org.incendo.cloud.Command;
+import org.incendo.cloud.component.DefaultValue;
+import org.incendo.cloud.paper.PaperCommandManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+
+import static org.incendo.cloud.parser.standard.IntegerParser.integerParser;
 
 public class BottledExpCommands {
     private final SkyPrisonCore plugin;
@@ -30,20 +32,20 @@ public class BottledExpCommands {
         createBottledExpCommands();
     }
     private void createBottledExpCommands() {
-        Command.Builder<CommandSender> xpb = manager.commandBuilder("bottledexp", "xpb")
+        Command.Builder<Player> xpb = manager.commandBuilder("bottledexp", "xpb")
                 .senderType(Player.class)
                 .permission("skyprisoncore.command.bottledexp")
-                .argument(IntegerArgument.<CommandSender>builder("amount").withMin(1).build());
+                .required("amount", integerParser(1));;
 
 
         manager.command(xpb);
         manager.command(xpb.permission("skyprisoncore.command.bottledexp.tier3")
-                .argument(IntegerArgument.<CommandSender>builder("bottles").withMin(1).withMax(64).asOptionalWithDefault(1).build())
+                .optional("bottles", integerParser(1, 64), DefaultValue.constant(1))
                 .handler(c -> {
                     int amount = c.get("amount");
                     int bottles = c.get("bottles");
                     int tAmount = amount * bottles;
-                    Player player = (Player) c.getSender();
+                    Player player = c.sender();
                     boolean canWithdraw = canPlayerWithdraw(player, tAmount);
                     if(canWithdraw) {
                         if (getTotalExperience(player) >= tAmount) {
@@ -66,11 +68,16 @@ public class BottledExpCommands {
                 .literal("all")
                 .senderType(Player.class)
                 .handler(c -> {
-                    Player player = (Player) c.getSender();
-                    if (PlayerManager.getBalance(player) >= getTotalExperience(player) * 0.25) {
-                        createBottle(player, getTotalExperience(player));
+                    Player player = c.sender();
+                    int amount = getTotalExperience(player);
+                    if(amount == 0) {
+                        player.sendMessage(Component.text("You do not have any experience to bottle!", NamedTextColor.RED));
+                        return;
+                    }
+                    if (PlayerManager.getBalance(player) >= amount * 0.25) {
+                        createBottle(player, amount);
                     } else {
-                        player.sendMessage(Component.text("You need $" + ChatUtils.formatNumber(getTotalExperience(player) * 0.25)
+                        player.sendMessage(Component.text("You need $" + ChatUtils.formatNumber(amount * 0.25)
                                 + " to bottle that amount of experience!", NamedTextColor.RED));
                     }
                 }));

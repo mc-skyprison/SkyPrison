@@ -1,8 +1,5 @@
 package net.skyprison.skyprisoncore.commands;
 
-import cloud.commandframework.Command;
-import cloud.commandframework.arguments.standard.StringArgument;
-import cloud.commandframework.paper.PaperCommandManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
@@ -14,10 +11,13 @@ import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.incendo.cloud.Command;
+import org.incendo.cloud.paper.PaperCommandManager;
 
 import java.util.UUID;
 
 import static net.skyprison.skyprisoncore.SkyPrisonCore.db;
+import static org.incendo.cloud.parser.standard.StringParser.stringParser;
 
 public class SecretsCommands {
     private final SkyPrisonCore plugin;
@@ -28,33 +28,28 @@ public class SecretsCommands {
         createSecretsCommands();
     }
     private void createSecretsCommands() {
-        Command.Builder<CommandSender> secrets = manager.commandBuilder("secrets", "secret")
+        Command.Builder<Player> secrets = manager.commandBuilder("secrets", "secret")
+                .senderType(Player.class)
                 .permission("skyprisoncore.command.secrets")
                 .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    if(!(sender instanceof Player player)) {
-                        sender.sendMessage(Component.text("You can only run this in game!", NamedTextColor.RED));
-                        return;
-                    }
-                    Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new Secrets(plugin, db, player, "", player.hasPermission("skyprisoncore.command.secrets.create.secret"),
-                            player.hasPermission("skyprisoncore.command.secrets.create.category")).getInventory()));
+                    Player sender = c.sender();
+                    Bukkit.getScheduler().runTask(plugin, () -> sender.openInventory(new Secrets(plugin, db, sender, "", sender.hasPermission("skyprisoncore.command.secrets.create.secret"),
+                            sender.hasPermission("skyprisoncore.command.secrets.create.category")).getInventory()));
                 });
         manager.command(secrets);
 
         manager.command(secrets.literal("history")
                 .permission("skyprisoncore.command.secrets.history")
-                .senderType(Player.class)
                 .handler(c -> {
-                    Player player = (Player) c.getSender();
+                    Player player = c.sender();
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new SecretsHistory(plugin, db, player.getUniqueId()).getInventory()));
                 }));
 
         manager.command(secrets.literal("history")
                 .permission("skyprisoncore.command.secrets.history.others")
-                .senderType(Player.class)
-                .argument(StringArgument.of("player"))
+                .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.getSender();
+                    Player player = c.sender();
                     UUID pUUID = PlayerManager.getPlayerId(c.get("player"));
                     if(pUUID != null) {
                         Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new SecretsHistory(plugin, db, pUUID).getInventory()));
@@ -62,23 +57,20 @@ public class SecretsCommands {
                         player.sendMessage(Component.text("Player not found!", NamedTextColor.RED));
                     }
                 }));
-        Command.Builder<CommandSender> secretsCreate = secrets.literal("create")
-                .permission("skyprisoncore.command.secrets.create")
-                .senderType(Player.class);
+        Command.Builder<Player> secretsCreate = secrets.literal("create")
+                .permission("skyprisoncore.command.secrets.create");
 
         manager.command(secretsCreate.literal("secret")
                 .permission("skyprisoncore.command.secrets.create.secret")
-                .senderType(Player.class)
                 .handler(c -> {
-                    Player player = (Player) c.getSender();
+                    Player player = c.sender();
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new SecretsEdit(plugin, db, player.getUniqueId(), -1).getInventory()));
                 }));
 
         manager.command(secretsCreate.literal("category")
                 .permission("skyprisoncore.command.secrets.create.category")
-                .senderType(Player.class)
                 .handler(c -> {
-                    Player player = (Player) c.getSender();
+                    Player player = c.sender();
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new SecretsCategoryEdit(plugin, db, player.getUniqueId(), null).getInventory()));
                 }));
     }

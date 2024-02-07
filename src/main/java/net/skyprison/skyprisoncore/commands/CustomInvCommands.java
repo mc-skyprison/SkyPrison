@@ -1,10 +1,5 @@
 package net.skyprison.skyprisoncore.commands;
 
-import cloud.commandframework.Command;
-import cloud.commandframework.arguments.standard.IntegerArgument;
-import cloud.commandframework.arguments.standard.StringArgument;
-import cloud.commandframework.bukkit.parsers.PlayerArgument;
-import cloud.commandframework.paper.PaperCommandManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -15,6 +10,14 @@ import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.incendo.cloud.Command;
+import org.incendo.cloud.component.DefaultValue;
+import org.incendo.cloud.paper.PaperCommandManager;
+import org.incendo.cloud.suggestion.SuggestionProvider;
+
+import static org.incendo.cloud.bukkit.parser.PlayerParser.playerParser;
+import static org.incendo.cloud.parser.standard.IntegerParser.integerParser;
+import static org.incendo.cloud.parser.standard.StringParser.stringParser;
 
 public class CustomInvCommands {
     private final SkyPrisonCore plugin;
@@ -29,49 +32,56 @@ public class CustomInvCommands {
     private void createCustomInvCommands() {
         manager.command(manager.commandBuilder("bartender")
                 .permission("skyprisoncore.command.bartender")
-                .argument(PlayerArgument.optional("player"))
-                .handler(c -> {
-                    Player player = c.getOptional("player").isPresent() ? (Player) c.getOptional("player").get() : c.getSender() instanceof Player ? (Player) c.getSender() : null;
-                    if(player != null) {
-                        Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new DatabaseInventory(plugin, db, player,
-                                player.hasPermission("skyprisoncore.inventories.bartender.editing"), "bartender").getInventory()));
-                    } else {
-                        c.getSender().sendMessage(Component.text("Invalid Usage! /bartender (player)"));
+                .optional("player", playerParser())
+                .handler(c -> Bukkit.getScheduler().runTask(plugin, () -> {
+                    Player player = c.getOrDefault("player", null);
+                    if(player == null && c.sender() instanceof Player) {
+                        player = (Player) c.sender();
                     }
-                }));
+                    if(player != null) {
+                        Player finalPlayer = player;
+                        Bukkit.getScheduler().runTask(plugin, () -> finalPlayer.openInventory(new DatabaseInventory(plugin, db, finalPlayer,
+                                finalPlayer.hasPermission("skyprisoncore.inventories.bartender.editing"), "bartender").getInventory()));
+                    } else {
+                        c.sender().sendMessage(Component.text("Invalid Usage! /bartender (player)"));
+                    }
+                })));
 
         Command.Builder<CommandSender> customInv = manager.commandBuilder("custominv")
                 .permission("skyprisoncore.command.custominv");
         manager.command(customInv.literal("list")
                 .permission("skyprisoncore.command.custominv.list")
-                .argument(IntegerArgument.<CommandSender>builder("page").asOptionalWithDefault(1).withMin(1).withMax(20))
+                .optional("page", integerParser(1, 20), DefaultValue.constant(1))
                 .handler(c -> {
                     int page = c.get("page");
                     Component list = CustomInvUtils.getFormattedList(page);
-                    c.getSender().sendMessage(list);
+                    c.sender().sendMessage(list);
                 }));
         manager.command(customInv.literal("open")
                 .permission("skyprisoncore.command.custominv.open")
-                .argument(StringArgument.<CommandSender>builder("name")
-                        .withSuggestionsProvider((commandSenderCommandContext, s) -> CustomInvUtils.getList()))
-                .argument(PlayerArgument.optional("player"))
+                .required("name", stringParser(), SuggestionProvider.suggestingStrings(CustomInvUtils.getList()))
+                .optional("player", playerParser())
                 .handler(c -> {
-                    Player player = c.getOptional("player").isPresent() ? (Player) c.getOptional("player").get() : c.getSender() instanceof Player ? (Player) c.getSender() : null;
+                    Player player = c.getOrDefault("player", null);
+                    if(player == null && c.sender() instanceof Player) {
+                        player = (Player) c.sender();
+                    }
                     if(player != null) {
                         String invName = c.get("name");
                         if(CustomInvUtils.categoryExists(invName)) {
                             if (player.hasPermission("skyprisoncore.inventories." + invName)) {
-                                Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new DatabaseInventory(plugin, db, player,
-                                        player.hasPermission("skyprisoncore.inventories." + invName + ".editing"), invName).getInventory()));
+                                Player finalPlayer = player;
+                                Bukkit.getScheduler().runTask(plugin, () -> finalPlayer.openInventory(new DatabaseInventory(plugin, db, finalPlayer,
+                                        finalPlayer.hasPermission("skyprisoncore.inventories." + invName + ".editing"), invName).getInventory()));
                             }
                         }
                     }
                 }));
         manager.command(customInv.literal("create")
                 .permission("skyprisoncore.command.custominv.create")
-                .argument(StringArgument.of("name"))
-                .argument(StringArgument.optional("display"))
-                .argument(StringArgument.optional("colour"))
+                .required("name", stringParser())
+                .optional("display", stringParser())
+                .optional("colour", stringParser())
                 .handler(c -> {
                     String name = c.get("name");
                     if(!CustomInvUtils.categoryExists(name)) {

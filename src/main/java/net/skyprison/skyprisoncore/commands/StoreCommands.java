@@ -1,9 +1,5 @@
 package net.skyprison.skyprisoncore.commands;
 
-import cloud.commandframework.arguments.standard.DoubleArgument;
-import cloud.commandframework.arguments.standard.IntegerArgument;
-import cloud.commandframework.arguments.standard.StringArgument;
-import cloud.commandframework.paper.PaperCommandManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -15,6 +11,7 @@ import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.incendo.cloud.paper.PaperCommandManager;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -27,6 +24,10 @@ import java.util.UUID;
 
 import static net.skyprison.skyprisoncore.utils.PlayerManager.checkTotalPurchases;
 import static net.skyprison.skyprisoncore.utils.PlayerManager.getPlayerId;
+import static org.incendo.cloud.parser.standard.DoubleParser.doubleParser;
+import static org.incendo.cloud.parser.standard.IntegerParser.integerParser;
+import static org.incendo.cloud.parser.standard.StringParser.greedyStringParser;
+import static org.incendo.cloud.parser.standard.StringParser.stringParser;
 
 public class StoreCommands {
     private final DatabaseHook db;
@@ -39,13 +40,14 @@ public class StoreCommands {
     private void createStoreCommands() {
         manager.command(manager.commandBuilder("donoradd")
                 .permission("skyprisoncore.command.donoradd")
-                .argument(StringArgument.of("player"))
-                .argument(StringArgument.of("currency"))
-                .argument(DoubleArgument.of("price"))
-                .argument(StringArgument.of("date"))
-                .argument(StringArgument.of("time"))
-                .argument(IntegerArgument.of("amount"))
-                .argument(StringArgument.greedy("bought"))
+                .required("player", stringParser())
+                .required("player", stringParser())
+                .required("currency", stringParser())
+                .required("price", doubleParser())
+                .required("date", stringParser())
+                .required("time", stringParser())
+                .required("amount", integerParser())
+                .required("bought", greedyStringParser())
                 .handler(c -> {
                     UUID pUUID = getPlayerId(c.get("player"));
                     if(pUUID != null) {
@@ -84,19 +86,19 @@ public class StoreCommands {
 
                 }));
         manager.command(manager.commandBuilder("purchases")
-                .senderType(Player.class)
                 .permission("skyprisoncore.command.purchases")
+                .senderType(Player.class)
                 .handler(c -> {
-                    Player player = (Player) c.getSender();
+                    Player player = c.sender();
                     getPurchases(player, player.getUniqueId(), 1);
                 }));
         manager.command(manager.commandBuilder("purchases")
                 .permission("skyprisoncore.command.purchases.others")
-                .argument(StringArgument.of("player"))
+                .required("player", stringParser())
                 .handler(c -> {
                     UUID pUUID = getPlayerId(c.get("player"));
                     if(pUUID != null) {
-                        getPurchases(c.getSender(), pUUID, 1);
+                        getPurchases(c.sender(), pUUID, 1);
                     }
                 }));
     }

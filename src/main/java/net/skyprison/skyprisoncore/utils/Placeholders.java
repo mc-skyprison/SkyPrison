@@ -265,7 +265,7 @@ public class Placeholders extends PlaceholderExpansion {
 			if(dailyMissions.getMissions(player).isEmpty()) {
 				return "&7-";
 			}
-			String mission = dailyMissions.getMissions(player).get(0);
+			String mission = dailyMissions.getMissions(player).getFirst();
 			String[] mSplit = mission.split("-");
 			int amount = dailyMissions.getMissionAmount(player, mission);
 			int needed = dailyMissions.getMissionNeeded(player, mission);

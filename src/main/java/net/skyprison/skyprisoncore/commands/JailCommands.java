@@ -1,9 +1,5 @@
 package net.skyprison.skyprisoncore.commands;
 
-import cloud.commandframework.arguments.standard.IntegerArgument;
-import cloud.commandframework.arguments.standard.StringArgument;
-import cloud.commandframework.bukkit.parsers.PlayerArgument;
-import cloud.commandframework.paper.PaperCommandManager;
 import com.destroystokyo.paper.MaterialSetTag;
 import com.destroystokyo.paper.MaterialTags;
 import net.kyori.adventure.audience.Audience;
@@ -23,6 +19,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.incendo.cloud.paper.PaperCommandManager;
+import org.incendo.cloud.suggestion.SuggestionProvider;
 import org.mariadb.jdbc.Statement;
 
 import java.sql.Connection;
@@ -35,6 +33,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static net.skyprison.skyprisoncore.SkyPrisonCore.*;
+import static org.incendo.cloud.bukkit.parser.PlayerParser.playerParser;
+import static org.incendo.cloud.parser.standard.IntegerParser.integerParser;
+import static org.incendo.cloud.parser.standard.StringParser.greedyStringParser;
 
 public class JailCommands {
     private final SkyPrisonCore plugin;
@@ -47,10 +48,10 @@ public class JailCommands {
     private void createJailCommands() {
         manager.command(manager.commandBuilder("jail")
                 .permission("skyprisoncore.command.jail")
-                .argument(PlayerArgument.of("player"))
-                .argument(StringArgument.optional("reason", StringArgument.StringMode.GREEDY))
+                .required("player", playerParser())
+                .optional("reason", greedyStringParser())
                 .handler(c -> {
-                    CommandSender sender = c.getSender();
+                    CommandSender sender = c.sender();
                     final Player player = c.get("player");
                     final String message = c.getOrDefault("reason", null);
 
@@ -58,22 +59,20 @@ public class JailCommands {
                 }));
         manager.command(manager.commandBuilder("unjail")
                 .permission("skyprisoncore.command.unjail")
-                .argument(PlayerArgument.<CommandSender>builder("player")
-                        .withSuggestionsProvider((commandSenderCommandContext, s) -> currentlyJailed.keySet().stream().map(Bukkit::getPlayer).filter(Objects::nonNull).map(Player::getName).toList()))
-                .argument(StringArgument.optional("reason", StringArgument.StringMode.GREEDY))
+                .required("player", playerParser(), SuggestionProvider.suggestingStrings(currentlyJailed.keySet().stream().map(Bukkit::getPlayer).filter(Objects::nonNull).map(Player::getName).toList()))
+                .optional("reason", greedyStringParser())
                 .handler(c -> {
-                    CommandSender sender = c.getSender();
+                    CommandSender sender = c.sender();
                     final Player player = c.get("player");
                     final String message = c.getOrDefault("reason", null);
                     setUnjail(sender, player, message, "unjail");
                 }));
         manager.command(manager.commandBuilder("bribe")
                 .permission("skyprisoncore.command.bribe")
-                .argument(PlayerArgument.<CommandSender>builder("player")
-                        .withSuggestionsProvider((commandSenderCommandContext, s) -> currentlyJailed.keySet().stream().map(Bukkit::getPlayer).filter(Objects::nonNull).map(Player::getName).toList()))
-                .argument(IntegerArgument.of("type"))
+                .required("player", playerParser(), SuggestionProvider.suggestingStrings(currentlyJailed.keySet().stream().map(Bukkit::getPlayer).filter(Objects::nonNull).map(Player::getName).toList()))
+                .required("type", integerParser())
                 .handler(c -> {
-                    CommandSender sender = c.getSender();
+                    CommandSender sender = c.sender();
                     final Player player = c.get("player");
                     final int type = c.get("type");
                     bribeCooldown.put(player.getUniqueId(), TimeUnit.MINUTES.toMillis(10) + System.currentTimeMillis());
@@ -93,40 +92,40 @@ public class JailCommands {
                 }));
         manager.command(manager.commandBuilder("bow")
                 .permission("skyprisoncore.command.bow")
-                .argument(PlayerArgument.of("player"))
-                .argument(StringArgument.optional("reason", StringArgument.StringMode.GREEDY))
+                .required("player", playerParser())
+                .optional("reason", greedyStringParser())
                 .handler(c -> {
-                    CommandSender sender = c.getSender();
+                    CommandSender sender = c.sender();
                     final Player player = c.get("player");
                     final String message = c.getOrDefault("reason", "Bow / Crossbow");
                     contrabandMessager(sender, player, "bow", message);
                 }));
         manager.command(manager.commandBuilder("sword")
                 .permission("skyprisoncore.command.sword")
-                .argument(PlayerArgument.of("player"))
-                .argument(StringArgument.optional("reason", StringArgument.StringMode.GREEDY))
+                .required("player", playerParser())
+                .optional("reason", greedyStringParser())
                 .handler(c -> {
-                    CommandSender sender = c.getSender();
+                    CommandSender sender = c.sender();
                     final Player player = c.get("player");
                     final String message = c.getOrDefault("reason", "Sword");
                     contrabandMessager(sender, player, "sword", message);
                 }));
         manager.command(manager.commandBuilder("contraband")
                 .permission("skyprisoncore.command.contraband")
-                .argument(PlayerArgument.of("player"))
-                .argument(StringArgument.optional("reason", StringArgument.StringMode.GREEDY))
+                .required("player", playerParser())
+                .optional("reason", greedyStringParser())
                 .handler(c -> {
-                    CommandSender sender = c.getSender();
+                    CommandSender sender = c.sender();
                     final Player player = c.get("player");
                     final String message = c.getOrDefault("reason", "Contraband");
                     contrabandMessager(sender, player, "contraband", message);
                 }));
         manager.command(manager.commandBuilder("safezone")
                 .permission("skyprisoncore.command.safezone")
-                .argument(PlayerArgument.of("player"))
-                .argument(StringArgument.optional("reason", StringArgument.StringMode.GREEDY))
+                .required("player", playerParser())
+                .optional("reason", greedyStringParser())
                 .handler(c -> {
-                    CommandSender sender = c.getSender();
+                    CommandSender sender = c.sender();
                     final Player player = c.get("player");
                     if(!sender.equals(player)) {
                         final String message = c.getOrDefault("reason", "Safezoning");
@@ -155,7 +154,7 @@ public class JailCommands {
                         put("guard", "skyprisoncore.guard.guard");
                         put("trguard", "skyprisoncore.guard.trguard");
                     }};
-                    Player player = (Player) c.getSender();
+                    Player player = (Player) c.sender();
                     String action;
                     String messageAction;
 

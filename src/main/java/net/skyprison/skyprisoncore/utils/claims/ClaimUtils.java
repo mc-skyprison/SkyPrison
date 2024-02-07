@@ -652,7 +652,7 @@ public class ClaimUtils {
                             .append(Component.text("⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯", NamedTextColor.WHITE, TextDecoration.STRIKETHROUGH))
                             .append(parentInfo)
                             .append(Component.text("\nCoords", TextColor.fromHexString("#0fffc3")).append(Component.text(" ⇒ ", NamedTextColor.GRAY))
-                                    .append(Component.text("X " + coords.get(0) + " Y " + coords.get(1), TextColor.fromHexString("#ffba75"))))
+                                    .append(Component.text("X " + coords.getFirst() + " Y " + coords.get(1), TextColor.fromHexString("#ffba75"))))
                             .append(Component.text("\nBlocks", TextColor.fromHexString("#0fffc3")).append(Component.text(" ⇒ ", NamedTextColor.GRAY))
                                     .append(Component.text(claim.getBlocks(), TextColor.fromHexString("#ffba75"))))
                             .append(Component.text("\nClick for more info", NamedTextColor.GRAY))
@@ -732,7 +732,7 @@ public class ClaimUtils {
                                         .append(Component.text(member.getRank(), TextColor.fromHexString("#ffba75"))) : Component.empty())
                                 .append(parentInfo)
                                 .append(Component.text("\nCoords", TextColor.fromHexString("#0fffc3")).append(Component.text(" ⇒ ", NamedTextColor.GRAY))
-                                        .append(Component.text("X " + coords.get(0) + " Y " + coords.get(1), TextColor.fromHexString("#ffba75"))))
+                                        .append(Component.text("X " + coords.getFirst() + " Y " + coords.get(1), TextColor.fromHexString("#ffba75"))))
                                 .append(Component.text("\nBlocks", TextColor.fromHexString("#0fffc3")).append(Component.text(" ⇒ ", NamedTextColor.GRAY))
                                         .append(Component.text(claim.getBlocks(), TextColor.fromHexString("#ffba75"))))
                                 .append(Component.text("\nClick for more info", NamedTextColor.GRAY))
@@ -842,7 +842,7 @@ public class ClaimUtils {
         List<Integer> coords = getClaimCoords(claim);
 
         info = info.append(Component.text("\nCoords", TextColor.fromHexString("#0fffc3")).append(Component.text(" ⇒ ", NamedTextColor.GRAY))
-                .append(Component.text("X " + coords.get(0) + " Y " + coords.get(1), TextColor.fromHexString("#ffba75"))));
+                .append(Component.text("X " + coords.getFirst() + " Y " + coords.get(1), TextColor.fromHexString("#ffba75"))));
 
         info = info.append(Component.text("\n\nVIEW MEMBERS", TextColor.fromHexString("#0fffc3"))
                 .hoverEvent(HoverEvent.showText(Component.text("View members", NamedTextColor.GRAY)))

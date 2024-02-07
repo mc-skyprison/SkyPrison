@@ -90,7 +90,7 @@ public class Referral implements CustomInventory {
         reffedBy.forEach((uuid, data) -> {
             ItemStack head = new ItemStack(Material.PLAYER_HEAD);
             head.editMeta(SkullMeta.class, meta -> {
-                meta.displayName(Component.text(data.get(0), NamedTextColor.YELLOW, TextDecoration.BOLD)
+                meta.displayName(Component.text(data.getFirst(), NamedTextColor.YELLOW, TextDecoration.BOLD)
                         .decoration(TextDecoration.ITALIC, false));
                 meta.setOwningPlayer(Bukkit.getOfflinePlayer(uuid));
                 List<Component> lore = new ArrayList<>();

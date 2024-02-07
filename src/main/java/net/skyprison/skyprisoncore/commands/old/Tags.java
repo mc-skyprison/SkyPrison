@@ -96,7 +96,7 @@ public class Tags implements CommandExecutor {
             meta.lore(lore);
 
             NamespacedKey key3 = new NamespacedKey(plugin, "tag-id");
-            meta.getPersistentDataContainer().set(key3, PersistentDataType.INTEGER, (Integer) tag.get(0));
+            meta.getPersistentDataContainer().set(key3, PersistentDataType.INTEGER, (Integer) tag.getFirst());
 
             head.setItemMeta(meta);
             bounties.setItem(j, head);
@@ -137,8 +137,6 @@ public class Tags implements CommandExecutor {
             bounties.setItem(46, prevPage);
             bounties.setItem(52, nextPage);
         }
-
-
 
         ItemStack remTag = new ItemStack(Material.BARRIER);
         ItemMeta remMeta = remTag.getItemMeta();
@@ -400,12 +398,12 @@ public class Tags implements CommandExecutor {
                 lore.add(Component.text("Effect: " + tag.get(3), NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
             }
             lore.add(Component.text("--", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-            lore.add(Component.text("Tag ID: " + tag.get(0), NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+            lore.add(Component.text("Tag ID: " + tag.getFirst(), NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
 
             meta.lore(lore);
 
             NamespacedKey key3 = new NamespacedKey(plugin, "tag-id");
-            meta.getPersistentDataContainer().set(key3, PersistentDataType.INTEGER, (Integer) tag.get(0));
+            meta.getPersistentDataContainer().set(key3, PersistentDataType.INTEGER, (Integer) tag.getFirst());
 
             if(j == 0) {
                 NamespacedKey key = new NamespacedKey(plugin, "stop-click");

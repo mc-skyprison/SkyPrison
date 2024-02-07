@@ -59,7 +59,7 @@ public class MailBox implements CustomInventory {
         Iterator<Integer> mailsIterator = mailsToShow.iterator();
         for(int i = 0; i < 45; i++) {
             if(mailsIterator.hasNext()) {
-                inventory.setItem(i, mails.get(mailsIterator.next()).get(0));
+                inventory.setItem(i, mails.get(mailsIterator.next()).getFirst());
             }
         }
     }

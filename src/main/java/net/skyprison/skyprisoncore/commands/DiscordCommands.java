@@ -1,10 +1,6 @@
 package net.skyprison.skyprisoncore.commands;
 
 
-import cloud.commandframework.Command;
-import cloud.commandframework.arguments.standard.LongArgument;
-import cloud.commandframework.arguments.standard.StringArgument;
-import cloud.commandframework.paper.PaperCommandManager;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickCallback;
@@ -16,6 +12,8 @@ import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.incendo.cloud.Command;
+import org.incendo.cloud.paper.PaperCommandManager;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.channel.TextChannel;
 
@@ -25,6 +23,9 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Random;
+
+import static org.incendo.cloud.parser.standard.LongParser.longParser;
+import static org.incendo.cloud.parser.standard.StringParser.greedyStringParser;
 
 public class DiscordCommands {
     private final SkyPrisonCore plugin;
@@ -44,7 +45,7 @@ public class DiscordCommands {
         Command.Builder<CommandSender> discord = manager.commandBuilder("discord")
                 .permission("skyprisoncore.command.discord")
                 .handler(c -> {
-                    Player player = (Player) c.getSender();
+                    Player player = (Player) c.sender();
                     Component discordLink = Component.text("Join our discord at ", NamedTextColor.AQUA).appendNewline()
                             .append(Component.text("https://skyprison.net/discord", NamedTextColor.DARK_AQUA, TextDecoration.BOLD));
 
@@ -57,7 +58,7 @@ public class DiscordCommands {
                 .senderType(Player.class)
                 .permission("skyprisoncore.command.discord.link")
                 .handler(c -> {
-                    Player player = (Player) c.getSender();
+                    Player player = c.sender();
                     long discordId = PlayerManager.getPlayerDiscord(player.getUniqueId());
 
                     if(discordId == 0) {
@@ -89,7 +90,7 @@ public class DiscordCommands {
                 .senderType(Player.class)
                 .permission("skyprisoncore.command.discord.unlink")
                 .handler(c -> {
-                    Player player = (Player) c.getSender();
+                    Player player = c.sender();
                     long discordId = PlayerManager.getPlayerDiscord(player.getUniqueId());
 
                     if(discordId != 0) {
@@ -102,8 +103,8 @@ public class DiscordCommands {
 
         manager.command(discord.literal("broadcast")
                 .permission("skyprisoncore.command.discord.broadcast")
-                .argument(LongArgument.of("channel_id"))
-                .argument(StringArgument.greedy("message"))
+                .required("channel_id", longParser())
+                .required("message", greedyStringParser())
                 .handler(c -> {
                     long channelId = c.get("channel_id");
                     String message = c.get("message");

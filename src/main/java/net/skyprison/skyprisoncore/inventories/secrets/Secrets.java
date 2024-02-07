@@ -141,7 +141,7 @@ public class Secrets implements CustomInventory {
                 }));
         if(!selCats.isEmpty()) {
             int priority = Collections.max(selCats.keySet());
-            return categories.indexOf(selCats.get(priority).get(0));
+            return categories.indexOf(selCats.get(priority).getFirst());
         }
         return 0;
     }

@@ -1,10 +1,5 @@
 package net.skyprison.skyprisoncore.commands;
 
-import cloud.commandframework.Command;
-import cloud.commandframework.arguments.standard.IntegerArgument;
-import cloud.commandframework.arguments.standard.StringArgument;
-import cloud.commandframework.bukkit.parsers.PlayerArgument;
-import cloud.commandframework.paper.PaperCommandManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
@@ -19,9 +14,16 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.incendo.cloud.Command;
+import org.incendo.cloud.paper.PaperCommandManager;
+import org.incendo.cloud.suggestion.SuggestionProvider;
 
 import java.util.List;
 import java.util.UUID;
+
+import static org.incendo.cloud.bukkit.parser.PlayerParser.playerParser;
+import static org.incendo.cloud.parser.standard.IntegerParser.integerParser;
+import static org.incendo.cloud.parser.standard.StringParser.stringParser;
 
 public class MailCommands {
     private final SkyPrisonCore plugin;
@@ -39,10 +41,9 @@ public class MailCommands {
         List<String> postOfficeOptions = List.of("mailbox");
         manager.command(postOffice.literal("give")
                 .permission("skyprisoncore.command.postoffice.give")
-                .argument(PlayerArgument.of("player"))
-                .argument(StringArgument.<CommandSender>builder("type")
-                        .withSuggestionsProvider((commandSenderCommandContext, s) -> postOfficeOptions))
-                .argument(IntegerArgument.of("amount"))
+                .required("player", playerParser())
+                .required("type", stringParser(), SuggestionProvider.suggestingStrings(postOfficeOptions))
+                .required("amount", integerParser())
                 .handler(c -> {
                     final Player player = c.get("player");
                     final String type = c.get("type");
@@ -51,7 +52,7 @@ public class MailCommands {
                         ItemStack item = PostOffice.getItemFromType(plugin, type, amount);
                         if (item != null) {
                             PlayerManager.giveItems(player, item);
-                            c.getSender().sendMessage(Component.text("Successfully sent!"));
+                            c.sender().sendMessage(Component.text("Successfully sent!"));
                         }
                     }
                 }));
@@ -59,35 +60,29 @@ public class MailCommands {
                 .permission("skyprisoncore.command.mail");
         manager.command(mail.literal("history")
                 .permission("skyprisoncore.command.mail.history")
+                .senderType(Player.class)
                 .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    if(sender instanceof Player player) {
-                        Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new MailHistory(plugin, db, player.getUniqueId()).getInventory()));
-                    } else {
-                        sender.sendMessage(Component.text("Can only be used by a player!"));
-                    }
+                    Player sender = c.sender();
+                    Bukkit.getScheduler().runTask(plugin, () -> sender.openInventory(new MailHistory(plugin, db, sender.getUniqueId()).getInventory()));
                 }));
         manager.command(mail.literal("history")
                 .permission("skyprisoncore.command.mail.history.others")
-                .argument(StringArgument.optional("player"))
+                .optional("player", stringParser())
+                .senderType(Player.class)
                 .handler(c -> {
-                    CommandSender sender = c.getSender();
-                    if(sender instanceof Player player) {
-                        String playerName = c.getOrDefault("player", player.getName());
-                        UUID pUUID = PlayerManager.getPlayerId(playerName);
-                        if (pUUID != null) {
-                            Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new MailHistory(plugin, db, pUUID).getInventory()));
-                        } else {
-                            sender.sendMessage(Component.text("Specified player doesn't exist!"));
-                        }
+                    Player sender = c.sender();
+                    String playerName = c.getOrDefault("player", sender.getName());
+                    UUID pUUID = PlayerManager.getPlayerId(playerName);
+                    if (pUUID != null) {
+                        Bukkit.getScheduler().runTask(plugin, () -> sender.openInventory(new MailHistory(plugin, db, pUUID).getInventory()));
                     } else {
-                        sender.sendMessage(Component.text("Can only be used by a player!"));
+                        sender.sendMessage(Component.text("Specified player doesn't exist!"));
                     }
                 }));
         manager.command(mail.literal("send")
                 .permission("skyprisoncore.command.mail.send")
                 .handler(c -> {
-                    CommandSender sender = c.getSender();
+                    CommandSender sender = c.sender();
                     if(sender instanceof Player player) {
                         Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new MailBoxSend(plugin, db, player,
                                 player.hasPermission("skyprisoncore.command.mail.send.items")).getInventory()));
@@ -97,10 +92,10 @@ public class MailCommands {
                 }));
         manager.command(mail.literal("open")
                 .permission("skyprisoncore.command.mail.open")
-                .argument(IntegerArgument.of("mailbox-id"))
-                .argument(PlayerArgument.optional("player"))
+                .required("mailbox-id", integerParser())
+                .optional("player", playerParser())
                 .handler(c -> {
-                    CommandSender sender = c.getSender();
+                    CommandSender sender = c.sender();
                     Player player = c.getOrDefault("player", sender instanceof Player ? (Player) sender : null);
                     if(player != null) {
                         int mailBoxId = c.get("mailbox-id");
@@ -117,9 +112,9 @@ public class MailCommands {
                 }));
         manager.command(mail.literal("expand")
                 .permission("skyprisoncore.command.mail.expand")
-                .argument(PlayerArgument.of("player"))
+                .required("player", playerParser())
                 .handler(c -> {
-                    CommandSender sender = c.getSender();
+                    CommandSender sender = c.sender();
                     Player player = c.get("player");
                     if(player.hasPermission("skyprisoncore.mailboxes.amount.2")) {
                         Bukkit.getScheduler().runTask(plugin, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + player.getName() + " permission set skyprisoncore.mailboxes.amount.3"));
