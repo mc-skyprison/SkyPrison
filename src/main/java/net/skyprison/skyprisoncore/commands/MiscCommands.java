@@ -8,6 +8,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.misc.NewsMessages;
+import net.skyprison.skyprisoncore.inventories.misc.PlotTeleport;
 import net.skyprison.skyprisoncore.inventories.recipes.CustomMain;
 import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
@@ -198,6 +199,19 @@ public class MiscCommands {
                             }));
                     player.sendMessage(confirm);
 
+                }));
+
+
+        manager.command(manager.commandBuilder("plotteleport", "plot", "plottp")
+                .senderType(Player.class)
+                .permission("skyprisoncore.command.plotteleport")
+                .handler(c -> {
+                    Player player = c.sender();
+                    if(player.getWorld().getName().equalsIgnoreCase("world_prison")) {
+                        player.sendMessage(Component.text("Can't use this command here!", NamedTextColor.RED));
+                        return;
+                    }
+                    Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new PlotTeleport(player).getInventory()));
                 }));
     }
     private List<UUID> getIgnoredTps(Player player) {

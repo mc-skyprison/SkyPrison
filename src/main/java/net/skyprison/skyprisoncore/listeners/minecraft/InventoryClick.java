@@ -73,7 +73,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -1895,6 +1894,11 @@ public class InventoryClick implements Listener {
                             e.printStackTrace();
                         }
                     }
+                    case PlotTeleport inv -> {
+                        if (currItem != null && !MaterialTags.STAINED_GLASS_PANES.isTagged(currItem.getType())) {
+                            inv.teleport(currItem);
+                        }
+                    }
                     default -> {
                     }
                 }
@@ -1930,38 +1934,6 @@ public class InventoryClick implements Listener {
                             if (clickCheck == 1) {
                                 event.setCancelled(true);
                                 switch (Objects.requireNonNull(guiType)) {
-                                    case "plotteleport":
-                                        if (clickInv.getItem(event.getSlot()) != null) {
-                                            ItemStack itemClick = clickInv.getItem(event.getSlot());
-                                            PersistentDataContainer plotData = Objects.requireNonNull(itemClick).getPersistentDataContainer();
-                                            NamespacedKey plotKey = new NamespacedKey(plugin, "x");
-                                            if (plotData.has(plotKey, PersistentDataType.DOUBLE)) {
-                                                NamespacedKey plotKey1 = new NamespacedKey(plugin, "y");
-                                                NamespacedKey plotKey2 = new NamespacedKey(plugin, "z");
-                                                NamespacedKey plotKey3 = new NamespacedKey(plugin, "world");
-                                                double x = plotData.get(plotKey, PersistentDataType.DOUBLE);
-                                                double y = plotData.get(plotKey1, PersistentDataType.DOUBLE);
-                                                double z = plotData.get(plotKey2, PersistentDataType.DOUBLE);
-                                                World world = Bukkit.getWorld(plotData.get(plotKey3, PersistentDataType.STRING));
-                                                Location loc = new Location(world, x, y, z);
-                                                if (player.getWorld().getName().equalsIgnoreCase("world_skycity")
-                                                        || player.hasPermission("cmi.command.tpa.warmupbypass")) {
-                                                    player.teleportAsync(loc);
-                                                    player.sendMessage(Component.text("Teleported to plot!", NamedTextColor.GREEN));
-                                                } else {
-                                                    player.closeInventory();
-                                                    player.sendMessage(Component.text("Teleporting to your plot in 5 seconds, Don't move!", NamedTextColor.GREEN));
-                                                    BukkitTask task = plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                                                        plugin.teleportMove.remove(player.getUniqueId());
-                                                        player.teleport(loc);
-                                                        player.sendMessage(Component.text("Teleported to plot!", NamedTextColor.GREEN));
-                                                    }, 100L);
-                                                    plugin.teleportMove.put(player.getUniqueId(), task.getTaskId());
-
-                                                }
-                                            }
-                                        }
-                                        break;
                                     case "tags":
                                         if (clickInv.getItem(event.getSlot()) != null) {
                                             ItemStack clickItem = event.getClickedInventory().getItem(event.getSlot());

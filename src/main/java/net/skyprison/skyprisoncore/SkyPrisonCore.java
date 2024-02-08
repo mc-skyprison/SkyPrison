@@ -25,7 +25,6 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.skyprison.skyprisoncore.commands.*;
-import net.skyprison.skyprisoncore.commands.old.PlotTeleport;
 import net.skyprison.skyprisoncore.commands.old.SkyPlot;
 import net.skyprison.skyprisoncore.commands.old.Sponge;
 import net.skyprison.skyprisoncore.commands.old.Tags;
@@ -722,7 +721,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, db));
 
         Objects.requireNonNull(getCommand("skyplot")).setExecutor(new SkyPlot(this));
-        Objects.requireNonNull(getCommand("plot")).setExecutor(new PlotTeleport(this));
         Objects.requireNonNull(getCommand("tags")).setExecutor(new Tags(this, db));
     }
 

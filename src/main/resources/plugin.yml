@@ -23,12 +23,6 @@ commands:
     usage: /<command>
     permission: skyprisoncore.command.skyplot
     permission-message: §4Error:§c You do not have permission to execute this command...
-  plot:
-    description: Opens plot TP GUI
-    usage: /<command>
-    aliases: [plottp, plotteleport]
-    permission: skyprisoncore.command.plotteleport
-    permission-message: §4Error:§c You do not have permission to execute this command...
   tags:
     description: Tags command
     usage: /<command>
@@ -52,8 +46,6 @@ permissions:
     description: Gives acess to /sponge
   skyprisoncore.command.skyplot:
     description: Gives access to /skyplot
-  skyprisoncore.command.plotteleport:
-    description: Gives access to /plot
   skyprisoncore.command.tags:
     description: Gives access to /tags
   skyprisoncore.command.tags.admin:
