@@ -25,8 +25,6 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.skyprison.skyprisoncore.commands.*;
-import net.skyprison.skyprisoncore.commands.old.SkyPlot;
-import net.skyprison.skyprisoncore.commands.old.Sponge;
 import net.skyprison.skyprisoncore.commands.old.Tags;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.inventories.mail.MailBoxSend;
@@ -718,9 +716,6 @@ public class SkyPrisonCore extends JavaPlugin {
         Permission bountyBypass = new Permission("skyprisoncore.command.bounty.bypass", PermissionDefault.FALSE);
         Bukkit.getPluginManager().addPermission(bountyBypass);
 
-        Objects.requireNonNull(getCommand("sponge")).setExecutor(new Sponge(this, db));
-
-        Objects.requireNonNull(getCommand("skyplot")).setExecutor(new SkyPlot(this));
         Objects.requireNonNull(getCommand("tags")).setExecutor(new Tags(this, db));
     }
 

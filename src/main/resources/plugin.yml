@@ -8,14 +8,6 @@ website: https://skyprison.net/
 depend: [WorldGuard, WorldEdit, PlaceholderAPI, CMI, Parkour, ShopGUIPlus, CoreProtect, PvPManager, AdvancedRegionMarket]
 commands:
   #
-  # Minigame Commands
-  #
-  sponge:
-    description: Sponge Commands
-    usage: /<command>
-    permission: skyprisoncore.command.sponge
-    permission-message: §4Error:§c You do not have permission to execute this command...
-  #
   # Cheese?
   #
   skyplot:
@@ -42,10 +34,6 @@ permissions:
   #
   # Minigame Permissions
   #
-  skyprisoncore.command.sponge:
-    description: Gives acess to /sponge
-  skyprisoncore.command.skyplot:
-    description: Gives access to /skyplot
   skyprisoncore.command.tags:
     description: Gives access to /tags
   skyprisoncore.command.tags.admin:

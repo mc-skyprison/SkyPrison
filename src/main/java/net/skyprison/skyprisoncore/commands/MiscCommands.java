@@ -14,6 +14,7 @@ import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -41,9 +42,11 @@ public class MiscCommands {
         this.db = db;
         this.manager = manager;
         createMiscCommands();
+        createSpongeCommands();
     }
     private record FirstJoins(long date, List<FirstJoin> joins) {}
     private record FirstJoin(UUID uuid, String name, long firstJoin, String date) {}
+    private record SpongeLocation(int id, int orderPos, String world, int x, int y, int z) {}
     private void createMiscCommands() {
         manager.command(manager.commandBuilder("killinfo", "killsinfo", "killstats", "pvpstats")
                 .senderType(Player.class)
@@ -213,6 +216,157 @@ public class MiscCommands {
                     }
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new PlotTeleport(player).getInventory()));
                 }));
+    }
+    private void createSpongeCommands() {
+        Component prefix = Component.text("Sponge", TextColor.fromHexString("#FFFF00")).append(Component.text(" | ", NamedTextColor.WHITE));
+        Component line = Component.text("      ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH);
+
+        Component help = line.append(Component.text(" Sponge Commands ", TextColor.fromHexString("#FFFF00"), TextDecoration.BOLD)).append(line)
+                .append(Component.text("\n/sponge set\n/sponge list\n/sponge delete <id>\n/sponge tp <id>", TextColor.fromHexString("#7fff00")))
+                .decorationIfAbsent(TextDecoration.STRIKETHROUGH, TextDecoration.State.FALSE);
+
+        Command.Builder<Player> sponge = manager.commandBuilder("sponge")
+                .senderType(Player.class)
+                .permission("skyprisoncore.command.sponge")
+                .handler(c -> c.sender().sendMessage(help));
+        manager.command(sponge);
+
+        manager.command(sponge.literal("set")
+                .handler(c -> {
+                    Player player = c.sender();
+                    Location loc = player.getLocation();
+                    List<SpongeLocation> spongeLocations = new ArrayList<>();
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT * FROM sponge_locations")) {
+                        ResultSet rs = ps.executeQuery();
+                        while (rs.next()) {
+                            spongeLocations.add(new SpongeLocation(rs.getInt(1), rs.getInt(2), rs.getString(3),
+                                    rs.getInt(4), rs.getInt(5), rs.getInt(6)));
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                    if(spongeLocations.stream().anyMatch(spongeLoc -> spongeLoc.world().equalsIgnoreCase(loc.getWorld().getName())
+                            && spongeLoc.x() == loc.blockX() && spongeLoc.y() == loc.blockY() && spongeLoc.z() == loc.blockZ())) {
+                        player.sendMessage(prefix.append(Component.text("There's already a sponge location here!", NamedTextColor.RED)));
+                        return;
+                    }
+
+                    int max = spongeLocations.stream().mapToInt(SpongeLocation::orderPos).max().orElse(0);
+
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO sponge_locations (order_id, world, x, y, z) VALUES (?, ?, ?, ?, ?)")) {
+                        ps.setInt(1, max + 1);
+                        ps.setString(2, loc.getWorld().getName());
+                        ps.setInt(3, loc.blockX());
+                        ps.setInt(4, loc.blockY());
+                        ps.setInt(5, loc.blockZ());
+                        ps.executeUpdate();
+                        player.sendMessage(prefix.append(Component.text("Successfully created a sponge location!", TextColor.fromHexString("#7fff00"))));
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }));
+        manager.command(sponge.literal("list")
+                .handler(c -> {
+                    Player player = c.sender();
+                    List<SpongeLocation> spongeLocations = new ArrayList<>();
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT * FROM sponge_locations")) {
+                        ResultSet rs = ps.executeQuery();
+                        while (rs.next()) {
+                            spongeLocations.add(new SpongeLocation(rs.getInt(1), rs.getInt(2), rs.getString(3),
+                                    rs.getInt(4), rs.getInt(5), rs.getInt(6)));
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                    spongeList(player, spongeLocations, 1);
+                }));
+        manager.command(sponge.literal("delete")
+                .required("id", integerParser())
+                .handler(c -> {
+                    Player player = c.sender();
+                    int id = c.get("id");
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM sponge_locations WHERE order_id = ?")) {
+                        ps.setInt(1, id);
+                        int deleted = ps.executeUpdate();
+                        if(deleted == 0) {
+                            player.sendMessage(prefix.append(Component.text("No sponge location with that ID!", NamedTextColor.RED)));
+                            return;
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE sponge_locations SET order_id = order_id - 1 WHERE order_id > ?")) {
+                        ps.setInt(1, id);
+                        ps.executeUpdate();
+                        player.sendMessage(prefix.append(Component.text("Successfully deleted sponge location!", TextColor.fromHexString("#7fff00"))));
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }));
+        manager.command(sponge.literal("tp")
+                .required("id", integerParser())
+                .handler(c -> {
+                    Player player = c.sender();
+                    int id = c.get("id");
+                    Location loc = null;
+                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT world, x, y, z FROM sponge_locations WHERE order_id = ?")) {
+                        ps.setInt(1, id);
+                        ResultSet rs = ps.executeQuery();
+                        if (rs.next()) {
+                            loc = new Location(Bukkit.getWorld(rs.getString(1)), rs.getInt(2), rs.getInt(3), rs.getInt(4));
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                    if(loc == null) {
+                        player.sendMessage(prefix.append(Component.text("No sponge location with that ID!", NamedTextColor.RED)));
+                        return;
+                    }
+                    if(player.teleportAsync(loc).isCompletedExceptionally()) {
+                        player.sendMessage(prefix.append(Component.text("Failed to teleport to sponge location!", NamedTextColor.RED)));
+                        return;
+                    }
+                    player.sendMessage(prefix.append(Component.text("Successfully teleported to sponge location!", TextColor.fromHexString("#7fff00"))));
+                }));
+    }
+    private void spongeList(Player player, List<SpongeLocation> locations, int page) {
+        int totalPages = (int) Math.ceil(locations.size() / 10.0);
+
+
+        List<SpongeLocation> locs = new ArrayList<>(locations);
+        int toDelete = 10 * (page - 1);
+        if (toDelete != 0) {
+            locs = locs.subList(toDelete, locs.size());
+        }
+
+
+        Component line = Component.text("      ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH);
+        Component msg = line.append(Component.text(" Sponge Locations ", TextColor.fromHexString("#FFFF00"), TextDecoration.BOLD)).append(line);
+        for(SpongeLocation loc : locs) {
+            msg = msg.append(Component.text("\n" + loc.orderPos + ". ", TextColor.fromHexString("#cea916"))
+                    .append(Component.text("X " + loc.x + " Y " + loc.y + " Z " + loc.z, TextColor.fromHexString("#7fff00")))
+                    .hoverEvent(HoverEvent.showText(Component.text("Click to teleport to this location", NamedTextColor.GRAY)))
+                    .clickEvent(ClickEvent.callback(audience -> player.teleportAsync(new Location(player.getWorld(), loc.x, loc.y, loc.z)))));
+        }
+
+        int nextPage = page + 1;
+        int prevPage = page - 1;
+        Component pages = Component.text(page, TextColor.fromHexString("#266d27")).append(Component.text("/", NamedTextColor.GRAY)
+                .append(Component.text(totalPages, TextColor.fromHexString("#266d27"))));
+        Component next = Component.text(" Next --->", NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text(">>>", NamedTextColor.GRAY)))
+                .clickEvent(ClickEvent.callback(audience -> spongeList(player, locations, nextPage)));
+        Component prev = Component.text("<--- Prev ", NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text("<<<", NamedTextColor.GRAY)))
+                .clickEvent(ClickEvent.callback(audience -> spongeList(player, locations, prevPage)));
+
+        if (page == 1 && page != totalPages) {
+            msg = msg.appendNewline().append(pages).append(next);
+        } else if (page != 1 && page == totalPages) {
+            msg = msg.appendNewline().append(prev).append(pages);
+        } else if (page != 1) {
+            msg = msg.appendNewline().append(prev).append(pages).append(next);
+        }
+        msg = msg.decorationIfAbsent(TextDecoration.STRIKETHROUGH, TextDecoration.State.FALSE);
+        player.sendMessage(msg);
     }
     private List<UUID> getIgnoredTps(Player player) {
         List<UUID> ignoredPlayers = new ArrayList<>();
