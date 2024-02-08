@@ -10,11 +10,6 @@ commands:
   #
   # Cheese?
   #
-  skyplot:
-    description: Opens the skyplot GUI
-    usage: /<command>
-    permission: skyprisoncore.command.skyplot
-    permission-message: §4Error:§c You do not have permission to execute this command...
   tags:
     description: Tags command
     usage: /<command>

@@ -30,16 +30,13 @@ import java.util.List;
 public class Tags implements CommandExecutor {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
-
     public Tags(SkyPrisonCore plugin, DatabaseHook db) {
         this.plugin = plugin;
         this.db = db;
     }
-
     private Component formatMsg(String msg) {
          return MiniMessage.miniMessage().deserialize(msg);
     }
-
     public void openGUI(Player player, Integer page) {
         List<List<Object>> tags = new ArrayList<>();
 
@@ -153,7 +150,6 @@ public class Tags implements CommandExecutor {
 
         player.openInventory(bounties);
     }
-
     public void openNewGUI(Player player, String display, String lore, String effect) {
         Inventory bounties = Bukkit.createInventory(null, 27, Component.text("Tags | Create New", NamedTextColor.RED));
         for (int i = 0; i < 27; i++) {
@@ -245,7 +241,6 @@ public class Tags implements CommandExecutor {
 
         player.openInventory(bounties);
     }
-
     public void openSpecificGUI(Player player, Integer tag_id) {
         String name = "";
         String lore = "";
@@ -358,7 +353,6 @@ public class Tags implements CommandExecutor {
         }
         player.openInventory(bounties);
     }
-
     public void openEditGUI(Player player, Integer page) {
         List<List<Object>> tags = new ArrayList<>();
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tags_id, tags_display, tags_lore, tags_effect FROM tags")) {
@@ -445,7 +439,6 @@ public class Tags implements CommandExecutor {
 
         player.openInventory(bounties);
     }
-
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if(sender instanceof Player player) {

@@ -217,6 +217,33 @@ public class MiscCommands {
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new PlotTeleport(player).getInventory()));
                 }));
     }
+    private void createTagCommands() {
+        Command.Builder<Player> tags = manager.commandBuilder("tags")
+                .senderType(Player.class)
+                .permission("skyprisoncore.command.tags")
+                .handler(c -> {
+                        Player player = c.sender();
+                        Bukkit.getScheduler().runTask(plugin, () ->
+                                player.openInventory(new NewsMessages(plugin, db, true, 1).getInventory()));
+                        });
+        manager.command(tags);
+
+        manager.command(tags.permission("skyprisoncore.command.tags.admin")
+                .literal("edit")
+                .handler(c -> {
+                    Player player = c.sender();
+                    Bukkit.getScheduler().runTask(plugin, () ->
+                            player.openInventory(new NewsMessages(plugin, db, true, 1).getInventory()));
+                }));
+
+        manager.command(tags.permission("skyprisoncore.command.tags.admin")
+                .literal("new")
+                .handler(c -> {
+                    Player player = c.sender();
+                    Bukkit.getScheduler().runTask(plugin, () ->
+                            player.openInventory(new NewsMessages(plugin, db, true, 1).getInventory()));
+                }));
+    }
     private void createSpongeCommands() {
         Component prefix = Component.text("Sponge", TextColor.fromHexString("#FFFF00")).append(Component.text(" | ", NamedTextColor.WHITE));
         Component line = Component.text("      ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH);
