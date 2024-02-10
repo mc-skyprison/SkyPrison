@@ -59,14 +59,13 @@ public class Placeholders extends PlaceholderExpansion {
 	}
 
 	private String getBusPrice(Player player, String identifier) {
-		CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
 		Location warpLoc = CMI.getInstance().getWarpManager().getWarp(identifier).getLoc();
-		int dist = (int) user.getLocation().distance(warpLoc);
+		int dist = (int) player.getLocation().distance(warpLoc);
 		if(dist < 10) {
 			return "&7&oYou Are Here";
 		} else {
 			if(!player.hasPermission("skyprisoncore.command.transportpass.bus")) {
-				if (user.getWorld().getTime() > 0 && user.getWorld().getTime() < 12300) {
+				if (player.getWorld().getTime() > 0 && player.getWorld().getTime() < 12300) {
 					return "&7Price: &e$" + dist;
 				} else {
 					int nightDist = (int) (dist * 1.5);
@@ -79,14 +78,13 @@ public class Placeholders extends PlaceholderExpansion {
 	}
 
 	private String getBusPriceInt(Player player, String identifier) {
-		CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
 		Location warpLoc = CMI.getInstance().getWarpManager().getWarp(identifier).getLoc();
-		int dist = (int) user.getLocation().distance(warpLoc);
+		int dist = (int) player.getLocation().distance(warpLoc);
 		if(dist < 10) {
 			return "0";
 		} else {
 			if(!player.hasPermission("skyprisoncore.command.transportpass.bus")) {
-				if (user.getWorld().getTime() > 0 && user.getWorld().getTime() < 12300) {
+				if (player.getWorld().getTime() > 0 && player.getWorld().getTime() < 12300) {
 					return String.valueOf(dist);
 				} else {
 					int nightDist = (int) (dist * 1.5);
@@ -99,9 +97,8 @@ public class Placeholders extends PlaceholderExpansion {
 	}
 
 	private String getTrainPrice(Player player, String identifier) {
-		CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
 		Location warpLoc = CMI.getInstance().getWarpManager().getWarp(identifier).getLoc();
-		int dist = (int) user.getLocation().distance(warpLoc);
+		int dist = (int) player.getLocation().distance(warpLoc);
 		if(dist < 50) {
 			return "&7&oYou Are Here";
 		} else {
@@ -113,9 +110,8 @@ public class Placeholders extends PlaceholderExpansion {
 	}
 
 	private String getTrainPriceInt(Player player, String identifier) {
-		CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
 		Location warpLoc = CMI.getInstance().getWarpManager().getWarp(identifier).getLoc();
-		int dist = (int) user.getLocation().distance(warpLoc);
+		int dist = (int) player.getLocation().distance(warpLoc);
 		if(dist < 50) {
 			return "0";
 		} else {
@@ -227,8 +223,7 @@ public class Placeholders extends PlaceholderExpansion {
 		}
 
 		if(identifier.equalsIgnoreCase("can_afford_bribe")) {
-			CMIUser user = CMI.getInstance().getPlayerManager().getUser(player);
-			return String.valueOf(user.hasMoney((double) getBribeAmount(player)) ? 1 : 0);
+			return String.valueOf(PlayerManager.getBalance(player) >= getBribeAmount(player) ? 1 : 0);
 		}
 
 
