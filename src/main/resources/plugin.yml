@@ -6,15 +6,6 @@ main: net.skyprison.skyprisoncore.SkyPrisonCore
 api-version: "$apiVersion"
 website: https://skyprison.net/
 depend: [WorldGuard, WorldEdit, PlaceholderAPI, CMI, Parkour, ShopGUIPlus, CoreProtect, PvPManager, AdvancedRegionMarket]
-commands:
-  #
-  # Cheese?
-  #
-  tags:
-    description: Tags command
-    usage: /<command>
-    permission: skyprisoncore.command.tags
-    permission-message: §4Error:§c You do not have permission to execute this command...
 permissions:
   #
   # Guard Permissions
@@ -26,10 +17,3 @@ permissions:
     description: Shows when a player hits you
   skyprisoncore.contraband.itembypass:
     description: Bypasses Item Removal and that kind of stuff
-  #
-  # Minigame Permissions
-  #
-  skyprisoncore.command.tags:
-    description: Gives access to /tags
-  skyprisoncore.command.tags.admin:
-    description: Gives access to tags stuff

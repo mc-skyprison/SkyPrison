@@ -340,8 +340,9 @@ public class Placeholders extends PlaceholderExpansion {
 		}
 
         if(identifier.equalsIgnoreCase("user_tag")) {
-			if(plugin.userTags.get(player.getUniqueId()) != null) {
-				return plugin.userTags.get(player.getUniqueId());
+			PlayerManager.PlayerTag tag = PlayerManager.getPlayerTag(player.getUniqueId());
+			if(tag != null) {
+				return tag.tag().display();
 			} else {
 				return "";
 			}

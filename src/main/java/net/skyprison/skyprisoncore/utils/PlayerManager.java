@@ -1,12 +1,16 @@
 package net.skyprison.skyprisoncore.utils;
 
 import com.Zrips.CMI.CMI;
+import dev.esophose.playerparticles.api.PlayerParticlesAPI;
+import dev.esophose.playerparticles.particles.ParticleEffect;
+import dev.esophose.playerparticles.styles.DefaultStyles;
 import net.kyori.adventure.text.Component;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.cacheddata.CachedPermissionData;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.model.user.UserManager;
+import net.skyprison.skyprisoncore.inventories.tags.TagsEdit;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
@@ -26,15 +30,35 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static net.skyprison.skyprisoncore.SkyPrisonCore.db;
 
 public class PlayerManager {
+    private static final List<PlayerTag> playerTags = new ArrayList<>();
+    public record PlayerTag(UUID playerId, Tags.Tag tag) {}
+    public static final HashMap<UUID, HashMap<Tags.Tag, TagsEdit>> tagsEdit = new HashMap<>();
+    public static PlayerTag getPlayerTag(UUID pUUID) {
+        return playerTags.stream().filter(tag -> tag.playerId().equals(pUUID)).findFirst().orElse(null);
+    }
+    public static void addPlayerTags(PlayerTag ...tags) {
+        Collections.addAll(playerTags, tags);
+
+        Arrays.stream(tags).toList().forEach(playerTag -> {
+            Player player = Bukkit.getPlayer(playerTag.playerId);
+            if(player != null && playerTag.tag().effectType() != null && playerTag.tag().effectStyle() != null) {
+                PlayerParticlesAPI particles = PlayerParticlesAPI.getInstance();
+                particles.resetActivePlayerParticles(player);
+                particles.addActivePlayerParticle(player, ParticleEffect.fromInternalName(playerTag.tag().effectType()),
+                        Tags.effectStyles().stream().filter(style -> style.getName().equalsIgnoreCase(playerTag.tag().effectStyle())).findFirst().orElse(DefaultStyles.NORMAL));
+            }
+        });
+    }
+    public static void removePlayerTags(PlayerTag ...tags) {
+        if(tags != null) playerTags.removeAll(Arrays.stream(tags).toList());
+    }
     public static UUID getPlayerId(String playerName) {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id FROM users WHERE current_name = ?")) {
             ps.setString(1, playerName);

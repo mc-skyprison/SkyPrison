@@ -10,6 +10,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.misc.NewsMessages;
 import net.skyprison.skyprisoncore.inventories.misc.PlotTeleport;
 import net.skyprison.skyprisoncore.inventories.recipes.CustomMain;
+import net.skyprison.skyprisoncore.inventories.tags.TagsView;
 import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
@@ -43,6 +44,7 @@ public class MiscCommands {
         this.manager = manager;
         createMiscCommands();
         createSpongeCommands();
+        createTagCommands();
     }
     private record FirstJoins(long date, List<FirstJoin> joins) {}
     private record FirstJoin(UUID uuid, String name, long firstJoin, String date) {}
@@ -224,25 +226,9 @@ public class MiscCommands {
                 .handler(c -> {
                         Player player = c.sender();
                         Bukkit.getScheduler().runTask(plugin, () ->
-                                player.openInventory(new NewsMessages(plugin, db, true, 1).getInventory()));
+                                player.openInventory(new TagsView(player).getInventory()));
                         });
         manager.command(tags);
-
-        manager.command(tags.permission("skyprisoncore.command.tags.admin")
-                .literal("edit")
-                .handler(c -> {
-                    Player player = c.sender();
-                    Bukkit.getScheduler().runTask(plugin, () ->
-                            player.openInventory(new NewsMessages(plugin, db, true, 1).getInventory()));
-                }));
-
-        manager.command(tags.permission("skyprisoncore.command.tags.admin")
-                .literal("new")
-                .handler(c -> {
-                    Player player = c.sender();
-                    Bukkit.getScheduler().runTask(plugin, () ->
-                            player.openInventory(new NewsMessages(plugin, db, true, 1).getInventory()));
-                }));
     }
     private void createSpongeCommands() {
         Component prefix = Component.text("Sponge", TextColor.fromHexString("#FFFF00")).append(Component.text(" | ", NamedTextColor.WHITE));

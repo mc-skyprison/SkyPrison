@@ -25,7 +25,6 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.skyprison.skyprisoncore.commands.*;
-import net.skyprison.skyprisoncore.commands.old.Tags;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.inventories.mail.MailBoxSend;
 import net.skyprison.skyprisoncore.inventories.misc.DatabaseInventoryEdit;
@@ -120,7 +119,6 @@ public class SkyPrisonCore extends JavaPlugin {
     public HashMap<UUID, Boolean> flyPvP = new HashMap<>();
     public Map<Player, Map.Entry<Player, Long>> hitcd = new HashMap<>();
     public HashMap<UUID, Integer> teleportMove = new HashMap<>();
-    public HashMap<UUID, String> userTags = new HashMap<>();
     public HashMap<UUID, ArrayList<String>> missions = new HashMap<>();
     public Map<String, Long> mineCools = new HashMap<>();
     public HashMap<UUID, List<Object>> chatLock = new HashMap<>();
@@ -160,7 +158,6 @@ public class SkyPrisonCore extends JavaPlugin {
     public static final HashMap<UUID, Long> bountyCooldown = new HashMap<>();
     public static final HashMap<UUID, Integer> safezoneViolators = new HashMap<>();
     public static final Component pluginPrefix = Component.text("Sky", TextColor.fromHexString("#0fc3ff")).append(Component.text("Prison", TextColor.fromHexString("#ff0000")));
-
     @Override
     public void onLoad() {
         FlagRegistry registry = WorldGuard.getInstance().getFlagRegistry();
@@ -249,6 +246,8 @@ public class SkyPrisonCore extends JavaPlugin {
         registerCommands();
         registerEvents();
 
+        new Tags().loadTags(db);
+
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new Placeholders(this, dailyMissions, db).register();
             getLogger().info("Placeholders registered");
@@ -318,7 +317,6 @@ public class SkyPrisonCore extends JavaPlugin {
             }
         }.runTaskTimerAsynchronously(this, 20 * 635, 20 * 635);
     }
-
     private final Map<String, TagResolver> DEFAULT_TAGS = Map.ofEntries(
             Map.entry("color", StandardTags.color()),
             Map.entry("reset", StandardTags.reset()),
@@ -715,8 +713,6 @@ public class SkyPrisonCore extends JavaPlugin {
 
         Permission bountyBypass = new Permission("skyprisoncore.command.bounty.bypass", PermissionDefault.FALSE);
         Bukkit.getPluginManager().addPermission(bountyBypass);
-
-        Objects.requireNonNull(getCommand("tags")).setExecutor(new Tags(this, db));
     }
 
     public void registerEvents() {
@@ -730,7 +726,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EntityDamageByEntity(this), this);
         pm.registerEvents(new EntityDeath(this, db, dailyMissions), this);
         pm.registerEvents(new EntityPickupItem(this), this);
-        pm.registerEvents(new InventoryClick(this, db, new Tags(this, db), particles), this);
+        pm.registerEvents(new InventoryClick(this, db, particles), this);
         pm.registerEvents(new InventoryOpen(this), this);
         pm.registerEvents(new LeavesDecay(), this);
         pm.registerEvents(new McMMOLevelUp(this), this);
@@ -768,7 +764,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PlayerSwapHandItems(this), this);
         pm.registerEvents(new CraftItem(), this);
 
-        pm.registerEvents(new AsyncChat(this, discApi, db, new Tags(this, db)), this);
+        pm.registerEvents(new AsyncChat(this, discApi, db), this);
         pm.registerEvents(new PlayerQuit(this, db, discApi, dailyMissions), this);
         pm.registerEvents(new PlayerJoin(this, db, discApi, dailyMissions, particles), this);
 

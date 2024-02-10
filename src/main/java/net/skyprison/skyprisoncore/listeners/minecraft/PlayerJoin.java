@@ -17,7 +17,7 @@ import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
 import dev.esophose.playerparticles.api.PlayerParticlesAPI;
 import dev.esophose.playerparticles.particles.ParticleEffect;
-import dev.esophose.playerparticles.styles.ParticleStyle;
+import dev.esophose.playerparticles.styles.DefaultStyles;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -25,10 +25,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.JailCommands;
-import net.skyprison.skyprisoncore.utils.DailyMissions;
-import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.MailUtils;
-import net.skyprison.skyprisoncore.utils.TokenUtils;
+import net.skyprison.skyprisoncore.utils.*;
 import net.skyprison.skyprisoncore.utils.claims.ClaimUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -302,25 +299,14 @@ public class PlayerJoin implements Listener {
                 JailCommands.setJail(Bukkit.getConsoleSender(), player, jailReason, jailTime, false);
             }
 
-            if(!plugin.userTags.containsKey(player.getUniqueId())) {
-                if(tag_id != 0) {
-                    String tagsDisplay = "";
-                    String tagsEffect = "";
-                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT tags_display, tags_effect FROM tags WHERE tags_id = ?")) {
-                        ps.setInt(1, tag_id);
-                        ResultSet rs = ps.executeQuery();
-                        if (rs.next()) {
-                            tagsDisplay = rs.getString(1);
-                            tagsEffect = rs.getString(2);
-                        }
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                    plugin.userTags.put(player.getUniqueId(), tagsDisplay);
-                    particles.resetActivePlayerParticles(player);
-                    if(tagsEffect != null && !tagsEffect.isEmpty())
-                        particles.addActivePlayerParticle(player, ParticleEffect.CLOUD, ParticleStyle.fromInternalName(tagsEffect));
-                }
+            if(PlayerManager.getPlayerTag(player.getUniqueId()) == null && tag_id != 0) {
+                Tags.Tag tagObject = Tags.getTag(tag_id);
+                if(tagObject == null) return;
+                PlayerManager.addPlayerTags(new PlayerTag(player.getUniqueId(), tagObject));
+                particles.resetActivePlayerParticles(player);
+                if(tagObject.effectType() != null && tagObject.effectStyle() != null)
+                    particles.addActivePlayerParticle(player, ParticleEffect.fromInternalName(tagObject.effectType()),
+                            Tags.effectStyles().stream().filter(style -> style.getName().equalsIgnoreCase(tagObject.effectStyle())).findFirst().orElse(DefaultStyles.NORMAL));
             }
         });
     }
