@@ -29,6 +29,8 @@ import net.skyprison.skyprisoncore.inventories.mail.MailBoxMembers;
 import net.skyprison.skyprisoncore.inventories.mail.MailBoxSend;
 import net.skyprison.skyprisoncore.inventories.mail.MailBoxSettings;
 import net.skyprison.skyprisoncore.inventories.misc.DatabaseInventoryEdit;
+import net.skyprison.skyprisoncore.inventories.misc.Ignore;
+import net.skyprison.skyprisoncore.inventories.misc.IgnoreEdit;
 import net.skyprison.skyprisoncore.inventories.misc.NewsMessageEdit;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsCategoryEdit;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsEdit;
@@ -51,6 +53,9 @@ import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.channel.TextChannel;
 
 import java.io.File;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -173,6 +178,49 @@ public class AsyncChat implements Listener {
                             }
                         }
                     }
+                    if(removeChatLock) {
+                        player.openInventory(inv.getInventory());
+                        plugin.chatLock.remove(player.getUniqueId());
+                    }
+                    event.setCancelled(true);
+                    return;
+                } else if(lockType instanceof Ignore inv) {
+                    if(!msg.equalsIgnoreCase("cancel")) {
+                        UUID targetId = PlayerManager.getPlayerId(msg);
+                        if(targetId != null) {
+                            if(!player.getUniqueId().equals(targetId)) {
+                                if(!PlayerManager.getPlayerIgnores(player.getUniqueId()).stream().anyMatch(ignore -> ignore.targetId().equals(targetId))) {
+                                    PlayerManager.Ignore ignore = new PlayerManager.Ignore(player.getUniqueId(), targetId, false, false);
+                                    PlayerManager.addPlayerIgnores(ignore);
+                                    try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                                            "INSERT INTO user_ignores (user_id, ignored_id) VALUES (?, ?)")) {
+                                        ps.setString(1, player.getUniqueId().toString());
+                                        ps.setString(2, ignore.targetId().toString());
+                                        ps.executeUpdate();
+                                        player.sendMessage(Component.text("Successfully added ", NamedTextColor.GREEN)
+                                                .append(Component.text(msg, NamedTextColor.GREEN, TextDecoration.BOLD))
+                                                .append(Component.text(" to /ignore! Opening ignore options..", NamedTextColor.GREEN)));
+                                        plugin.chatLock.remove(player.getUniqueId());
+                                        player.openInventory(new IgnoreEdit(player, ignore, db).getInventory());
+                                        event.setCancelled(true);
+                                        return;
+                                    } catch (SQLException e) {
+                                        e.printStackTrace();
+                                    }
+                                } else {
+                                    player.sendMessage(Component.text("Player is already on your list! Try again..", NamedTextColor.RED));
+                                    removeChatLock = false;
+                                }
+                            } else {
+                                player.sendMessage(Component.text("You can't add yourself to the list! Try again..", NamedTextColor.RED));
+                                removeChatLock = false;
+                            }
+                        } else {
+                            player.sendMessage(Component.text("Player doesn't exist! Try again..", NamedTextColor.RED));
+                            removeChatLock = false;
+                        }
+                    }
+
                     if(removeChatLock) {
                         player.openInventory(inv.getInventory());
                         plugin.chatLock.remove(player.getUniqueId());

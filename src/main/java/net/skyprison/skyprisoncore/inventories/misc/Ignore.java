@@ -20,12 +20,13 @@ import java.util.*;
 public class Ignore implements CustomInventory {
     private final Inventory inventory;
     private int page = 1;
-    private final LinkedHashMap<ItemStack, PlayerManager.Ignore> ignoreDisplay = new LinkedHashMap<>();
+    private final List<IgnoreItem> ignoreDisplay = new ArrayList<>();
     private final ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
     private final ItemStack nextPage = new ItemStack(Material.PAPER);
     private final ItemStack prevPage = new ItemStack(Material.PAPER);
+    private record IgnoreItem(UUID targetId, ItemStack item, PlayerManager.Ignore ignore) {}
     public void updatePage(int page) {
-        List<ItemStack> ignoresToShow = ignoreDisplay.keySet().stream().toList();
+        List<ItemStack> ignoresToShow = ignoreDisplay.stream().map(IgnoreItem::item).toList();
 
         int totalPages = (int) Math.ceil((double) ignoresToShow.size() / 45);
 
@@ -37,7 +38,6 @@ public class Ignore implements CustomInventory {
         for(int i = 0; i < 45; i++) {
             inventory.setItem(i, null);
         }
-
         inventory.setItem(46, this.page == 1 ? blackPane : prevPage);
         inventory.setItem(52, totalPages < 2 || this.page == totalPages ? blackPane : nextPage);
         int toRemove = 45 * (this.page - 1);
@@ -78,7 +78,7 @@ public class Ignore implements CustomInventory {
                 lore.add(Component.text("Click to edit options", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
                 meta.lore(lore);
             });
-            ignoreDisplay.put(ignoreHead, ignore);
+            ignoreDisplay.add(new IgnoreItem(ignore.targetId(), ignoreHead, ignore));
         });
 
         blackPane.editMeta(meta -> meta.displayName(Component.text(" ")));
@@ -87,10 +87,21 @@ public class Ignore implements CustomInventory {
         for(int i = 45; i < 54; i++) {
             inventory.setItem(i, blackPane);
         }
+        ItemStack addIgnore = new ItemStack(Material.LIME_CONCRETE);
+        addIgnore.editMeta(meta -> {
+            meta.displayName(Component.text("Add Player to Ignore", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+            meta.lore(Collections.singletonList(Component.text("Click to add a player to your ignore list", NamedTextColor.GRAY)
+                    .decoration(TextDecoration.ITALIC, false)));
+        });
+        inventory.setItem(53, addIgnore);
         updatePage(0);
     }
     public PlayerManager.Ignore getIgnore(ItemStack item) {
-        return ignoreDisplay.get(item);
+        return ignoreDisplay.stream().filter(ignore -> {
+            SkullMeta meta = (SkullMeta) item.getItemMeta();
+            SkullMeta ignoreMeta = (SkullMeta) ignore.item().getItemMeta();
+            return Objects.equals(meta.getOwningPlayer(), ignoreMeta.getOwningPlayer());
+        }).findFirst().map(IgnoreItem::ignore).orElse(null);
     }
     @Override
     public ClickBehavior defaultClickBehavior() {

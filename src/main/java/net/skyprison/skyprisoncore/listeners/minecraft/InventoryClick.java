@@ -2076,7 +2076,13 @@ public class InventoryClick implements Listener {
                     if(isPaper) {
                         inv.updatePage(event.getSlot() == 46 ? -1 : 1);
                     } else {
-                        player.openInventory(new IgnoreEdit(player, inv.getIgnore(currItem), db).getInventory());
+                        if(event.getSlot() == 53) {
+                            plugin.chatLock.put(player.getUniqueId(), List.of(inv));
+                            player.closeInventory();
+                            player.sendMessage(Component.text("Type the player to add to your ignore list: (Type 'cancel' to cancel)", NamedTextColor.YELLOW));
+                        } else {
+                            player.openInventory(new IgnoreEdit(player, inv.getIgnore(currItem), db).getInventory());
+                        }
                     }
                 }
             }
