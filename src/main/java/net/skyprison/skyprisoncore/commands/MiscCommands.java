@@ -317,13 +317,13 @@ public class MiscCommands {
                 .clickEvent(ClickEvent.callback(audience -> spongeList(player, locations, prevPage)));
 
         if (page == 1 && page != totalPages) {
-            msg = msg.appendNewline().append(pages).append(next);
+            msg = msg.appendNewline().append(pages.decoration(TextDecoration.ITALIC, false)).append(next.decoration(TextDecoration.ITALIC, false));
         } else if (page != 1 && page == totalPages) {
-            msg = msg.appendNewline().append(prev).append(pages);
+            msg = msg.appendNewline().append(prev.decoration(TextDecoration.ITALIC, false)).append(pages.decoration(TextDecoration.ITALIC, false));
         } else if (page != 1) {
-            msg = msg.appendNewline().append(prev).append(pages).append(next);
+            msg = msg.appendNewline().append(prev.decoration(TextDecoration.ITALIC, false)).append(pages.decoration(TextDecoration.ITALIC, false))
+                    .append(next.decoration(TextDecoration.ITALIC, false));
         }
-        msg = msg.decorationIfAbsent(TextDecoration.STRIKETHROUGH, TextDecoration.State.FALSE);
         player.sendMessage(msg);
     }
     private void sendFirstjoin(CommandSender sender, int page) {
