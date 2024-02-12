@@ -5,7 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.items.Greg;
-import org.apache.commons.lang.WordUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
@@ -229,7 +229,7 @@ public enum RandomReward {
             if(item.getType().equals(Material.FISHING_ROD)) {
                 type = item.getType().toString().toLowerCase().replace("_", " ");
             }
-            String name = WordUtils.capitalize(reward.title + " " + type);
+            String name = StringUtils.capitalize(reward.title + " " + type);
             lore.add(MiniMessage.miniMessage().deserialize(reward.desc));
             iMeta.lore(lore);
             iMeta.displayName(Component.text(name, NamedTextColor.GRAY));

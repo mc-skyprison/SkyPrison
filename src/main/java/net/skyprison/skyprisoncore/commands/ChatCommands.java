@@ -8,7 +8,10 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.inventories.misc.Ignore;
+import net.skyprison.skyprisoncore.inventories.misc.IgnoreEdit;
 import net.skyprison.skyprisoncore.utils.ChatUtils;
+import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;
@@ -16,11 +19,15 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.incendo.cloud.Command;
+import org.incendo.cloud.component.DefaultValue;
 import org.incendo.cloud.paper.PaperCommandManager;
 import org.incendo.cloud.permission.Permission;
 import org.incendo.cloud.suggestion.SuggestionProvider;
 import org.javacord.api.DiscordApi;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -34,9 +41,11 @@ public class ChatCommands {
     private final SkyPrisonCore plugin;
     private final PaperCommandManager<CommandSender> manager;
     private final ChatUtils chatUtils;
-    public ChatCommands(SkyPrisonCore plugin, PaperCommandManager<CommandSender> manager, DiscordApi discApi) {
+    private final DatabaseHook db;
+    public ChatCommands(SkyPrisonCore plugin, PaperCommandManager<CommandSender> manager, DiscordApi discApi, DatabaseHook db) {
         this.plugin = plugin;
         this.manager = manager;
+        this.db = db;
         createChatCommands();
         this.chatUtils = new ChatUtils(plugin, discApi);
     }
@@ -164,6 +173,46 @@ public class ChatCommands {
                     }
                     setMultiColour(sender, targetId, colName, isOther);
                 }));
+
+        manager.command(manager.commandBuilder("ignore")
+                .senderType(Player.class)
+                .permission("skyprisoncore.command.ignore")
+                .optional("player", stringParser(), DefaultValue.constant(""))
+                .handler(c -> {
+                    Player player = c.sender();
+                    String target = c.get("player");
+                    if(target.isEmpty()) {
+                        Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new Ignore(player).getInventory()));
+                        return;
+                    }
+                    UUID targetId = PlayerManager.getPlayerId(target);
+                    if(targetId == null) {
+                        player.sendMessage(Component.text("Player not found!", NamedTextColor.RED));
+                        return;
+                    }
+                    if(targetId.equals(player.getUniqueId())) {
+                        player.sendMessage(Component.text("You can't ignore yourself!", NamedTextColor.RED));
+                        return;
+                    }
+                    PlayerManager.Ignore ignore = PlayerManager.getPlayerIgnore(player.getUniqueId(), targetId);
+                    if(ignore == null) {
+                        ignore = new PlayerManager.Ignore(player.getUniqueId(), targetId, false, false);
+                        PlayerManager.addPlayerIgnores(ignore);
+                        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                                "INSERT INTO user_ignores (user_id, ignored_id) VALUES (?, ?)")) {
+                            ps.setString(1, player.getUniqueId().toString());
+                            ps.setString(2, ignore.targetId().toString());
+                            ps.executeUpdate();
+                            player.sendMessage(Component.text("Successfully added ", NamedTextColor.GREEN)
+                                    .append(Component.text(target, NamedTextColor.GREEN, TextDecoration.BOLD))
+                                    .append(Component.text(" to /ignore! Opening ignore options..", NamedTextColor.GREEN)));
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    PlayerManager.Ignore finalIgnore = ignore;
+                    Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new IgnoreEdit(player, finalIgnore, db).getInventory()));
+                }));
     }
     private List<String> getColours() {
         List<String> namedCols = new ArrayList<>(NamedTextColor.NAMES.keys().stream().toList());
@@ -271,6 +320,19 @@ public class ChatCommands {
         sender.sendMessage(help);
     }
     private void sendPrivateMessage(CommandSender sender, Audience receiver, String message) {
+        boolean isIgnored = false;
+        if(sender instanceof Player sPlayer && receiver instanceof Player rPlayer) {
+            PlayerManager.Ignore ignoring = PlayerManager.getPlayerIgnore(sPlayer.getUniqueId(), rPlayer.getUniqueId());
+            if(ignoring != null && ignoring.ignorePrivate()) {
+                sender.sendMessage(Component.text("Can't message players you're ignoring!", NamedTextColor.RED));
+                return;
+            }
+            PlayerManager.Ignore ignored = PlayerManager.getPlayerIgnore(rPlayer.getUniqueId(), sPlayer.getUniqueId());
+            if(ignored != null && ignored.ignorePrivate()) {
+                isIgnored = true;
+            }
+        }
+
         Component senderName = sender.name();
         Component pMsg = Component.empty().append(Component.text(" » ", TextColor.fromHexString("#940b34")))
                 .append(plugin.getParsedString(sender, "private", message).colorIfAbsent(NamedTextColor.GRAY));
@@ -292,7 +354,7 @@ public class ChatCommands {
                 .append(Component.text("Me", TextColor.fromHexString("#f02d68")));
 
         sender.sendMessage(msgTo.append(pMsg));
-        receiver.sendMessage(msgFrom.append(pMsg));
+        if(!isIgnored) receiver.sendMessage(msgFrom.append(pMsg));
 
         if (lastMessaged.isEmpty() || !lastMessaged.containsKey(sender) || !lastMessaged.get(sender).equals(receiver)) {
             lastMessaged.put(sender, receiver);

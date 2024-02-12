@@ -10,7 +10,7 @@ import net.skyprison.skyprisoncore.utils.*;
 import net.skyprison.skyprisoncore.utils.secrets.Secret;
 import net.skyprison.skyprisoncore.utils.secrets.SecretCategory;
 import net.skyprison.skyprisoncore.utils.secrets.SecretsUtils;
-import org.apache.commons.lang.WordUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
@@ -113,7 +113,7 @@ public class PlayerInteract implements Listener {
                                             }
                                         }
                                         player.sendMessage(Component.text("You've found all the secrets in this category, and have received ", NamedTextColor.GREEN)
-                                                .append(Component.text(category.rewardAmount() + " " + WordUtils.capitalize(category.rewardType()) + "!", NamedTextColor.GOLD, TextDecoration.BOLD)));
+                                                .append(Component.text(category.rewardAmount() + " " + StringUtils.capitalize(category.rewardType()) + "!", NamedTextColor.GOLD, TextDecoration.BOLD)));
                                     }
                                 }
                             } else {

@@ -25,7 +25,6 @@ repositories {
     maven("https://repo.kryptonmc.org/releases")
     maven("https://repo.md-5.net/content/groups/public/")
     maven("https://repo.rosewooddev.io/repository/public/")
-    maven("https://maven.wolfyscript.com/repository/public/")
     maven("https://repo.maven.apache.org/maven2/")
 }
 
@@ -51,7 +50,6 @@ dependencies {
     compileOnly("LibsDisguises:LibsDisguises:10.0.33")
     compileOnly("dev.esophose:playerparticles:8.3")
     compileOnly("com.github.Realizedd.Duels:duels-api:3.5.1")
-    compileOnly("com.wolfyscript.wolfyutilities:wolfyutilities:3.16.1.0")
     compileOnly("com.vexsoftware:nuvotifier-universal:2.7.2")
     // Jars
     compileOnly(fileTree("libs") { include("*.jar")})

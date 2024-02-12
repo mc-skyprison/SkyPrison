@@ -10,7 +10,7 @@ import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import net.skyprison.skyprisoncore.utils.claims.ClaimData;
 import net.skyprison.skyprisoncore.utils.claims.ClaimMember;
-import org.apache.commons.lang.WordUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -69,7 +69,7 @@ public class ClaimMembers implements CustomInventory {
             List<Component> lore = new ArrayList<>();
             types.forEach(type -> {
                 boolean selected = getType().equalsIgnoreCase(type);
-                lore.add(Component.text((selected ? " " : "") + WordUtils.capitalize(type), selected ? selectedColor : color)
+                lore.add(Component.text((selected ? " " : "") + StringUtils.capitalize(type), selected ? selectedColor : color)
                         .decoration(TextDecoration.BOLD, selected).decoration(TextDecoration.ITALIC, false));
             });
             meta.lore(lore);
@@ -106,7 +106,7 @@ public class ClaimMembers implements CustomInventory {
                 }
                 meta.displayName(Component.text(Objects.requireNonNullElse(name, "Name Not Found.."), TextColor.fromHexString("#0fffc3"), TextDecoration.BOLD)
                         .append(Component.text(" (", NamedTextColor.DARK_GRAY, TextDecoration.BOLD))
-                        .append(Component.text(WordUtils.capitalize(member.getRank()), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
+                        .append(Component.text(StringUtils.capitalize(member.getRank()), TextColor.fromHexString("#ffba75"), TextDecoration.BOLD))
                         .append(Component.text(")", NamedTextColor.DARK_GRAY, TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
             });
             members.add(new Member(displayItem, member));

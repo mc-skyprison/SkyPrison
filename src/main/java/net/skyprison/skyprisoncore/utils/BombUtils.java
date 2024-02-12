@@ -5,7 +5,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import org.apache.commons.lang.WordUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -25,7 +25,7 @@ public class BombUtils {
         ItemStack item = hAPI.getItemHead(getBombHdb(bombName));
         String finalBombName = bombName;
         item.editMeta(SkullMeta.class, meta -> {
-            meta.displayName(Component.text(WordUtils.capitalize(finalBombName) + " Bomb", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+            meta.displayName(Component.text(StringUtils.capitalize(finalBombName) + " Bomb", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
             NamespacedKey key = new NamespacedKey(plugin, "bomb-type");
             meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, finalBombName);
         });

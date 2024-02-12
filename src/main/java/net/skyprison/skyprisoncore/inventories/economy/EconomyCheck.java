@@ -9,7 +9,7 @@ import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import org.apache.commons.lang.WordUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -71,7 +71,7 @@ public class EconomyCheck implements CustomInventory {
             List<Component> lore = new ArrayList<>();
             sorts.forEach(sort -> {
                 boolean selected = getSort().equalsIgnoreCase(sort);
-                lore.add(Component.text((selected ? " " : "") + WordUtils.capitalize(sort), selected ? selectedColor : color)
+                lore.add(Component.text((selected ? " " : "") + StringUtils.capitalize(sort), selected ? selectedColor : color)
                         .decoration(TextDecoration.BOLD, selected).decoration(TextDecoration.ITALIC, false));
             });
             meta.lore(lore);

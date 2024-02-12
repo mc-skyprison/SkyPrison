@@ -4,7 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import org.apache.commons.lang.WordUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemFlag;
@@ -31,7 +31,7 @@ public class BlacksmithEnd {
         ItemStack upgrade = new ItemStack(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE, amount);
         ItemMeta upgradeMeta = upgrade.getItemMeta();
         upgradeMeta.addItemFlags(ItemFlag.HIDE_ITEM_SPECIFICS);
-        upgradeMeta.displayName(Component.text(WordUtils.capitalize(type) + " Template", TextColor.fromHexString("#09f755"), TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+        upgradeMeta.displayName(Component.text(StringUtils.capitalize(type) + " Template", TextColor.fromHexString("#09f755"), TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
         PersistentDataContainer axePers = upgradeMeta.getPersistentDataContainer();
         NamespacedKey upgradeKey = new NamespacedKey(plugin, "blacksmith-end-upgrade");
         axePers.set(upgradeKey, PersistentDataType.STRING, type);

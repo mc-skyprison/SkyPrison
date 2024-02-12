@@ -26,7 +26,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.ItemLore;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
-import org.apache.commons.lang.WordUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -170,7 +170,7 @@ public class AdminCommands {
                             e.printStackTrace();
                         }
                         String mineName = mine.replace("-", " ");
-                        mineName = WordUtils.capitalize(mineName);
+                        mineName = StringUtils.capitalize(mineName);
                         Audience audiences = plugin.getServer().filterAudience(audience -> audience instanceof Player oPlayer && oPlayer.getWorld().equals(w));
                         Component prefix = Component.text("[", NamedTextColor.WHITE).append(Component.text("Mines", NamedTextColor.RED)
                                 .append(Component.text("] ", NamedTextColor.WHITE)));

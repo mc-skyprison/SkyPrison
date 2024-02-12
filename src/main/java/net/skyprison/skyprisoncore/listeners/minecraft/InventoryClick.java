@@ -54,7 +54,7 @@ import net.skyprison.skyprisoncore.utils.*;
 import net.skyprison.skyprisoncore.utils.claims.ClaimFlag;
 import net.skyprison.skyprisoncore.utils.claims.ClaimUtils;
 import net.skyprison.skyprisoncore.utils.secrets.SecretsUtils;
-import org.apache.commons.lang.WordUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -224,7 +224,7 @@ public class InventoryClick implements Listener {
                                         TextColor.fromHexString("#20df80")));
                                 return;
                             }
-                            player.sendMessage(prefix.append(Component.text("Enter the new " + WordUtils.capitalize(flag.getName().replace("-", " ")) + " value (Type 'unset' to unset)",
+                            player.sendMessage(prefix.append(Component.text("Enter the new " + StringUtils.capitalize(flag.getName().replace("-", " ")) + " value (Type 'unset' to unset)",
                                     TextColor.fromHexString("#20df80"))));
                         }
                     }
@@ -2071,8 +2071,46 @@ public class InventoryClick implements Listener {
                     }
                 }
             }
-            default -> {
+            case Ignore inv -> {
+                if (currItem != null && !MaterialTags.STAINED_GLASS_PANES.isTagged(currItem.getType())) {
+                    if(isPaper) {
+                        inv.updatePage(event.getSlot() == 46 ? -1 : 1);
+                    } else {
+                        player.openInventory(new IgnoreEdit(player, inv.getIgnore(currItem), db).getInventory());
+                    }
+                }
             }
+            case IgnoreEdit inv -> {
+                if (currItem != null && !MaterialTags.STAINED_GLASS_PANES.isTagged(currItem.getType())) {
+                    switch (event.getSlot()) {
+                        case 20 -> inv.setIgnorePrivate();
+                        case 24 -> inv.setIgnoreTeleport();
+                        case 27 -> player.openInventory(new Ignore(player).getInventory());
+                        case 31 -> {
+                            player.closeInventory();
+                            inv.setDeleteLock(true);
+                            Component msg = Component.text("Are you sure you want to fully unignore & remove " + inv.targetName() + " from /ignore?", NamedTextColor.GRAY)
+                                    .append(Component.text("\nI AM SURE", NamedTextColor.RED, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                        if (inv.deleteLock()) {
+                                            inv.setDeleteLock(false);
+                                            inv.deleteIgnore();
+                                            player.openInventory(new Ignore(player).getInventory());
+                                        }
+                                    })))
+                                    .append(Component.text("     "))
+                                    .append(Component.text("CANCEL", NamedTextColor.GRAY, TextDecoration.BOLD).clickEvent(ClickEvent.callback(audience -> {
+                                        if (inv.deleteLock()) {
+                                            inv.setDeleteLock(false);
+                                            audience.sendMessage(Component.text("Successfully cancelled!", NamedTextColor.GRAY));
+                                            player.openInventory(inv.getInventory());
+                                        }
+                                    })));
+                            player.sendMessage(msg);
+                        }
+                    }
+                }
+            }
+            default -> {}
         }
     }
 }

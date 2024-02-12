@@ -17,7 +17,7 @@ import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.claims.ClaimData;
 import net.skyprison.skyprisoncore.utils.claims.ClaimFlagMob;
-import org.apache.commons.lang.WordUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
@@ -100,7 +100,7 @@ public class ClaimFlagsMobs implements CustomInventory {
         mob.setEnabled(isAllowed);
         ItemStack displayItem = mob.getItem();
         displayItem.editMeta(meta -> {
-            String mobName = WordUtils.capitalize(mob.getType().name().toLowerCase().replace("_", " "));
+            String mobName = StringUtils.capitalize(mob.getType().name().toLowerCase().replace("_", " "));
             meta.displayName(Component.text(mobName, isAllowed ? NamedTextColor.GREEN : NamedTextColor.RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
 
             List<Component> lore = new ArrayList<>();
@@ -160,7 +160,7 @@ public class ClaimFlagsMobs implements CustomInventory {
             ItemStack mobItem = getMobHead(entity) != null ? hAPI.getItemHead(getMobHead(entity)) : new ItemStack(Material.PLAYER_HEAD);
             boolean isAllowed = !deniedMobs.contains(entity);
             mobItem.editMeta(meta -> {
-                String mobName = WordUtils.capitalize(entity.name().toLowerCase().replace("_", " "));
+                String mobName = StringUtils.capitalize(entity.name().toLowerCase().replace("_", " "));
                 meta.displayName(Component.text(mobName, isAllowed ? NamedTextColor.GREEN : NamedTextColor.RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
 
                 List<Component> lore = new ArrayList<>();

@@ -19,7 +19,7 @@ import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.claims.AvailableFlags;
 import net.skyprison.skyprisoncore.utils.claims.ClaimData;
 import net.skyprison.skyprisoncore.utils.claims.ClaimFlag;
-import org.apache.commons.lang.WordUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
@@ -83,7 +83,7 @@ public class ClaimFlags implements CustomInventory {
             List<Component> lore = new ArrayList<>();
             types.forEach(type -> {
                 boolean selected = getType().equalsIgnoreCase(type);
-                lore.add(Component.text((selected ? " " : "") + WordUtils.capitalize(type), selected ? selectedColor : color)
+                lore.add(Component.text((selected ? " " : "") + StringUtils.capitalize(type), selected ? selectedColor : color)
                         .decoration(TextDecoration.BOLD, selected).decoration(TextDecoration.ITALIC, false));
             });
             meta.lore(lore);

@@ -10,7 +10,7 @@ import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.secrets.Secret;
-import org.apache.commons.lang.WordUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -60,7 +60,7 @@ public class SecretsHistory implements CustomInventory {
         TextColor selectedColor = TextColor.fromHexString("#0fffc3");
         categoryItem.editMeta(meta -> {
             List<Component> lore = new ArrayList<>();
-            categories.forEach(category -> lore.add(Component.text(WordUtils.capitalize(category).replace("-", " "),
+            categories.forEach(category -> lore.add(Component.text(StringUtils.capitalize(category).replace("-", " "),
                     getCategory().equalsIgnoreCase(category) ? selectedColor : color).decoration(TextDecoration.ITALIC, false)));
             meta.lore(lore);
         });
@@ -72,7 +72,7 @@ public class SecretsHistory implements CustomInventory {
         TextColor selectedColor = TextColor.fromHexString("#0fffc3");
         typeItem.editMeta(meta -> {
             List<Component> lore = new ArrayList<>();
-            types.forEach(type -> lore.add(Component.text(WordUtils.capitalize(type).replace("-", " "),
+            types.forEach(type -> lore.add(Component.text(StringUtils.capitalize(type).replace("-", " "),
                     getCategory().equalsIgnoreCase(type) ? selectedColor : color).decoration(TextDecoration.ITALIC, false)));
             meta.lore(lore);
         });

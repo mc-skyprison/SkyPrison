@@ -248,6 +248,8 @@ public class SkyPrisonCore extends JavaPlugin {
 
         new Tags().loadTags(db);
 
+        PlayerManager.loadIgnores();
+
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new Placeholders(this, dailyMissions, db).register();
             getLogger().info("Placeholders registered");
@@ -697,7 +699,7 @@ public class SkyPrisonCore extends JavaPlugin {
         );
 
         new AdminCommands(this, manager);
-        new ChatCommands(this, manager, discApi);
+        new ChatCommands(this, manager, discApi, db);
         new JailCommands(this, manager);
         new SecretsCommands(this, manager);
         new DiscordCommands(this, db, discApi, manager);
@@ -721,7 +723,7 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new BlockDamage(this, db, dailyMissions), this);
         pm.registerEvents(new BlockPlace(this, dailyMissions, db), this);
         pm.registerEvents(new BrewDrink(db), this);
-        pm.registerEvents(new CMIPlayerTeleportRequest(db), this);
+        pm.registerEvents(new CMIPlayerTeleportRequest(), this);
         pm.registerEvents(new CMIUserBalanceChange(this, db), this);
         pm.registerEvents(new EntityDamageByEntity(this), this);
         pm.registerEvents(new EntityDeath(this, db, dailyMissions), this);

@@ -97,7 +97,7 @@ public class DatabaseInventory implements CustomInventory {
                 }
                 if (useVouchers) {
                     Component voucherComp = Component.text("Voucher: " + ChatUtils.formatNumber((int) itemData.get("price_voucher")), NamedTextColor.GRAY, TextDecoration.BOLD);
-                    //voucherComp = voucherComp.append(Component.text(" (" + WordUtils.capitalize(itemData.get("price_voucher_type").toString().replace("-", "")) + ") ", NamedTextColor.GRAY));
+                    //voucherComp = voucherComp.append(Component.text(" (" + StringUtils.capitalize(itemData.get("price_voucher_type").toString().replace("-", "")) + ") ", NamedTextColor.GRAY));
                     if(useMoney && useTokens) {
                         voucherComp = voucherComp.append(Component.text(" (Shift Click)", NamedTextColor.GRAY, TextDecoration.ITALIC).decoration(TextDecoration.BOLD, false));
                     } else if(useMoney || useTokens) {

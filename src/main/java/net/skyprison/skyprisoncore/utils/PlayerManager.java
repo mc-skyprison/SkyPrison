@@ -38,7 +38,9 @@ import static net.skyprison.skyprisoncore.SkyPrisonCore.db;
 
 public class PlayerManager {
     private static final List<PlayerTag> playerTags = new ArrayList<>();
+    private static final List<Ignore> playerIgnores = new ArrayList<>();
     public record PlayerTag(UUID playerId, Tags.Tag tag) {}
+    public record Ignore(UUID playerId, UUID targetId, boolean ignorePrivate, boolean ignoreTeleport) {}
     public static final HashMap<UUID, HashMap<Tags.Tag, TagsEdit>> tagsEdit = new HashMap<>();
     public static PlayerTag getPlayerTag(UUID pUUID) {
         return playerTags.stream().filter(tag -> tag.playerId().equals(pUUID)).findFirst().orElse(null);
@@ -58,6 +60,29 @@ public class PlayerManager {
     }
     public static void removePlayerTags(PlayerTag ...tags) {
         if(tags != null) playerTags.removeAll(Arrays.stream(tags).toList());
+    }
+    public static List<Ignore> getPlayerIgnores(UUID pUUID) {
+        return playerIgnores.stream().filter(ignores -> ignores.playerId().equals(pUUID)).toList();
+    }
+    public static Ignore getPlayerIgnore(UUID pUUID, UUID targetId) {
+        return playerIgnores.stream().filter(ignore -> ignore.playerId().equals(pUUID) && ignore.targetId().equals(targetId)).findFirst().orElse(null);
+    }
+    public static void addPlayerIgnores(Ignore ...ignores) {
+        Collections.addAll(playerIgnores, ignores);
+    }
+    public static void removePlayerIgnores(Ignore ...ignores) {
+        if(ignores != null) playerIgnores.removeAll(Arrays.stream(ignores).toList());
+    }
+    public static void loadIgnores() {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id, ignored_id, ignore_private, ignore_teleports FROM user_ignores")) {
+            ResultSet rs = ps.executeQuery();
+            while(rs.next()) {
+                playerIgnores.add(new Ignore(UUID.fromString(rs.getString(1)), UUID.fromString(rs.getString(2)),
+                        rs.getBoolean(3), rs.getBoolean(4)));
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load ignores!", e);
+        }
     }
     public static UUID getPlayerId(String playerName) {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id FROM users WHERE current_name = ?")) {

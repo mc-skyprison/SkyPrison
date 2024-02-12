@@ -18,7 +18,7 @@ import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.secrets.Secret;
 import net.skyprison.skyprisoncore.utils.secrets.SecretCategory;
 import net.skyprison.skyprisoncore.utils.secrets.SecretsUtils;
-import org.apache.commons.lang.WordUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -66,7 +66,7 @@ public class Secrets implements CustomInventory {
             List<Component> lore = new ArrayList<>();
             categories.forEach(category -> {
                 boolean selected = getCategory().name().equalsIgnoreCase(category.name());
-                lore.add(Component.text((selected ? " " : "") + WordUtils.capitalize(category.name().replace("-", " ")), selected ? selectedColor : color)
+                lore.add(Component.text((selected ? " " : "") + StringUtils.capitalize(category.name().replace("-", " ")), selected ? selectedColor : color)
                         .decoration(TextDecoration.BOLD, selected).decoration(TextDecoration.ITALIC, false));
             });
             meta.lore(lore);
@@ -82,7 +82,7 @@ public class Secrets implements CustomInventory {
             List<Component> lore = new ArrayList<>();
             types.forEach(type -> {
                 boolean selected = getType().equalsIgnoreCase(type);
-                lore.add(Component.text((selected ? " " : "") + WordUtils.capitalize(type).replace("-", " "), selected ? selectedColor : color)
+                lore.add(Component.text((selected ? " " : "") + StringUtils.capitalize(type).replace("-", " "), selected ? selectedColor : color)
                         .decoration(TextDecoration.BOLD, selected).decoration(TextDecoration.ITALIC, false));
             });
             meta.lore(lore);
@@ -97,7 +97,7 @@ public class Secrets implements CustomInventory {
             List<Component> lore = new ArrayList<>();
             show.forEach(show -> {
                 boolean selected = getShow().equalsIgnoreCase(show);
-                lore.add(Component.text((selected ? " " : "") + WordUtils.capitalize(show).replace("-", " "), selected ? selectedColor : color)
+                lore.add(Component.text((selected ? " " : "") + StringUtils.capitalize(show).replace("-", " "), selected ? selectedColor : color)
                         .decoration(TextDecoration.BOLD, selected).decoration(TextDecoration.ITALIC, false));
             });
             meta.lore(lore);
@@ -182,7 +182,7 @@ public class Secrets implements CustomInventory {
                             lore.add(Component.text("(No Longer Available)", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
                         }
                         lore.add(Component.text("Reward", NamedTextColor.GRAY).append(Component.text(" » ", NamedTextColor.DARK_GRAY))
-                                .append(Component.text(reward + " " + WordUtils.capitalize(rewardType.replace("-", " ")),
+                                .append(Component.text(reward + " " + StringUtils.capitalize(rewardType.replace("-", " ")),
                                         TextColor.fromHexString("#48e2e5"), TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
                         lore.add(Component.empty());
                         lore.add(coolText.decoration(TextDecoration.ITALIC, false));
