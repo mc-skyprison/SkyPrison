@@ -26,6 +26,7 @@ repositories {
     maven("https://repo.md-5.net/content/groups/public/")
     maven("https://repo.rosewooddev.io/repository/public/")
     maven("https://repo.maven.apache.org/maven2/")
+    maven("https://repo.codemc.org/repository/maven-public/")
 }
 
 dependencies {
@@ -44,10 +45,10 @@ dependencies {
     compileOnly("com.github.brcdev-minecraft:shopgui-api:3.0.0")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.2.11")
     compileOnly("net.coreprotect:coreprotect:22.2")
-    compileOnly("me.NoChance.PvPManager:PvPManager:3.10.9")
+    compileOnly("me.NoChance.PvPManager:pvpmanager:3.16")
     compileOnly("com.github.alex9849:advanced-region-market:3.5.3")
-    compileOnly("com.gitlab.ruany:LiteBansAPI:0.4.1")
-    compileOnly("LibsDisguises:LibsDisguises:10.0.33")
+    compileOnly("com.gitlab.ruany:LiteBansAPI:0.5.0")
+    compileOnly("LibsDisguises:LibsDisguises:10.0.42")
     compileOnly("dev.esophose:playerparticles:8.3")
     compileOnly("com.github.Realizedd.Duels:duels-api:3.5.1")
     compileOnly("com.vexsoftware:nuvotifier-universal:2.7.2")
@@ -74,6 +75,10 @@ tasks {
             expand(props)
         }
     }
+}
+
+tasks.named("build") {
+    dependsOn("shadowJar")
 }
 
 tasks.withType<JavaCompile> {

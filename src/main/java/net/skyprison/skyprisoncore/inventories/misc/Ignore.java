@@ -72,7 +72,7 @@ public class Ignore implements CustomInventory {
                 List<Component> lore = new ArrayList<>();
                 lore.add(Component.text("Private Messages are ", NamedTextColor.GRAY).append(ignore.ignorePrivate() ? ignored : allowed)
                         .decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Teleport Requests are ", NamedTextColor.GRAY).append(ignore.ignorePrivate() ? ignored : allowed)
+                lore.add(Component.text("Teleport Requests are ", NamedTextColor.GRAY).append(ignore.ignoreTeleport() ? ignored : allowed)
                         .decoration(TextDecoration.ITALIC, false));
                 lore.add(Component.empty());
                 lore.add(Component.text("Click to edit options", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));

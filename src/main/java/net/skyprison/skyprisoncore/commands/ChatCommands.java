@@ -242,8 +242,6 @@ public class ChatCommands {
         }
         Component nickName = plugin.getParsedString(sender, "namecolour", colouredName);
         String plainName = MiniMessage.miniMessage().stripTags(colouredName);
-        Bukkit.getLogger().info(plainName);
-        Bukkit.getLogger().info(playerName);
         if(!sender.hasPermission("skyprisoncore.command.namecolour.nickname") && !plainName.equalsIgnoreCase(playerName)) {
             sender.sendMessage(Component.text("That doesn't match your name!", NamedTextColor.RED));
             return;
@@ -354,12 +352,14 @@ public class ChatCommands {
                 .append(Component.text("Me", TextColor.fromHexString("#f02d68")));
 
         sender.sendMessage(msgTo.append(pMsg));
-        if(!isIgnored) receiver.sendMessage(msgFrom.append(pMsg));
+        if(!isIgnored) {
+            receiver.sendMessage(msgFrom.append(pMsg));
+        }
 
         if (lastMessaged.isEmpty() || !lastMessaged.containsKey(sender) || !lastMessaged.get(sender).equals(receiver)) {
             lastMessaged.put(sender, receiver);
         }
-        if (lastMessaged.isEmpty() || !lastMessaged.containsKey(receiver)) {
+        if (!isIgnored && lastMessaged.isEmpty() || !lastMessaged.containsKey(receiver)) {
             lastMessaged.put(receiver, sender);
         }
     }
