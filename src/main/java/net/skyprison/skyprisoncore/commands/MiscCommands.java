@@ -175,9 +175,10 @@ public class MiscCommands {
         Component prefix = Component.text("Sponge", TextColor.fromHexString("#FFFF00")).append(Component.text(" | ", NamedTextColor.WHITE));
         Component line = Component.text("      ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH);
 
-        Component help = line.append(Component.text(" Sponge Commands ", TextColor.fromHexString("#FFFF00"), TextDecoration.BOLD)).append(line)
-                .append(Component.text("\n/sponge set\n/sponge list\n/sponge delete <id>\n/sponge tp <id>", TextColor.fromHexString("#7fff00")))
-                .decorationIfAbsent(TextDecoration.STRIKETHROUGH, TextDecoration.State.FALSE);
+        Component help = line.append(Component.text(" Sponge Commands ", TextColor.fromHexString("#FFFF00"), TextDecoration.BOLD)
+                        .decoration(TextDecoration.STRIKETHROUGH, false).append(line))
+                .append(Component.text("\n/sponge set\n/sponge list\n/sponge delete <id>\n/sponge tp <id>", TextColor.fromHexString("#7fff00"))
+                        .decoration(TextDecoration.STRIKETHROUGH, false));
 
         Command.Builder<Player> sponge = manager.commandBuilder("sponge")
                 .senderType(Player.class)
@@ -286,30 +287,33 @@ public class MiscCommands {
     private void spongeList(Player player, List<SpongeLocation> locations, int page) {
         int totalPages = (int) Math.ceil(locations.size() / 10.0);
 
-
         List<SpongeLocation> locs = new ArrayList<>(locations);
         int toDelete = 10 * (page - 1);
         if (toDelete != 0) {
             locs = locs.subList(toDelete, locs.size());
         }
-
-
         Component line = Component.text("      ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH);
-        Component msg = line.append(Component.text(" Sponge Locations ", TextColor.fromHexString("#FFFF00"), TextDecoration.BOLD)).append(line);
-        for(SpongeLocation loc : locs) {
+        Component msg = line.append(Component.text(" Sponge Locations ", TextColor.fromHexString("#FFFF00"), TextDecoration.BOLD)
+                .decoration(TextDecoration.STRIKETHROUGH, false).append(line));
+        for(int i = 0; i < 10; i++) {
+            if(i == locs.size()) break;
+            SpongeLocation loc = locs.get(i);
             msg = msg.append(Component.text("\n" + loc.orderPos + ". ", TextColor.fromHexString("#cea916"))
                     .append(Component.text("X " + loc.x + " Y " + loc.y + " Z " + loc.z, TextColor.fromHexString("#7fff00")))
                     .hoverEvent(HoverEvent.showText(Component.text("Click to teleport to this location", NamedTextColor.GRAY)))
-                    .clickEvent(ClickEvent.callback(audience -> player.teleportAsync(new Location(player.getWorld(), loc.x, loc.y, loc.z)))));
+                    .clickEvent(ClickEvent.callback(audience -> player.teleportAsync(new Location(player.getWorld(), loc.x, loc.y, loc.z))))
+                    .decoration(TextDecoration.STRIKETHROUGH, false));
         }
 
         int nextPage = page + 1;
         int prevPage = page - 1;
         Component pages = Component.text(page, TextColor.fromHexString("#266d27")).append(Component.text("/", NamedTextColor.GRAY)
-                .append(Component.text(totalPages, TextColor.fromHexString("#266d27"))));
-        Component next = Component.text(" Next --->", NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text(">>>", NamedTextColor.GRAY)))
+                .append(Component.text(totalPages, TextColor.fromHexString("#266d27")))).decoration(TextDecoration.ITALIC, false);
+        Component next = Component.text(" Next --->", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
+                .hoverEvent(HoverEvent.showText(Component.text(">>>", NamedTextColor.GRAY)))
                 .clickEvent(ClickEvent.callback(audience -> spongeList(player, locations, nextPage)));
-        Component prev = Component.text("<--- Prev ", NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text("<<<", NamedTextColor.GRAY)))
+        Component prev = Component.text("<--- Prev ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
+                .hoverEvent(HoverEvent.showText(Component.text("<<<", NamedTextColor.GRAY)))
                 .clickEvent(ClickEvent.callback(audience -> spongeList(player, locations, prevPage)));
 
         if (page == 1 && page != totalPages) {
@@ -321,19 +325,6 @@ public class MiscCommands {
         }
         msg = msg.decorationIfAbsent(TextDecoration.STRIKETHROUGH, TextDecoration.State.FALSE);
         player.sendMessage(msg);
-    }
-    private List<UUID> getIgnoredTps(Player player) {
-        List<UUID> ignoredPlayers = new ArrayList<>();
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT ignore_id FROM teleport_ignore WHERE user_id = ?")) {
-            ps.setString(1, player.getUniqueId().toString());
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                ignoredPlayers.add(UUID.fromString(rs.getString(1)));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return ignoredPlayers;
     }
     private void sendFirstjoin(CommandSender sender, int page) {
         List<FirstJoin> firstJoins = new ArrayList<>();

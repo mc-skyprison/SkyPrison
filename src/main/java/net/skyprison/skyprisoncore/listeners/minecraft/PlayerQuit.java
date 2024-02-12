@@ -59,7 +59,7 @@ public class PlayerQuit implements Listener {
             }
 
             for(DailyMissions.PlayerMission mission : PlayerManager.getPlayerMissions(player.getUniqueId())) {
-                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE daily_missions SET amount = ?, completed = ? WHERE mission_id = ?")) {
+                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE daily_missions SET amount = ?, completed = ? WHERE id = ?")) {
                     ps.setInt(1, mission.amount());
                     ps.setBoolean(2, mission.completed());
                     ps.setString(3, mission.id().toString());
