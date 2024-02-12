@@ -175,10 +175,9 @@ public class MiscCommands {
         Component prefix = Component.text("Sponge", TextColor.fromHexString("#FFFF00")).append(Component.text(" | ", NamedTextColor.WHITE));
         Component line = Component.text("      ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH);
 
-        Component help = line.append(Component.text(" Sponge Commands ", TextColor.fromHexString("#FFFF00"), TextDecoration.BOLD)
-                        .decoration(TextDecoration.STRIKETHROUGH, false).append(line))
-                .append(Component.text("\n/sponge set\n/sponge list\n/sponge delete <id>\n/sponge tp <id>", TextColor.fromHexString("#7fff00"))
-                        .decoration(TextDecoration.STRIKETHROUGH, false));
+        Component help = Component.text("").append(line).append(Component.text(" Sponge Commands ", TextColor.fromHexString("#FFFF00"), TextDecoration.BOLD))
+                .append(line)
+                .append(Component.text("\n/sponge set\n/sponge list\n/sponge delete <id>\n/sponge tp <id>", TextColor.fromHexString("#7fff00")));
 
         Command.Builder<Player> sponge = manager.commandBuilder("sponge")
                 .senderType(Player.class)
@@ -293,37 +292,35 @@ public class MiscCommands {
             locs = locs.subList(toDelete, locs.size());
         }
         Component line = Component.text("      ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH);
-        Component msg = line.append(Component.text(" Sponge Locations ", TextColor.fromHexString("#FFFF00"), TextDecoration.BOLD)
-                .decoration(TextDecoration.STRIKETHROUGH, false).append(line));
+        Component msg = Component.text("").append(line)
+                .append(Component.text(" Sponge Locations ", TextColor.fromHexString("#FFFF00"), TextDecoration.BOLD))
+                .append(line);
         for(int i = 0; i < 10; i++) {
             if(i == locs.size()) break;
             SpongeLocation loc = locs.get(i);
             msg = msg.append(Component.text("\n" + loc.orderPos + ". ", TextColor.fromHexString("#cea916"))
                     .append(Component.text("X " + loc.x + " Y " + loc.y + " Z " + loc.z, TextColor.fromHexString("#7fff00")))
                     .hoverEvent(HoverEvent.showText(Component.text("Click to teleport to this location", NamedTextColor.GRAY)))
-                    .clickEvent(ClickEvent.callback(audience -> player.teleportAsync(new Location(player.getWorld(), loc.x, loc.y, loc.z))))
-                    .decoration(TextDecoration.STRIKETHROUGH, false));
+                    .clickEvent(ClickEvent.callback(audience -> player.teleportAsync(new Location(player.getWorld(), loc.x, loc.y, loc.z)))));
         }
 
         int nextPage = page + 1;
         int prevPage = page - 1;
         Component pages = Component.text(page, TextColor.fromHexString("#266d27")).append(Component.text("/", NamedTextColor.GRAY)
-                .append(Component.text(totalPages, TextColor.fromHexString("#266d27")))).decoration(TextDecoration.ITALIC, false);
-        Component next = Component.text(" Next --->", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
-                .hoverEvent(HoverEvent.showText(Component.text(">>>", NamedTextColor.GRAY)))
+                .append(Component.text(totalPages, TextColor.fromHexString("#266d27"))));
+        Component next = Component.text(" Next --->", NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text(">>>", NamedTextColor.GRAY)))
                 .clickEvent(ClickEvent.callback(audience -> spongeList(player, locations, nextPage)));
-        Component prev = Component.text("<--- Prev ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
-                .hoverEvent(HoverEvent.showText(Component.text("<<<", NamedTextColor.GRAY)))
+        Component prev = Component.text("<--- Prev ", NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(Component.text("<<<", NamedTextColor.GRAY)))
                 .clickEvent(ClickEvent.callback(audience -> spongeList(player, locations, prevPage)));
 
         if (page == 1 && page != totalPages) {
-            msg = msg.appendNewline().append(pages.decoration(TextDecoration.ITALIC, false)).append(next.decoration(TextDecoration.ITALIC, false));
+            msg = msg.appendNewline().append(pages).append(next);
         } else if (page != 1 && page == totalPages) {
-            msg = msg.appendNewline().append(prev.decoration(TextDecoration.ITALIC, false)).append(pages.decoration(TextDecoration.ITALIC, false));
+            msg = msg.appendNewline().append(prev).append(pages);
         } else if (page != 1) {
-            msg = msg.appendNewline().append(prev.decoration(TextDecoration.ITALIC, false)).append(pages.decoration(TextDecoration.ITALIC, false))
-                    .append(next.decoration(TextDecoration.ITALIC, false));
+            msg = msg.appendNewline().append(prev).append(pages).append(next);
         }
+        msg = msg.decorationIfAbsent(TextDecoration.STRIKETHROUGH, TextDecoration.State.FALSE);
         player.sendMessage(msg);
     }
     private void sendFirstjoin(CommandSender sender, int page) {
