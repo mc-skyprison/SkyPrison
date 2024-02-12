@@ -31,12 +31,10 @@ import java.util.Random;
 
 public class BlockBreak implements Listener {
     private final SkyPrisonCore plugin;
-    private final DailyMissions dm;
     private final PlayerParticlesAPI particles;
 
-    public BlockBreak(SkyPrisonCore plugin, DailyMissions dm, PlayerParticlesAPI particles) {
+    public BlockBreak(SkyPrisonCore plugin, PlayerParticlesAPI particles) {
         this.plugin = plugin;
-        this.dm = dm;
         this.particles = particles;
     }
 
@@ -70,7 +68,6 @@ public class BlockBreak implements Listener {
                 return;
             }
         }
-
         if(player.getGameMode().equals(GameMode.SURVIVAL)) {
             Location loc = block.getLocation();
             Material bType = block.getType();
@@ -190,53 +187,7 @@ public class BlockBreak implements Listener {
                 }
             }
 
-            for (String mission : dm.getMissions(player)) {
-                if (!dm.isCompleted(player, mission)) {
-                    String[] missSplit = mission.split("-");
-                    if (missSplit[0].equalsIgnoreCase("break")) {
-                        switch (missSplit[1].toLowerCase()) {
-                            case "any" -> {
-                                if (!(block.getBlockData() instanceof Ageable)) {
-                                    dm.updatePlayerMission(player, mission);
-                                }
-                            }
-                            case "birch_log" -> {
-                                if (bType.equals(Material.BIRCH_LOG) || bType.equals(Material.BIRCH_WOOD)) {
-                                    dm.updatePlayerMission(player, mission);
-                                }
-                            }
-                        }
-                    } else if (missSplit[0].equalsIgnoreCase("harvest")) {
-                        switch (missSplit[1].toLowerCase()) {
-                            case "any" -> {
-                                if (block.getBlockData() instanceof Ageable) {
-                                    dm.updatePlayerMission(player, mission);
-                                }
-                            }
-                            case "cactus" -> {
-                                if (bType.equals(Material.CACTUS)) {
-                                    dm.updatePlayerMission(player, mission);
-                                }
-                            }
-                            case "sugar_cane" -> {
-                                if (bType.equals(Material.SUGAR_CANE)) {
-                                    dm.updatePlayerMission(player, mission);
-                                }
-                            }
-                            case "pumpkin" -> {
-                                if (bType.equals(Material.PUMPKIN)) {
-                                    dm.updatePlayerMission(player, mission);
-                                }
-                            }
-                            case "bamboo" -> {
-                                if (bType.equals(Material.BAMBOO)) {
-                                    dm.updatePlayerMission(player, mission);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            DailyMissions.updatePlayerMissions(player.getUniqueId(), block.getBlockData() instanceof Ageable ? "harvest" : "break", bType);
         }
     }
 }

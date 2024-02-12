@@ -51,11 +51,9 @@ import java.util.Random;
 
 public class BlockPlace implements Listener {
     private final SkyPrisonCore plugin;
-    private final DailyMissions dm;
     private final DatabaseHook db;
-    public BlockPlace(SkyPrisonCore plugin, DailyMissions dm, DatabaseHook db) {
+    public BlockPlace(SkyPrisonCore plugin, DatabaseHook db) {
         this.plugin = plugin;
-        this.dm = dm;
         this.db = db;
     }
     @EventHandler
@@ -263,11 +261,7 @@ public class BlockPlace implements Listener {
                                                     }
                                                 }
                                                 plugin.bombLocs.remove(loc);
-                                                for (String mission : dm.getMissions(player)) {
-                                                    if (mission.startsWith("bomb") && !dm.isCompleted(player, mission)) {
-                                                        dm.updatePlayerMission(player, mission);
-                                                    }
-                                                }
+                                                DailyMissions.updatePlayerMissions(player.getUniqueId(), "bomb", "");
                                                 this.cancel();
                                             }
                                         }

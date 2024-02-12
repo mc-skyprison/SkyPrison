@@ -15,13 +15,9 @@ import java.sql.SQLException;
 
 public class ShopPostTransaction implements Listener {
     private final DatabaseHook db;
-    private final DailyMissions dailyMissions;
-
-    public ShopPostTransaction(DatabaseHook db, DailyMissions dailyMissions) {
+    public ShopPostTransaction(DatabaseHook db) {
         this.db = db;
-        this.dailyMissions = dailyMissions;
     }
-
     @EventHandler
     public void onShopPostTransaction(ShopPostTransactionEvent event) {
         ShopTransactionResult result = event.getResult();
@@ -29,15 +25,7 @@ public class ShopPostTransaction implements Listener {
 
         Player player = result.getPlayer();
 
-        for (String mission : dailyMissions.getMissions(player)) {
-            if(!dailyMissions.isCompleted(player, mission)) {
-                String[] missSplit = mission.split("-");
-                if (missSplit[0].equalsIgnoreCase("money")) {
-                    int incAmount = (int) result.getPrice();
-                    dailyMissions.updatePlayerMission(player, mission, incAmount);
-                }
-            }
-        }
+        DailyMissions.updatePlayerMissions(player.getUniqueId(), "money", "", (int) result.getPrice());
 
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO logs_shop (user_id, user_rank, transaction_type, item, amount, price) VALUES (?, ?, ?, ?, ?, ?)")) {
             ps.setString(1, player.getUniqueId().toString());

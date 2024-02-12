@@ -39,6 +39,7 @@ import static net.skyprison.skyprisoncore.SkyPrisonCore.db;
 public class PlayerManager {
     private static final List<PlayerTag> playerTags = new ArrayList<>();
     private static final List<Ignore> playerIgnores = new ArrayList<>();
+    private static final List<DailyMissions.PlayerMission> playerMissions = new ArrayList<>();
     public record PlayerTag(UUID playerId, Tags.Tag tag) {}
     public record Ignore(UUID playerId, UUID targetId, boolean ignorePrivate, boolean ignoreTeleport) {}
     public static final HashMap<UUID, HashMap<Tags.Tag, TagsEdit>> tagsEdit = new HashMap<>();
@@ -83,6 +84,21 @@ public class PlayerManager {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to load ignores!", e);
         }
+    }
+    public static List<DailyMissions.PlayerMission> getAllMissions() {
+        return playerMissions;
+    }
+    public static List<DailyMissions.PlayerMission> getPlayerMissions(UUID pUUID) {
+        return playerMissions.stream().filter(playerMission -> playerMission.player().equals(pUUID)).toList();
+    }
+    public static List<DailyMissions.PlayerMission> getPlayerMissions(UUID pUUID, boolean getSpecific) {
+        return playerMissions.stream().filter(mission -> mission.player().equals(pUUID) && mission.completed() == getSpecific).toList();
+    }
+    public static void addPlayerMissions(DailyMissions.PlayerMission ...missions) {
+        Collections.addAll(playerMissions, missions);
+    }
+    public static void removePlayerMissions(DailyMissions.PlayerMission ...missions) {
+        if(missions != null) playerMissions.removeAll(Arrays.stream(missions).toList());
     }
     public static UUID getPlayerId(String playerName) {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id FROM users WHERE current_name = ?")) {

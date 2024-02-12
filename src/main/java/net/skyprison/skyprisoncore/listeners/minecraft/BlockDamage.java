@@ -23,14 +23,10 @@ import java.sql.SQLException;
 public class BlockDamage implements Listener {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
-    private final DailyMissions dailyMissions;
-
-    public BlockDamage(SkyPrisonCore plugin, DatabaseHook db, DailyMissions dailyMissions) {
+    public BlockDamage(SkyPrisonCore plugin, DatabaseHook db) {
         this.plugin = plugin;
         this.db = db;
-        this.dailyMissions = dailyMissions;
     }
-
     @EventHandler
     public void onBlockDamage(BlockDamageEvent event) {
         Block b = event.getBlock();
@@ -61,17 +57,9 @@ public class BlockDamage implements Listener {
                     ps.setString(1, player.getUniqueId().toString());
                     ps.executeUpdate();
                     TokenUtils.addTokens(player.getUniqueId(), 25, "Found Sponge", "");
+                    DailyMissions.updatePlayerMissions(player.getUniqueId(), "sponge", "");
                 } catch (SQLException e) {
                     e.printStackTrace();
-                }
-
-                for (String mission : dailyMissions.getMissions(player)) {
-                    if(!dailyMissions.isCompleted(player, mission)) {
-                        String[] missSplit = mission.split("-");
-                        if (missSplit[0].equalsIgnoreCase("sponge")) {
-                            dailyMissions.updatePlayerMission(player, mission);
-                        }
-                    }
                 }
             }
         }

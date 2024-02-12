@@ -46,6 +46,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.*;
 
@@ -55,13 +56,11 @@ public class PlayerJoin implements Listener {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
     private final DiscordApi discApi;
-    private final DailyMissions dailyMissions;
     private final PlayerParticlesAPI particles;
-    public PlayerJoin(SkyPrisonCore plugin, DatabaseHook db, DiscordApi discApi, DailyMissions dailyMissions, PlayerParticlesAPI particles) {
+    public PlayerJoin(SkyPrisonCore plugin, DatabaseHook db, DiscordApi discApi, PlayerParticlesAPI particles) {
         this.plugin = plugin;
         this.db = db;
         this.discApi = discApi;
-        this.dailyMissions = dailyMissions;
         this.particles = particles;
     }
     @EventHandler
@@ -241,9 +240,17 @@ public class PlayerJoin implements Listener {
             if(discApi != null && discApi.getTextChannelById("788108242797854751").isPresent())
                 discApi.getTextChannelById("788108242797854751").get().sendMessage(embedJoin);
 
-
-            if(dailyMissions.getMissions(player).isEmpty()) {
-                dailyMissions.setPlayerMissions(player);
+            List<DailyMissions.PlayerMission> missions = PlayerManager.getPlayerMissions(player.getUniqueId());
+            if(missions.isEmpty()) {
+                DailyMissions.giveMissions(player);
+            } else {
+                for(DailyMissions.PlayerMission mission : missions) {
+                    if(!mission.date().toLocalDateTime().toLocalDate().equals(LocalDate.now())) {
+                        DailyMissions.giveMissions(player);
+                        missions.forEach(PlayerManager::removePlayerMissions);
+                        break;
+                    }
+                }
             }
 
             RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();

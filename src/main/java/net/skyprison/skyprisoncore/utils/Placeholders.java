@@ -23,15 +23,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Objects;
 
 public class Placeholders extends PlaceholderExpansion {
 	private final SkyPrisonCore plugin;
-	private final DailyMissions dailyMissions;
 	private final DatabaseHook db;
-	public Placeholders(SkyPrisonCore plugin, DailyMissions dailyMissions, DatabaseHook db) {
+	public Placeholders(SkyPrisonCore plugin, DatabaseHook db) {
 		this.plugin = plugin;
-		this.dailyMissions = dailyMissions;
 		this.db = db;
 	}
 	@Override
@@ -257,51 +256,21 @@ public class Placeholders extends PlaceholderExpansion {
 		}
 
 		if(identifier.equalsIgnoreCase("daily_mission_one")) {
-			if(dailyMissions.getMissions(player).isEmpty()) {
+			List<DailyMissions.PlayerMission> missions = PlayerManager.getPlayerMissions(player.getUniqueId());
+			if(missions.isEmpty()) {
 				return "&7-";
 			}
-			String mission = dailyMissions.getMissions(player).getFirst();
-			String[] mSplit = mission.split("-");
-			int amount = dailyMissions.getMissionAmount(player, mission);
-			int needed = dailyMissions.getMissionNeeded(player, mission);
-
-			String amFormat = ChatUtils.formatNumber(amount);
-			String neeFormat = ChatUtils.formatNumber(needed);
-
-			if(mSplit[0].equalsIgnoreCase("money")) {
-				amFormat = "$" + amFormat;
-				neeFormat = "$" + neeFormat;
-			}
-
-			if(dailyMissions.isCompleted(player, mission)) {
-				return "<#ACBED8>&m" + mSplit[2] + " &f&m" + amFormat + "/" + neeFormat;
-			} else {
-				return "<#ACBED8>" + mSplit[2] + " &f" + amFormat + "/" + neeFormat;
-			}
+			DailyMissions.PlayerMission mission = missions.getFirst();
+			return formatMission(mission);
 		}
 
 		if(identifier.equalsIgnoreCase("daily_mission_two")) {
-			if(dailyMissions.getMissions(player).isEmpty()) {
-				return "&7>-";
+			List<DailyMissions.PlayerMission> missions = PlayerManager.getPlayerMissions(player.getUniqueId());
+			if(missions.size() < 2) {
+				return "&7-";
 			}
-			String mission = dailyMissions.getMissions(player).get(1);
-			String[] mSplit = mission.split("-");
-			int amount = dailyMissions.getMissionAmount(player, mission);
-			int needed = dailyMissions.getMissionNeeded(player, mission);
-
-			String amFormat = ChatUtils.formatNumber(amount);
-			String neeFormat = ChatUtils.formatNumber(needed);
-
-			if(mSplit[0].equalsIgnoreCase("money")) {
-				amFormat = "$" + amFormat;
-				neeFormat = "$" + neeFormat;
-			}
-
-			if(dailyMissions.isCompleted(player, mission)) {
-				return "<#ACBED8>&m" + mSplit[2] + " &f&m" + amFormat + "/" + neeFormat;
-			} else {
-				return "<#ACBED8>" + mSplit[2] + " &f" + amFormat + "/" + neeFormat;
-			}
+			DailyMissions.PlayerMission mission = missions.get(1);
+			return formatMission(mission);
 		}
 
 		if(identifier.equalsIgnoreCase("token_balance_formatted")) {
@@ -554,5 +523,21 @@ public class Placeholders extends PlaceholderExpansion {
 		}
 
 		return null;
+	}
+	@NotNull
+	private String formatMission(DailyMissions.PlayerMission mission) {
+		String amount = ChatUtils.formatNumber(mission.amount());
+		String needed = ChatUtils.formatNumber(mission.needed());
+
+		if(mission.mission().type().equalsIgnoreCase("money")) {
+			amount = "$" + amount;
+			needed = "$" + needed;
+		}
+
+		if(mission.completed()) {
+			return "<#ACBED8>&m" + mission.mission().displayName() + " &f&m" + amount + "/" + needed;
+		} else {
+			return "<#ACBED8>" + mission.mission().displayName() + " &f" + amount + "/" + needed;
+		}
 	}
 }

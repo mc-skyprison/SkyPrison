@@ -37,11 +37,9 @@ import java.util.Objects;
 public class PlayerInteract implements Listener {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
-    private final DailyMissions dm;
-    public PlayerInteract(SkyPrisonCore plugin, DatabaseHook db, DailyMissions dm) {
+    public PlayerInteract(SkyPrisonCore plugin, DatabaseHook db) {
         this.plugin = plugin;
         this.db = db;
-        this.dm = dm;
     }
     public boolean isMember(Player player, int mailBox) {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT id FROM mail_boxes_users WHERE mailbox_id = ? AND user_id = ?")) {
@@ -94,14 +92,7 @@ public class PlayerInteract implements Listener {
                                         secret.setPlayerCooldown(player.getUniqueId());
                                     }
                                 }
-                                for (String mission : dm.getMissions(player)) {
-                                    if(!dm.isCompleted(player, mission)) {
-                                        String[] missSplit = mission.split("-");
-                                        if (missSplit[0].equalsIgnoreCase("secrets")) {
-                                            dm.updatePlayerMission(player, mission);
-                                        }
-                                    }
-                                }
+                                DailyMissions.updatePlayerMissions(player.getUniqueId(), "secrets", "");
                                 if(notFound.size() == 1 && notFound.contains(secret)) {
                                     SecretCategory category = SecretsUtils.getCategoryFromId(secret.category());
                                     if(category != null) {

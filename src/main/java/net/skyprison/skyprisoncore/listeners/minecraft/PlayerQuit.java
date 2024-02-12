@@ -4,6 +4,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.inventories.mail.MailBoxSend;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
+import net.skyprison.skyprisoncore.utils.PlayerManager;
 import net.skyprison.skyprisoncore.utils.TokenUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -19,17 +20,13 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class PlayerQuit implements Listener {
-
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
     private final DiscordApi discApi;
-    private final DailyMissions dm;
-
-    public PlayerQuit(SkyPrisonCore plugin, DatabaseHook db, DiscordApi discApi, DailyMissions dm) {
+    public PlayerQuit(SkyPrisonCore plugin, DatabaseHook db, DiscordApi discApi) {
         this.plugin = plugin;
         this.db = db;
         this.discApi = discApi;
-        this.dm = dm;
     }
 
     @EventHandler
@@ -61,12 +58,11 @@ public class PlayerQuit implements Listener {
                 e.printStackTrace();
             }
 
-            for(String mission : dm.getMissions(player)) {
-                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE daily_missions SET amount = ?, completed = ? WHERE user_id = ? AND type = ?")) {
-                    ps.setInt(1, dm.getMissionAmount(player, mission));
-                    ps.setInt(2, dm.isCompleted(player, mission) ? 1 : 0);
-                    ps.setString(3, player.getUniqueId().toString());
-                    ps.setString(4, mission);
+            for(DailyMissions.PlayerMission mission : PlayerManager.getPlayerMissions(player.getUniqueId())) {
+                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE daily_missions SET amount = ?, completed = ? WHERE mission_id = ?")) {
+                    ps.setInt(1, mission.amount());
+                    ps.setBoolean(2, mission.completed());
+                    ps.setString(3, mission.id().toString());
                     ps.executeUpdate();
                 } catch (SQLException e) {
                     e.printStackTrace();

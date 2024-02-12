@@ -1,11 +1,7 @@
 package net.skyprison.skyprisoncore.utils;
 
-import com.google.common.base.Functions;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.sql.Connection;
@@ -15,19 +11,14 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.TimerTask;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class NextDayTask extends TimerTask {
-    private final SkyPrisonCore plugin;
     private final DatabaseHook db;
-
-    public NextDayTask(SkyPrisonCore plugin, DatabaseHook db) {
-        this.plugin = plugin;
+    public NextDayTask(DatabaseHook db) {
         this.db = db;
     }
-
     @Override
     public void run() {
         ArrayList<String> dailyPlayers = new ArrayList<>();
@@ -46,7 +37,8 @@ public class NextDayTask extends TimerTask {
             e.printStackTrace();
         }
         if(!dailyPlayers.isEmpty()) {
-            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE dailies SET current_streak = 0 WHERE user_id IN " + SkyPrisonCore.getQuestionMarks(dailyPlayers))) {
+            try (Connection conn = db.getConnection();
+                 PreparedStatement ps = conn.prepareStatement("UPDATE dailies SET current_streak = 0 WHERE user_id IN " + SkyPrisonCore.getQuestionMarks(dailyPlayers))) {
                 for (int i = 0; i < dailyPlayers.size(); i++) {
                     ps.setString(i + 1, dailyPlayers.get(i));
                 }
@@ -55,47 +47,14 @@ public class NextDayTask extends TimerTask {
                 e.printStackTrace();
             }
         }
-        LocalDate yesterday = LocalDate.now();
-        String currDate = yesterday.format(formatter);
-        ArrayList<Integer> oldMissions = new ArrayList<>();
-        ArrayList<UUID> players = new ArrayList<>();
-        ArrayList<UUID> oPlayers = new ArrayList<>();
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT mission_id, user_id FROM daily_missions WHERE date != ?")) {
-            ps.setString(1, currDate);
-            ResultSet rs = ps.executeQuery();
-            while(rs.next()) {
-                oldMissions.add(rs.getInt(1));
-                UUID pUUID = UUID.fromString(rs.getString(2));
-                if(!players.contains(pUUID)) {
-                    players.add(pUUID);
-                    if (Bukkit.getOfflinePlayer(pUUID).isOnline()) {
-                        oPlayers.add(pUUID);
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        if(!oldMissions.isEmpty()) {
-            players.forEach(player -> plugin.missions.remove(player));
+        List<DailyMissions.PlayerMission> missions = PlayerManager.getAllMissions();
+        for(DailyMissions.PlayerMission mission : missions) {
+            if(!mission.date().toLocalDateTime().toLocalDate().equals(LocalDate.now())) {
+                missions.forEach(PlayerManager::removePlayerMissions);
 
-            for (UUID pUUID : oPlayers) {
-                OfflinePlayer offline = Bukkit.getOfflinePlayer(pUUID);
-                if (offline.isOnline()) {
-                    Player player = offline.getPlayer();
-                    assert player != null;
-                    player.sendMessage(Component.text("Your Daily Missions have refreshed!", NamedTextColor.GREEN));
-                    plugin.dailyMissions.setPlayerMissions(player);
-                }
-            }
-
-            try (Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM daily_missions WHERE mission_id IN " + SkyPrisonCore.getQuestionMarks(oldMissions.stream().map(Functions.toStringFunction()).collect(Collectors.toList())))) {
-                for (int i = 0; i < oldMissions.size(); i++) {
-                    ps.setInt(i + 1, oldMissions.get(i));
-                }
-                ps.executeUpdate();
-            } catch (SQLException e) {
-                e.printStackTrace();
+                Player player = Bukkit.getPlayer(mission.player());
+                if(player != null && player.isOnline()) DailyMissions.giveMissions(player);
+                break;
             }
         }
     }

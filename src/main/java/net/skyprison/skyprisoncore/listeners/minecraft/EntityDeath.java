@@ -13,7 +13,7 @@ import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.TokenUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Animals;
-import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -27,65 +27,19 @@ import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
 public class EntityDeath implements Listener {
-    private final SkyPrisonCore plugin;
     private final DatabaseHook db;
-    private final DailyMissions dailyMissions;
-
-    public EntityDeath(SkyPrisonCore plugin, DatabaseHook db, DailyMissions dailyMissions) {
-        this.plugin = plugin;
+    public EntityDeath(DatabaseHook db) {
         this.db = db;
-        this.dailyMissions = dailyMissions;
     }
     @EventHandler
     public void playerDeath(EntityDeathEvent event) {
-        if(event.getEntity() instanceof Player player) {
+        LivingEntity entity = event.getEntity();
+        if(entity instanceof Player player) {
             SkyPrisonCore.safezoneViolators.remove(player.getUniqueId());
         }
 
-        if(!(event.getEntity() instanceof Player) && event.getEntity().getKiller() != null) {
-            Player player = event.getEntity().getKiller();
-            for (String mission : dailyMissions.getMissions(player)) {
-                if(!dailyMissions.isCompleted(player, mission)) {
-                    String[] missSplit = mission.split("-");
-                    if (missSplit[0].equalsIgnoreCase("kill")) {
-                        switch (missSplit[1].toLowerCase()) {
-                            case "any" -> {
-                                if (event.getEntity() instanceof Monster) {
-                                    dailyMissions.updatePlayerMission(player, mission);
-                                }
-                            }
-                            case "zombie" -> {
-                                if (event.getEntityType().equals(EntityType.ZOMBIE)) {
-                                    dailyMissions.updatePlayerMission(player, mission);
-                                }
-                            }
-                            case "skeleton" -> {
-                                if (event.getEntityType().equals(EntityType.SKELETON)) {
-                                    dailyMissions.updatePlayerMission(player, mission);
-                                }
-                            }
-                        }
-                    } else if (missSplit[0].equalsIgnoreCase("slaughter")) {
-                        switch (missSplit[1].toLowerCase()) {
-                            case "any" -> {
-                                if (event.getEntity() instanceof Animals) {
-                                    dailyMissions.updatePlayerMission(player, mission);
-                                }
-                            }
-                            case "pig" -> {
-                                if (event.getEntityType().equals(EntityType.PIG)) {
-                                    dailyMissions.updatePlayerMission(player, mission);
-                                }
-                            }
-                            case "cow" -> {
-                                if (event.getEntityType().equals(EntityType.COW)) {
-                                    dailyMissions.updatePlayerMission(player, mission);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        if(entity.getKiller() instanceof Player player && (entity instanceof Monster || entity instanceof Animals)) {
+            DailyMissions.updatePlayerMissions(player.getUniqueId(), entity instanceof Monster ? "kill" : "slaughter", event.getEntityType());
         }
 
         if(event.getEntity() instanceof Player killed && killed.getKiller() != null) {

@@ -1,306 +1,177 @@
 package net.skyprison.skyprisoncore.utils;
 
 import com.Zrips.CMI.CMI;
-import net.skyprison.skyprisoncore.SkyPrisonCore;
-import org.bukkit.OfflinePlayer;
+import com.destroystokyo.paper.MaterialSetTag;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
+import java.sql.*;
 import java.util.*;
 
+import static net.skyprison.skyprisoncore.SkyPrisonCore.db;
+
 public class DailyMissions {
-
-    private final SkyPrisonCore plugin;
-    private final DatabaseHook db;
-
-    public DailyMissions(SkyPrisonCore plugin, DatabaseHook db) {
-        this.plugin = plugin;
-        this.db = db;
+    private final static List<Mission> missions = new ArrayList<>();
+    public static void updatePlayerMissions(UUID player, String type, Object subType) {
+        updatePlayerMissions(player, type, subType, 1);
     }
-
-
-    //Mission Type - Specific Type in type - Mission Title - Amount to reach - Current amount
-    private ArrayList<String> getMissions(List<String> ranks) {
-        ArrayList<String> missions = new ArrayList<>();
-        missions.add("secrets-any-Find Secrets");
-
-        missions.add("sponge-any-Find Sponges");
-
-        missions.add("fish-any-Go Fishing");
-        missions.add("fish-pufferfish-Fish Pufferfish");
-        missions.add("fish-cod-Fish Cod");
-        missions.add("fish-salmon-Fish Salmon");
-        missions.add("fish-tropical_fish-Fish Tropical Fish");
-
-        missions.add("money-any-Make Money");
-
-        missions.add("break-any-Break Blocks");
-        missions.add("break-birch_log-Chop Birch");
-
-        missions.add("bomb-any-Use Bombs");
-
-        missions.add("parkour-any-Do /parkour");
-
-        if(ranks.contains("desert")) {
-            missions.add("harvest-any-Harvest Crops");
-            missions.add("harvest-cactus-Harvest Cactus");
-            missions.add("harvest-bamboo-Harvest Bamboo");
-        }
-
-        if(ranks.contains("nether")) {
-            missions.add("harvest-pumpkin-Harvest Pumpkin");
-            //missions.add("harvest-nether_wart-Harvest Nether Wart");
-
-            missions.add("kill-any-Kill Monsters");
-            missions.add("kill-zombie-Kill Zombies");
-            missions.add("kill-skeleton-Kill Skeletons");
-        }
-
-        if(ranks.contains("snow")) {
-            missions.add("Slaughter-any-Slaughter Animals");
-            missions.add("slaughter-cow-Slaughter Cows");
-            missions.add("slaughter-pig-Slaughter Pigs");
-            missions.add("harvest-sugar_cane-Harvest Sugar Cane");
-        }
-
-        Collections.shuffle(missions);
-
-        ArrayList<String> twoMissions = new ArrayList<>();
-        twoMissions.add(missions.getFirst());
-        twoMissions.add(missions.get(1));
-
-        ArrayList<String> missionsToGive = new ArrayList<>();
-
-        for(String mission : twoMissions) {
-            Random randInt = new Random();
-            String[] missionSplit = mission.split("-");
-            switch (missionSplit[0].toLowerCase()) {
-                case "secrets" -> missionsToGive.add(mission + ":" + (randInt.nextInt(3) + 2));
-                case "fish" -> {
-                    switch (missionSplit[1].toLowerCase()) {
-                        case "any" -> missionsToGive.add(mission + ":" + (randInt.nextInt(16) + 16));
-                        case "pufferfish" -> missionsToGive.add(mission + ":" + (randInt.nextInt(5) + 5));
-                        case "cod" -> missionsToGive.add(mission + ":" + (randInt.nextInt(10) + 5));
-                        case "salmon" -> missionsToGive.add(mission + ":" + (randInt.nextInt(10) + 5));
-                        case "tropical_fish" -> missionsToGive.add(mission + ":" + (randInt.nextInt(5) + 5));
-                    }
-                }
-                case "kill" -> {
-                    switch (missionSplit[1].toLowerCase()) {
-                        case "any" -> missionsToGive.add(mission + ":" + (randInt.nextInt(15) + 15));
-                        case "zombie" -> missionsToGive.add(mission + ":" + (randInt.nextInt(15) + 15));
-                        case "skeleton" -> missionsToGive.add(mission + ":" + (randInt.nextInt(15) + 15));
-                    }
-                }
-                case "break" -> {
-                    switch (missionSplit[1].toLowerCase()) {
-                        case "any" -> missionsToGive.add(mission + ":" + (randInt.nextInt(50) + 75));
-                        case "birch_log" -> missionsToGive.add(mission + ":" + (randInt.nextInt(50) + 25));
-                    }
-                }
-                case "harvest" -> {
-                    switch (missionSplit[1].toLowerCase()) {
-                        case "any" -> missionsToGive.add(mission + ":" + (randInt.nextInt(80) + 80));
-                        case "cactus" -> missionsToGive.add(mission + ":" + (randInt.nextInt(64) + 64));
-                        case "pumpkin" -> missionsToGive.add(mission + ":" + (randInt.nextInt(64) + 64));
-                        case "nether_wart" -> missionsToGive.add(mission + ":" + (randInt.nextInt(64) + 64));
-                        case "sugar_cane" -> missionsToGive.add(mission + ":" + (randInt.nextInt(64) + 64));
-                        case "bamboo" -> missionsToGive.add(mission + ":" + (randInt.nextInt(64) + 64));
-                    }
-                }
-                case "slaughter" -> {
-                    switch (missionSplit[1].toLowerCase()) {
-                        case "any" -> missionsToGive.add(mission + ":" + (randInt.nextInt(15) + 15));
-                        case "pig" -> missionsToGive.add(mission + ":" + (randInt.nextInt(15) + 15));
-                        case "cow" -> missionsToGive.add(mission + ":" + (randInt.nextInt(15) + 15));
-                    }
-                }
-                case "money" -> missionsToGive.add(mission + ":" + (randInt.nextInt(1500) + 500));
-                case "sponge" -> missionsToGive.add(mission + ":" + (randInt.nextInt(1) + 2));
-                case "bomb" -> missionsToGive.add(mission + ":" + (randInt.nextInt(5) + 5));
-                case "parkour" -> missionsToGive.add(mission + ":" + (randInt.nextInt(5) + 3));
+    public static void updatePlayerMissions(UUID player, String type, Object subType, int amount) {
+        List<DailyMissions.PlayerMission> missions = PlayerManager.getPlayerMissions(player, false);
+        missions.forEach(pMission -> {
+            Mission mission = pMission.mission();
+            if(mission.type().equals(type) && (mission.subType().contains("any") || mission.subType().contains(subType))) {
+                pMission.updateAmount(amount);
             }
-        }
-
-        return missionsToGive;
+        });
     }
-
-    public void setPlayerMissions(Player player) {
-        Date date = new Date();
-        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-        String currDate = formatter.format(date);
-
-        ArrayList<String> missions = new ArrayList<>();
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT type, amount, needed, completed, date FROM daily_missions WHERE user_id = ?")) {
+    public static void giveMissions(Player player) {
+        boolean newMissions = true;
+        try(Connection conn = db.getConnection(); PreparedStatement ps =
+                conn.prepareStatement("SELECT id, mission, needed, amount, completed, mission_date FROM daily_missions WHERE user_id = ? AND DATE(mission_date) = CURDATE()")) {
             ps.setString(1, player.getUniqueId().toString());
             ResultSet rs = ps.executeQuery();
+            List<PlayerMission> pMissions = new ArrayList<>();
             while (rs.next()) {
-                if(rs.getString(5).equalsIgnoreCase(currDate)) {
-                    if (rs.getInt(4) == 0) {
-                        missions.add(rs.getString(1) + ":" + rs.getInt(3) + "_" + rs.getInt(2));
-                    } else {
-                        missions.add(rs.getString(1) + ":" + rs.getInt(3) + "_" + rs.getInt(2) + ":completed");
-                    }
-                }
+                UUID id = UUID.fromString(rs.getString(1));
+                int missionId = rs.getInt(2);
+                int needed = rs.getInt(3);
+                int amount = rs.getInt(4);
+                boolean completed = rs.getBoolean(5);
+                Timestamp date = rs.getTimestamp(6);
+                Mission mission = missions.stream().filter(m -> m.id() == missionId).findFirst().orElse(null);
+                if(mission == null) break;
+                pMissions.add(new PlayerMission(id, player.getUniqueId(), mission, amount, needed, completed, date));
+            }
+            if(pMissions.size() == 2) {
+                newMissions = false;
+                pMissions.forEach(PlayerManager::addPlayerMissions);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        if (missions.isEmpty()) {
+        if(newMissions) {
             List<String> ranks = new ArrayList<>();
             CMI.getInstance().getPlayerManager().getUser(player).getRank().getPreviousRanks().forEach(i -> ranks.add(i.getName()));
-
-            missions = getMissions(ranks);
-
-            for (String mission : missions) {
-                String[] mSplit = mission.split(":");
-
-                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("INSERT INTO daily_missions (user_id, date, type, amount, needed, completed) VALUES (?, ?, ?, ?, ?, ?)")) {
-                    ps.setString(1, player.getUniqueId().toString());
-                    ps.setString(2, currDate);
-                    ps.setString(3, mSplit[0]);
-                    ps.setInt(4, 0);
-                    ps.setInt(5, Integer.parseInt(mSplit[1]));
-                    ps.setInt(6, 0);
-                    ps.executeUpdate();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        plugin.missions.put(player.getUniqueId(), missions);
-    }
-
-    private String getFullMission(OfflinePlayer player, String mission) {
-        String pMission = "";
-        for(String fMission : getFullMissions(player)) {
-            if(fMission.split(":")[0].equalsIgnoreCase(mission)) {
-                pMission = fMission;
-            }
-        }
-        return pMission;
-    }
-
-    public ArrayList<String> getFullMissions(OfflinePlayer player) {
-        if(plugin.missions.containsKey(player.getUniqueId())) {
-            return plugin.missions.get(player.getUniqueId());
-        } else {
-            return new ArrayList<>();
+            List<Mission> avail = new ArrayList<>(missions.stream().filter(mission -> ranks.contains(mission.rank())).toList());
+            Collections.shuffle(avail);
+            List<Mission> toGive = avail.subList(0, 2);
+            toGive.forEach(mission -> PlayerManager.addPlayerMissions(new PlayerMission(player.getUniqueId(), mission)));
         }
     }
+    public static void loadMissions() {
+        missions.add(new Mission(1, "secrets", List.of("any"), "Find Secrets", 2, 5, "default"));
+        missions.add(new Mission(2, "sponge", List.of("any"), "Find Sponges", 2, 5, "default"));
 
-    public boolean isCompleted(OfflinePlayer player, String mission) {
-        return getFullMission(player, mission).contains(":completed");
+        missions.add(new Mission(3, "fish", List.of("any"), "Go Fishing", 16, 32, "default"));
+        missions.add(new Mission(4, "fish", List.of(Material.PUFFERFISH), "Fish Pufferfish", 5, 10, "default"));
+        missions.add(new Mission(5, "fish", List.of(Material.COD), "Fish Cod", 5, 15, "default"));
+        missions.add(new Mission(6, "fish", List.of(Material.SALMON), "Fish Salmon", 5, 15, "default"));
+        missions.add(new Mission(7, "fish", List.of(Material.TROPICAL_FISH), "Fish Tropical Fish", 5, 10, "default"));
+
+        missions.add(new Mission(8, "break", List.of("any"), "Break Blocks", 75, 125, "default"));
+        missions.add(new Mission(9, "break", MaterialSetTag.BIRCH_LOGS.getValues().stream().toList(), "Chop Birch", 25, 75, "default"));
+
+        missions.add(new Mission(10, "money", List.of("any"), "Make Money", 500, 2000, "default"));
+        missions.add(new Mission(11, "bomb", List.of("any"), "Use Bombs", 5, 10, "default"));
+        missions.add(new Mission(12, "parkour", List.of("any"), "Do /parkour", 3, 8, "default"));
+
+        missions.add(new Mission(13, "harvest", MaterialSetTag.CROPS.getValues().stream().toList(), "Harvest Crops", 80, 160, "desert"));
+        missions.add(new Mission(14, "harvest", List.of(Material.CACTUS), "Harvest Cactus", 64, 128, "desert"));
+        missions.add(new Mission(15, "harvest", List.of(Material.BAMBOO), "Harvest Bamboo", 64, 128, "desert"));
+        missions.add(new Mission(16, "harvest", List.of(Material.PUMPKIN), "Harvest Pumpkin", 64, 128, "nether"));
+        missions.add(new Mission(17, "harvest", List.of(Material.SUGAR_CANE), "Harvest Sugar Cane", 64, 128, "snow"));
+
+        missions.add(new Mission(18, "kill", List.of("any"), "Kill Monsters", 15, 30, "nether"));
+        missions.add(new Mission(19, "kill", Arrays.asList(EntityType.ZOMBIE, EntityType.ZOMBIE_VILLAGER), "Kill Zombies", 15, 30, "nether"));
+        missions.add(new Mission(20, "kill", List.of("skeleton"), "Kill Skeletons", 15, 30, "nether"));
+
+        missions.add(new Mission(21, "slaughter", List.of("any"), "Slaughter Animals", 15, 30, "snow"));
+        missions.add(new Mission(22, "slaughter", List.of("cow"), "Slaughter Cows", 15, 30, "snow"));
+        missions.add(new Mission(23, "slaughter", List.of("pig"), "Slaughter Pigs", 15, 30, "snow"));
     }
-
-    public ArrayList<String> getMissions(OfflinePlayer player) {
-        if(plugin.missions.containsKey(player.getUniqueId())) {
-            ArrayList<String> missionType = new ArrayList<>();
-            for(String mission : plugin.missions.get(player.getUniqueId())) {
-                missionType.add(mission.split(":")[0]);
-            }
-            return missionType;
-        } else {
-            return new ArrayList<>();
+    public record Mission(int id, String type, List<?> subType, String displayName, Integer lowest, Integer highest, String rank) {
+        public Integer randomNeeded() {
+                return (int) (Math.random() * (highest - lowest)) + lowest;
         }
     }
-
-    public Integer getMissionNeeded(OfflinePlayer player, String mission) {
-        int needed;
-
-        if(!mission.contains(":")) {
-            mission = getFullMission(player, mission);
-        }
-
-        String stats = mission.split(":")[1];
-
-        if(stats.contains("_")) {
-            needed = Integer.parseInt(stats.split("_")[0]);
-        } else {
-            needed = Integer.parseInt(stats);
-        }
-
-        return needed;
-    }
-
-
-    public Integer getMissionAmount(OfflinePlayer player, String mission) {
-        int amount = 0;
-
-        if(!mission.contains(":")) {
-            mission = getFullMission(player, mission);
-        }
-
-        String stats = mission.split(":")[1];
-
-        if(stats.contains("_")) {
-            amount = Integer.parseInt(stats.split("_")[1]);
-        }
-
-        return amount;
-    }
-
-
-    public void updatePlayerMission(Player player, String mission) {
-        updateMission(player, getFullMission(player, mission), 1);
-    }
-
-    public void updatePlayerMission(Player player, String mission, Integer amount) {
-        updateMission(player, getFullMission(player, mission), amount);
-    }
-
-    private void updateMission(Player player, String mission, Integer incAmount) {
-        String[] mSplit = mission.split(":");
-
-        int needed;
-        int amount = 0;
-        byte completed = 0;
-
-        if(mSplit[1].contains("_")) {
-            needed = Integer.parseInt(mSplit[1].split("_")[0]);
-            amount = Integer.parseInt(mSplit[1].split("_")[1]);
-        } else {
-            needed = Integer.parseInt(mSplit[1]);
-        }
-        ArrayList<String> missions = getFullMissions(player);
-        amount += incAmount;
-        String uMission = mSplit[0] + ":" + needed + "_" + amount;
-
-        if(amount >= needed) {
-            completed = 1;
-            Random randInt = new Random();
-            int reward = randInt.nextInt(25) + 25;
-            TokenUtils.addTokens(player.getUniqueId(), reward, "Daily Mission", mSplit[0] + ":" + needed);
-            player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
-
-            uMission = uMission + ":completed";
-
-            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET daily_missions_completed = daily_missions_completed + ? WHERE user_id = ?")) {
-                ps.setInt(1, 1);
-                ps.setString(2, player.getUniqueId().toString());
+    public static class PlayerMission {
+        private final UUID id;
+        private final UUID player;
+        private final Mission mission;
+        private final Integer needed;
+        private Integer amount = 0;
+        private boolean completed = false;
+        private final Timestamp date;
+        public PlayerMission(UUID player, Mission mission) {
+            Timestamp date = null;
+            id = UUID.randomUUID();
+            this.player = player;
+            this.mission = mission;
+            needed = mission.randomNeeded();
+            try(Connection conn = db.getConnection();
+                PreparedStatement ps = conn.prepareStatement("INSERT INTO daily_missions (id, user_id, mission, needed, amount) VALUES (?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+                ps.setString(1, id.toString());
+                ps.setString(2, player.toString());
+                ps.setInt(3, mission.id);
+                ps.setInt(4, needed);
+                ps.setInt(5, amount);
                 ps.executeUpdate();
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        date = rs.getTimestamp("mission_date");
+                    }
+                }
             } catch (SQLException e) {
                 e.printStackTrace();
             }
+            this.date = date;
         }
-
-        missions.set(missions.indexOf(mission), uMission);
-        plugin.missions.put(player.getUniqueId(), missions);
-
-        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE daily_missions SET amount = ?, completed = ? WHERE user_id = ? AND type = ?")) {
-            ps.setInt(1, amount);
-            ps.setInt(2, completed);
-            ps.setString(3, player.getUniqueId().toString());
-            ps.setString(4, mSplit[0]);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        public PlayerMission(UUID id, UUID player, Mission mission, Integer amount, Integer needed, boolean completed, Timestamp date) {
+            this.id = id;
+            this.player = player;
+            this.mission = mission;
+            this.amount = amount;
+            this.needed = needed;
+            this.completed = completed;
+            this.date = date;
+        }
+        public UUID id() {
+            return id;
+        }
+        public UUID player() {
+            return player;
+        }
+        public Mission mission() {
+            return mission;
+        }
+        public Integer needed() {
+            return needed;
+        }
+        public Integer amount() {
+            return amount;
+        }
+        public boolean completed() {
+            return completed;
+        }
+        public Timestamp date() {
+            return date;
+        }
+        public void updateAmount(Integer amount) {
+            if(completed) return;
+            this.amount += amount;
+            if(this.amount >= needed) {
+                completed = true;
+                Player oPlayer = Bukkit.getPlayer(player);
+                if(oPlayer != null) {
+                    Random randInt = new Random();
+                    int reward = randInt.nextInt(25) + 25;
+                    TokenUtils.addTokens(player, reward, "Daily Mission", mission.displayName + " - " + needed);
+                    oPlayer.playSound(oPlayer.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+                }
+            }
         }
     }
 }
