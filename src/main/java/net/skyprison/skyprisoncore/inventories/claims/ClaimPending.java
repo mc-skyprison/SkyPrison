@@ -5,7 +5,6 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
@@ -136,19 +135,9 @@ public class ClaimPending implements CustomInventory {
         return this.claims;
     }
     @Override
-    public ClickBehavior defaultClickBehavior() {
-        return ClickBehavior.DISABLE_ALL;
-    }
-
-    @Override
-    public List<Object> customClickList() {
-        return null;
-    }
-
-    public int getPage() {
+    public int page() {
         return this.page;
     }
-
     @Override
     public @NotNull Inventory getInventory() {
         return this.inventory;

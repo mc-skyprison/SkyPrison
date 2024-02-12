@@ -6,7 +6,6 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
@@ -104,22 +103,8 @@ public class BuyBack implements CustomInventory {
         });
         return iSold;
     }
-
     public SoldItem getSoldItem(int id) {
         return soldItems.get(id);
-    }
-
-    @Override
-    public ClickBehavior defaultClickBehavior() {
-        return ClickBehavior.DISABLE_ALL;
-    }
-    @Override
-    public List<Object> customClickList() {
-        return null;
-    }
-    @Override
-    public int getPage() {
-        return 1;
     }
     @Override
     public @NotNull Inventory getInventory() {

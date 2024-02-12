@@ -8,7 +8,6 @@ import net.alex9849.arm.regions.SellType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -69,22 +68,10 @@ public class PlotTeleport implements CustomInventory {
             }
         });
     }
-
     @Override
     public @NotNull Inventory getInventory() {
         return inventory;
     }
-    @Override
-    public ClickBehavior defaultClickBehavior() {
-        return ClickBehavior.DISABLE_ALL;
-    }
-    @Override
-    public List<Object> customClickList() {
-        return null;
-    }
-    @Override
-    public int getPage() {
-        return 1;
-    }
+
 }
 

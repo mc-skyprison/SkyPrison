@@ -6,7 +6,6 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import net.skyprison.skyprisoncore.utils.Tags;
@@ -226,18 +225,7 @@ public class TagsEdit implements CustomInventory {
     public boolean hasEffectStyle() {
         return effectStyle != null && !effectStyle.isEmpty();
     }
-    @Override
-    public ClickBehavior defaultClickBehavior() {
-        return ClickBehavior.DISABLE_ALL;
-    }
-    @Override
-    public List<Object> customClickList() {
-        return null;
-    }
-    @Override
-    public int getPage() {
-        return 1;
-    }
+
     @Override
     public @NotNull Inventory getInventory() {
         return this.inventory;

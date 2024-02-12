@@ -12,7 +12,6 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.secrets.Secret;
@@ -316,7 +315,10 @@ public class Secrets implements CustomInventory {
         updateShowing(null);
         updatePage(0);
     }
-
+    @Override
+    public int page() {
+        return this.page;
+    }
     public List<Integer> getPositions() {
         return positions;
     }
@@ -328,19 +330,6 @@ public class Secrets implements CustomInventory {
     }
     public String getShow() {
         return this.show.get(showPos);
-    }
-
-    @Override
-    public ClickBehavior defaultClickBehavior() {
-        return ClickBehavior.DISABLE_ALL;
-    }
-    @Override
-    public List<Object> customClickList() {
-        return null;
-    }
-    @Override
-    public int getPage() {
-        return 1;
     }
 
     public boolean canEditSecrets() {

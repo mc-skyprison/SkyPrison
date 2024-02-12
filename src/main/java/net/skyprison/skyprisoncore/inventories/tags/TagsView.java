@@ -6,7 +6,6 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import net.skyprison.skyprisoncore.utils.Tags;
@@ -102,16 +101,9 @@ public class TagsView implements CustomInventory {
     public Tags.Tag getTag(ItemStack tagItem) {
         return tags.stream().filter(tag -> (isAdmin ? tag.adminItem() : tag.item()).equals(tagItem)).findFirst().orElse(null);
     }
-    public int getPage() {
+    @Override
+    public int page() {
         return this.page;
-    }
-    @Override
-    public ClickBehavior defaultClickBehavior() {
-        return ClickBehavior.DISABLE_ALL;
-    }
-    @Override
-    public List<Object> customClickList() {
-        return null;
     }
     @Override
     public @NotNull Inventory getInventory() {

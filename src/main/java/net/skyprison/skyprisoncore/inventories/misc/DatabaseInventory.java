@@ -7,7 +7,6 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
@@ -234,37 +233,18 @@ public class DatabaseInventory implements CustomInventory {
         updateUsage(player);
         updateInventory(player);
     }
-
-    @Override
-    public ClickBehavior defaultClickBehavior() {
-        return ClickBehavior.DISABLE_ALL;
-    }
-
-    @Override
-    public List<Object> customClickList() {
-        return null;
-    }
-
-    @Override
-    public int getPage() {
-        return 1;
-    }
-
     public HashMap<String, Object> getItem(int position) {
         if(items.containsKey(position)) {
             return items.get(position);
         }
         return null;
     }
-
     public String getCategory() {
         return this.category;
     }
-
     public boolean getCanEdit() {
         return this.canEdit;
     }
-
     @Override
     public @NotNull Inventory getInventory() {
         return this.inventory;

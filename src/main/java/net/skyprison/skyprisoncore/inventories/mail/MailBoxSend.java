@@ -6,7 +6,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.*;
 import org.bukkit.Material;
@@ -158,18 +157,6 @@ public class MailBoxSend implements CustomInventory {
         plugin.mailSend.put(player.getUniqueId(), this);
     }
     @Override
-    public ClickBehavior defaultClickBehavior() {
-        return ClickBehavior.DISABLE_ALL;
-    }
-    @Override
-    public List<Object> customClickList() {
-        return null;
-    }
-    @Override
-    public int getPage() {
-        return 1;
-    }
-    @Override
     public @NotNull Inventory getInventory() {
         return this.inventory;
     }
@@ -181,7 +168,6 @@ public class MailBoxSend implements CustomInventory {
         sendTo.remove(pUUID);
         updateSendTo();
     }
-
     public void sendMail(ItemStack itemToSend) {
         plugin.mailSend.remove(player.getUniqueId());
         sendTo.forEach((uuid, name) -> {

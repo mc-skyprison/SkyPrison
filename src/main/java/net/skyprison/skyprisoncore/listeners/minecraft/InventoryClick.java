@@ -155,11 +155,8 @@ public class InventoryClick implements Listener {
         ItemStack currItem = event.getCurrentItem();
         ItemStack cursor = event.getCursor();
         boolean isPaper = currItem != null && currItem.getType().equals(Material.PAPER);
-        switch (customInv.defaultClickBehavior()) {
-            case DISABLE_ALL, ENABLE_SPECIFIC -> event.setCancelled(true);
-        }
+        event.setCancelled(true);
         if(event.getAction().equals(InventoryAction.COLLECT_TO_CURSOR)) {
-            event.setCancelled(true);
             return;
         }
         switch (customInv) {
@@ -304,12 +301,12 @@ public class InventoryClick implements Listener {
                     switch (event.getSlot()) {
                         case 47 -> {
                             if (isPaper) {
-                                player.openInventory(new NewsMessages(plugin, inv.getDatabase(), inv.getCanEdit(), inv.getPage() - 1).getInventory());
+                                player.openInventory(new NewsMessages(plugin, inv.getDatabase(), inv.getCanEdit(), inv.page() - 1).getInventory());
                             }
                         }
                         case 51 -> {
                             if (isPaper) {
-                                player.openInventory(new NewsMessages(plugin, inv.getDatabase(), inv.getCanEdit(), inv.getPage() + 1).getInventory());
+                                player.openInventory(new NewsMessages(plugin, inv.getDatabase(), inv.getCanEdit(), inv.page() + 1).getInventory());
                             }
                         }
                         case 49 -> {

@@ -4,7 +4,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
@@ -31,7 +30,6 @@ public class Referral implements CustomInventory {
     private final ItemStack prevPage;
     private final ItemStack blackPane;
     private boolean sort = true;
-
     public void updatePage(int page) {
         this.page += page;
         if(this.page > totalPages) {
@@ -115,17 +113,8 @@ public class Referral implements CustomInventory {
         updateSort();
         updatePage(0);
     }
-
     @Override
-    public ClickBehavior defaultClickBehavior() {
-        return ClickBehavior.DISABLE_ALL;
-    }
-    @Override
-    public List<Object> customClickList() {
-        return null;
-    }
-    @Override
-    public int getPage() {
+    public int page() {
         return this.page;
     }
     @Override

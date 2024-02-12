@@ -7,7 +7,6 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Material;
@@ -243,19 +242,6 @@ public class DatabaseInventoryEdit implements CustomInventory {
         }
         updateInventory();
     }
-
-    @Override
-    public ClickBehavior defaultClickBehavior() {
-        return ClickBehavior.DISABLE_ALL;
-    }
-    @Override
-    public List<Object> customClickList() {
-        return null;
-    }
-    @Override
-    public int getPage() {
-        return 1;
-    }
     public int getItemId() {
         return this.itemId;
     }
@@ -331,7 +317,6 @@ public class DatabaseInventoryEdit implements CustomInventory {
         this.priceVoucherType = priceVoucherType;
         updateInventory();
     }
-
     public void setCommands(String command) {
         if(plugin.isInt(command)) {
             int cmdNum = Integer.parseInt(command) - 1;
@@ -349,7 +334,6 @@ public class DatabaseInventoryEdit implements CustomInventory {
             updateInventory();
         }
     }
-
     public void setMaxUses(int maxUses) {
         this.maxUses = maxUses;
         updateInventory();
@@ -358,7 +342,6 @@ public class DatabaseInventoryEdit implements CustomInventory {
         this.usageLore = usageLore;
         updateInventory();
     }
-
     @Override
     public @NotNull Inventory getInventory() {
         return this.inventory;

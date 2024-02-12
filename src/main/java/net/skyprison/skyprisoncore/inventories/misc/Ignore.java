@@ -3,7 +3,6 @@ package net.skyprison.skyprisoncore.inventories.misc;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.skyprison.skyprisoncore.inventories.ClickBehavior;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;
@@ -104,14 +103,7 @@ public class Ignore implements CustomInventory {
         }).findFirst().map(IgnoreItem::ignore).orElse(null);
     }
     @Override
-    public ClickBehavior defaultClickBehavior() {
-        return ClickBehavior.DISABLE_ALL;
-    }
-    @Override
-    public List<Object> customClickList() {
-        return null;
-    }
-    public int getPage() {
+    public int page() {
         return this.page;
     }
     @Override
