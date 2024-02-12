@@ -1,6 +1,5 @@
 package net.skyprison.skyprisoncore.utils;
 
-import com.Zrips.CMI.CMI;
 import com.destroystokyo.paper.MaterialSetTag;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -22,7 +21,9 @@ public class DailyMissions {
         List<DailyMissions.PlayerMission> missions = PlayerManager.getPlayerMissions(player, false);
         missions.forEach(pMission -> {
             Mission mission = pMission.mission();
-            if(mission.type().equals(type) && (mission.subType().contains("any") || mission.subType().contains(subType))) {
+            boolean subTypeMatch = mission.subType().contains(subType);
+            if(mission.reverseSubType) subTypeMatch = !subTypeMatch;
+            if(mission.type().equals(type) && (mission.subType().contains("any") || subTypeMatch)) {
                 pMission.updateAmount(amount);
             }
         });
@@ -54,7 +55,18 @@ public class DailyMissions {
         }
         if(newMissions) {
             List<String> ranks = new ArrayList<>();
-            CMI.getInstance().getPlayerManager().getUser(player).getRank().getPreviousRanks().forEach(i -> ranks.add(i.getName()));
+            String rank = PlayerManager.getPrisonRank(player.getUniqueId()).toLowerCase();
+            ranks.add(rank);
+            switch (rank) {
+                case "end": ranks.add("hell");
+                case "hell": ranks.add("free");
+                case "free": ranks.add("snow");
+                case "snow": ranks.add("nether");
+                case "nether": ranks.add("desert");
+                case "desert":
+                    ranks.add("grass");
+                    break;
+            }
             List<Mission> avail = new ArrayList<>(missions.stream().filter(mission -> ranks.contains(mission.rank())).toList());
             Collections.shuffle(avail);
             List<Mission> toGive = avail.subList(0, 2);
@@ -62,37 +74,38 @@ public class DailyMissions {
         }
     }
     public static void loadMissions() {
-        missions.add(new Mission(1, "secrets", List.of("any"), "Find Secrets", 2, 5, "default"));
-        missions.add(new Mission(2, "sponge", List.of("any"), "Find Sponges", 2, 5, "default"));
+        missions.add(new Mission(1, "secrets", List.of("any"), false,"Find Secrets", 2, 5, "grass"));
+        missions.add(new Mission(2, "sponge", List.of("any"), false, "Find Sponges", 2, 5, "grass"));
 
-        missions.add(new Mission(3, "fish", List.of("any"), "Go Fishing", 16, 32, "default"));
-        missions.add(new Mission(4, "fish", List.of(Material.PUFFERFISH), "Fish Pufferfish", 5, 10, "default"));
-        missions.add(new Mission(5, "fish", List.of(Material.COD), "Fish Cod", 5, 15, "default"));
-        missions.add(new Mission(6, "fish", List.of(Material.SALMON), "Fish Salmon", 5, 15, "default"));
-        missions.add(new Mission(7, "fish", List.of(Material.TROPICAL_FISH), "Fish Tropical Fish", 5, 10, "default"));
+        missions.add(new Mission(3, "fish", List.of("any"), false, "Go Fishing", 16, 32, "grass"));
+        missions.add(new Mission(4, "fish", List.of(Material.PUFFERFISH), false, "Fish Pufferfish", 5, 10, "grass"));
+        missions.add(new Mission(5, "fish", List.of(Material.COD), false, "Fish Cod", 5, 15, "grass"));
+        missions.add(new Mission(6, "fish", List.of(Material.SALMON), false, "Fish Salmon", 5, 15, "grass"));
+        missions.add(new Mission(7, "fish", List.of(Material.TROPICAL_FISH), false, "Fish Tropical Fish", 5, 10, "grass"));
+        List<Material> crops = new ArrayList<>(MaterialSetTag.CROPS.getValues().stream().toList());
+        crops.addAll(List.of(Material.CACTUS, Material.BAMBOO, Material.PUMPKIN, Material.SUGAR_CANE, Material.MELON));
+        missions.add(new Mission(8, "break", crops, true, "Break Blocks", 75, 125, "grass"));
+        missions.add(new Mission(9, "break", MaterialSetTag.BIRCH_LOGS.getValues().stream().toList(), false, "Chop Birch", 25, 75, "grass"));
 
-        missions.add(new Mission(8, "break", List.of("any"), "Break Blocks", 75, 125, "default"));
-        missions.add(new Mission(9, "break", MaterialSetTag.BIRCH_LOGS.getValues().stream().toList(), "Chop Birch", 25, 75, "default"));
+        missions.add(new Mission(10, "money", List.of("any"), false, "Make Money", 500, 2000, "grass"));
+        missions.add(new Mission(11, "bomb", List.of("any"), false, "Use Bombs", 5, 10, "grass"));
+        missions.add(new Mission(12, "parkour", List.of("any"), false, "Do /parkour", 3, 8, "grass"));
 
-        missions.add(new Mission(10, "money", List.of("any"), "Make Money", 500, 2000, "default"));
-        missions.add(new Mission(11, "bomb", List.of("any"), "Use Bombs", 5, 10, "default"));
-        missions.add(new Mission(12, "parkour", List.of("any"), "Do /parkour", 3, 8, "default"));
+        missions.add(new Mission(13, "harvest", crops, false, "Harvest Crops", 80, 160, "desert"));
+        missions.add(new Mission(14, "harvest", List.of(Material.CACTUS), false, "Harvest Cactus", 64, 128, "desert"));
+        missions.add(new Mission(15, "harvest", List.of(Material.BAMBOO), false, "Harvest Bamboo", 64, 128, "desert"));
+        missions.add(new Mission(16, "harvest", List.of(Material.PUMPKIN), false, "Harvest Pumpkin", 64, 128, "nether"));
+        missions.add(new Mission(17, "harvest", List.of(Material.SUGAR_CANE), false, "Harvest Sugar Cane", 64, 128, "snow"));
 
-        missions.add(new Mission(13, "harvest", MaterialSetTag.CROPS.getValues().stream().toList(), "Harvest Crops", 80, 160, "desert"));
-        missions.add(new Mission(14, "harvest", List.of(Material.CACTUS), "Harvest Cactus", 64, 128, "desert"));
-        missions.add(new Mission(15, "harvest", List.of(Material.BAMBOO), "Harvest Bamboo", 64, 128, "desert"));
-        missions.add(new Mission(16, "harvest", List.of(Material.PUMPKIN), "Harvest Pumpkin", 64, 128, "nether"));
-        missions.add(new Mission(17, "harvest", List.of(Material.SUGAR_CANE), "Harvest Sugar Cane", 64, 128, "snow"));
+        missions.add(new Mission(18, "kill", List.of("any"), false, "Kill Monsters", 15, 30, "nether"));
+        missions.add(new Mission(19, "kill", Arrays.asList(EntityType.ZOMBIE, EntityType.ZOMBIE_VILLAGER), false, "Kill Zombies", 15, 30, "nether"));
+        missions.add(new Mission(20, "kill", Arrays.asList(EntityType.SKELETON, EntityType.WITHER_SKELETON), false, "Kill Skeletons", 15, 30, "nether"));
 
-        missions.add(new Mission(18, "kill", List.of("any"), "Kill Monsters", 15, 30, "nether"));
-        missions.add(new Mission(19, "kill", Arrays.asList(EntityType.ZOMBIE, EntityType.ZOMBIE_VILLAGER), "Kill Zombies", 15, 30, "nether"));
-        missions.add(new Mission(20, "kill", List.of("skeleton"), "Kill Skeletons", 15, 30, "nether"));
-
-        missions.add(new Mission(21, "slaughter", List.of("any"), "Slaughter Animals", 15, 30, "snow"));
-        missions.add(new Mission(22, "slaughter", List.of("cow"), "Slaughter Cows", 15, 30, "snow"));
-        missions.add(new Mission(23, "slaughter", List.of("pig"), "Slaughter Pigs", 15, 30, "snow"));
+        missions.add(new Mission(21, "slaughter", List.of("any"), false, "Slaughter Animals", 15, 30, "snow"));
+        missions.add(new Mission(22, "slaughter", List.of("cow"), false, "Slaughter Cows", 15, 30, "snow"));
+        missions.add(new Mission(23, "slaughter", List.of("pig"), false, "Slaughter Pigs", 15, 30, "snow"));
     }
-    public record Mission(int id, String type, List<?> subType, String displayName, Integer lowest, Integer highest, String rank) {
+    public record Mission(int id, String type, List<?> subType, boolean reverseSubType, String displayName, Integer lowest, Integer highest, String rank) {
         public Integer randomNeeded() {
                 return (int) (Math.random() * (highest - lowest)) + lowest;
         }

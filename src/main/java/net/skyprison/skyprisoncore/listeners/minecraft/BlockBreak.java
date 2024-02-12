@@ -186,7 +186,6 @@ public class BlockBreak implements Listener {
                     }
                 }
             }
-
             DailyMissions.updatePlayerMissions(player.getUniqueId(), block.getBlockData() instanceof Ageable ? "harvest" : "break", bType);
         }
     }
