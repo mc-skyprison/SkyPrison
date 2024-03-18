@@ -10,7 +10,6 @@ import org.javacord.api.entity.channel.TextChannel;
 import java.util.Objects;
 
 public class McMMOPartyChat implements Listener {
-
     private final DiscordApi discApi;
 
     public McMMOPartyChat (DiscordApi discApi) {

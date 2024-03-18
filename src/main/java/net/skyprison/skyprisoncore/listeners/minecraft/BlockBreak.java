@@ -37,7 +37,6 @@ public class BlockBreak implements Listener {
         this.plugin = plugin;
         this.particles = particles;
     }
-
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onblockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
