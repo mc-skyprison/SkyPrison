@@ -1,11 +1,12 @@
 package net.skyprison.skyprisoncore.listeners.quickshop;
 
+import com.ghostchu.quickshop.api.event.ShopSuccessPurchaseEvent;
+import com.ghostchu.quickshop.api.shop.Shop;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
-import org.maxgamer.quickshop.api.event.ShopSuccessPurchaseEvent;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -20,13 +21,19 @@ public class ShopSuccessPurchase implements Listener {
     }
     @EventHandler
     public void onShopSuccessPurchase(ShopSuccessPurchaseEvent event) {
-        UUID purchaser = event.getPurchaser();
-        UUID shopOwner = event.getShop().getOwner();
-        boolean isBuying = event.getShop().isBuying();
+        Shop shop = event.getShop();
+
+        UUID purchaser = event.getPurchaser().getUniqueId();
+        UUID shopOwner = shop.getOwner().getUniqueId();
+        if(purchaser == null || shopOwner == null) return;
+
+        boolean isBuying = shop.isBuying();
         String sender = isBuying ? shopOwner.toString() : purchaser.toString();
         String receiver = isBuying ? purchaser.toString() : shopOwner.toString();
-        ItemStack item = event.getShop().getItem();
+
+        ItemStack item = shop.getItem();
         item.setAmount(event.getAmount());
+
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
                 "INSERT INTO logs_transactions (sender_id, sender_rank, receiver_id, receiver_rank, amount, item) VALUES (?, ?, ?, ?, ?, ?)")) {
             ps.setString(1, sender);

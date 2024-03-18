@@ -1,33 +1,35 @@
 package net.skyprison.skyprisoncore.listeners.advancedregionmarket;
 
 
+import com.ghostchu.quickshop.api.QuickShopAPI;
+import com.ghostchu.quickshop.api.shop.Shop;
+import com.ghostchu.quickshop.api.shop.ShopManager;
+import net.alex9849.arm.adapters.WGRegion;
 import net.alex9849.arm.events.UnsellRegionEvent;
+import net.alex9849.arm.regions.Region;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.maxgamer.quickshop.QuickShop;
-import org.maxgamer.quickshop.api.QuickShopAPI;
-import org.maxgamer.quickshop.api.shop.Shop;
+
+import java.util.List;
 
 public class UnsellRegion implements Listener {
     @EventHandler
     public void onUnsellRegion(UnsellRegionEvent event) {
-        if (event.getRegion().getRegionworld().getName().equalsIgnoreCase("world_skycity")) {
-            World world = event.getRegion().getRegionworld();
-            Location locMax = event.getRegion().getRegion().getMaxPoint().toLocation(world);
-            Location locMin = event.getRegion().getRegion().getMinPoint().toLocation(world);
-            QuickShopAPI qsApi = QuickShop.getInstance();
-            for(Shop shop : qsApi.getShopManager().getPlayerAllShops(event.getRegion().getOwner())) {
-                Location shopLoc = shop.getLocation();
-                if ((shopLoc.getBlockX() >= locMax.getBlockX() && shopLoc.getBlockX() <= locMin.getBlockX()) || (shopLoc.getBlockX() <= locMax.getBlockX() && shopLoc.getBlockX() >= locMin.getBlockX())) {
-                    if ((shopLoc.getBlockZ() >= locMax.getBlockZ() && shopLoc.getBlockZ() <= locMin.getBlockZ()) || (shopLoc.getBlockZ() <= locMax.getBlockZ() && shopLoc.getBlockZ() >= locMin.getBlockZ())) {
-                        if ((shopLoc.getBlockY() >= locMax.getBlockY() && shopLoc.getBlockY() <= locMin.getBlockY()) || (shopLoc.getBlockY() <= locMax.getBlockY() && shopLoc.getBlockY() >= locMin.getBlockY())) {
-                            shop.delete();
-                        }
-                    }
-                }
-            }
-        }
+        Region region = event.getRegion();
+        World world = region.getRegionworld();
+        if(!world.getName().equalsIgnoreCase("world_skycity")) return;
+
+        WGRegion wgRegion = region.getRegion();
+        QuickShopAPI qs = QuickShopAPI.getInstance();
+        ShopManager shopManager = qs.getShopManager();
+
+        List<Shop> shops = shopManager.getAllShops(region.getOwner()).stream().filter(shop -> {
+            Location loc = shop.getLocation();
+            return wgRegion.contains(loc.blockX(), loc.blockY(), loc.blockZ());
+        }).toList();
+
+        shops.forEach(shopManager::deleteShop);
     }
 }

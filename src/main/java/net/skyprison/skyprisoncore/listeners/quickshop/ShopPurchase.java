@@ -1,18 +1,18 @@
 package net.skyprison.skyprisoncore.listeners.quickshop;
 
+import com.ghostchu.quickshop.api.event.ShopPurchaseEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.maxgamer.quickshop.api.event.ShopPurchaseEvent;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Objects;
+import java.util.UUID;
 
 public class ShopPurchase implements Listener {
     private final DatabaseHook db;
@@ -23,13 +23,14 @@ public class ShopPurchase implements Listener {
 
     @EventHandler
     public void onShopPurchase(ShopPurchaseEvent event) {
-        String player = event.getShop().getOwner().toString();
-        String bannedPlayer = event.getPurchaser().toString();
+        Player player = event.getPurchaser().getBukkitPlayer().orElse(null);
+        UUID shopOwner = event.getShop().getOwner().getUniqueId();
+        if(player == null || shopOwner == null) return;
 
         boolean isBanned = false;
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT banned_user FROM shop_banned WHERE user_id = ? AND banned_user = ?")) {
-            ps.setString(1, player);
-            ps.setString(2, bannedPlayer);
+            ps.setString(1, shopOwner.toString());
+            ps.setString(2, player.getUniqueId().toString());
             ResultSet rs = ps.executeQuery();
             while(rs.next()) {
                 isBanned = true;
@@ -39,8 +40,8 @@ public class ShopPurchase implements Listener {
         }
 
         if(isBanned) {
-            Objects.requireNonNull(Bukkit.getPlayer(event.getPurchaser())).sendMessage(Component.text("This player has banned you from their shops!", NamedTextColor.RED));
-            event.setCancelled(true);
+            player.sendMessage(Component.text("This player has banned you from their shops!", NamedTextColor.RED));
+            event.setCancelled(true, player.getName() + " has been banned from this shop!");
         }
     }
 

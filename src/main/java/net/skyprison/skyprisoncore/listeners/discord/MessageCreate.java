@@ -1,6 +1,7 @@
 package net.skyprison.skyprisoncore.listeners.discord;
 
 import com.gmail.nossr50.datatypes.party.Party;
+import com.gmail.nossr50.mcMMO;
 import com.gmail.nossr50.party.PartyManager;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
@@ -76,23 +77,25 @@ public class MessageCreate implements MessageCreateListener {
                             event.getMessage().delete();
                         }
                         case "811643634562367498" -> { // party
+                            mcMMO mcMMO = (mcMMO) Bukkit.getPluginManager().getPlugin("mcMMO");
+                            if(mcMMO == null) return;
+
                             String[] splitMsg = message.split(" ", 2);
                             Component nMessage = Component.text("(P) ", NamedTextColor.GREEN).append(Component.text(userName, NamedTextColor.WHITE))
                                     .append(Component.text(" → ", NamedTextColor.GREEN)).append(Component.text(splitMsg[1], NamedTextColor.WHITE));
-                            Party p;
-                            if (Bukkit.getPlayer(splitMsg[0]) != null) {
-                                p = PartyManager.getParty(Bukkit.getPlayer(splitMsg[0]));
-                            } else {
-                                p = PartyManager.getParty(splitMsg[0]);
-                            }
-                            if (p != null) {
-                                List<Player> pMembers = p.getOnlineMembers();
-                                Audience receivers = Audience.audience(pMembers.stream().collect(Audience.toAudience()), plugin.getServer().getConsoleSender());
-                                receivers.sendMessage(nMessage);
-                                String dMessage = "(**" + p.getName() + "**) " + userName + " » " + splitMsg[1];
-                                channel.sendMessage(dMessage);
-                            }
+
+                            Player player = Bukkit.getPlayer(splitMsg[0]);
+                            PartyManager partyManager = mcMMO.getPartyManager();
+                            Party p = player != null ? partyManager.getParty(player) : partyManager.getParty(splitMsg[0]);
+
                             event.getMessage().delete();
+                            if(p == null) return;
+
+                            List<Player> pMembers = p.getOnlineMembers();
+                            Audience receivers = Audience.audience(pMembers.stream().collect(Audience.toAudience()), plugin.getServer().getConsoleSender());
+                            receivers.sendMessage(nMessage);
+                            String dMessage = "(**" + p.getName() + "**) " + userName + " » " + splitMsg[1];
+                            channel.sendMessage(dMessage);
                         }
                     }
                 }

@@ -52,6 +52,7 @@ dependencies {
     compileOnly("dev.esophose:playerparticles:8.3")
     compileOnly("com.github.Realizedd.Duels:duels-api:3.5.1")
     compileOnly("com.vexsoftware:nuvotifier-universal:2.7.2")
+    compileOnly("com.ghostchu:quickshop-api:6.0.0.10")
     // Jars
     compileOnly(fileTree("libs") { include("*.jar")})
 }

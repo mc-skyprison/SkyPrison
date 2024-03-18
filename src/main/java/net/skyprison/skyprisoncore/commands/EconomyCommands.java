@@ -43,6 +43,7 @@ import static org.incendo.cloud.bukkit.parser.MaterialParser.materialParser;
 import static org.incendo.cloud.bukkit.parser.PlayerParser.playerParser;
 import static org.incendo.cloud.parser.standard.DoubleParser.doubleParser;
 import static org.incendo.cloud.parser.standard.IntegerParser.integerParser;
+import static org.incendo.cloud.parser.standard.LongParser.longParser;
 import static org.incendo.cloud.parser.standard.StringParser.quotedStringParser;
 import static org.incendo.cloud.parser.standard.StringParser.stringParser;
 
@@ -89,7 +90,7 @@ public class EconomyCommands {
                 .required("player", playerParser())
                 .required("key", stringParser())
                 .required("price", doubleParser(0))
-                .required("cooldown", integerParser(0))
+                .required("cooldown", longParser(0))
                 .handler(c -> {
                     Player player = c.get("player");
                     String key = c.get("key");

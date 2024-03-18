@@ -225,7 +225,6 @@ public class SkyPrisonCore extends JavaPlugin {
 
         manager = PaperCommandManager.createNative(this, ExecutionCoordinator.simpleCoordinator());
 
-
         if (manager.hasCapability(CloudBukkitCapabilities.NATIVE_BRIGADIER)) {
             manager.registerBrigadier();
         } else if (manager.hasCapability(CloudBukkitCapabilities.ASYNCHRONOUS_COMPLETION)) {
