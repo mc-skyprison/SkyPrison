@@ -14,13 +14,11 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 public class PlayerTag implements Listener {
-
     private final SkyPrisonCore plugin;
 
     public PlayerTag(SkyPrisonCore plugin) {
         this.plugin = plugin;
     }
-
     @EventHandler
     public void onPlayerTag(PlayerTagEvent event) {
         Player player = event.getPlayer();

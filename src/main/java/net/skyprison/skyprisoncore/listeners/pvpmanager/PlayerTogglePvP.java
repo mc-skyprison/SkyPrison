@@ -12,13 +12,11 @@ public class PlayerTogglePvP  implements Listener {
 
     @EventHandler
     public void onPlayerTogglePvP(PlayerTogglePvPEvent event) {
-        if(TabAPI.getInstance().getNameTagManager() instanceof UnlimitedNameTagManager nametagManager) {
-            TabPlayer tPlayer = TabAPI.getInstance().getPlayer(event.getPlayer().getUniqueId());
-            if (event.getPvPState()) {
-                nametagManager.setLine(tPlayer, "belowname", null);
-            } else {
-                nametagManager.setLine(tPlayer, "belowname", "<red>PVP OFF</red>");
-            }
-        }
+        if(!(TabAPI.getInstance().getNameTagManager() instanceof UnlimitedNameTagManager nametagManager)) return;
+
+        TabPlayer tPlayer = TabAPI.getInstance().getPlayer(event.getPlayer().getUniqueId());
+        if(tPlayer == null) return;
+
+        nametagManager.setLine(tPlayer, "belowname", event.getPvPState() ? null : "<red>PVP OFF</red>");
     }
 }

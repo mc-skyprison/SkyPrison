@@ -18,29 +18,20 @@ public class ShopPreTransaction implements Listener {
     public ShopPreTransaction(DatabaseHook db) {
         this.db = db;
     }
-
     @EventHandler
     public void onShopPreTransaction(ShopPreTransactionEvent event) {
-        if(event.getShopAction().equals(ShopManager.ShopAction.SELL_ALL)) {
-            Player player = event.getPlayer();
+        if(!event.getShopAction().equals(ShopManager.ShopAction.SELL_ALL)) return;
 
-            boolean isBlocked = false;
+        Player player = event.getPlayer();
+        String iName = event.getShopItem().getItem().getType().name();
 
-            String iName = event.getShopItem().getItem().getType().name();
-            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT block_item FROM block_sells WHERE user_id = ? AND block_item = ?")) {
-                ps.setString(1, player.getUniqueId().toString());
-                ps.setString(2, iName);
-                ResultSet rs = ps.executeQuery();
-                while(rs.next()) {
-                    isBlocked = true;
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-
-            if(isBlocked) {
-                event.setCancelled(true);
-            }
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT block_item FROM block_sells WHERE user_id = ? AND block_item = ?")) {
+            ps.setString(1, player.getUniqueId().toString());
+            ps.setString(2, iName);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) event.setCancelled(true);
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 }
