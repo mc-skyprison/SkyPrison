@@ -96,6 +96,36 @@ public class MiscCommands {
                     sendFirstjoin(sender, page);
                 }));
 
+        manager.command(manager.commandBuilder("website")
+                .permission("skyprisoncore.command.website")
+                .handler(c -> {
+                    CommandSender sender = c.sender();
+                    sender.sendMessage(Component.text("Our website: ", NamedTextColor.GRAY)
+                            .append(Component.text("https://skyprison.net", NamedTextColor.AQUA)
+                                    .hoverEvent(HoverEvent.showText(Component.text("Click to open website", NamedTextColor.GRAY)))
+                                    .clickEvent(ClickEvent.openUrl("https://skyprison.net"))));
+                }));
+
+        manager.command(manager.commandBuilder("apply")
+                .permission("skyprisoncore.command.apply")
+                .handler(c -> {
+                    CommandSender sender = c.sender();
+                    sender.sendMessage(Component.text("Apply for staff: ", NamedTextColor.GRAY)
+                            .append(Component.text("https://skyprison.net/apply", NamedTextColor.AQUA)
+                                    .hoverEvent(HoverEvent.showText(Component.text("Click to open applications", NamedTextColor.GRAY)))
+                                    .clickEvent(ClickEvent.openUrl("https://skyprison.net/apply"))));
+                }));
+
+        manager.command(manager.commandBuilder("store")
+                .permission("skyprisoncore.command.store")
+                .handler(c -> {
+                    CommandSender sender = c.sender();
+                    sender.sendMessage(Component.text("Our store: ", NamedTextColor.GRAY)
+                            .append(Component.text("https://store.skyprison.net", NamedTextColor.AQUA)
+                                    .hoverEvent(HoverEvent.showText(Component.text("Click to open store", NamedTextColor.GRAY)))
+                                    .clickEvent(ClickEvent.openUrl("https://store.skyprison.net"))));
+                }));
+
         manager.command(manager.commandBuilder("customrecipes")
                 .senderType(Player.class)
                 .permission("skyprisoncore.command.customrecipes")
