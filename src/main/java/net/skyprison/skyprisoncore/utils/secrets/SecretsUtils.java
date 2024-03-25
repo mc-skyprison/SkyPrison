@@ -160,7 +160,7 @@ public class SecretsUtils {
         Component coolText = null;
         LocalDateTime currTime = LocalDateTime.now();
         LocalDateTime cooldownDate = Instant.ofEpochMilli(collected).atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay();
-        if (currTime.getDayOfYear() < cooldownDate.getDayOfYear()) {
+        if (currTime.toLocalDate().toEpochDay() < cooldownDate.toLocalDate().toEpochDay()) {
             Duration duration = Duration.between(currTime, cooldownDate);
             List<String> timeStrings = timeToString(duration);
             String timeString = "<#ff5f33>" + String.join(", ", timeStrings) + " <bold>Left</bold>";

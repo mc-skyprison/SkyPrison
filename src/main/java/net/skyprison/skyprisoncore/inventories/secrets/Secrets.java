@@ -191,7 +191,7 @@ public class Secrets implements CustomInventory {
                                 .append(Component.text(" time" + (found != 1 ? "s" : ""), NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
 
                         lore.add(Component.text("You last " + (type.equals("parkour") ? "did" : doneType) + " it ", NamedTextColor.GRAY)
-                                .append(Component.text(daysSince, TextColor.fromHexString("#48e2e5"), TextDecoration.BOLD))
+                                .append(Component.text(String.valueOf(found != 0 ? daysSince : "NEVER"), TextColor.fromHexString("#48e2e5"), TextDecoration.BOLD))
                                 .append(Component.text(" day" + (daysSince != 1 ? "s" : "") + " ago", NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
                         if(canEditSecrets) {
                             lore.add(Component.empty());

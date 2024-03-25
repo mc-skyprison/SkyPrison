@@ -245,7 +245,7 @@ public class PlayerJoin implements Listener {
                 DailyMissions.giveMissions(player);
             } else {
                 for(DailyMissions.PlayerMission mission : missions) {
-                    if(!mission.date().toLocalDateTime().toLocalDate().equals(LocalDate.now())) {
+                    if(mission.date() != null && !mission.date().toLocalDateTime().toLocalDate().equals(LocalDate.now())) {
                         DailyMissions.giveMissions(player);
                         missions.forEach(PlayerManager::removePlayerMissions);
                         break;

@@ -26,96 +26,84 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
-import java.util.Objects;
+import java.util.Comparator;
 
 public class PlayerTeleport implements Listener {
-
     private final SkyPrisonCore plugin;
 
     public PlayerTeleport(SkyPrisonCore plugin) {
         this.plugin = plugin;
     }
-
-
+    private void enableFlight(Player player, boolean fromFlight) {
+        plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> player.setAllowFlight(true), 1L);
+        if (!fromFlight) {
+            player.sendMessage(Component.text("You can fly now!", NamedTextColor.AQUA, TextDecoration.BOLD));
+        }
+    }
+    private void disableFlight(Player player) {
+        plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> player.setAllowFlight(false), 1L);
+        player.sendMessage(Component.text("You can no longer fly!", NamedTextColor.AQUA, TextDecoration.BOLD));
+    }
     @EventHandler
     public void onPlayerTeleport(PlayerTeleportEvent event) {
+        PvPManager pvpAPI = (PvPManager) Bukkit.getPluginManager().getPlugin("PvPManager");
+        if(pvpAPI == null) return;
+
         Player player = event.getPlayer();
-        PvPManager pvpmanager = (PvPManager) Bukkit.getPluginManager().getPlugin("PvPManager");
-        PlayerHandler playerHandler = Objects.requireNonNull(pvpmanager).getPlayerHandler();
+        PlayerHandler playerHandler = pvpAPI.getPlayerHandler();
         PvPlayer pvpPlayer = playerHandler.get(player);
+
         Location toLoc = event.getTo();
         Location fromLoc = event.getFrom();
 
-        if(!pvpPlayer.isInCombat() && !event.isCancelled() && !player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
-            RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
-            RegionManager regionsTo = container.get(BukkitAdapter.adapt(toLoc.getWorld()));
-            RegionManager regionsFrom = container.get(BukkitAdapter.adapt(fromLoc.getWorld()));
-            final ApplicableRegionSet regionListTo = Objects.requireNonNull(regionsTo).getApplicableRegions(BlockVector3.at(toLoc.getBlockX(),
-                    toLoc.getBlockY(), toLoc.getBlockZ()));
-            final ApplicableRegionSet regionListFrom = Objects.requireNonNull(regionsFrom).getApplicableRegions(BlockVector3.at(fromLoc.getBlockX(),
-                    fromLoc.getBlockY(), fromLoc.getBlockZ()));
+        GameMode mode = player.getGameMode();
 
-            com.sk89q.worldedit.util.Location fromLocWE = BukkitAdapter.adapt(event.getFrom());
-            com.sk89q.worldedit.util.Location toLocWE = BukkitAdapter.adapt(toLoc);
-            LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
-            RegionQuery query = container.createQuery();
+        if(pvpPlayer.isInCombat() || event.isCancelled() || !mode.equals(GameMode.SURVIVAL)) return;
 
-            if(!regionListTo.getRegions().isEmpty() && !regionListFrom.getRegions().isEmpty()) {
-                ProtectedRegion toRegion = null;
-                for (final ProtectedRegion rg : regionListTo) {
-                    if(toRegion == null)
-                        toRegion = rg;
-                    if(rg.getPriority() > toRegion.getPriority()) {
-                        toRegion = rg;
-                    }
-                }
-                ProtectedRegion fromRegion = null;
-                for (final ProtectedRegion rg : regionListFrom) {
-                    if(fromRegion == null)
-                        fromRegion = rg;
-                    if(rg.getPriority() > fromRegion.getPriority()) {
-                        fromRegion = rg;
-                    }
-                }
-                if (query.testState(toLocWE, localPlayer, ClaimUtils.FLY) || (toRegion != null && toRegion.getId().contains("fly") && !toRegion.getId().contains("nofly") && !toRegion.getId().contains("no-fly"))) {
-                    plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> player.setAllowFlight(true), 1L);
-                    if (!query.testState(fromLocWE, localPlayer, ClaimUtils.FLY)) {
-                        player.sendMessage(Component.text("You can fly now!", NamedTextColor.AQUA, TextDecoration.BOLD));
-                    }
-                } else if (query.testState(fromLocWE, localPlayer, ClaimUtils.FLY) || (fromRegion != null && fromRegion.getId().contains("fly") && !fromRegion.getId().contains("nofly") && !fromRegion.getId().contains("no-fly"))) {
-                    plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> player.setAllowFlight(false), 1L);
-                    if (!player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
-                        player.sendMessage(Component.text("You can no longer fly!", NamedTextColor.AQUA, TextDecoration.BOLD));
-                    }
-                }
-            } else {
-                if (query.testState(toLocWE, localPlayer, ClaimUtils.FLY)) {
-                    plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> player.setAllowFlight(true), 1L);
-                    if (!query.testState(fromLocWE, localPlayer, ClaimUtils.FLY)) {
-                        player.sendMessage(Component.text("You can fly now!", NamedTextColor.AQUA, TextDecoration.BOLD));
-                    }
-                } else if (query.testState(fromLocWE, localPlayer, ClaimUtils.FLY)) {
-                    plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> player.setAllowFlight(false), 1L);
-                    if (!player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
-                        player.sendMessage(Component.text("You can no longer fly!", NamedTextColor.AQUA, TextDecoration.BOLD));
-                    }
-                }
-                if(!regionListFrom.getRegions().isEmpty()) {
-                    ProtectedRegion fromRegion = null;
-                    for (final ProtectedRegion rg : regionListFrom) {
-                        if(fromRegion == null)
-                            fromRegion = rg;
-                        if(rg.getPriority() > fromRegion.getPriority()) {
-                            fromRegion = rg;
-                        }
-                    }
-                    if (query.testState(fromLocWE, localPlayer, ClaimUtils.FLY) || (fromRegion != null && fromRegion.getId().contains("fly") && !fromRegion.getId().contains("nofly") && !fromRegion.getId().contains("no-fly"))) {
-                        plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> player.setAllowFlight(false), 1L);
-                        if (!player.getGameMode().equals(GameMode.CREATIVE) && !player.getGameMode().equals(GameMode.SPECTATOR)) {
-                            player.sendMessage(Component.text("You can no longer fly!", NamedTextColor.AQUA, TextDecoration.BOLD));
-                        }
-                    }
-                }
+        RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+        RegionManager regionsTo = container.get(BukkitAdapter.adapt(toLoc.getWorld()));
+        RegionManager regionsFrom = container.get(BukkitAdapter.adapt(fromLoc.getWorld()));
+
+        if(regionsTo == null || regionsFrom == null) return;
+
+        final ApplicableRegionSet to = regionsTo.getApplicableRegions(BlockVector3.at(toLoc.getBlockX(),
+                toLoc.getBlockY(), toLoc.getBlockZ()));
+        final ApplicableRegionSet from = regionsFrom.getApplicableRegions(BlockVector3.at(fromLoc.getBlockX(),
+                fromLoc.getBlockY(), fromLoc.getBlockZ()));
+
+        LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
+        RegionQuery query = container.createQuery();
+
+        boolean toFlight = query.testState(BukkitAdapter.adapt(toLoc), localPlayer, ClaimUtils.FLY);
+        boolean fromFlight = query.testState(BukkitAdapter.adapt(fromLoc), localPlayer, ClaimUtils.FLY);
+
+        if (toFlight) {
+            enableFlight(player, fromFlight);
+            return;
+        } else if (fromFlight) {
+            disableFlight(player);
+            return;
+        }
+
+        ProtectedRegion toRegion = to.getRegions().stream().max(Comparator.comparingInt(ProtectedRegion::getPriority)).orElse(null);
+        ProtectedRegion fromRegion = from.getRegions().stream().max(Comparator.comparingInt(ProtectedRegion::getPriority)).orElse(null);
+
+        if(fromRegion == null) return;
+
+        String fromId = fromRegion.getId();
+        fromFlight = fromId.contains("fly") && !fromId.contains("nofly") && !fromId.contains("no-fly");
+        if(toRegion != null) {
+            String toId = toRegion.getId();
+            toFlight = toId.contains("fly") && !toId.contains("nofly") && !toId.contains("no-fly");
+
+            if (toFlight) {
+                enableFlight(player, fromFlight);
+            } else if (fromFlight) {
+                disableFlight(player);
+            }
+        } else {
+            if (fromFlight) {
+                disableFlight(player);
             }
         }
     }

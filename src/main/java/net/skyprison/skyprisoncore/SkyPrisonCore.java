@@ -819,14 +819,6 @@ public class SkyPrisonCore extends JavaPlugin {
             return Tag.inserting(componentPlaceholder);
         });
     }
-    public boolean isLong(String str) {
-        try {
-            Long.parseLong(str);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
     public boolean isInt(String str) {
         try {
             Integer.parseInt(str);

@@ -22,6 +22,8 @@ public class PlayerTag implements Listener {
     @EventHandler
     public void onPlayerTag(PlayerTagEvent event) {
         Player player = event.getPlayer();
+        if(!player.getWorld().getName().equalsIgnoreCase("world_prison")) return;
+
         com.sk89q.worldedit.util.Location toLoc = BukkitAdapter.adapt(player.getLocation());
         LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
         RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
