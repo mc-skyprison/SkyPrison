@@ -41,7 +41,6 @@ public class StoreCommands {
         manager.command(manager.commandBuilder("donoradd")
                 .permission("skyprisoncore.command.donoradd")
                 .required("player", stringParser())
-                .required("player", stringParser())
                 .required("currency", stringParser())
                 .required("price", doubleParser())
                 .required("date", stringParser())
