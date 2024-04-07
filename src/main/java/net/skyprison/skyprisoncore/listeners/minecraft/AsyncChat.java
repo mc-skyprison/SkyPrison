@@ -136,7 +136,7 @@ public class AsyncChat implements Listener {
                     switch (String.valueOf(chatLock.get(1))) {
                         case "name" -> {
                             if(!msg.equalsIgnoreCase("cancel")) {
-                                inv.setName(msg);
+                                inv.setName(miniMsg);
                             }
                         }
                         case "lore" -> {

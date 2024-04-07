@@ -31,7 +31,7 @@ repositories {
 
 dependencies {
     implementation("org.javacord:javacord:3.8.0")
-    implementation("org.mariadb.jdbc:mariadb-java-client:3.1.4")
+    implementation("org.mariadb.jdbc:mariadb-java-client:3.3.3")
     implementation("org.incendo:cloud-paper:2.0.0-beta.2")
     implementation("org.incendo:cloud-minecraft-extras:2.0.0-beta.2")
     compileOnly("org.jetbrains:annotations:24.0.0")

@@ -48,19 +48,38 @@ public class PlayerManager {
     }
     public static void addPlayerTags(PlayerTag ...tags) {
         Collections.addAll(playerTags, tags);
-
-        Arrays.stream(tags).toList().forEach(playerTag -> {
-            Player player = Bukkit.getPlayer(playerTag.playerId);
-            if(player != null && playerTag.tag().effectType() != null && playerTag.tag().effectStyle() != null) {
+        for(PlayerTag tag : tags) {
+            Player player = Bukkit.getPlayer(tag.playerId);
+            if(player != null && tag.tag().effectType() != null && tag.tag().effectStyle() != null) {
                 PlayerParticlesAPI particles = PlayerParticlesAPI.getInstance();
                 particles.resetActivePlayerParticles(player);
-                particles.addActivePlayerParticle(player, ParticleEffect.fromInternalName(playerTag.tag().effectType()),
-                        Tags.effectStyles().stream().filter(style -> style.getName().equalsIgnoreCase(playerTag.tag().effectStyle())).findFirst().orElse(DefaultStyles.NORMAL));
+                particles.addActivePlayerParticle(player, ParticleEffect.fromInternalName(tag.tag().effectType()),
+                        Tags.effectStyles().stream().filter(style -> style.getName().equalsIgnoreCase(tag.tag().effectStyle())).findFirst().orElse(DefaultStyles.NORMAL));
             }
-        });
+            if(tag.tag == null || tag.playerId == null) continue;
+            try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET active_tag = ? WHERE user_id = ?")) {
+                ps.setInt(1, tag.tag.id());
+                ps.setString(2, tag.playerId.toString());
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
     }
     public static void removePlayerTags(PlayerTag ...tags) {
-        if(tags != null) playerTags.removeAll(Arrays.stream(tags).toList());
+        if(tags != null && tags.length > 0) {
+            playerTags.removeAll(Arrays.stream(tags).toList());
+            for(PlayerTag tag : tags)  {
+                if(tag == null || tag.playerId == null) continue;
+                try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("UPDATE users SET active_tag = ? WHERE user_id = ?")) {
+                    ps.setInt(1, 0);
+                    ps.setString(2, tag.playerId.toString());
+                    ps.executeUpdate();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
     public static List<Ignore> getPlayerIgnores(UUID pUUID) {
         return playerIgnores.stream().filter(ignores -> ignores.playerId().equals(pUUID)).toList();
@@ -259,18 +278,14 @@ public class PlayerManager {
         }
     }
     public static void checkTotalPurchases(Player player, double total) {
-        if (total >= 10.0) {
-            if (!player.hasPermission("group.donor1")) {
-                Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getUniqueId() + " parent add donor1");
-            } else if (total >= 50.0) {
-                if (!player.hasPermission("group.donor2")) {
-                    Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getUniqueId() + " parent add donor2");
-                } else if (total >= 100.0) {
-                    if (!player.hasPermission("group.donor3")) {
-                        Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "lp user " + player.getUniqueId() + " parent add donor3");
-                    }
-                }
-            }
+        if(total >= 10.0 && !player.hasPermission("group.donor1")) {
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + player.getUniqueId() + " parent add donor1");
+        }
+        if(total >= 50.0 && !player.hasPermission("group.donor2")) {
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + player.getUniqueId() + " parent add donor2");
+        }
+        if(total >= 100.0 && !player.hasPermission("group.donor3")) {
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + player.getUniqueId() + " parent add donor3");
         }
     }
     public static void sendMessage(UUID pUUID, Component msg, String notifType) {
