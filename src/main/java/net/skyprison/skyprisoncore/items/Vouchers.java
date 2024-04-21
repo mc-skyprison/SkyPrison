@@ -46,8 +46,8 @@ public class Vouchers {
         ItemMeta vMeta = voucher.getItemMeta();
         vMeta.displayName(Component.text( "Mine Reset Voucher", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
         ArrayList<Component> lore = new ArrayList<>();
-        lore.add(Component.text("Use on an on cooldown Mine Reset", NamedTextColor.GRAY));
-        lore.add(Component.text("sign to instantly reset the mine,", NamedTextColor.GRAY));
+        lore.add(Component.text("Use on a cooldown Mine Reset", NamedTextColor.GRAY));
+        lore.add(Component.text("sign to instantly reset the mine.", NamedTextColor.GRAY));
         vMeta.addEnchant(Enchantment.PROTECTION_FALL, 1, true);
         vMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         vMeta.lore(lore);
