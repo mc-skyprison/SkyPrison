@@ -61,17 +61,17 @@ public class Placeholders extends PlaceholderExpansion {
 		Location warpLoc = CMI.getInstance().getWarpManager().getWarp(identifier).getLoc();
 		int dist = (int) player.getLocation().distance(warpLoc);
 		if(dist < 10) {
-			return "&7&oYou Are Here";
+			return "<gray><i>You Are Here";
 		} else {
 			if(!player.hasPermission("skyprisoncore.command.transportpass.bus")) {
 				if (player.getWorld().getTime() > 0 && player.getWorld().getTime() < 12300) {
-					return "&7Price: &e$" + dist;
+					return "<gray>Price: <yellow>$" + dist;
 				} else {
 					int nightDist = (int) (dist * 1.5);
-					return "&7Price: &e$" + nightDist;
+					return "<gray>Price: <yellow>$" + nightDist;
 				}
 			} else {
-				return "&7Price: &eFREE";
+				return "<gray>Price: <yellow>FREE";
 			}
 		}
 	}
@@ -258,7 +258,7 @@ public class Placeholders extends PlaceholderExpansion {
 		if(identifier.equalsIgnoreCase("daily_mission_one")) {
 			List<DailyMissions.PlayerMission> missions = PlayerManager.getPlayerMissions(player.getUniqueId());
 			if(missions.isEmpty()) {
-				return "&7-";
+				return "<gray>-";
 			}
 			DailyMissions.PlayerMission mission = missions.getFirst();
 			return formatMission(mission);
@@ -267,7 +267,7 @@ public class Placeholders extends PlaceholderExpansion {
 		if(identifier.equalsIgnoreCase("daily_mission_two")) {
 			List<DailyMissions.PlayerMission> missions = PlayerManager.getPlayerMissions(player.getUniqueId());
 			if(missions.size() < 2) {
-				return "&7-";
+				return "<gray>-";
 			}
 			DailyMissions.PlayerMission mission = missions.get(1);
 			return formatMission(mission);
@@ -535,9 +535,9 @@ public class Placeholders extends PlaceholderExpansion {
 		}
 
 		if(mission.completed()) {
-			return "<#ACBED8>&m" + mission.mission().displayName() + " &f&m" + amount + "/" + needed;
+			return "<st><#ACBED8>" + mission.mission().displayName() + " <white>" + amount + "/" + needed;
 		} else {
-			return "<#ACBED8>" + mission.mission().displayName() + " &f" + amount + "/" + needed;
+			return "<#ACBED8>" + mission.mission().displayName() + " <white>" + amount + "/" + needed;
 		}
 	}
 }

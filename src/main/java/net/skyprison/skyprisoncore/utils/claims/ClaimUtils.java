@@ -53,9 +53,11 @@ import java.util.concurrent.CompletableFuture;
 public class ClaimUtils {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
+
     public static StateFlag FLY;
     public static StringFlag EFFECTS;
     public static StringFlag CONSOLECMD;
+
     public static final List<UUID> deleteClaim = new ArrayList<>();
     public static final List<UUID> transferClaim = new ArrayList<>();
     public static final List<UUID> customClaimHeight = new ArrayList<>();
@@ -63,10 +65,12 @@ public class ClaimUtils {
     public static final List<ClaimData> claimData = new ArrayList<>();
     private static final Component prefix = Component.text("Claims", TextColor.fromHexString("#0fc3ff")).append(Component.text(" | ", NamedTextColor.WHITE));
     private static final Component notFound = prefix.append(Component.text("No claim(s) were found!", NamedTextColor.RED));
+
     public ClaimUtils(SkyPrisonCore plugin, DatabaseHook db) {
         this.plugin = plugin;
         this.db = db;
     }
+
     public static Component getPrefix() {
         return prefix;
     }

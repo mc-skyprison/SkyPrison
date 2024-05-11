@@ -46,9 +46,10 @@ public class DiscordCommands {
                 .permission("skyprisoncore.command.discord")
                 .handler(c -> {
                     Player player = (Player) c.sender();
-                    Component discordLink = Component.text("Join our discord at ", NamedTextColor.AQUA).appendNewline()
-                            .append(Component.text("https://skyprison.net/discord", NamedTextColor.DARK_AQUA, TextDecoration.BOLD));
-
+                    Component discordLink = Component.text("Join our discord! ", NamedTextColor.AQUA).appendNewline()
+                            .append(Component.text("https://skyprison.net/discord", NamedTextColor.DARK_AQUA, TextDecoration.BOLD))
+                            .hoverEvent(Component.text("Click to open link", NamedTextColor.GRAY))
+                            .clickEvent(ClickEvent.openUrl("https://skyprison.net/discord"));
                     player.sendMessage(discordLink);
                 });
 

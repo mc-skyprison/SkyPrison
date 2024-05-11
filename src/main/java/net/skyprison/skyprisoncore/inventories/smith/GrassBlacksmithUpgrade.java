@@ -28,10 +28,12 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
     private final SkyPrisonCore plugin;
     private final Player player;
     private final Timer timer = new Timer();
+
     private ItemStack currLeft = new ItemStack(Material.AIR);
     private ItemStack currRight = new ItemStack(Material.AIR);
     private ItemStack axeItem = new ItemStack(Material.AIR);
     private ItemStack bookItem = new ItemStack(Material.AIR);
+
     public void updateInventory() {
         ItemStack left = inventory.getItem(10);
         ItemStack right = inventory.getItem(16);
@@ -53,16 +55,13 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
             }
         } else setColour(leftValid, rightValid);
     }
+
     private void setColour(boolean left, boolean right) {
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-        ItemMeta redMeta = redPane.getItemMeta();
-        redMeta.displayName(Component.empty());
-        redPane.setItemMeta(redMeta);
+        redPane.editMeta(meta -> meta.displayName(Component.empty()));
 
         ItemStack greenPane = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
-        ItemMeta greenMeta = greenPane.getItemMeta();
-        greenMeta.displayName(Component.empty());
-        greenPane.setItemMeta(greenMeta);
+        greenPane.editMeta(meta -> meta.displayName(Component.empty()));
 
         ItemStack leftItem = inventory.getItem(10);
         ItemStack rightItem = inventory.getItem(16);
@@ -86,9 +85,11 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
             setResult(leftItem, rightItem);
         }
     }
+
     public void cancelTimer() {
         timer.cancel();
     }
+
     public void setResult(ItemStack left, ItemStack right) {
         if(left != null && right != null) {
             ItemMeta leftMeta = left.getItemMeta();
@@ -108,8 +109,8 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
                 treeAxe.editMeta(meta -> {
                     List<Component> lore = meta.lore();
                     if (lore != null) {
-                        lore.add(0, Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(price), TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
-                                .decoration(TextDecoration.ITALIC, false));
+                        lore.add(0, Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(price),
+                                TextColor.fromHexString("#52fc28"), TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
                         lore.add(1, Component.text("                  ").decoration(TextDecoration.ITALIC, false));
                         meta.lore(lore);
                     } else inventory.close();
@@ -117,18 +118,18 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
                 inventory.setItem(13, treeAxe);
             } else {
                 ItemStack needMoney = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-                ItemMeta needMeta = needMoney.getItemMeta();
-                needMeta.displayName(Component.text("Not Enough Money", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(price), TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
-                        .decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Missing: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(hasMoney), NamedTextColor.RED, TextDecoration.BOLD))
-                        .decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("                  ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH).decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(PlayerManager.getBalance(player)), NamedTextColor.RED, TextDecoration.BOLD))
-                        .decoration(TextDecoration.ITALIC, false));
-                needMeta.lore(lore);
-                needMoney.setItemMeta(needMeta);
+                needMoney.editMeta(meta -> {
+                    meta.displayName(Component.text("Not Enough Money", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                    List<Component> lore = new ArrayList<>();
+                    lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(price),
+                            TextColor.fromHexString("#52fc28"), TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
+                    lore.add(Component.text("Missing: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(hasMoney),
+                            NamedTextColor.RED, TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
+                    lore.add(Component.text("                  ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH).decoration(TextDecoration.ITALIC, false));
+                    lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(PlayerManager.getBalance(player)),
+                            NamedTextColor.RED, TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
+                    meta.lore(lore);
+                    });
                 inventory.setItem(13, needMoney);
             }
         } else {
@@ -136,14 +137,17 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
             setColour(false, false);
         }
     }
+
     public void resultTaken() {
         currLeft.setAmount(currLeft.getAmount()-1);
         currRight.setAmount(currRight.getAmount()-1);
     }
+
     public double hasMoney(double cost) {
         double money = PlayerManager.getBalance(player);
         return (money >= cost) ? 0 : cost - money;
     }
+
     public double getPrice() {
         double price = 0;
         if(axeItem != null) {
@@ -167,14 +171,17 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
         }
         return price;
     }
+
     public void resetResult() {
         inventory.setItem(13, new ItemStack(Material.AIR));
     }
+
     public boolean isItemValid(ItemStack item) {
         if(item.hasItemMeta() && item.getPersistentDataContainer().has(new NamespacedKey(plugin, "treefeller"))) {
             return true;
         } else return item.getType().equals(Material.ENCHANTED_BOOK) && item.hasItemMeta() && item.getPersistentDataContainer().has(new NamespacedKey(plugin, "treefeller-upgrade"));
     }
+
     public boolean areBothValid(ItemStack left, ItemStack right) {
         boolean hasAxe = false;
         boolean hasBook = false;
@@ -192,6 +199,7 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
 
         return hasAxe && hasBook;
     }
+
     public boolean canUpgrade(ItemStack left, ItemStack right) {
         ItemMeta leftMeta = left.getItemMeta();
         PersistentDataContainer leftPers = leftMeta.getPersistentDataContainer();
@@ -251,23 +259,20 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
         }
         return false;
     }
+
     public GrassBlacksmithUpgrade(SkyPrisonCore plugin, Player player) {
         this.plugin = plugin;
         this.player = player;
         this.inventory = plugin.getServer().createInventory(this, 27, Component.text("Smithy", TextColor.fromHexString("#0fc3ff")));
 
         ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta paneMeta = blackPane.getItemMeta();
-        paneMeta.displayName(Component.empty());
-        blackPane.setItemMeta(paneMeta);
+        blackPane.editMeta(meta -> meta.displayName(Component.empty()));
+
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-        ItemMeta redMeta = redPane.getItemMeta();
-        redMeta.displayName(Component.empty());
-        redPane.setItemMeta(redMeta);
+        redPane.editMeta(meta -> meta.displayName(Component.empty()));
+
         ItemStack blackArrow = new HeadDatabaseAPI().getItemHead("10307");
-        ItemMeta arrowMeta = blackArrow.getItemMeta();
-        arrowMeta.displayName(Component.text("Insert item below", NamedTextColor.GRAY));
-        blackArrow.setItemMeta(arrowMeta);
+        blackArrow.editMeta(meta -> meta.displayName(Component.text("Insert item below", NamedTextColor.GRAY)));
 
         for(int i = 0; i < inventory.getSize(); i++) {
             if(i == 1 || i == 7) {

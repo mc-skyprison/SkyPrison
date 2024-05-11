@@ -155,6 +155,7 @@ public class SkyPrisonCore extends JavaPlugin {
     public static final HashMap<UUID, Long> bountyCooldown = new HashMap<>();
     public static final HashMap<UUID, Integer> safezoneViolators = new HashMap<>();
     public static final Component pluginPrefix = Component.text("Sky", TextColor.fromHexString("#0fc3ff")).append(Component.text("Prison", TextColor.fromHexString("#ff0000")));
+
     @Override
     public void onLoad() {
         FlagRegistry registry = WorldGuard.getInstance().getFlagRegistry();
@@ -175,7 +176,6 @@ public class SkyPrisonCore extends JavaPlugin {
 
     public void onEnable() {
         new ConfigCreator(this).init();
-        new LangCreator(this).init();
 
         try {
             db = new DatabaseHook(this);

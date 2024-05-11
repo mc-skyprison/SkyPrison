@@ -42,8 +42,6 @@ import net.skyprison.skyprisoncore.utils.secrets.SecretsUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -52,7 +50,6 @@ import org.bukkit.inventory.ItemStack;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.channel.TextChannel;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -61,18 +58,21 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class AsyncChat implements Listener {
     private final SkyPrisonCore plugin;
     private final DiscordApi discApi;
     private final DatabaseHook db;
+    private final ChatUtils chatUtils;
+
     public AsyncChat(SkyPrisonCore plugin, DiscordApi discApi, DatabaseHook db) {
         this.plugin = plugin;
         this.discApi = discApi;
         this.db = db;
+        this.chatUtils = new ChatUtils(plugin, discApi);
     }
+
     @EventHandler (priority = EventPriority.LOWEST)
     public void onAsyncChat(AsyncChatEvent event) {
         Player player = event.getPlayer();
@@ -189,7 +189,7 @@ public class AsyncChat implements Listener {
                         UUID targetId = PlayerManager.getPlayerId(msg);
                         if(targetId != null) {
                             if(!player.getUniqueId().equals(targetId)) {
-                                if(!PlayerManager.getPlayerIgnores(player.getUniqueId()).stream().anyMatch(ignore -> ignore.targetId().equals(targetId))) {
+                                if(PlayerManager.getPlayerIgnores(player.getUniqueId()).stream().noneMatch(ignore -> ignore.targetId().equals(targetId))) {
                                     PlayerManager.Ignore ignore = new PlayerManager.Ignore(player.getUniqueId(), targetId, false, false);
                                     PlayerManager.addPlayerIgnores(ignore);
                                     try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
@@ -657,7 +657,7 @@ public class AsyncChat implements Listener {
                             SecretsEdit inv = (SecretsEdit) chatLock.get(1);
                             if(!msg.equalsIgnoreCase("cancel")) {
                                 Material sign = Material.valueOf(msg.toUpperCase());
-                                if(sign != null){
+                                if(sign != null) {
                                     if (MaterialTags.SIGNS.isTagged(sign)) {
                                         PlayerManager.giveItems(player, SecretsUtils.getSign(plugin, inv.getSecretsId(), inv.getName(), sign));
                                         player.openInventory(inv.getInventory());
@@ -849,43 +849,16 @@ public class AsyncChat implements Listener {
         }
 
         if(!event.isCancelled()) {
-            File lang = new File(plugin.getDataFolder() + File.separator
-                    + "lang" + File.separator + plugin.getConfig().getString("lang-file"));
-            FileConfiguration langConf = YamlConfiguration.loadConfiguration(lang);
-
             if (plugin.stickyChat.containsKey(player.getUniqueId())) {
                 event.setCancelled(true);
-                String stickiedChat = plugin.stickyChat.get(player.getUniqueId());
-                String[] split = stickiedChat.split("-");
-
-                String format = Objects.requireNonNull(langConf.getString("chat." + split[0] + ".format")).replaceAll("\\[name]", Matcher.quoteReplacement(player.getName()));
-                String msgContent = format.replaceAll("\\[message]", Matcher.quoteReplacement(msg));
-                Component formatMsg = player.isOp() ? MiniMessage.miniMessage().deserialize(msgContent) : plugin.playerMsgBuilder.deserialize(msgContent);
-
-                for (Player online : Bukkit.getServer().getOnlinePlayers()) {
-                    if (online.hasPermission("skyprisoncore.command." + split[0])) {
-                        online.sendMessage(formatMsg);
-                    }
-                }
-
-                Bukkit.getConsoleSender().sendMessage(plugin.playerMsgBuilder.deserialize(msgContent));
-                if(discApi != null) {
-                    String dFormat = Objects.requireNonNull(langConf.getString("chat.discordSRV.format")).replaceAll("\\[name]", Matcher.quoteReplacement(player.getName()));
-                    String dMessage = dFormat.replaceAll("\\[message]", Matcher.quoteReplacement(msg));
-                    if(discApi.getTextChannelById(split[1]).isPresent()) {
-                        TextChannel channel = discApi.getTextChannelById(split[1]).get();
-                        channel.sendMessage(dMessage);
-                    }
-                }
+                String chatId = plugin.stickyChat.get(player.getUniqueId());
+                chatUtils.sendPrivateMessage(msg, player.getName(), chatId);
             } else {
-                if(discApi != null) {
-                    String dFormat = Objects.requireNonNull(langConf.getString("chat.discordSRV.format")).replaceAll("\\[name]", Matcher.quoteReplacement(player.getName()));
-                    String dMessage = dFormat.replaceAll("\\[message]", Matcher.quoteReplacement(msg));
-                    if (discApi.getTextChannelById("788108242797854751").isPresent()) {
-                        TextChannel channel = discApi.getTextChannelById("788108242797854751").get();
-                        channel.sendMessage(dMessage);
-                    }
+                if(discApi != null && discApi.getTextChannelById("788108242797854751").isPresent()) {
+                    TextChannel channel = discApi.getTextChannelById("788108242797854751").get();
+                    channel.sendMessage("**" + player.getName() + "**: " + MiniMessage.miniMessage().stripTags(msg));
                 }
+
                 event.renderer((source, sourceDisplayName, message, viewer) -> {
                     LuckPerms luckAPI = LuckPermsProvider.get();
                     User user = luckAPI.getPlayerAdapter(Player.class).getUser(source);

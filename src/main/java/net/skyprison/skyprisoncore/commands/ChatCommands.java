@@ -33,6 +33,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.format.NamedTextColor.RED;
+import static net.kyori.adventure.text.format.TextDecoration.BOLD;
 import static net.skyprison.skyprisoncore.SkyPrisonCore.lastMessaged;
 import static org.incendo.cloud.bukkit.parser.PlayerParser.playerParser;
 import static org.incendo.cloud.parser.standard.StringParser.*;
@@ -42,6 +45,7 @@ public class ChatCommands {
     private final PaperCommandManager<CommandSender> manager;
     private final ChatUtils chatUtils;
     private final DatabaseHook db;
+
     public ChatCommands(SkyPrisonCore plugin, PaperCommandManager<CommandSender> manager, DiscordApi discApi, DatabaseHook db) {
         this.plugin = plugin;
         this.manager = manager;
@@ -49,42 +53,45 @@ public class ChatCommands {
         createChatCommands();
         this.chatUtils = new ChatUtils(plugin, discApi);
     }
-    private void runCommand(String msg, CommandSender sender, String chatId, String discordId) {
+
+    private void staffMessageHandler(String msg, CommandSender sender, String chatId) {
         if(!msg.isEmpty()) {
-            chatUtils.chatSendMessage(msg, sender, chatId, discordId);
+            chatUtils.sendPrivateMessage(msg, sender instanceof Player player ? player.getName() : "Console", chatId);
         } else {
             if(sender instanceof Player player) {
-                chatUtils.stickyChatCheck(player, chatId, discordId);
+                chatUtils.stickyChatCheck(player, chatId);
             } else {
-                chatUtils.wrongUsage(sender, chatId);
+                sender.sendMessage(text("You need to specify a message!", RED));
             }
         }
     }
+
     private void createChatCommands() {
         manager.command(manager.commandBuilder("b")
                 .permission("skyprisoncore.command.build")
                 .optional("message", greedyStringParser())
-                .handler(c -> runCommand(c.getOrDefault("message", ""), c.sender(), "build", "800885673732997121"))
+                .handler(c -> staffMessageHandler(c.getOrDefault("message", ""), c.sender(), "build"))
                 .build()
         );
-        manager.command(manager.commandBuilder("a")
+        manager.command(manager.commandBuilder("admin", "a", "y")
                 .permission("skyprisoncore.command.admin")
                 .optional("message", greedyStringParser())
-                .handler(c -> runCommand(c.getOrDefault("message", ""), c.sender(), "admin", "791054229136605194"))
+                .handler(c -> staffMessageHandler(c.getOrDefault("message", ""), c.sender(), "admin"))
                 .build()
         );
         manager.command(manager.commandBuilder("g")
                 .permission("skyprisoncore.command.guard")
                 .optional("message", greedyStringParser())
-                .handler(c -> runCommand(c.getOrDefault("message", ""), c.sender(), "guard", "791054021338464266"))
+                .handler(c -> staffMessageHandler(c.getOrDefault("message", ""), c.sender(), "guard"))
                 .build()
         );
         manager.command(manager.commandBuilder("s")
                 .permission("skyprisoncore.command.staff")
                 .optional("message", greedyStringParser())
-                .handler(c -> runCommand(c.getOrDefault("message", ""), c.sender(), "staff", "791054076787163166"))
+                .handler(c -> staffMessageHandler(c.getOrDefault("message", ""), c.sender(), "staff"))
                 .build()
         );
+
         manager.command(manager.commandBuilder("msg")
                 .permission("skyprisoncore.command.msg")
                 .required("player", playerParser())
@@ -104,7 +111,7 @@ public class ChatCommands {
                             && ((lastMessaged.get(sender) instanceof Player player && player.isOnline()) || lastMessaged.get(sender) instanceof ConsoleCommandSender)) {
                         sendPrivateMessage(sender, lastMessaged.get(sender), c.get("message"));
                     } else {
-                        sender.sendMessage(Component.text("Noone to reply to found..", NamedTextColor.RED));
+                        sender.sendMessage(text("Noone to reply to found..", RED));
                     }
                 }));
         manager.command(manager.commandBuilder("stellraw")
@@ -135,7 +142,7 @@ public class ChatCommands {
                     String target = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(target);
                     if(targetId == null) {
-                        sender.sendMessage(Component.text("Player not found!", NamedTextColor.RED));
+                        sender.sendMessage(text("Player not found!", RED));
                         return;
                     }
                     removeNameColour(sender, targetId, true);
@@ -148,7 +155,7 @@ public class ChatCommands {
                     boolean isOther = c.flags().contains("player");
 
                     if(!isOther && !(sender instanceof Player)) {
-                        sender.sendMessage(Component.text("You need to specify a player!", NamedTextColor.RED));
+                        sender.sendMessage(text("You need to specify a player!", RED));
                         return;
                     }
                     UUID targetId;
@@ -157,7 +164,7 @@ public class ChatCommands {
                     } else targetId = ((Player) sender).getUniqueId();
 
                     if(targetId == null) {
-                        sender.sendMessage(Component.text("Player not found!", NamedTextColor.RED));
+                        sender.sendMessage(text("Player not found!", RED));
                         return;
                     }
 
@@ -168,7 +175,7 @@ public class ChatCommands {
                         return;
                     }
                     if(!sender.hasPermission("skyprisoncore.command.namecolour.multicolour")) {
-                        sender.sendMessage(Component.text("You don't have permission to use multicolour!", NamedTextColor.RED));
+                        sender.sendMessage(text("You don't have permission to use multicolour!", RED));
                         return;
                     }
                     setMultiColour(sender, targetId, colName, isOther);
@@ -187,11 +194,11 @@ public class ChatCommands {
                     }
                     UUID targetId = PlayerManager.getPlayerId(target);
                     if(targetId == null) {
-                        player.sendMessage(Component.text("Player not found!", NamedTextColor.RED));
+                        player.sendMessage(text("Player not found!", RED));
                         return;
                     }
                     if(targetId.equals(player.getUniqueId())) {
-                        player.sendMessage(Component.text("You can't ignore yourself!", NamedTextColor.RED));
+                        player.sendMessage(text("You can't ignore yourself!", RED));
                         return;
                     }
                     PlayerManager.Ignore ignore = PlayerManager.getPlayerIgnore(player.getUniqueId(), targetId);
@@ -203,9 +210,9 @@ public class ChatCommands {
                             ps.setString(1, player.getUniqueId().toString());
                             ps.setString(2, ignore.targetId().toString());
                             ps.executeUpdate();
-                            player.sendMessage(Component.text("Successfully added ", NamedTextColor.GREEN)
-                                    .append(Component.text(target, NamedTextColor.GREEN, TextDecoration.BOLD))
-                                    .append(Component.text(" to /ignore! Opening ignore options..", NamedTextColor.GREEN)));
+                            player.sendMessage(text("Successfully added ", NamedTextColor.GREEN)
+                                    .append(text(target, NamedTextColor.GREEN, BOLD))
+                                    .append(text(" to /ignore! Opening ignore options..", NamedTextColor.GREEN)));
                         } catch (SQLException e) {
                             e.printStackTrace();
                         }
@@ -226,10 +233,10 @@ public class ChatCommands {
         } else {
             NotificationsUtils.scheduleForOnline(player, "namecolour", "remove");
         }
-        sender.sendMessage(Component.text("Successfully removed the name color", TextColor.fromHexString("#87fdd2")));
+        sender.sendMessage(text("Successfully removed the name color", TextColor.fromHexString("#87fdd2")));
         if(isOther) {
-            Component colourChange = Component.text("Your name colour was removed by ", TextColor.fromHexString("#87fdd2"))
-                    .append(sender.name().decorate(TextDecoration.BOLD)).append(Component.text("!", TextColor.fromHexString("#87fdd2")));
+            Component colourChange = text("Your name colour was removed by ", TextColor.fromHexString("#87fdd2"))
+                    .append(sender.name().decorate(BOLD)).append(text("!", TextColor.fromHexString("#87fdd2")));
             PlayerManager.sendMessage(player, colourChange, "namecolour-update");
         }
     }
@@ -237,13 +244,13 @@ public class ChatCommands {
         Player target = Bukkit.getPlayer(player);
         String playerName = target != null && target.isOnline() ? target.getName() : PlayerManager.getPlayerName(player);
         if(playerName == null) {
-            sender.sendMessage(Component.text("Player not found!", NamedTextColor.RED));
+            sender.sendMessage(text("Player not found!", RED));
             return;
         }
         Component nickName = plugin.getParsedString(sender, "namecolour", colouredName);
         String plainName = MiniMessage.miniMessage().stripTags(colouredName);
         if(!sender.hasPermission("skyprisoncore.command.namecolour.nickname") && !plainName.equalsIgnoreCase(playerName)) {
-            sender.sendMessage(Component.text("That doesn't match your name!", NamedTextColor.RED));
+            sender.sendMessage(text("That doesn't match your name!", RED));
             return;
         }
         setName(sender, player, nickName, isOther);
@@ -251,16 +258,16 @@ public class ChatCommands {
     private void setNameColour(CommandSender sender, UUID player, String colour, boolean isOther) {
         Component nickName = MiniMessage.miniMessage().deserialize(colour);
         if(!nickName.hasStyling()) {
-            sender.sendMessage(Component.text("Invalid colour! For available colours, see /namecolour", NamedTextColor.RED));
+            sender.sendMessage(text("Invalid colour! For available colours, see /namecolour", RED));
             return;
         }
         Player target = Bukkit.getPlayer(player);
         String playerName = target != null && target.isOnline() ? target.getName() : PlayerManager.getPlayerName(player);
         if(playerName == null) {
-            sender.sendMessage(Component.text("Player not found!", NamedTextColor.RED));
+            sender.sendMessage(text("Player not found!", RED));
             return;
         }
-        setName(sender, player, Component.text(playerName).style(nickName.style()), isOther);
+        setName(sender, player, text(playerName).style(nickName.style()), isOther);
     }
     private void setName(CommandSender sender, UUID player, Component nickName, boolean isOther) {
         Player target = Bukkit.getPlayer(player);
@@ -270,19 +277,19 @@ public class ChatCommands {
             NotificationsUtils.scheduleForOnline(player, "namecolour", GsonComponentSerializer.gson().serialize(nickName));
         }
 
-        sender.sendMessage(Component.text("Successfully changed the name color to ", TextColor.fromHexString("#87fdd2")).append(nickName.colorIfAbsent(NamedTextColor.WHITE)));
+        sender.sendMessage(text("Successfully changed the name color to ", TextColor.fromHexString("#87fdd2")).append(nickName.colorIfAbsent(NamedTextColor.WHITE)));
         if(isOther) {
-            Component colourChange = Component.text("Your name colour was changed by ", TextColor.fromHexString("#87fdd2"))
-                    .append(sender.name().decorate(TextDecoration.BOLD)).append(Component.text(" to ", TextColor.fromHexString("#87fdd2"))).append(nickName.colorIfAbsent(NamedTextColor.WHITE));
+            Component colourChange = text("Your name colour was changed by ", TextColor.fromHexString("#87fdd2"))
+                    .append(sender.name().decorate(BOLD)).append(text(" to ", TextColor.fromHexString("#87fdd2"))).append(nickName.colorIfAbsent(NamedTextColor.WHITE));
             PlayerManager.sendMessage(player, colourChange, "namecolour-update");
         }
     }
 
     private void sendNameColourHelp(CommandSender sender) {
         Component help = Component.empty();
-        help = help.append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
-                .append(Component.text(" Name Colouring ", TextColor.fromHexString("#03b09c"), TextDecoration.BOLD))
-                .append(Component.text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
+        help = help.append(text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH))
+                .append(text(" Name Colouring ", TextColor.fromHexString("#03b09c"), BOLD))
+                .append(text("⎯⎯⎯⎯⎯⎯", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
         help = help.appendNewline().append(MiniMessage.miniMessage().deserialize(
                 "<#87fdd2>The named colours available are: \n<black>\\<black></black>, <dark_blue>\\<dark_blue></dark_blue>, " +
                 "<dark_green>\\<dark_green></dark_green>, <dark_aqua>\\<dark_aqua></dark_aqua>, <dark_red>\\<dark_red></dark_red>, <dark_purple>\\<dark_purple></dark_purple>, " +
@@ -322,7 +329,7 @@ public class ChatCommands {
         if(sender instanceof Player sPlayer && receiver instanceof Player rPlayer) {
             PlayerManager.Ignore ignoring = PlayerManager.getPlayerIgnore(sPlayer.getUniqueId(), rPlayer.getUniqueId());
             if(ignoring != null && ignoring.ignorePrivate()) {
-                sender.sendMessage(Component.text("Can't message players you're ignoring!", NamedTextColor.RED));
+                sender.sendMessage(text("Can't message players you're ignoring!", RED));
                 return;
             }
             PlayerManager.Ignore ignored = PlayerManager.getPlayerIgnore(rPlayer.getUniqueId(), sPlayer.getUniqueId());
@@ -332,24 +339,24 @@ public class ChatCommands {
         }
 
         Component senderName = sender.name();
-        Component pMsg = Component.empty().append(Component.text(" » ", TextColor.fromHexString("#940b34")))
+        Component pMsg = Component.empty().append(text(" » ", TextColor.fromHexString("#940b34")))
                 .append(plugin.getParsedString(sender, "private", message).colorIfAbsent(NamedTextColor.GRAY));
         if (sender instanceof Player toPlayer) {
             Component customName = toPlayer.customName();
             if (customName != null) senderName = customName;
         }
 
-        Component receiverName = Component.text("Unknown");
+        Component receiverName = text("Unknown");
         if(receiver instanceof Player player) {
             receiverName = Objects.requireNonNullElse(player.customName(), player.displayName());
         } else if(receiver instanceof CommandSender receiving) {
             receiverName = receiving.name();
         }
 
-        Component msgTo = Component.empty().append(Component.text("Me", TextColor.fromHexString("#f02d68"))).append(Component.text(" ⇒ ", TextColor.fromHexString("#940b34")))
+        Component msgTo = Component.empty().append(text("Me", TextColor.fromHexString("#f02d68"))).append(text(" ⇒ ", TextColor.fromHexString("#940b34")))
                 .append(receiverName.colorIfAbsent(TextColor.fromHexString("#f02d68")));
-        Component msgFrom = Component.empty().append(senderName.colorIfAbsent(TextColor.fromHexString("#f02d68"))).append(Component.text(" ⇒ ", TextColor.fromHexString("#940b34")))
-                .append(Component.text("Me", TextColor.fromHexString("#f02d68")));
+        Component msgFrom = Component.empty().append(senderName.colorIfAbsent(TextColor.fromHexString("#f02d68"))).append(text(" ⇒ ", TextColor.fromHexString("#940b34")))
+                .append(text("Me", TextColor.fromHexString("#f02d68")));
 
         sender.sendMessage(msgTo.append(pMsg));
         if(!isIgnored) {

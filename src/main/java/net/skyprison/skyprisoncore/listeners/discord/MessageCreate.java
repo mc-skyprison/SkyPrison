@@ -61,19 +61,19 @@ public class MessageCreate implements MessageCreateListener {
                             }
                         }
                         case "791054229136605194" -> { // admin
-                            chatUtils.discordChatSend(message, userName, "admin", "791054229136605194");
+                            chatUtils.sendPrivateMessage(message, userName, "admin");
                             event.getMessage().delete();
                         }
                         case "791054021338464266" -> { // guard
-                            chatUtils.discordChatSend(message, userName, "guard", "791054021338464266");
+                            chatUtils.sendPrivateMessage(message, userName, "guard");
                             event.getMessage().delete();
                         }
                         case "791054076787163166" -> { // staff
-                            chatUtils.discordChatSend(message, userName, "staff", "791054076787163166");
+                            chatUtils.sendPrivateMessage(message, userName, "staff");
                             event.getMessage().delete();
                         }
                         case "800885673732997121" -> { // build
-                            chatUtils.discordChatSend(message, userName, "build", "800885673732997121");
+                            chatUtils.sendPrivateMessage(message, userName, "build");
                             event.getMessage().delete();
                         }
                         case "811643634562367498" -> { // party

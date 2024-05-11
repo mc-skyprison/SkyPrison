@@ -313,6 +313,7 @@ public class MiscCommands {
                     player.sendMessage(prefix.append(Component.text("Successfully teleported to sponge location!", TextColor.fromHexString("#7fff00"))));
                 }));
     }
+
     private void spongeList(Player player, List<SpongeLocation> locations, int page) {
         int totalPages = (int) Math.ceil(locations.size() / 10.0);
 
@@ -353,6 +354,7 @@ public class MiscCommands {
         msg = msg.decorationIfAbsent(TextDecoration.STRIKETHROUGH, TextDecoration.State.FALSE);
         player.sendMessage(msg);
     }
+
     private void sendFirstjoin(CommandSender sender, int page) {
         List<FirstJoin> firstJoins = new ArrayList<>();
         boolean refresh = false;

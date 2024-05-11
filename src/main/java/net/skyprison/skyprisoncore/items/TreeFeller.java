@@ -9,7 +9,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.Damageable;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -23,7 +23,8 @@ public class TreeFeller {
         axe.editMeta(meta -> {
             meta.displayName(Component.text("Treefeller Axe", TextColor.fromHexString("#adc17a")).decoration(TextDecoration.ITALIC, false));
             List<Component> lore = new ArrayList<>();
-            lore.add(Component.text("Cooldown: ", NamedTextColor.GRAY).append(Component.text("10s", TextColor.fromHexString("#c4c6c5"))).decoration(TextDecoration.ITALIC, false));
+            lore.add(Component.text("Cooldown: ", NamedTextColor.GRAY).append(Component.text("10s", TextColor.fromHexString("#c4c6c5")))
+                    .decoration(TextDecoration.ITALIC, false));
             meta.lore(lore);
             PersistentDataContainer axePers = meta.getPersistentDataContainer();
             NamespacedKey treefellerKey = new NamespacedKey(plugin, "treefeller");
@@ -53,37 +54,38 @@ public class TreeFeller {
             upgradeItem = right.clone();
         }
 
+        NamespacedKey treefellerCooldownKey = new NamespacedKey(plugin, "treefeller-cooldown");
         PersistentDataContainer upgradePers = upgradeItem.getPersistentDataContainer();
         String type = upgradePers.get(upgradeKey, PersistentDataType.STRING);
-        axe.editMeta(Damageable.class, meta -> {
-            PersistentDataContainer axePers = axe.getPersistentDataContainer();
-            switch (Objects.requireNonNull(type)) {
-                case "speed" -> {
-                    int enchLvl = 1;
-                    if(meta.hasEnchant(Enchantment.DIG_SPEED)) {
-                        enchLvl += meta.getEnchantLevel(Enchantment.DIG_SPEED);
-                    }
-                    meta.addEnchant(Enchantment.DIG_SPEED, enchLvl, false);
+        switch (Objects.requireNonNull(type)) {
+            case "speed" -> {
+                int enchLvl = 1;
+                if(axe.hasEnchant(Enchantment.DIG_SPEED)) {
+                    enchLvl += axe.getEnchantLevel(Enchantment.DIG_SPEED);
                 }
-                case "cooldown" -> {
-                    NamespacedKey treefellerCooldownKey = new NamespacedKey(plugin, "treefeller-cooldown");
-                    int cooldown = axePers.get(treefellerCooldownKey, PersistentDataType.INTEGER);
-                    int newCooldown = cooldown - 1;
-                    axePers.set(treefellerCooldownKey, PersistentDataType.INTEGER, newCooldown);
-                    List<Component> lore = new ArrayList<>();
-                    lore.add(Component.text("Cooldown: ", NamedTextColor.GRAY).append(Component.text(newCooldown + "s", TextColor.fromHexString("#c4c6c5"))).decoration(TextDecoration.ITALIC, false));
-                    meta.lore(lore);
-                }
-                case "durability" -> {
-                    int enchLvl = 1;
-                    if(meta.hasEnchant(Enchantment.DURABILITY)) {
-                        enchLvl += meta.getEnchantLevel(Enchantment.DURABILITY);
-                    }
-                    meta.addEnchant(Enchantment.DURABILITY, enchLvl, false);
-                }
-                case "repair" -> meta.setDamage(0);
+                axe.addEnchant(Enchantment.DIG_SPEED, enchLvl, false);
             }
-        });
+            case "cooldown" -> {
+                ItemMeta meta = axe.getItemMeta();
+                PersistentDataContainer axePers = meta.getPersistentDataContainer();
+                int cooldown = axePers.get(treefellerCooldownKey, PersistentDataType.INTEGER);
+                int newCooldown = cooldown - 1;
+                axePers.set(treefellerCooldownKey, PersistentDataType.INTEGER, newCooldown);
+                List<Component> lore = new ArrayList<>();
+                lore.add(Component.text("Cooldown: ", NamedTextColor.GRAY).append(Component.text(newCooldown + "s", TextColor.fromHexString("#c4c6c5")))
+                        .decoration(TextDecoration.ITALIC, false));
+                meta.lore(lore);
+                axe.setItemMeta(meta);
+            }
+            case "durability" -> {
+                int enchLvl = 1;
+                if(axe.hasEnchant(Enchantment.DURABILITY)) {
+                    enchLvl += axe.getEnchantLevel(Enchantment.DURABILITY);
+                }
+                axe.addEnchant(Enchantment.DURABILITY, enchLvl, false);
+            }
+            case "repair" -> axe.setDamage(0);
+        }
         return axe;
     }
     public static ItemStack getRepairItem(SkyPrisonCore plugin, int amount) {
