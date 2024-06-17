@@ -240,7 +240,7 @@ public class BlockPlace implements Listener {
                                                 world.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 0);
                                             } else {
                                                 world.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1, 1);
-                                                world.spawnParticle(Particle.EXPLOSION_LARGE, loc, 1);
+                                                world.spawnParticle(Particle.EXPLOSION, loc, 1);
                                                 ent.remove();
                                                 double delay = 0.0;
                                                 for (Block block1 : blocks) {

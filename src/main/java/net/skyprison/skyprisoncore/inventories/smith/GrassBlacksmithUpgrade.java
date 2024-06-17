@@ -161,11 +161,11 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
             NamespacedKey treefellerCooldownKey = new NamespacedKey(plugin, "treefeller-cooldown");
             int cooldown = axePers.get(treefellerCooldownKey, PersistentDataType.INTEGER);
             upgradedAmounts += (10 - cooldown);
-            if(axeMeta.hasEnchant(Enchantment.DURABILITY)) {
-                upgradedAmounts += axeMeta.getEnchantLevel(Enchantment.DURABILITY);
+            if(axeMeta.hasEnchant(Enchantment.UNBREAKING)) {
+                upgradedAmounts += axeMeta.getEnchantLevel(Enchantment.UNBREAKING);
             }
-            if(axeMeta.hasEnchant(Enchantment.DIG_SPEED)) {
-                upgradedAmounts += axeMeta.getEnchantLevel(Enchantment.DIG_SPEED);
+            if(axeMeta.hasEnchant(Enchantment.EFFICIENCY)) {
+                upgradedAmounts += axeMeta.getEnchantLevel(Enchantment.EFFICIENCY);
             }
             price = 50 * upgradedAmounts;
         }
@@ -227,9 +227,9 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
 
         switch (Objects.requireNonNull(type)) {
             case "speed" -> {
-                if(axeMeta.hasEnchant(Enchantment.DIG_SPEED)) {
-                    int enchLvl = axeMeta.getEnchantLevel(Enchantment.DIG_SPEED);
-                    if(enchLvl < Enchantment.DIG_SPEED.getMaxLevel()) {
+                if(axeMeta.hasEnchant(Enchantment.EFFICIENCY)) {
+                    int enchLvl = axeMeta.getEnchantLevel(Enchantment.EFFICIENCY);
+                    if(enchLvl < Enchantment.EFFICIENCY.getMaxLevel()) {
                         return true;
                     }
                 } else {
@@ -244,9 +244,9 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
                 }
             }
             case "durability" -> {
-                if(axeMeta.hasEnchant(Enchantment.DURABILITY)) {
-                    int enchLvl = axeMeta.getEnchantLevel(Enchantment.DURABILITY);
-                    if(enchLvl < Enchantment.DURABILITY.getMaxLevel()) {
+                if(axeMeta.hasEnchant(Enchantment.UNBREAKING)) {
+                    int enchLvl = axeMeta.getEnchantLevel(Enchantment.UNBREAKING);
+                    if(enchLvl < Enchantment.UNBREAKING.getMaxLevel()) {
                         return true;
                     }
                 } else {

@@ -9,6 +9,7 @@ import com.sk89q.worldguard.protection.flags.registry.FlagConflictException;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
 import com.sk89q.worldguard.session.SessionManager;
 import dev.esophose.playerparticles.api.PlayerParticlesAPI;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import litebans.api.Entry;
 import litebans.api.Events;
 import me.clip.placeholderapi.PlaceholderAPI;
@@ -79,10 +80,7 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.incendo.cloud.Command;
-import org.incendo.cloud.bukkit.CloudBukkitCapabilities;
 import org.incendo.cloud.execution.ExecutionCoordinator;
-import org.incendo.cloud.minecraft.extras.MinecraftExceptionHandler;
-import org.incendo.cloud.minecraft.extras.MinecraftHelp;
 import org.incendo.cloud.paper.PaperCommandManager;
 import org.incendo.cloud.suggestion.SuggestionProvider;
 import org.javacord.api.DiscordApi;
@@ -149,8 +147,7 @@ public class SkyPrisonCore extends JavaPlugin {
     private final ScheduledExecutorService dailyExecutor = Executors.newSingleThreadScheduledExecutor();
     public static final HashMap<UUID, JailTimer> currentlyJailed = new HashMap<>();
     public static final HashMap<Audience, Audience> lastMessaged = new HashMap<>();
-    private PaperCommandManager<CommandSender> manager;
-    private MinecraftHelp<CommandSender> minecraftHelp;
+    private PaperCommandManager<CommandSourceStack> manager;
     public static final HashMap<UUID, Long> bribeCooldown = new HashMap<>();
     public static final HashMap<UUID, Long> bountyCooldown = new HashMap<>();
     public static final HashMap<UUID, Integer> safezoneViolators = new HashMap<>();
@@ -222,23 +219,9 @@ public class SkyPrisonCore extends JavaPlugin {
         registerMinPrice();
 
         new ClaimUtils(this, db).initializeData();
-
-        manager = PaperCommandManager.createNative(this, ExecutionCoordinator.simpleCoordinator());
-
-        if (manager.hasCapability(CloudBukkitCapabilities.NATIVE_BRIGADIER)) {
-            manager.registerBrigadier();
-        } else if (manager.hasCapability(CloudBukkitCapabilities.ASYNCHRONOUS_COMPLETION)) {
-            manager.registerAsynchronousCompletions();
-        }
-        minecraftHelp = MinecraftHelp.createNative("/spc help", manager);
-
-        MinecraftExceptionHandler.<CommandSender>createNative()
-                .defaultHandlers()
-                .decorator(component -> Component.text()
-                                .append(pluginPrefix)
-                                .append(Component.text(" » ", NamedTextColor.DARK_GRAY))
-                                .append(component).build()
-                ).registerTo(manager);
+        manager = PaperCommandManager.builder()
+                .executionCoordinator(ExecutionCoordinator.simpleCoordinator())
+                .buildOnEnable(this);
 
         registerCommands();
         registerEvents();
@@ -520,7 +503,7 @@ public class SkyPrisonCore extends JavaPlugin {
     }
 
     public void registerCommands() {
-        Command.Builder<CommandSender> treefeller = manager.commandBuilder("treefeller")
+        Command.Builder<CommandSourceStack> treefeller = manager.commandBuilder("treefeller")
                 .permission("skyprisoncore.command.treefeller");
         List<String> treefellerOptions = List.of("axe", "speed", "cooldown", "durability", "repair");
         manager.command(treefeller.literal("give")
@@ -542,7 +525,7 @@ public class SkyPrisonCore extends JavaPlugin {
                             treeItem = TreeFeller.getUpgradeItem(this, type, amount);
                         }
                         PlayerManager.giveItems(player, treeItem);
-                        c.sender().sendMessage(Component.text("Successfully sent!"));
+                        c.sender().getSender().sendMessage(Component.text("Successfully sent!"));
                     }
                 }));
 
@@ -563,14 +546,14 @@ public class SkyPrisonCore extends JavaPlugin {
                         if (inv != null) {
                             player.openInventory(inv.getInventory());
                         } else {
-                            c.sender().sendMessage(Component.text("Invalid Usage! /blacksmith <blacksmith> (player)", NamedTextColor.RED));
+                            c.sender().getSender().sendMessage(Component.text("Invalid Usage! /blacksmith <blacksmith> (player)", NamedTextColor.RED));
                         }
                     } else {
-                        c.sender().sendMessage(Component.text("Invalid Usage! /blacksmith <blacksmith> <player>", NamedTextColor.RED));
+                        c.sender().getSender().sendMessage(Component.text("Invalid Usage! /blacksmith <blacksmith> <player>", NamedTextColor.RED));
                     }
                 })));
 
-        Command.Builder<CommandSender> voucher = manager.commandBuilder("voucher")
+        Command.Builder<CommandSourceStack> voucher = manager.commandBuilder("voucher")
                 .permission("skyprisoncore.command.voucher");
         manager.command(voucher.literal("give")
                 .permission("skyprisoncore.command.voucher.give")
@@ -584,11 +567,11 @@ public class SkyPrisonCore extends JavaPlugin {
                     ItemStack voucherItem = Vouchers.getVoucherFromType(this, voucherType, amount);
                     if(voucherItem != null) {
                         PlayerManager.giveItems(player, voucherItem);
-                        c.sender().sendMessage(Component.text("Successfully sent!"));
+                        c.sender().getSender().sendMessage(Component.text("Successfully sent!"));
                     }
                 }));
 
-        Command.Builder<CommandSender> greg = manager.commandBuilder("greg")
+        Command.Builder<CommandSourceStack> greg = manager.commandBuilder("greg")
                 .permission("skyprisoncore.command.greg");
         List<String> gregOptions = List.of("grease", "allay-dust", "strength", "speed", "fire-resistance", "instant-health", "instant-damage",
                 "release-papers", "fake-release-papers");
@@ -605,12 +588,12 @@ public class SkyPrisonCore extends JavaPlugin {
                         ItemStack item = Greg.getItemFromType(this, type, amount);
                         if (item != null) {
                             PlayerManager.giveItems(player, item);
-                            c.sender().sendMessage(Component.text("Successfully sent!"));
+                            c.sender().getSender().sendMessage(Component.text("Successfully sent!"));
                         }
                     }
                 }));
 
-        Command.Builder<CommandSender> endSmith = manager.commandBuilder("endsmith")
+        Command.Builder<CommandSourceStack> endSmith = manager.commandBuilder("endsmith")
                 .permission("skyprisoncore.command.endsmith");
         List<String> endSmithOptions = List.of("reset-repair", "keep-enchants", "keep-trims");
         manager.command(endSmith.literal("addon")
@@ -626,7 +609,7 @@ public class SkyPrisonCore extends JavaPlugin {
                         ItemStack item = BlacksmithEnd.getItemFromType(this, type, "", amount);
                         if (item != null) {
                             PlayerManager.giveItems(player, item);
-                            c.sender().sendMessage(Component.text("Successfully sent!"));
+                            c.sender().getSender().sendMessage(Component.text("Successfully sent!"));
                         }
                     }
                 }));
@@ -644,12 +627,12 @@ public class SkyPrisonCore extends JavaPlugin {
                         ItemStack item = BlacksmithEnd.getItemFromType(this, "upgrade-template", type, amount);
                         if (item != null) {
                             PlayerManager.giveItems(player, item);
-                            c.sender().sendMessage(Component.text("Successfully sent!"));
+                            c.sender().getSender().sendMessage(Component.text("Successfully sent!"));
                         }
                     }
                 }));
 
-        Command.Builder<CommandSender> bomb = manager.commandBuilder("bomb")
+        Command.Builder<CommandSourceStack> bomb = manager.commandBuilder("bomb")
                 .permission("skyprisoncore.command.bomb");
         List<String> bombOptions = List.of("small", "medium", "large", "massive", "nuke");
         manager.command(bomb.literal("give")
@@ -664,15 +647,14 @@ public class SkyPrisonCore extends JavaPlugin {
                     if(bombOptions.contains(type.toLowerCase())) {
                         ItemStack item = BombUtils.getBomb(this, type, amount);
                         PlayerManager.giveItems(player, item);
-                        c.sender().sendMessage(Component.text("Successfully sent!"));
+                        c.sender().getSender().sendMessage(Component.text("Successfully sent!"));
                     }
                 }));
 
         manager.command(manager.commandBuilder("enchtable", "ench", "enchanttable")
-                .senderType(Player.class)
                 .permission("skyprisoncore.command.enchtable")
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     Location loc;
                     String worldName = player.getWorld().getName();
 

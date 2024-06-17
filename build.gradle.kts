@@ -32,10 +32,10 @@ repositories {
 dependencies {
     implementation("org.javacord:javacord:3.8.0")
     implementation("org.mariadb.jdbc:mariadb-java-client:3.3.3")
-    implementation("org.incendo:cloud-paper:2.0.0-beta.2")
+    implementation("org.incendo:cloud-paper:2.0.0-beta.8")
     implementation("org.incendo:cloud-minecraft-extras:2.0.0-beta.2")
     compileOnly("org.jetbrains:annotations:24.0.0")
-    compileOnly("org.purpurmc.purpur:purpur-api:1.20.4-R0.1-SNAPSHOT")
+    compileOnly("org.purpurmc.purpur:purpur-api:1.21-R0.1-SNAPSHOT")
     compileOnly("net.luckperms:api:5.4")
     compileOnly("me.neznamy:tab-api:4.0.2") // Used for PvP
     compileOnly("com.github.DieReicheErethons:Brewery:3.1.1")
@@ -50,7 +50,7 @@ dependencies {
     compileOnly("com.gitlab.ruany:LiteBansAPI:0.5.0")
     compileOnly("LibsDisguises:LibsDisguises:10.0.42")
     compileOnly("dev.esophose:playerparticles:8.3")
-    compileOnly("com.github.Realizedd.Duels:duels-api:3.5.1")
+    // compileOnly("com.github.Realizedd.Duels:duels-api:3.5.1")
     compileOnly("com.vexsoftware:nuvotifier-universal:2.7.2")
     compileOnly("com.ghostchu:quickshop-api:6.0.0.10")
     // Jars

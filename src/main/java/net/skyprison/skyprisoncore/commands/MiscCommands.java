@@ -1,5 +1,6 @@
 package net.skyprison.skyprisoncore.commands;
 
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -35,9 +36,9 @@ import static org.incendo.cloud.parser.standard.IntegerParser.integerParser;
 public class MiscCommands {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
-    private final PaperCommandManager<CommandSender> manager;
+    private final PaperCommandManager<CommandSourceStack> manager;
     private static FirstJoins firstJoins = null;
-    public MiscCommands(SkyPrisonCore plugin, DatabaseHook db, PaperCommandManager<CommandSender> manager) {
+    public MiscCommands(SkyPrisonCore plugin, DatabaseHook db, PaperCommandManager<CommandSourceStack> manager) {
         this.plugin = plugin;
         this.db = db;
         this.manager = manager;
@@ -50,10 +51,9 @@ public class MiscCommands {
     private record SpongeLocation(int id, int orderPos, String world, int x, int y, int z) {}
     private void createMiscCommands() {
         manager.command(manager.commandBuilder("killinfo", "killsinfo", "killstats", "pvpstats")
-                .senderType(Player.class)
                 .permission("skyprisoncore.command.killinfo")
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     int deaths = 0;
                     int pKills = 0;
                     int streak = 0;
@@ -91,7 +91,7 @@ public class MiscCommands {
                 .permission("skyprisoncore.command.firstjointop")
                 .optional("page", integerParser(1), DefaultValue.constant(1))
                 .handler(c -> {
-                    CommandSender sender = c.sender();
+                    CommandSender sender = c.sender().getSender();
                     int page = c.get("page");
                     sendFirstjoin(sender, page);
                 }));
@@ -99,7 +99,7 @@ public class MiscCommands {
         manager.command(manager.commandBuilder("website")
                 .permission("skyprisoncore.command.website")
                 .handler(c -> {
-                    CommandSender sender = c.sender();
+                    CommandSender sender = c.sender().getSender();
                     sender.sendMessage(Component.text("Our website: ", NamedTextColor.GRAY)
                             .append(Component.text("https://skyprison.net", NamedTextColor.AQUA)
                                     .hoverEvent(HoverEvent.showText(Component.text("Click to open website", NamedTextColor.GRAY)))
@@ -109,7 +109,7 @@ public class MiscCommands {
         manager.command(manager.commandBuilder("apply")
                 .permission("skyprisoncore.command.apply")
                 .handler(c -> {
-                    CommandSender sender = c.sender();
+                    CommandSender sender = c.sender().getSender();
                     sender.sendMessage(Component.text("Apply for staff: ", NamedTextColor.GRAY)
                             .append(Component.text("https://skyprison.net/apply", NamedTextColor.AQUA)
                                     .hoverEvent(HoverEvent.showText(Component.text("Click to open applications", NamedTextColor.GRAY)))
@@ -119,7 +119,7 @@ public class MiscCommands {
         manager.command(manager.commandBuilder("store")
                 .permission("skyprisoncore.command.store")
                 .handler(c -> {
-                    CommandSender sender = c.sender();
+                    CommandSender sender = c.sender().getSender();
                     sender.sendMessage(Component.text("Our store: ", NamedTextColor.GRAY)
                             .append(Component.text("https://store.skyprison.net", NamedTextColor.AQUA)
                                     .hoverEvent(HoverEvent.showText(Component.text("Click to open store", NamedTextColor.GRAY)))
@@ -127,27 +127,24 @@ public class MiscCommands {
                 }));
 
         manager.command(manager.commandBuilder("customrecipes")
-                .senderType(Player.class)
                 .permission("skyprisoncore.command.customrecipes")
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new CustomMain().getInventory()));
                 }));
 
         manager.command(manager.commandBuilder("news")
-                .senderType(Player.class)
                 .permission("skyprisoncore.command.news")
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     Bukkit.getScheduler().runTask(plugin, () ->
                             player.openInventory(new NewsMessages(plugin, db, player.hasPermission("skyprisoncore.command.news.edit"), 1).getInventory()));
                 }));
 
         manager.command(manager.commandBuilder("removeitalics")
-                .senderType(Player.class)
                 .permission("skyprisoncore.command.removeitalics")
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     ItemStack item = player.getInventory().getItemInMainHand();
                     if(!item.hasDisplayName()) {
                         player.sendMessage(Component.text("This item doesn't have a custom name!", NamedTextColor.RED));
@@ -179,10 +176,9 @@ public class MiscCommands {
 
 
         manager.command(manager.commandBuilder("plotteleport", "plot", "plottp")
-                .senderType(Player.class)
                 .permission("skyprisoncore.command.plotteleport")
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     if(player.getWorld().getName().equalsIgnoreCase("world_prison")) {
                         player.sendMessage(Component.text("Can't use this command here!", NamedTextColor.RED));
                         return;
@@ -191,11 +187,10 @@ public class MiscCommands {
                 }));
     }
     private void createTagCommands() {
-        Command.Builder<Player> tags = manager.commandBuilder("tags")
-                .senderType(Player.class)
+        Command.Builder<CommandSourceStack> tags = manager.commandBuilder("tags")
                 .permission("skyprisoncore.command.tags")
                 .handler(c -> {
-                        Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                         Bukkit.getScheduler().runTask(plugin, () ->
                                 player.openInventory(new TagsView(player).getInventory()));
                         });
@@ -209,15 +204,14 @@ public class MiscCommands {
                 .append(line)
                 .append(Component.text("\n/sponge set\n/sponge list\n/sponge delete <id>\n/sponge tp <id>", TextColor.fromHexString("#7fff00")));
 
-        Command.Builder<Player> sponge = manager.commandBuilder("sponge")
-                .senderType(Player.class)
+        Command.Builder<CommandSourceStack> sponge = manager.commandBuilder("sponge")
                 .permission("skyprisoncore.command.sponge")
-                .handler(c -> c.sender().sendMessage(help));
+                .handler(c -> c.sender().getSender().sendMessage(help));
         manager.command(sponge);
 
         manager.command(sponge.literal("set")
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     Location loc = player.getLocation();
                     List<SpongeLocation> spongeLocations = new ArrayList<>();
                     try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT * FROM sponge_locations")) {
@@ -251,7 +245,7 @@ public class MiscCommands {
                 }));
         manager.command(sponge.literal("list")
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     List<SpongeLocation> spongeLocations = new ArrayList<>();
                     try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT * FROM sponge_locations")) {
                         ResultSet rs = ps.executeQuery();
@@ -267,7 +261,7 @@ public class MiscCommands {
         manager.command(sponge.literal("delete")
                 .required("id", integerParser())
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     int id = c.get("id");
                     try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("DELETE FROM sponge_locations WHERE order_id = ?")) {
                         ps.setInt(1, id);
@@ -290,7 +284,7 @@ public class MiscCommands {
         manager.command(sponge.literal("tp")
                 .required("id", integerParser())
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     int id = c.get("id");
                     Location loc = null;
                     try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT world, x, y, z FROM sponge_locations WHERE order_id = ?")) {

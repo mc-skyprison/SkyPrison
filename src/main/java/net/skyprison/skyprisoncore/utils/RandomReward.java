@@ -209,19 +209,19 @@ public enum RandomReward {
                     iMeta.addEnchant(Enchantment.LURE, enchantLevel, false);
                     if(enchantLevel > 2) {
                         enchantLevel = enchantLevel / 2;
-                        iMeta.addEnchant(Enchantment.LUCK, enchantLevel, false);
+                        iMeta.addEnchant(Enchantment.LUCK_OF_THE_SEA, enchantLevel, false);
                     }
                 } else if(item.getType().toString().toLowerCase().contains("sword")) {
-                    iMeta.addEnchant(Enchantment.DAMAGE_ALL, enchantLevel, false);
+                    iMeta.addEnchant(Enchantment.SHARPNESS, enchantLevel, false);
                     if(enchantLevel > 2) {
                         enchantLevel = enchantLevel / 2;
-                        iMeta.addEnchant(Enchantment.DURABILITY, enchantLevel, false);
+                        iMeta.addEnchant(Enchantment.UNBREAKING, enchantLevel, false);
                     }
                 } else {
-                    iMeta.addEnchant(Enchantment.DIG_SPEED, enchantLevel, false);
+                    iMeta.addEnchant(Enchantment.EFFICIENCY, enchantLevel, false);
                     if(enchantLevel > 2) {
                         enchantLevel = enchantLevel / 2;
-                        iMeta.addEnchant(Enchantment.DURABILITY, enchantLevel, false);
+                        iMeta.addEnchant(Enchantment.UNBREAKING, enchantLevel, false);
                     }
                 }
             }

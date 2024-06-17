@@ -1,5 +1,6 @@
 package net.skyprison.skyprisoncore.commands;
 
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -22,18 +23,18 @@ import static org.incendo.cloud.parser.standard.StringParser.stringParser;
 public class VoteCommands {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
-    private final PaperCommandManager<CommandSender> manager;
-    public VoteCommands(SkyPrisonCore plugin, DatabaseHook db, PaperCommandManager<CommandSender> manager) {
+    private final PaperCommandManager<CommandSourceStack> manager;
+    public VoteCommands(SkyPrisonCore plugin, DatabaseHook db, PaperCommandManager<CommandSourceStack> manager) {
         this.plugin = plugin;
         this.db = db;
         this.manager = manager;
         createVoteCommands();
     }
     private void createVoteCommands() {
-        Command.Builder<CommandSender> vote = manager.commandBuilder("vote")
+        Command.Builder<CommandSourceStack> vote = manager.commandBuilder("vote")
                 .permission("skyprisoncore.command.vote")
                 .handler(c -> {
-                    CommandSender sender = c.sender();
+                    CommandSender sender = c.sender().getSender();
                     Component msg = Component.text("Vote for our server!", NamedTextColor.DARK_RED, TextDecoration.BOLD);
                     msg = msg.appendNewline();
                     msg = msg.append(Component.text("Planet Minecraft", NamedTextColor.RED, TextDecoration.BOLD).hoverEvent(HoverEvent
@@ -64,19 +65,17 @@ public class VoteCommands {
         manager.command(vote);
 
         manager.command(vote.literal("history")
-                .senderType(Player.class)
                 .permission("skyprisoncore.command.vote.history")
                 .handler(c -> {
-                    Player sender = c.sender();
+                    Player sender = (Player) c.sender().getSender();
                     Bukkit.getScheduler().runTask(plugin, () -> sender.openInventory(new VoteHistory(plugin, db, sender.getUniqueId()).getInventory()));
                 }));
 
         manager.command(vote.literal("history")
-                .senderType(Player.class)
                 .permission("skyprisoncore.command.vote.history.others")
                 .optional("player", stringParser())
                 .handler(c -> {
-                    Player sender = c.sender();
+                    Player sender = (Player) c.sender().getSender();
                     String playerName = c.getOrDefault("player", sender.getName());
                     UUID pUUID = PlayerManager.getPlayerId(playerName);
                     if (pUUID != null) {

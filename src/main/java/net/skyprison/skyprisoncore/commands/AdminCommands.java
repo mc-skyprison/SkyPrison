@@ -16,6 +16,7 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.util.WorldEditRegionConverter;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -53,28 +54,26 @@ import static org.incendo.cloud.parser.standard.StringParser.stringParser;
 
 public class AdminCommands {
     private final SkyPrisonCore plugin;
-    private final PaperCommandManager<CommandSender> manager;
-    public AdminCommands(SkyPrisonCore plugin, PaperCommandManager<CommandSender> manager) {
+    private final PaperCommandManager<CommandSourceStack> manager;
+    public AdminCommands(SkyPrisonCore plugin, PaperCommandManager<CommandSourceStack> manager) {
         this.plugin = plugin;
         this.manager = manager;
         createAdminCommands();
     }
     private void createAdminCommands() {
         manager.command(manager.commandBuilder("itemlore", "ilore")
-                .senderType(Player.class)
                 .permission("skyprisoncore.command.itemlore")
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     new ItemLore(plugin).displayLore(player);
                 }));
 
-        Command.Builder<Player> rename = manager.commandBuilder("rename")
-                .permission("skyprisoncore.command.rename")
-                .senderType(Player.class);
+        Command.Builder<CommandSourceStack> rename = manager.commandBuilder("rename")
+                .permission("skyprisoncore.command.rename");
 
         manager.command(rename.literal("remove")
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     ItemStack heldItem = player.getInventory().getItemInMainHand();
                     if (!heldItem.getType().isItem()) {
                         player.sendMessage(Component.text("You're not holding an item!", NamedTextColor.RED));
@@ -90,7 +89,7 @@ public class AdminCommands {
                 }));
         manager.command(rename.required("name", greedyStringParser())
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     ItemStack heldItem = player.getInventory().getItemInMainHand();
                     if (!heldItem.getType().isItem()) {
                         player.sendMessage(Component.text("You're not holding an item!", NamedTextColor.RED));
@@ -209,7 +208,7 @@ public class AdminCommands {
                 .required("amount", integerParser(1))
                 .flag(manager.flagBuilder("silent").withAliases("s"))
                 .handler(c -> {
-                    CommandSender sender = c.sender();
+                    CommandSender sender = c.sender().getSender();
                     Player player = c.get("player");
                     String item = c.get("item");
                     int amount = c.get("amount");

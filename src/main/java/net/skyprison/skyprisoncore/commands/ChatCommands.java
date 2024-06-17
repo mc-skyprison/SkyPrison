@@ -1,5 +1,6 @@
 package net.skyprison.skyprisoncore.commands;
 
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -42,11 +43,11 @@ import static org.incendo.cloud.parser.standard.StringParser.*;
 
 public class ChatCommands {
     private final SkyPrisonCore plugin;
-    private final PaperCommandManager<CommandSender> manager;
+    private final PaperCommandManager<CommandSourceStack> manager;
     private final ChatUtils chatUtils;
     private final DatabaseHook db;
 
-    public ChatCommands(SkyPrisonCore plugin, PaperCommandManager<CommandSender> manager, DiscordApi discApi, DatabaseHook db) {
+    public ChatCommands(SkyPrisonCore plugin, PaperCommandManager<CommandSourceStack> manager, DiscordApi discApi, DatabaseHook db) {
         this.plugin = plugin;
         this.manager = manager;
         this.db = db;
@@ -70,25 +71,25 @@ public class ChatCommands {
         manager.command(manager.commandBuilder("b")
                 .permission("skyprisoncore.command.build")
                 .optional("message", greedyStringParser())
-                .handler(c -> staffMessageHandler(c.getOrDefault("message", ""), c.sender(), "build"))
+                .handler(c -> staffMessageHandler(c.getOrDefault("message", ""), c.sender().getSender(), "build"))
                 .build()
         );
         manager.command(manager.commandBuilder("admin", "a", "y")
                 .permission("skyprisoncore.command.admin")
                 .optional("message", greedyStringParser())
-                .handler(c -> staffMessageHandler(c.getOrDefault("message", ""), c.sender(), "admin"))
+                .handler(c -> staffMessageHandler(c.getOrDefault("message", ""), c.sender().getSender(), "admin"))
                 .build()
         );
         manager.command(manager.commandBuilder("g")
                 .permission("skyprisoncore.command.guard")
                 .optional("message", greedyStringParser())
-                .handler(c -> staffMessageHandler(c.getOrDefault("message", ""), c.sender(), "guard"))
+                .handler(c -> staffMessageHandler(c.getOrDefault("message", ""), c.sender().getSender(), "guard"))
                 .build()
         );
         manager.command(manager.commandBuilder("s")
                 .permission("skyprisoncore.command.staff")
                 .optional("message", greedyStringParser())
-                .handler(c -> staffMessageHandler(c.getOrDefault("message", ""), c.sender(), "staff"))
+                .handler(c -> staffMessageHandler(c.getOrDefault("message", ""), c.sender().getSender(), "staff"))
                 .build()
         );
 
@@ -97,7 +98,7 @@ public class ChatCommands {
                 .required("player", playerParser())
                 .required("message", greedyStringParser())
                 .handler(c -> {
-                    CommandSender sender = c.sender();
+                    CommandSender sender = c.sender().getSender();
                     final Player player = c.get("player");
                     final String message = c.get("message");
                     sendPrivateMessage(sender, player, message);
@@ -106,7 +107,7 @@ public class ChatCommands {
                 .permission("skyprisoncore.command.reply")
                 .required("message", greedyStringParser())
                 .handler(c -> {
-                    CommandSender sender = c.sender();
+                    CommandSender sender = c.sender().getSender();
                     if(!lastMessaged.isEmpty() && lastMessaged.containsKey(sender) && lastMessaged.get(sender) != null
                             && ((lastMessaged.get(sender) instanceof Player player && player.isOnline()) || lastMessaged.get(sender) instanceof ConsoleCommandSender)) {
                         sendPrivateMessage(sender, lastMessaged.get(sender), c.get("message"));
@@ -119,26 +120,25 @@ public class ChatCommands {
                 .required("message", greedyStringParser())
                 .handler(c -> {
                     String msg = c.get("message");
-                    Component fMsg = plugin.getParsedString(c.sender(), "chat", msg);
+                    Component fMsg = plugin.getParsedString(c.sender().getSender(), "chat", msg);
                     plugin.getServer().sendMessage(fMsg);
                 }));
 
-        Command.Builder<CommandSender> nameColour = manager.commandBuilder("namecolour", "namecolor", "multicolour", "multicolor", "nc")
+        Command.Builder<CommandSourceStack> nameColour = manager.commandBuilder("namecolour", "namecolor", "multicolour", "multicolor", "nc")
                 .permission("skyprisoncore.command.namecolour")
-                .handler(c -> sendNameColourHelp(c.sender()));
+                .handler(c -> sendNameColourHelp(c.sender().getSender()));
         manager.command(nameColour);
 
-        Command.Builder<Player> remCol = nameColour.literal("remove")
-                .senderType(Player.class)
+        Command.Builder<CommandSourceStack> remCol = nameColour.literal("remove")
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     removeNameColour(player, player.getUniqueId(), false);
                 });
         manager.command(remCol);
         manager.command(remCol.permission("skyprisoncore.command.namecolour.other")
                 .required("player", stringParser())
                 .handler(c -> {
-                    CommandSender sender = c.sender();
+                    CommandSender sender = c.sender().getSender();
                     String target = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(target);
                     if(targetId == null) {
@@ -151,7 +151,7 @@ public class ChatCommands {
         manager.command(nameColour.required("colour/name", greedyFlagYieldingStringParser(), SuggestionProvider.suggestingStrings(getColours()))
                 .flag(manager.flagBuilder("player").withAliases("p").withComponent(stringParser()).withPermission(Permission.of("skyprisoncore.command.namecolour.other")))
                 .handler(c -> {
-                    CommandSender sender = c.sender();
+                    CommandSender sender = c.sender().getSender();
                     boolean isOther = c.flags().contains("player");
 
                     if(!isOther && !(sender instanceof Player)) {
@@ -182,11 +182,10 @@ public class ChatCommands {
                 }));
 
         manager.command(manager.commandBuilder("ignore")
-                .senderType(Player.class)
                 .permission("skyprisoncore.command.ignore")
                 .optional("player", stringParser(), DefaultValue.constant(""))
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     if(target.isEmpty()) {
                         Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new Ignore(player).getInventory()));

@@ -1,5 +1,6 @@
 package net.skyprison.skyprisoncore.commands;
 
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -8,7 +9,6 @@ import net.skyprison.skyprisoncore.inventories.misc.DatabaseInventory;
 import net.skyprison.skyprisoncore.utils.CustomInvUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.incendo.cloud.Command;
 import org.incendo.cloud.component.DefaultValue;
@@ -22,8 +22,8 @@ import static org.incendo.cloud.parser.standard.StringParser.stringParser;
 public class CustomInvCommands {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
-    private final PaperCommandManager<CommandSender> manager;
-    public CustomInvCommands(SkyPrisonCore plugin, DatabaseHook db, PaperCommandManager<CommandSender> manager) {
+    private final PaperCommandManager<CommandSourceStack> manager;
+    public CustomInvCommands(SkyPrisonCore plugin, DatabaseHook db, PaperCommandManager<CommandSourceStack> manager) {
         this.plugin = plugin;
         this.db = db;
         this.manager = manager;
@@ -43,11 +43,11 @@ public class CustomInvCommands {
                         Bukkit.getScheduler().runTask(plugin, () -> finalPlayer.openInventory(new DatabaseInventory(plugin, db, finalPlayer,
                                 finalPlayer.hasPermission("skyprisoncore.inventories.bartender.editing"), "bartender").getInventory()));
                     } else {
-                        c.sender().sendMessage(Component.text("Invalid Usage! /bartender (player)"));
+                        c.sender().getSender().sendMessage(Component.text("Invalid Usage! /bartender (player)"));
                     }
                 })));
 
-        Command.Builder<CommandSender> customInv = manager.commandBuilder("custominv")
+        Command.Builder<CommandSourceStack> customInv = manager.commandBuilder("custominv")
                 .permission("skyprisoncore.command.custominv");
         manager.command(customInv.literal("list")
                 .permission("skyprisoncore.command.custominv.list")
@@ -55,7 +55,7 @@ public class CustomInvCommands {
                 .handler(c -> {
                     int page = c.get("page");
                     Component list = CustomInvUtils.getFormattedList(page);
-                    c.sender().sendMessage(list);
+                    c.sender().getSender().sendMessage(list);
                 }));
         manager.command(customInv.literal("open")
                 .permission("skyprisoncore.command.custominv.open")

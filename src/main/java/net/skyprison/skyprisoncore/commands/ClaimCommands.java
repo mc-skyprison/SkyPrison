@@ -9,6 +9,7 @@ import com.sk89q.worldedit.regions.selector.CuboidRegionSelector;
 import com.sk89q.worldedit.regions.selector.Polygonal2DRegionSelector;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -43,10 +44,10 @@ import static org.incendo.cloud.parser.standard.StringParser.stringParser;
 public class ClaimCommands {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
-    private final PaperCommandManager<CommandSender> manager;
+    private final PaperCommandManager<CommandSourceStack> manager;
     private final Component prefix = ClaimUtils.getPrefix();
     private final Component notFound = ClaimUtils.getNotFound();
-    public ClaimCommands(SkyPrisonCore plugin, DatabaseHook db, PaperCommandManager<CommandSender> manager) {
+    public ClaimCommands(SkyPrisonCore plugin, DatabaseHook db, PaperCommandManager<CommandSourceStack> manager) {
         this.plugin = plugin;
         this.db = db;
         this.manager = manager;
@@ -55,9 +56,9 @@ public class ClaimCommands {
     private void createClaimCommands() {
         ClaimUtils claim = new ClaimUtils(plugin, db);
 
-        Command.Builder<CommandSender> claimMain = manager.commandBuilder("claim")
+        Command.Builder<CommandSourceStack> claimMain = manager.commandBuilder("claim")
                 .permission("skyprisoncore.command.claim")
-                .handler(c -> claim.helpMessage(c.sender(), 1));
+                .handler(c -> claim.helpMessage(c.sender().getSender(), 1));
 
         manager.command(claimMain);
 
@@ -65,11 +66,11 @@ public class ClaimCommands {
 
         manager.command(claimMain.literal("help")
                 .optional("page", integerParser(1, 2), DefaultValue.constant(1))
-                .handler(c -> claim.helpMessage(c.sender(), c.get("page"))));
+                .handler(c -> claim.helpMessage(c.sender().getSender(), c.get("page"))));
         manager.command(claimMain.literal("create")
                 .required("name", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String claimName = c.get("name");
                     if (!player.getWorld().getName().equalsIgnoreCase("world_free")) {
                         player.sendMessage(prefix.append(Component.text("Claiming is not allowed in this world!", NamedTextColor.RED)));
@@ -86,7 +87,7 @@ public class ClaimCommands {
                 }));
         manager.command(claimMain.literal("customheight")
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     if(ClaimUtils.customClaimHeight.contains(player.getUniqueId())) {
                         ClaimUtils.customClaimHeight.remove(player.getUniqueId());
                         player.sendMessage(prefix.append(Component.text("Custom height claiming disabled!", NamedTextColor.RED)));
@@ -97,7 +98,7 @@ public class ClaimCommands {
                 }));
         manager.command(claimMain.literal("customshape")
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     com.sk89q.worldedit.entity.Player bPlayer = BukkitAdapter.adapt(player);
                     LocalSession session = WorldEdit.getInstance().getSessionManager().get(bPlayer);
                     final RegionSelector newSelector;
@@ -113,10 +114,10 @@ public class ClaimCommands {
                     }
                     session.setRegionSelector(bPlayer.getWorld(), newSelector);
                 }));
-        Command.Builder<CommandSender> claimDelete = claimMain.literal("delete")
+        Command.Builder<CommandSourceStack> claimDelete = claimMain.literal("delete")
                 .required("name", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String claimName = c.get("name");
                     deleteClaim(player, player.getUniqueId(), claimName, claim);
                 });
@@ -125,7 +126,7 @@ public class ClaimCommands {
                 .permission("skyprisoncore.command.claim.admin")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String claimName = c.get("name");
                     String targetPlayer = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(targetPlayer);
@@ -139,21 +140,21 @@ public class ClaimCommands {
 
         manager.command(claimMain.literal("wand")
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     Bukkit.getScheduler().runTask(plugin, () -> player.performCommand("/wand"));
                 }));
 
         // Claim Infos
 
-        Command.Builder<CommandSender> list = claimMain.literal("list")
+        Command.Builder<CommandSourceStack> list = claimMain.literal("list")
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     claim.claimList(player, player.getUniqueId(), 1);
                 });
         manager.command(list);
-        Command.Builder<CommandSender> listPage = list.required("page", integerParser(1))
+        Command.Builder<CommandSourceStack> listPage = list.required("page", integerParser(1))
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     int page = c.get("page");
                     claim.claimList(player, player.getUniqueId(), page);
                 });
@@ -165,22 +166,22 @@ public class ClaimCommands {
                     String target = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(target);
                     if(targetId == null) {
-                        c.sender().sendMessage(prefix.append(Component.text("Player not found!", NamedTextColor.RED)));
+                        c.sender().getSender().sendMessage(prefix.append(Component.text("Player not found!", NamedTextColor.RED)));
                         return;
                     }
-                    claim.claimList(c.sender(), targetId, page);
+                    claim.claimList(c.sender().getSender(), targetId, page);
                 }));
         manager.command(listPage.literal("all")
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
                     int page = c.get("page");
-                    claim.claimListAll(c.sender(), page);
+                    claim.claimListAll(c.sender().getSender(), page);
                 }));
 
 
-        Command.Builder<CommandSender> info = claimMain.literal("info")
+        Command.Builder<CommandSourceStack> info = claimMain.literal("info")
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     List<ClaimData> claimsAtLoc = claim.getClaimsFromloc(player.getLocation(), player);
                     if(claimsAtLoc.isEmpty()) {
                         player.sendMessage(notFound);
@@ -194,9 +195,9 @@ public class ClaimCommands {
                     }
                 });
         manager.command(info);
-        Command.Builder<CommandSender> infoSpecific = info.required("claim", stringParser())
+        Command.Builder<CommandSourceStack> infoSpecific = info.required("claim", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String claimName = c.get("claim");
                     List<ClaimData> claims = claim.getPlayerClaims(player.getUniqueId(), claimName, Arrays.asList("owner", "co-owner", "member"));
                     if(claims.isEmpty()) {
@@ -213,12 +214,12 @@ public class ClaimCommands {
         manager.command(infoSpecific.required("player", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     UUID targetId = PlayerManager.getPlayerId(target);
                     if(targetId == null) {
-                        c.sender().sendMessage(prefix.append(Component.text("Player not found!", NamedTextColor.RED)));
+                        c.sender().getSender().sendMessage(prefix.append(Component.text("Player not found!", NamedTextColor.RED)));
                         return;
                     }
                     List<ClaimData> claims = claim.getPlayerClaims(targetId, claimName, Arrays.asList("owner", "co-owner", "member"));
@@ -236,7 +237,7 @@ public class ClaimCommands {
                 .required("radius", integerParser(1))
                 .handler(c -> {
                     int radius = c.get("radius");
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     if(radius > 200 && !claim.hasPerm(player)) {
                         player.sendMessage(prefix.append(Component.text("Incorrect Usage! Max radius is 200 blocks.", NamedTextColor.RED)));
                         return;
@@ -261,10 +262,10 @@ public class ClaimCommands {
                 }));
 
         // Claim User Management
-        Command.Builder<CommandSender> invite = claimMain.literal("invite")
+        Command.Builder<CommandSourceStack> invite = claimMain.literal("invite")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(target);
                     if(targetId == null) {
@@ -275,9 +276,9 @@ public class ClaimCommands {
                     invitePlayer(player, targetId, claims, claim);
                 });
         manager.command(invite);
-        Command.Builder<CommandSender> inviteClaim = invite.required("claim", stringParser())
+        Command.Builder<CommandSourceStack> inviteClaim = invite.required("claim", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     UUID targetId = PlayerManager.getPlayerId(target);
@@ -292,7 +293,7 @@ public class ClaimCommands {
         manager.command(inviteClaim.required("target", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     String targetPlayer = c.get("target");
@@ -312,10 +313,10 @@ public class ClaimCommands {
 
 
 
-        Command.Builder<CommandSender> kick = claimMain.literal("kick")
+        Command.Builder<CommandSourceStack> kick = claimMain.literal("kick")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(target);
                     if(targetId == null) {
@@ -326,9 +327,9 @@ public class ClaimCommands {
                     kickPlayer(player, targetId, claims, claim);
                 });
         manager.command(kick);
-        Command.Builder<CommandSender> kickClaim = kick.required("claim", stringParser())
+        Command.Builder<CommandSourceStack> kickClaim = kick.required("claim", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     UUID targetId = PlayerManager.getPlayerId(target);
@@ -343,7 +344,7 @@ public class ClaimCommands {
         manager.command(kickClaim.required("target", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     String targetPlayer = c.get("target");
@@ -362,10 +363,10 @@ public class ClaimCommands {
                 }));
 
 
-        Command.Builder<CommandSender> promote = claimMain.literal("promote")
+        Command.Builder<CommandSourceStack> promote = claimMain.literal("promote")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(target);
                     if(targetId == null) {
@@ -376,9 +377,9 @@ public class ClaimCommands {
                     promotePlayer(player, targetId, claims, claim);
                 });
         manager.command(promote);
-        Command.Builder<CommandSender> promoteClaim = promote.required("claim", stringParser())
+        Command.Builder<CommandSourceStack> promoteClaim = promote.required("claim", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     UUID targetId = PlayerManager.getPlayerId(target);
@@ -393,7 +394,7 @@ public class ClaimCommands {
         manager.command(promoteClaim.required("target", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     String targetPlayer = c.get("target");
@@ -412,10 +413,10 @@ public class ClaimCommands {
                 }));
 
 
-        Command.Builder<CommandSender> demote = claimMain.literal("demote")
+        Command.Builder<CommandSourceStack> demote = claimMain.literal("demote")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(target);
                     if(targetId == null) {
@@ -426,9 +427,9 @@ public class ClaimCommands {
                     demotePlayer(player, targetId, claims, claim);
                 });
         manager.command(demote);
-        Command.Builder<CommandSender> demoteClaim = demote.required("claim", stringParser())
+        Command.Builder<CommandSourceStack> demoteClaim = demote.required("claim", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     UUID targetId = PlayerManager.getPlayerId(target);
@@ -443,7 +444,7 @@ public class ClaimCommands {
         manager.command(demoteClaim.required("target", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     String targetPlayer = c.get("target");
@@ -462,9 +463,9 @@ public class ClaimCommands {
                 }));
 
 
-        Command.Builder<CommandSender> pending = claimMain.literal("pending")
+        Command.Builder<CommandSourceStack> pending = claimMain.literal("pending")
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     List<ClaimData> claims = claim.getPlayerClaims(player.getUniqueId(), Arrays.asList("owner", "co-owner"));
                     pendingData(player, claims, claim);
                 });
@@ -472,13 +473,13 @@ public class ClaimCommands {
         manager.command(pending.literal("all")
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new ClaimPending(plugin, claim.getAllClaims()).getInventory()));
                 }));
         manager.command(pending.required("player", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(target);
                     if(targetId == null) {
@@ -490,9 +491,9 @@ public class ClaimCommands {
                 }));
         // Claim Management
 
-        Command.Builder<CommandSender> flags = claimMain.literal("flags", "flag")
+        Command.Builder<CommandSourceStack> flags = claimMain.literal("flags", "flag")
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     List<ClaimData> claims = claim.getClaimsFromloc(player.getLocation(), player);
                     if (claims.size() == 1) {
                         claim.claimFlags(player, player.getUniqueId(), claims.getFirst());
@@ -501,9 +502,9 @@ public class ClaimCommands {
                     }
                 });
         manager.command(flags);
-        Command.Builder<CommandSender> flagsClaim = flags.required("claim", stringParser())
+        Command.Builder<CommandSourceStack> flagsClaim = flags.required("claim", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String claimName = c.get("claim");
                     List<ClaimData> claims = claim.getPlayerClaims(player.getUniqueId(), claimName, Arrays.asList("owner", "co-owner", "member"));
                     if(claims.isEmpty()) {
@@ -520,7 +521,7 @@ public class ClaimCommands {
         manager.command(flagsClaim.required("target", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String claimName = c.get("claim");
                     String targetPlayer = c.get("target");
                     UUID targetPlayerId = PlayerManager.getPlayerId(targetPlayer);
@@ -544,7 +545,7 @@ public class ClaimCommands {
                 .required("amount", integerParser(1))
                 .handler(c -> {
                     int amount = c.get("amount");
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     List<ClaimData> claims = claim.getClaimsFromloc(player.getLocation(), player);
 
                     claims = claims.stream().filter(claimData -> {
@@ -564,11 +565,11 @@ public class ClaimCommands {
                     }
                 }));
 
-        Command.Builder<CommandSender> rename = claimMain.literal("rename")
+        Command.Builder<CommandSourceStack> rename = claimMain.literal("rename")
                 .required("claim", stringParser())
                 .required("new name", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String claimName = c.get("claim");
                     String newName = c.get("new name");
                     updateName(player, player.getUniqueId(), claimName, newName, claim);
@@ -577,7 +578,7 @@ public class ClaimCommands {
         manager.command(rename.required("target", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String claimName = c.get("claim");
                     String newName = c.get("new name");
                     String targetPlayer = c.get("target");
@@ -590,10 +591,10 @@ public class ClaimCommands {
                 }));
 
 
-        Command.Builder<CommandSender> transfer = claimMain.literal("transfer")
+        Command.Builder<CommandSourceStack> transfer = claimMain.literal("transfer")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(target);
                     if(targetId == null) {
@@ -613,9 +614,9 @@ public class ClaimCommands {
                     transferClaim(player, targetId, parentClaim, claim);
                 });
         manager.command(transfer);
-        Command.Builder<CommandSender> transferClaim = transfer.required("claim", stringParser())
+        Command.Builder<CommandSourceStack> transferClaim = transfer.required("claim", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     UUID targetId = PlayerManager.getPlayerId(target);
@@ -634,7 +635,7 @@ public class ClaimCommands {
         manager.command(transferClaim.required("target", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     String targetPlayer = c.get("target");
@@ -658,7 +659,7 @@ public class ClaimCommands {
 
         // Claim Blocks
 
-        Command.Builder<CommandSender> claimBlocks = claimMain.literal("blocks")
+        Command.Builder<CommandSourceStack> claimBlocks = claimMain.literal("blocks")
                 .handler(c -> {
 
                 });
@@ -666,7 +667,7 @@ public class ClaimCommands {
         manager.command(claimBlocks.literal("buy")
                 .required("amount", longParser(1))
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     long blocks = c.get("amount");
                     double price = 40 * blocks;
                     if(PlayerManager.getBalance(player) < price) {
@@ -692,7 +693,7 @@ public class ClaimCommands {
                 .required("player", stringParser())
                 .required("amount", longParser(1))
                 .handler(c -> {
-                    CommandSender sender = c.sender();
+                    CommandSender sender = c.sender().getSender();
                     String target = c.get("player");
                     long blocks = c.get("amount");
                     UUID targetId = PlayerManager.getPlayerId(target);
@@ -724,7 +725,7 @@ public class ClaimCommands {
                 .required("player", stringParser())
                 .required("amount", longParser(0))
                 .handler(c -> {
-                    CommandSender sender = c.sender();
+                    CommandSender sender = c.sender().getSender();
                     long blocks = c.get("amount");
                     String target = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(target);
@@ -760,7 +761,7 @@ public class ClaimCommands {
                 .required("player", stringParser())
                 .required("amount", longParser(1))
                 .handler(c -> {
-                    CommandSender sender = c.sender();
+                    CommandSender sender = c.sender().getSender();
                     long blocks = c.get("amount");
                     String target = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(target);
@@ -796,7 +797,7 @@ public class ClaimCommands {
                 .required("type", stringParser())
                 .required("id", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String type = c.get("type");
                     String id = c.get("id");
                     String claimId = NotificationsUtils.hasNotification(id, player);
@@ -812,7 +813,7 @@ public class ClaimCommands {
                 .required("type", stringParser())
                 .required("id", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String type = c.get("type");
                     String id = c.get("id");
                     String claimId = NotificationsUtils.hasNotification(id, player);

@@ -1,5 +1,6 @@
 package net.skyprison.skyprisoncore.commands;
 
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -9,7 +10,6 @@ import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -24,16 +24,15 @@ import static org.incendo.cloud.parser.standard.IntegerParser.integerParser;
 
 public class BottledExpCommands {
     private final SkyPrisonCore plugin;
-    private final PaperCommandManager<CommandSender> manager;
+    private final PaperCommandManager<CommandSourceStack> manager;
 
-    public BottledExpCommands(SkyPrisonCore plugin, PaperCommandManager<CommandSender> manager) {
+    public BottledExpCommands(SkyPrisonCore plugin, PaperCommandManager<CommandSourceStack> manager) {
         this.plugin = plugin;
         this.manager = manager;
         createBottledExpCommands();
     }
     private void createBottledExpCommands() {
-        Command.Builder<Player> xpb = manager.commandBuilder("bottledexp", "xpb")
-                .senderType(Player.class)
+        Command.Builder<CommandSourceStack> xpb = manager.commandBuilder("bottledexp", "xpb")
                 .permission("skyprisoncore.command.bottledexp")
                 .required("amount", integerParser(1));;
 
@@ -45,7 +44,7 @@ public class BottledExpCommands {
                     int amount = c.get("amount");
                     int bottles = c.get("bottles");
                     int tAmount = amount * bottles;
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     boolean canWithdraw = canPlayerWithdraw(player, tAmount);
                     if(canWithdraw) {
                         if (getTotalExperience(player) >= tAmount) {
@@ -66,9 +65,8 @@ public class BottledExpCommands {
         manager.command(manager.commandBuilder("bottledexp", "xpb")
                 .permission("skyprisoncore.command.bottledexp.tier2")
                 .literal("all")
-                .senderType(Player.class)
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     int amount = getTotalExperience(player);
                     if(amount == 0) {
                         player.sendMessage(Component.text("You do not have any experience to bottle!", NamedTextColor.RED));

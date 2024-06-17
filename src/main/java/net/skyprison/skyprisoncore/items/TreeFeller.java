@@ -60,10 +60,10 @@ public class TreeFeller {
         switch (Objects.requireNonNull(type)) {
             case "speed" -> {
                 int enchLvl = 1;
-                if(axe.hasEnchant(Enchantment.DIG_SPEED)) {
-                    enchLvl += axe.getEnchantLevel(Enchantment.DIG_SPEED);
+                if(axe.hasEnchant(Enchantment.EFFICIENCY)) {
+                    enchLvl += axe.getEnchantLevel(Enchantment.EFFICIENCY);
                 }
-                axe.addEnchant(Enchantment.DIG_SPEED, enchLvl, false);
+                axe.addEnchant(Enchantment.EFFICIENCY, enchLvl, false);
             }
             case "cooldown" -> {
                 ItemMeta meta = axe.getItemMeta();
@@ -79,10 +79,10 @@ public class TreeFeller {
             }
             case "durability" -> {
                 int enchLvl = 1;
-                if(axe.hasEnchant(Enchantment.DURABILITY)) {
-                    enchLvl += axe.getEnchantLevel(Enchantment.DURABILITY);
+                if(axe.hasEnchant(Enchantment.UNBREAKING)) {
+                    enchLvl += axe.getEnchantLevel(Enchantment.UNBREAKING);
                 }
-                axe.addEnchant(Enchantment.DURABILITY, enchLvl, false);
+                axe.addEnchant(Enchantment.UNBREAKING, enchLvl, false);
             }
             case "repair" -> axe.setDamage(0);
         }

@@ -32,7 +32,7 @@ public class Vouchers {
         ArrayList<Component> lore = new ArrayList<>();
         lore.add(Component.text("Can be used instead of tokens to buy", NamedTextColor.GRAY));
         lore.add(Component.text("items & perks from the Token Shop.", NamedTextColor.GRAY));
-        vMeta.addEnchant(Enchantment.PROTECTION_FALL, 1, true);
+        vMeta.addEnchant(Enchantment.FEATHER_FALLING, 1, true);
         vMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         vMeta.lore(lore);
         PersistentDataContainer vouchData = vMeta.getPersistentDataContainer();
@@ -48,7 +48,7 @@ public class Vouchers {
         ArrayList<Component> lore = new ArrayList<>();
         lore.add(Component.text("Use on a cooldown Mine Reset", NamedTextColor.GRAY));
         lore.add(Component.text("sign to instantly reset the mine.", NamedTextColor.GRAY));
-        vMeta.addEnchant(Enchantment.PROTECTION_FALL, 1, true);
+        vMeta.addEnchant(Enchantment.FEATHER_FALLING, 1, true);
         vMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         vMeta.lore(lore);
         PersistentDataContainer vouchData = vMeta.getPersistentDataContainer();
@@ -63,7 +63,7 @@ public class Vouchers {
         vMeta.displayName(Component.text( "Single-Use Enderchest", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
         ArrayList<Component> lore = new ArrayList<>();
         lore.add(Component.text("Right click to open your ender chest!", NamedTextColor.GRAY));
-        vMeta.addEnchant(Enchantment.PROTECTION_FALL, 1, true);
+        vMeta.addEnchant(Enchantment.FEATHER_FALLING, 1, true);
         vMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         vMeta.lore(lore);
         PersistentDataContainer vouchData = vMeta.getPersistentDataContainer();

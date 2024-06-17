@@ -1,5 +1,6 @@
 package net.skyprison.skyprisoncore.commands;
 
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -31,8 +32,8 @@ import static org.incendo.cloud.parser.standard.StringParser.stringParser;
 
 public class StoreCommands {
     private final DatabaseHook db;
-    private final PaperCommandManager<CommandSender> manager;
-    public StoreCommands(DatabaseHook db, PaperCommandManager<CommandSender> manager) {
+    private final PaperCommandManager<CommandSourceStack> manager;
+    public StoreCommands(DatabaseHook db, PaperCommandManager<CommandSourceStack> manager) {
         this.db = db;
         this.manager = manager;
         createStoreCommands();
@@ -86,9 +87,8 @@ public class StoreCommands {
                 }));
         manager.command(manager.commandBuilder("purchases")
                 .permission("skyprisoncore.command.purchases")
-                .senderType(Player.class)
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     getPurchases(player, player.getUniqueId(), 1);
                 }));
         manager.command(manager.commandBuilder("purchases")
@@ -97,7 +97,7 @@ public class StoreCommands {
                 .handler(c -> {
                     UUID pUUID = getPlayerId(c.get("player"));
                     if(pUUID != null) {
-                        getPurchases(c.sender(), pUUID, 1);
+                        getPurchases(c.sender().getSender(), pUUID, 1);
                     }
                 }));
     }

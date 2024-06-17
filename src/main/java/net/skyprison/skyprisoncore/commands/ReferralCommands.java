@@ -1,5 +1,6 @@
 package net.skyprison.skyprisoncore.commands;
 
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
@@ -8,7 +9,6 @@ import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import net.skyprison.skyprisoncore.utils.TokenUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.incendo.cloud.Command;
 import org.incendo.cloud.paper.PaperCommandManager;
@@ -25,25 +25,24 @@ import static org.incendo.cloud.parser.standard.StringParser.stringParser;
 public class ReferralCommands {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
-    private final PaperCommandManager<CommandSender> manager;
-    public ReferralCommands(SkyPrisonCore plugin, DatabaseHook db, PaperCommandManager<CommandSender> manager) {
+    private final PaperCommandManager<CommandSourceStack> manager;
+    public ReferralCommands(SkyPrisonCore plugin, DatabaseHook db, PaperCommandManager<CommandSourceStack> manager) {
         this.plugin = plugin;
         this.db = db;
         this.manager = manager;
         createReferralCommands();
     }
     private void createReferralCommands() {
-        Command.Builder<Player> referral = manager.commandBuilder("referral", "ref", "refer")
-                .senderType(Player.class)
+        Command.Builder<CommandSourceStack> referral = manager.commandBuilder("referral", "ref", "refer")
                 .permission("skyprisoncore.command.referral")
-                .handler(c -> c.sender().sendMessage(Component.text("If a player referred you to our server, you can do \n/referral <player> to give them some tokens!", NamedTextColor.GREEN)));
+                .handler(c -> c.sender().getSender().sendMessage(Component.text("If a player referred you to our server, you can do \n/referral <player> to give them some tokens!", NamedTextColor.GREEN)));
 
         manager.command(referral);
 
         manager.command(referral
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String targetName = c.get("player");
                     UUID tUUID = PlayerManager.getPlayerId(targetName);
                     if(tUUID == null) {
@@ -105,11 +104,11 @@ public class ReferralCommands {
                 }));
 
         manager.command(referral.literal("help")
-                .handler(c -> c.sender().sendMessage(Component.text("If a player referred you to our server, you can do \n/referral <player> to give them some tokens!", NamedTextColor.GREEN))));
+                .handler(c -> c.sender().getSender().sendMessage(Component.text("If a player referred you to our server, you can do \n/referral <player> to give them some tokens!", NamedTextColor.GREEN))));
 
         manager.command(referral.literal("history", "list")
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new Referral(plugin, db, player.getUniqueId()).getInventory()));
                 }));
 
@@ -117,7 +116,7 @@ public class ReferralCommands {
                 .permission("skyprisoncore.command.referral.history.others")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = c.sender();
+                    Player player = (Player) c.sender().getSender();
                     String targetName = c.get("player");
                     UUID tUUID = PlayerManager.getPlayerId(targetName);
                     if (tUUID == null) {

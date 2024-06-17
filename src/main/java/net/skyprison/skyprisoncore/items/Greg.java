@@ -47,7 +47,7 @@ public class Greg {
         lore.add(Component.text("~Signed, The Warden", NamedTextColor.GRAY));
         lore.add(Component.text("                  ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
         lore.add(Component.text("Give this to the jailor to get out of jail.", NamedTextColor.GRAY));
-        vMeta.addEnchant(Enchantment.PROTECTION_FALL, 1, true);
+        vMeta.addEnchant(Enchantment.FEATHER_FALLING, 1, true);
         vMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         vMeta.lore(lore);
         PersistentDataContainer vouchData = vMeta.getPersistentDataContainer();
@@ -65,7 +65,7 @@ public class Greg {
         lore.add(Component.text("Signed, Wardenn", NamedTextColor.GRAY));
         lore.add(Component.text("                  ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH));
         lore.add(Component.text("Give this to the jailor to get out of jail.", NamedTextColor.GRAY));
-        vMeta.addEnchant(Enchantment.PROTECTION_FALL, 1, true);
+        vMeta.addEnchant(Enchantment.FEATHER_FALLING, 1, true);
         vMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         vMeta.lore(lore);
         PersistentDataContainer vouchData = vMeta.getPersistentDataContainer();
@@ -83,7 +83,7 @@ public class Greg {
         lore.add(Component.text("enchant table to make it work properly.", NamedTextColor.GRAY));
         lore.add(Component.empty());
         lore.add(Component.text("I don't think I should ask where he got it from.", NamedTextColor.DARK_GRAY));
-        vMeta.addEnchant(Enchantment.PROTECTION_FALL, 1, true);
+        vMeta.addEnchant(Enchantment.FEATHER_FALLING, 1, true);
         vMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         vMeta.lore(lore);
         PersistentDataContainer vouchData = vMeta.getPersistentDataContainer();
@@ -98,7 +98,7 @@ public class Greg {
         vMeta.displayName(Component.text( "Allay Dust", TextColor.fromHexString("#2DD4DC"), TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
         ArrayList<Component> lore = new ArrayList<>();
         lore.add(Component.text("Ecologically Sourced Allay Powder", NamedTextColor.GRAY));
-        vMeta.addEnchant(Enchantment.PROTECTION_FALL, 1, true);
+        vMeta.addEnchant(Enchantment.FEATHER_FALLING, 1, true);
         vMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         vMeta.lore(lore);
         PersistentDataContainer vouchData = vMeta.getPersistentDataContainer();
