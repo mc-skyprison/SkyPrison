@@ -10,6 +10,7 @@ import net.skyprison.skyprisoncore.inventories.secrets.SecretsEdit;
 import net.skyprison.skyprisoncore.inventories.secrets.SecretsHistory;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.incendo.cloud.Command;
 import org.incendo.cloud.paper.PaperCommandManager;
@@ -40,7 +41,11 @@ public class SecretsCommands {
         manager.command(secrets.literal("history")
                 .permission("skyprisoncore.command.secrets.history")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new SecretsHistory(plugin, db, player.getUniqueId()).getInventory()));
                 }));
 
@@ -48,7 +53,11 @@ public class SecretsCommands {
                 .permission("skyprisoncore.command.secrets.history.others")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     UUID pUUID = PlayerManager.getPlayerId(c.get("player"));
                     if(pUUID != null) {
                         Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new SecretsHistory(plugin, db, pUUID).getInventory()));
@@ -62,14 +71,22 @@ public class SecretsCommands {
         manager.command(secretsCreate.literal("secret")
                 .permission("skyprisoncore.command.secrets.create.secret")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new SecretsEdit(plugin, db, player.getUniqueId(), -1).getInventory()));
                 }));
 
         manager.command(secretsCreate.literal("category")
                 .permission("skyprisoncore.command.secrets.create.category")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new SecretsCategoryEdit(plugin, db, player.getUniqueId(), null).getInventory()));
                 }));
     }

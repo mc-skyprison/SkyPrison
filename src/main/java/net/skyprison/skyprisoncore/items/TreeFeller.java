@@ -36,7 +36,7 @@ public class TreeFeller {
     }
 
     public static ItemStack getUpgradedAxe(SkyPrisonCore plugin, ItemStack left, ItemStack right) {
-        PersistentDataContainer leftPers = left.getPersistentDataContainer();
+        PersistentDataContainer leftPers = left.getItemMeta().getPersistentDataContainer();
         ItemStack axe;
         ItemStack upgradeItem;
 
@@ -55,7 +55,7 @@ public class TreeFeller {
         }
 
         NamespacedKey treefellerCooldownKey = new NamespacedKey(plugin, "treefeller-cooldown");
-        PersistentDataContainer upgradePers = upgradeItem.getPersistentDataContainer();
+        PersistentDataContainer upgradePers = upgradeItem.getItemMeta().getPersistentDataContainer();
         String type = upgradePers.get(upgradeKey, PersistentDataType.STRING);
         switch (Objects.requireNonNull(type)) {
             case "speed" -> {

@@ -88,7 +88,11 @@ public class StoreCommands {
         manager.command(manager.commandBuilder("purchases")
                 .permission("skyprisoncore.command.purchases")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     getPurchases(player, player.getUniqueId(), 1);
                 }));
         manager.command(manager.commandBuilder("purchases")

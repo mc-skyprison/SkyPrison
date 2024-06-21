@@ -30,8 +30,6 @@ import org.incendo.cloud.component.DefaultValue;
 import org.incendo.cloud.paper.PaperCommandManager;
 import org.incendo.cloud.suggestion.SuggestionProvider;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -63,24 +61,26 @@ public class EconomyCommands {
         createMiscCommands();
         createTokenCommands();
     }
-    public static double round(double value, int places) {
-        if (places < 0) throw new IllegalArgumentException();
 
-        BigDecimal bd = BigDecimal.valueOf(value);
-        bd = bd.setScale(places, RoundingMode.HALF_UP);
-        return bd.doubleValue();
-    }
     private void createMiscCommands() {
         manager.command(manager.commandBuilder("daily")
                 .permission("skyprisoncore.command.daily")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new Daily(db, player).getInventory()));
                 }));
         manager.command(manager.commandBuilder("buyback")
                 .permission("skyprisoncore.command.buyback")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new BuyBack(plugin, db, player).getInventory()));
                 }));
 
@@ -178,7 +178,11 @@ public class EconomyCommands {
 
         manager.command(dontSell.literal("list")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     List<String> blockedSales = getDontSells(player);
                     if(!blockedSales.isEmpty()) {
                         Component blockMsg = Component.text("---=== ", NamedTextColor.AQUA).append(Component.text("Blocked Items", NamedTextColor.RED, TextDecoration.BOLD))
@@ -194,7 +198,11 @@ public class EconomyCommands {
 
         manager.command(dontSell.optional("item", materialParser(), DefaultValue.constant(Material.AIR))
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     Material item = c.get("item");
                     Material blockItem = player.getInventory().getItemInMainHand().getType();
                     if(!item.isAir()) blockItem = item;
@@ -252,7 +260,11 @@ public class EconomyCommands {
                 .permission("skyprisoncore.command.econcheck")
                 .optional("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String targetName = c.getOrDefault("player", null);
 
                     if(targetName != null) {
@@ -274,7 +286,11 @@ public class EconomyCommands {
         Command.Builder<CommandSourceStack> mHistory = manager.commandBuilder("moneyhistory", "mhistory")
                 .permission("skyprisoncore.command.moneyhistory")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new MoneyHistory(plugin, db, player.getUniqueId().toString()).getInventory()));
                 });
         manager.command(mHistory);
@@ -282,7 +298,11 @@ public class EconomyCommands {
                 .permission("skyprisoncore.command.moneyhistory.others")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     UUID pUUID = PlayerManager.getPlayerId(c.get("player"));
                     if(pUUID != null) {
                         Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new MoneyHistory(plugin, db, pUUID.toString()).getInventory()));
@@ -308,7 +328,11 @@ public class EconomyCommands {
 
         manager.command(shopBan.literal("list")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     List<String> bannedPlayers = getShopBanned(player);
                     if(bannedPlayers.isEmpty()) {
                         player.sendMessage(Component.text("You havn't banned anyone from your shops!", NamedTextColor.RED));
@@ -325,7 +349,11 @@ public class EconomyCommands {
         manager.command(shopBan.literal("add")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     List<String> bannedPlayers = getShopBanned(player);
                     UUID targetId = PlayerManager.getPlayerId(c.get("player"));
                     if(targetId == null) {
@@ -357,7 +385,11 @@ public class EconomyCommands {
         manager.command(shopBan.literal("remove")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     List<String> bannedPlayers = getShopBanned(player);
                     UUID targetId = PlayerManager.getPlayerId(c.get("player"));
                     if(targetId == null) {
@@ -389,7 +421,11 @@ public class EconomyCommands {
                 .handler(c -> Bukkit.getScheduler().runTask(plugin, () -> Bukkit.dispatchCommand(c.sender().getSender(), "lb tokens"))));
         Command<CommandSourceStack> tokenShop = tokensMain.literal("shop")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     boolean canEdit = player.hasPermission("skyprisoncore.inventories.tokenshop.editing");
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new DatabaseInventory(plugin, db, player, canEdit, "tokenshop").getInventory()));
                 }).build();
@@ -509,7 +545,11 @@ public class EconomyCommands {
                 .permission("skyprisoncore.command.tokens.admin")
                 .optional("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String targetName = c.getOrDefault("player", null);
 
                     if(targetName != null) {
@@ -527,7 +567,11 @@ public class EconomyCommands {
                 }));
         Command.Builder<CommandSourceStack> tokenHistory = tokensMain.literal("history")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new TokensHistory(plugin, db, player.getUniqueId().toString()).getInventory()));
                 });
         manager.command(tokenHistory);
@@ -535,7 +579,11 @@ public class EconomyCommands {
                 .permission("skyprisoncore.command.tokens.admin")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     UUID pUUID = PlayerManager.getPlayerId(c.get("player"));
                     if(pUUID != null) {
                         Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new TokensHistory(plugin, db, pUUID.toString()).getInventory()));
@@ -561,7 +609,11 @@ public class EconomyCommands {
                         c.sender().getSender().sendMessage(Component.text("Player doesn't exist!", NamedTextColor.RED));
                         return;
                     }
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
 
                     if(player.getUniqueId().equals(bountyTargetId)) {
                         player.sendMessage(Component.text("You can't put a bounty on yourself!", NamedTextColor.RED));
@@ -586,7 +638,7 @@ public class EconomyCommands {
 
                     double prize = c.get("amount");
 
-                    double bountyPrize = round(prize, 2);
+                    double bountyPrize = SkyPrisonCore.round(prize, 2);
                     if (PlayerManager.getBalance(player) < bountyPrize) {
                         player.sendMessage(Component.text("You do not have enough money..", NamedTextColor.RED));
                         return;
@@ -666,13 +718,21 @@ public class EconomyCommands {
 
         manager.command(bounty.literal("list")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new BountiesList(plugin, db).getInventory()));
                 }));
 
         manager.command(bounty.literal("mute")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     if(!player.hasPermission("skyprisoncore.command.bounty.silent")) {
                         Bukkit.getScheduler().runTask(plugin, () -> Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(),
                                 "lp user " + player.getName() + " permission set skyprisoncore.command.bounty.silent true"));

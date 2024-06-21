@@ -10,6 +10,7 @@ import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -44,7 +45,11 @@ public class BottledExpCommands {
                     int amount = c.get("amount");
                     int bottles = c.get("bottles");
                     int tAmount = amount * bottles;
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     boolean canWithdraw = canPlayerWithdraw(player, tAmount);
                     if(canWithdraw) {
                         if (getTotalExperience(player) >= tAmount) {
@@ -66,7 +71,11 @@ public class BottledExpCommands {
                 .permission("skyprisoncore.command.bottledexp.tier2")
                 .literal("all")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     int amount = getTotalExperience(player);
                     if(amount == 0) {
                         player.sendMessage(Component.text("You do not have any experience to bottle!", NamedTextColor.RED));

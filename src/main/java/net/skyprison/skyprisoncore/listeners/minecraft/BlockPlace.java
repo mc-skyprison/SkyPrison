@@ -63,7 +63,7 @@ public class BlockPlace implements Listener {
         ItemStack heldItem = event.getItemInHand();
         if(block.getState() instanceof Sign preSign && (MaterialSetTag.ITEMS_HANGING_SIGNS.isTagged(heldItem.getType()) || MaterialSetTag.STANDING_SIGNS.isTagged(heldItem.getType())) &&
         !heldItem.getPersistentDataContainer().isEmpty() && player.hasPermission("skyprisoncore.command.secrets.create.secret")) {
-            PersistentDataContainer itemPers = heldItem.getPersistentDataContainer();
+            PersistentDataContainer itemPers = heldItem.getItemMeta().getPersistentDataContainer();
             NamespacedKey key = new NamespacedKey(plugin, "secret-sign");
             if (itemPers.has(key, PersistentDataType.INTEGER)) {
                 int secretId = itemPers.getOrDefault(key, PersistentDataType.INTEGER, -1);
@@ -144,7 +144,7 @@ public class BlockPlace implements Listener {
                 }
             }
             if (item.hasItemMeta() && !item.getPersistentDataContainer().isEmpty()) {
-                PersistentDataContainer pers = item.getPersistentDataContainer();
+                PersistentDataContainer pers = item.getItemMeta().getPersistentDataContainer();
                 NamespacedKey bombKey = new NamespacedKey(plugin, "bomb-type");
                 NamespacedKey mailKey = new NamespacedKey(plugin, "mailbox");
                 if (pers.has(bombKey)) {

@@ -222,7 +222,7 @@ public class GrassBlacksmithUpgrade implements CustomInventory {
             upgradeItem = right.clone();
         }
 
-        PersistentDataContainer upgradePers = upgradeItem.getPersistentDataContainer();
+        PersistentDataContainer upgradePers = upgradeItem.getItemMeta().getPersistentDataContainer();
         String type = upgradePers.get(upgradeKey, PersistentDataType.STRING);
 
         switch (Objects.requireNonNull(type)) {

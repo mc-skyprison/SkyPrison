@@ -11,6 +11,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.incendo.cloud.Command;
 import org.incendo.cloud.paper.PaperCommandManager;
@@ -58,7 +59,11 @@ public class DiscordCommands {
         manager.command(discord.literal("link")
                 .permission("skyprisoncore.command.discord.link")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     long discordId = PlayerManager.getPlayerDiscord(player.getUniqueId());
 
                     if(discordId == 0) {
@@ -89,7 +94,11 @@ public class DiscordCommands {
         manager.command(discord.literal("unlink")
                 .permission("skyprisoncore.command.discord.unlink")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     long discordId = PlayerManager.getPlayerDiscord(player.getUniqueId());
 
                     if(discordId != 0) {

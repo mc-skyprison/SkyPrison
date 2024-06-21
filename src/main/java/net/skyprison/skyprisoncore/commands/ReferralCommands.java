@@ -9,6 +9,7 @@ import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.PlayerManager;
 import net.skyprison.skyprisoncore.utils.TokenUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.incendo.cloud.Command;
 import org.incendo.cloud.paper.PaperCommandManager;
@@ -42,7 +43,11 @@ public class ReferralCommands {
         manager.command(referral
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String targetName = c.get("player");
                     UUID tUUID = PlayerManager.getPlayerId(targetName);
                     if(tUUID == null) {
@@ -108,7 +113,11 @@ public class ReferralCommands {
 
         manager.command(referral.literal("history", "list")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new Referral(plugin, db, player.getUniqueId()).getInventory()));
                 }));
 
@@ -116,7 +125,11 @@ public class ReferralCommands {
                 .permission("skyprisoncore.command.referral.history.others")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String targetName = c.get("player");
                     UUID tUUID = PlayerManager.getPlayerId(targetName);
                     if (tUUID == null) {

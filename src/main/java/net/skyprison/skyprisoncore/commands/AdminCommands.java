@@ -64,7 +64,11 @@ public class AdminCommands {
         manager.command(manager.commandBuilder("itemlore", "ilore")
                 .permission("skyprisoncore.command.itemlore")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     new ItemLore(plugin).displayLore(player);
                 }));
 
@@ -73,7 +77,11 @@ public class AdminCommands {
 
         manager.command(rename.literal("remove")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     ItemStack heldItem = player.getInventory().getItemInMainHand();
                     if (!heldItem.getType().isItem()) {
                         player.sendMessage(Component.text("You're not holding an item!", NamedTextColor.RED));
@@ -89,7 +97,11 @@ public class AdminCommands {
                 }));
         manager.command(rename.required("name", greedyStringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     ItemStack heldItem = player.getInventory().getItemInMainHand();
                     if (!heldItem.getType().isItem()) {
                         player.sendMessage(Component.text("You're not holding an item!", NamedTextColor.RED));
@@ -125,7 +137,7 @@ public class AdminCommands {
 
                             ItemStack voucher = Arrays.stream(player.getInventory().getContents()).filter(item -> {
                                 if (item == null || !item.getType().equals(Material.PAPER)) return false;
-                                PersistentDataContainer itemPers = item.getPersistentDataContainer();
+                                PersistentDataContainer itemPers = item.getItemMeta().getPersistentDataContainer();
                                 return itemPers.has(key, PersistentDataType.STRING) && itemPers.get(key, PersistentDataType.STRING).equalsIgnoreCase("mine-reset");
                             }).findFirst().orElse(null);
 

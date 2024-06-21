@@ -16,7 +16,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.mariadb.jdbc.Statement;
-import su.nightexpress.excellentcrates.ExcellentCratesAPI;
+import su.nightexpress.excellentcrates.CratesAPI;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -107,7 +107,7 @@ public class Votifier implements Listener {
                     .append(Component.text("!", TextColor.fromHexString("#2db4e1"), TextDecoration.BOLD));
             receivers.sendMessage(partyMsg);
             if(player != null) player.sendMessage(partyMsg);
-            plugin.getServer().getOnlinePlayers().forEach(oPlayer -> ExcellentCratesAPI.getKeyManager().giveKey(oPlayer, ExcellentCratesAPI.getKeyManager().getKeyById("crate_vote"), 3));
+            plugin.getServer().getOnlinePlayers().forEach(oPlayer -> CratesAPI.getKeyManager().giveKey(oPlayer, CratesAPI.getKeyManager().getKeyById("crate_vote"), 3));
         }
     }
 }

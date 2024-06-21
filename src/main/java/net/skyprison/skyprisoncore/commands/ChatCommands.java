@@ -131,7 +131,11 @@ public class ChatCommands {
 
         Command.Builder<CommandSourceStack> remCol = nameColour.literal("remove")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     removeNameColour(player, player.getUniqueId(), false);
                 });
         manager.command(remCol);
@@ -185,7 +189,11 @@ public class ChatCommands {
                 .permission("skyprisoncore.command.ignore")
                 .optional("player", stringParser(), DefaultValue.constant(""))
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     if(target.isEmpty()) {
                         Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new Ignore(player).getInventory()));

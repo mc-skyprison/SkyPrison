@@ -154,7 +154,11 @@ public class JailCommands {
                         put("guard", "skyprisoncore.guard.guard");
                         put("trguard", "skyprisoncore.guard.trguard");
                     }};
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String action;
                     String messageAction;
 

@@ -654,7 +654,11 @@ public class SkyPrisonCore extends JavaPlugin {
         manager.command(manager.commandBuilder("enchtable", "ench", "enchanttable")
                 .permission("skyprisoncore.command.enchtable")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     Location loc;
                     String worldName = player.getWorld().getName();
 

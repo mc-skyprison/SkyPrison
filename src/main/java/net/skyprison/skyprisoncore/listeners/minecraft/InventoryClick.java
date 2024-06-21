@@ -321,7 +321,7 @@ public class InventoryClick implements Listener {
                         default -> {
                             if (!clickedMat.isEmpty() && clickedMat.equals(Material.WRITABLE_BOOK)) {
                                 NamespacedKey newsKey = new NamespacedKey(plugin, "news-message");
-                                PersistentDataContainer newsPersist = event.getCurrentItem().getPersistentDataContainer();
+                                PersistentDataContainer newsPersist = event.getCurrentItem().getItemMeta().getPersistentDataContainer();
                                 if (newsPersist.has(newsKey, PersistentDataType.INTEGER)) {
                                     int newsMessage = newsPersist.get(newsKey, PersistentDataType.INTEGER);
                                     if (event.isShiftClick() && player.hasPermission("skyprisoncore.command.news.edit")) {
@@ -1711,7 +1711,7 @@ public class InventoryClick implements Listener {
             case BuyBack inv -> {
                 if (currItem != null && Arrays.asList(11, 12, 13, 14, 15).contains(event.getSlot())) {
                     NamespacedKey key = new NamespacedKey(plugin, "sold-id");
-                    PersistentDataContainer soldData = currItem.getPersistentDataContainer();
+                    PersistentDataContainer soldData = currItem.getItemMeta().getPersistentDataContainer();
                     int itemId = soldData.getOrDefault(key, PersistentDataType.INTEGER, -1);
                     if (itemId == -1) return;
                     BuyBack.SoldItem itemData = inv.getSoldItem(itemId);

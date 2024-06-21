@@ -70,7 +70,11 @@ public class ClaimCommands {
         manager.command(claimMain.literal("create")
                 .required("name", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String claimName = c.get("name");
                     if (!player.getWorld().getName().equalsIgnoreCase("world_free")) {
                         player.sendMessage(prefix.append(Component.text("Claiming is not allowed in this world!", NamedTextColor.RED)));
@@ -87,7 +91,11 @@ public class ClaimCommands {
                 }));
         manager.command(claimMain.literal("customheight")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     if(ClaimUtils.customClaimHeight.contains(player.getUniqueId())) {
                         ClaimUtils.customClaimHeight.remove(player.getUniqueId());
                         player.sendMessage(prefix.append(Component.text("Custom height claiming disabled!", NamedTextColor.RED)));
@@ -98,7 +106,11 @@ public class ClaimCommands {
                 }));
         manager.command(claimMain.literal("customshape")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     com.sk89q.worldedit.entity.Player bPlayer = BukkitAdapter.adapt(player);
                     LocalSession session = WorldEdit.getInstance().getSessionManager().get(bPlayer);
                     final RegionSelector newSelector;
@@ -117,7 +129,11 @@ public class ClaimCommands {
         Command.Builder<CommandSourceStack> claimDelete = claimMain.literal("delete")
                 .required("name", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String claimName = c.get("name");
                     deleteClaim(player, player.getUniqueId(), claimName, claim);
                 });
@@ -126,7 +142,11 @@ public class ClaimCommands {
                 .permission("skyprisoncore.command.claim.admin")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String claimName = c.get("name");
                     String targetPlayer = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(targetPlayer);
@@ -140,7 +160,11 @@ public class ClaimCommands {
 
         manager.command(claimMain.literal("wand")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     Bukkit.getScheduler().runTask(plugin, () -> player.performCommand("/wand"));
                 }));
 
@@ -148,13 +172,21 @@ public class ClaimCommands {
 
         Command.Builder<CommandSourceStack> list = claimMain.literal("list")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     claim.claimList(player, player.getUniqueId(), 1);
                 });
         manager.command(list);
         Command.Builder<CommandSourceStack> listPage = list.required("page", integerParser(1))
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     int page = c.get("page");
                     claim.claimList(player, player.getUniqueId(), page);
                 });
@@ -181,7 +213,11 @@ public class ClaimCommands {
 
         Command.Builder<CommandSourceStack> info = claimMain.literal("info")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     List<ClaimData> claimsAtLoc = claim.getClaimsFromloc(player.getLocation(), player);
                     if(claimsAtLoc.isEmpty()) {
                         player.sendMessage(notFound);
@@ -197,7 +233,11 @@ public class ClaimCommands {
         manager.command(info);
         Command.Builder<CommandSourceStack> infoSpecific = info.required("claim", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String claimName = c.get("claim");
                     List<ClaimData> claims = claim.getPlayerClaims(player.getUniqueId(), claimName, Arrays.asList("owner", "co-owner", "member"));
                     if(claims.isEmpty()) {
@@ -214,7 +254,11 @@ public class ClaimCommands {
         manager.command(infoSpecific.required("player", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     UUID targetId = PlayerManager.getPlayerId(target);
@@ -237,7 +281,11 @@ public class ClaimCommands {
                 .required("radius", integerParser(1))
                 .handler(c -> {
                     int radius = c.get("radius");
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     if(radius > 200 && !claim.hasPerm(player)) {
                         player.sendMessage(prefix.append(Component.text("Incorrect Usage! Max radius is 200 blocks.", NamedTextColor.RED)));
                         return;
@@ -265,7 +313,11 @@ public class ClaimCommands {
         Command.Builder<CommandSourceStack> invite = claimMain.literal("invite")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(target);
                     if(targetId == null) {
@@ -278,7 +330,11 @@ public class ClaimCommands {
         manager.command(invite);
         Command.Builder<CommandSourceStack> inviteClaim = invite.required("claim", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     UUID targetId = PlayerManager.getPlayerId(target);
@@ -293,7 +349,11 @@ public class ClaimCommands {
         manager.command(inviteClaim.required("target", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     String targetPlayer = c.get("target");
@@ -316,7 +376,11 @@ public class ClaimCommands {
         Command.Builder<CommandSourceStack> kick = claimMain.literal("kick")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(target);
                     if(targetId == null) {
@@ -329,7 +393,11 @@ public class ClaimCommands {
         manager.command(kick);
         Command.Builder<CommandSourceStack> kickClaim = kick.required("claim", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     UUID targetId = PlayerManager.getPlayerId(target);
@@ -344,7 +412,11 @@ public class ClaimCommands {
         manager.command(kickClaim.required("target", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     String targetPlayer = c.get("target");
@@ -366,7 +438,11 @@ public class ClaimCommands {
         Command.Builder<CommandSourceStack> promote = claimMain.literal("promote")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(target);
                     if(targetId == null) {
@@ -379,7 +455,11 @@ public class ClaimCommands {
         manager.command(promote);
         Command.Builder<CommandSourceStack> promoteClaim = promote.required("claim", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     UUID targetId = PlayerManager.getPlayerId(target);
@@ -394,7 +474,11 @@ public class ClaimCommands {
         manager.command(promoteClaim.required("target", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     String targetPlayer = c.get("target");
@@ -416,7 +500,11 @@ public class ClaimCommands {
         Command.Builder<CommandSourceStack> demote = claimMain.literal("demote")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(target);
                     if(targetId == null) {
@@ -429,7 +517,11 @@ public class ClaimCommands {
         manager.command(demote);
         Command.Builder<CommandSourceStack> demoteClaim = demote.required("claim", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     UUID targetId = PlayerManager.getPlayerId(target);
@@ -444,7 +536,11 @@ public class ClaimCommands {
         manager.command(demoteClaim.required("target", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     String targetPlayer = c.get("target");
@@ -465,7 +561,11 @@ public class ClaimCommands {
 
         Command.Builder<CommandSourceStack> pending = claimMain.literal("pending")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     List<ClaimData> claims = claim.getPlayerClaims(player.getUniqueId(), Arrays.asList("owner", "co-owner"));
                     pendingData(player, claims, claim);
                 });
@@ -473,13 +573,21 @@ public class ClaimCommands {
         manager.command(pending.literal("all")
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(new ClaimPending(plugin, claim.getAllClaims()).getInventory()));
                 }));
         manager.command(pending.required("player", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(target);
                     if(targetId == null) {
@@ -493,7 +601,11 @@ public class ClaimCommands {
 
         Command.Builder<CommandSourceStack> flags = claimMain.literal("flags", "flag")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     List<ClaimData> claims = claim.getClaimsFromloc(player.getLocation(), player);
                     if (claims.size() == 1) {
                         claim.claimFlags(player, player.getUniqueId(), claims.getFirst());
@@ -504,7 +616,11 @@ public class ClaimCommands {
         manager.command(flags);
         Command.Builder<CommandSourceStack> flagsClaim = flags.required("claim", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String claimName = c.get("claim");
                     List<ClaimData> claims = claim.getPlayerClaims(player.getUniqueId(), claimName, Arrays.asList("owner", "co-owner", "member"));
                     if(claims.isEmpty()) {
@@ -521,7 +637,11 @@ public class ClaimCommands {
         manager.command(flagsClaim.required("target", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String claimName = c.get("claim");
                     String targetPlayer = c.get("target");
                     UUID targetPlayerId = PlayerManager.getPlayerId(targetPlayer);
@@ -545,7 +665,11 @@ public class ClaimCommands {
                 .required("amount", integerParser(1))
                 .handler(c -> {
                     int amount = c.get("amount");
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     List<ClaimData> claims = claim.getClaimsFromloc(player.getLocation(), player);
 
                     claims = claims.stream().filter(claimData -> {
@@ -569,7 +693,11 @@ public class ClaimCommands {
                 .required("claim", stringParser())
                 .required("new name", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String claimName = c.get("claim");
                     String newName = c.get("new name");
                     updateName(player, player.getUniqueId(), claimName, newName, claim);
@@ -578,7 +706,11 @@ public class ClaimCommands {
         manager.command(rename.required("target", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String claimName = c.get("claim");
                     String newName = c.get("new name");
                     String targetPlayer = c.get("target");
@@ -594,7 +726,11 @@ public class ClaimCommands {
         Command.Builder<CommandSourceStack> transfer = claimMain.literal("transfer")
                 .required("player", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     UUID targetId = PlayerManager.getPlayerId(target);
                     if(targetId == null) {
@@ -616,7 +752,11 @@ public class ClaimCommands {
         manager.command(transfer);
         Command.Builder<CommandSourceStack> transferClaim = transfer.required("claim", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     UUID targetId = PlayerManager.getPlayerId(target);
@@ -635,7 +775,11 @@ public class ClaimCommands {
         manager.command(transferClaim.required("target", stringParser())
                 .permission("skyprisoncore.command.claim.admin")
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String target = c.get("player");
                     String claimName = c.get("claim");
                     String targetPlayer = c.get("target");
@@ -667,7 +811,11 @@ public class ClaimCommands {
         manager.command(claimBlocks.literal("buy")
                 .required("amount", longParser(1))
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     long blocks = c.get("amount");
                     double price = 40 * blocks;
                     if(PlayerManager.getBalance(player) < price) {
@@ -797,7 +945,11 @@ public class ClaimCommands {
                 .required("type", stringParser())
                 .required("id", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String type = c.get("type");
                     String id = c.get("id");
                     String claimId = NotificationsUtils.hasNotification(id, player);
@@ -813,7 +965,11 @@ public class ClaimCommands {
                 .required("type", stringParser())
                 .required("id", stringParser())
                 .handler(c -> {
-                    Player player = (Player) c.sender().getSender();
+                    CommandSender sender = c.sender().getSender();
+                    if(!(sender instanceof Player player)) {
+                        sender.sendMessage(Component.text("You must be a player to use this command!", NamedTextColor.RED));
+                        return;
+                    }
                     String type = c.get("type");
                     String id = c.get("id");
                     String claimId = NotificationsUtils.hasNotification(id, player);
