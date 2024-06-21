@@ -14,7 +14,6 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.jetbrains.annotations.NotNull;
 
@@ -59,19 +58,15 @@ public class IgnoreEdit implements CustomInventory {
                 inventory.setItem(i, redPane);
             } else if (i == 31) {
                 ItemStack item = new ItemStack(Material.RED_CONCRETE);
-                ItemMeta itemMeta = item.getItemMeta();
-                itemMeta.displayName(Component.text("Unignore & remove " + targetName + " from /ignore", NamedTextColor.RED, TextDecoration.BOLD)
-                        .decoration(TextDecoration.ITALIC, false));
-                item.setItemMeta(itemMeta);
+                item.editMeta(meta -> meta.displayName(Component.text("Unignore & remove " + targetName + " from /ignore", NamedTextColor.RED, TextDecoration.BOLD)
+                        .decoration(TextDecoration.ITALIC, false)));
                 inventory.setItem(i, item);
             } else if (i < 8 || i > 27) {
                 inventory.setItem(i, blackPane);
             } else if (i == 27) {
                 HeadDatabaseAPI hAPI = new HeadDatabaseAPI();
                 ItemStack item = hAPI.getItemHead("10306");
-                ItemMeta itemMeta = item.getItemMeta();
-                itemMeta.displayName(Component.text("Back to Ignore List", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                item.setItemMeta(itemMeta);
+                item.editMeta(meta -> meta.displayName(Component.text("Back to Ignore List", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)));
                 inventory.setItem(i, item);
             }
         }

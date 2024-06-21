@@ -12,7 +12,6 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,23 +37,15 @@ public class NewsMessages implements CustomInventory {
 
         this.inventory = plugin.getServer().createInventory(this, 54, Component.text("News Messages", TextColor.fromHexString("#0fc3ff")));
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-        ItemMeta redMeta = redPane.getItemMeta();
-        redMeta.displayName(Component.text(" "));
-        redPane.setItemMeta(redMeta);
+        redPane.editMeta(meta -> meta.displayName(Component.empty()));
 
         ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta blackMeta = blackPane.getItemMeta();
-        blackMeta.displayName(Component.text(" "));
-        blackPane.setItemMeta(blackMeta);
+        blackPane.editMeta(meta -> meta.displayName(Component.empty()));
 
         ItemStack nextPage = new ItemStack(Material.PAPER);
-        ItemMeta nextMeta = nextPage.getItemMeta();
-        nextMeta.displayName(Component.text("Next Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
-        nextPage.setItemMeta(nextMeta);
+        nextPage.editMeta(meta -> meta.displayName(Component.text("Next Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)));
         ItemStack prevPage = new ItemStack(Material.PAPER);
-        ItemMeta prevMeta = prevPage.getItemMeta();
-        prevMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
-        prevPage.setItemMeta(prevMeta);
+        prevPage.editMeta(meta -> meta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)));
 
         HashMap<Integer, HashMap<String, Object>> messages = new HashMap<>();
 
@@ -95,9 +86,7 @@ public class NewsMessages implements CustomInventory {
         for(int i = 0; i < inventory.getSize();i++) {
             if(i == 49 && canEdit) {
                 ItemStack item = new ItemStack(Material.LIME_CONCRETE);
-                ItemMeta itemMeta = item.getItemMeta();
-                itemMeta.displayName(Component.text("Create News Message", NamedTextColor.GREEN, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
-                item.setItemMeta(itemMeta);
+                item.editMeta(meta -> meta.displayName(Component.text("Create News Message", NamedTextColor.GREEN, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false)));
                 inventory.setItem(i, item);
             } else if (i == 47 && page != 1) {
                 inventory.setItem(i, prevPage);
@@ -112,31 +101,29 @@ public class NewsMessages implements CustomInventory {
                     Integer newsMessage = newsIterator.next();
                     HashMap<String, Object> msgData = messages.get(newsMessage);
                     ItemStack item = new ItemStack(Material.WRITABLE_BOOK);
-                    ItemMeta itemMeta = item.getItemMeta();
-                    String title = (String) msgData.get("title");
-
-                    itemMeta.displayName(MiniMessage.miniMessage().deserialize(title).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
-                    List<Component> lore = new ArrayList<>();
-                    lore.add(Component.text("Click to show News Message", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                    if(canEdit) {
-                        lore.add(Component.empty());
-                        lore.add(Component.text("SHIFT CLICK TO EDIT", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
-                    }
-
-                    NamespacedKey key = new NamespacedKey(plugin, "news-message");
-                    itemMeta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, newsMessage);
-
-                    itemMeta.lore(lore);
-                    item.setItemMeta(itemMeta);
+                    item.editMeta(meta -> {
+                        meta.displayName(MiniMessage.miniMessage().deserialize((String) msgData.get("title")).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
+                        List<Component> lore = new ArrayList<>();
+                        lore.add(Component.text("Click to show News Message", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+                        if(canEdit) {
+                            lore.add(Component.empty());
+                            lore.add(Component.text("SHIFT CLICK TO EDIT", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                        }
+                        meta.lore(lore);
+                        NamespacedKey key = new NamespacedKey(plugin, "news-message");
+                        meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, newsMessage);
+                    });
                     inventory.setItem(i, item);
                 }
             }
         }
     }
+
     @Override
     public int page() {
         return this.page;
     }
+
     public boolean getCanEdit() {
         return this.canEdit;
     }

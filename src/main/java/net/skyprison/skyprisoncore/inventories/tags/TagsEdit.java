@@ -14,7 +14,6 @@ import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -84,27 +83,19 @@ public class TagsEdit implements CustomInventory {
             } else if (i == 18) {
                 HeadDatabaseAPI hAPI = new HeadDatabaseAPI();
                 ItemStack item = hAPI.getItemHead("10306");
-                ItemMeta itemMeta = item.getItemMeta();
-                itemMeta.displayName(Component.text("Back to Tags", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                item.setItemMeta(itemMeta);
+                item.editMeta(meta -> meta.displayName(Component.text("Back to Tags", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)));
                 inventory.setItem(i, item);
             } else if (i == 21) {
                 ItemStack item = new ItemStack(Material.RED_CONCRETE);
-                ItemMeta itemMeta = item.getItemMeta();
-                itemMeta.displayName(Component.text("Delete Tag", NamedTextColor.DARK_RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
-                item.setItemMeta(itemMeta);
+                item.editMeta(meta -> meta.displayName(Component.text("Delete Tag", NamedTextColor.DARK_RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false)));
                 inventory.setItem(i, item);
             } else if (i == 22) {
                 ItemStack item = new ItemStack(Material.GRAY_CONCRETE);
-                ItemMeta itemMeta = item.getItemMeta();
-                itemMeta.displayName(Component.text(isEdit ? "Discard Changes" : "Discard Tag", NamedTextColor.RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
-                item.setItemMeta(itemMeta);
+                item.editMeta(meta -> meta.displayName(Component.text(isEdit ? "Discard Changes" : "Discard Tag", NamedTextColor.RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false)));
                 inventory.setItem(i, item);
             } else if (i == 23) {
                 ItemStack item = new ItemStack(Material.LIME_CONCRETE);
-                ItemMeta itemMeta = item.getItemMeta();
-                itemMeta.displayName(Component.text(isEdit ? "Save Changes" : "Create Tag", NamedTextColor.GREEN, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
-                item.setItemMeta(itemMeta);
+                item.editMeta(meta -> meta.displayName(Component.text(isEdit ? "Save Changes" : "Create Tag", NamedTextColor.GREEN, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false)));
                 inventory.setItem(i, item);
             }
         }

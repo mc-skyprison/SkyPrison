@@ -75,7 +75,7 @@ public class MailBoxSend implements CustomInventory {
         if(canAfford()) {
             ItemStack send = new ItemStack(Material.WRITTEN_BOOK);
             send.editMeta(meta -> {
-                meta.addItemFlags(ItemFlag.HIDE_ITEM_SPECIFICS);
+                meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
                 meta.displayName(Component.text("Send Mail", NamedTextColor.GRAY, TextDecoration.BOLD)
                         .decoration(TextDecoration.ITALIC, false));
                 if (getCost() != 0) {
@@ -136,7 +136,7 @@ public class MailBoxSend implements CustomInventory {
                 case 14 -> {
                     ItemStack send = new ItemStack(Material.WRITTEN_BOOK);
                     send.editMeta(meta -> {
-                        meta.addItemFlags(ItemFlag.HIDE_ITEM_SPECIFICS);
+                        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
                         meta.displayName(Component.text("Send Mail", NamedTextColor.GRAY, TextDecoration.BOLD)
                                 .decoration(TextDecoration.ITALIC, false));
                     });

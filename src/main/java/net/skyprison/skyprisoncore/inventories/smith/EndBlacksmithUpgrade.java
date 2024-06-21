@@ -28,13 +28,16 @@ public class EndBlacksmithUpgrade implements CustomInventory {
     private final SkyPrisonCore plugin;
     private final Player player;
     private final Timer timer = new Timer();
+
     private ItemStack currLeft = new ItemStack(Material.AIR);
     private ItemStack currMiddle = new ItemStack(Material.AIR);
     private ItemStack currRight = new ItemStack(Material.AIR);
     private ItemStack currBookLeft = new ItemStack(Material.AIR);
     private ItemStack currBookRight = new ItemStack(Material.AIR);
+
     public final List<Material> diamondItems = new ArrayList<>(Arrays.asList(Material.DIAMOND_HELMET, Material.DIAMOND_CHESTPLATE, Material.DIAMOND_LEGGINGS, Material.DIAMOND_BLOCK,
             Material.DIAMOND_AXE, Material.DIAMOND_PICKAXE, Material.DIAMOND_SHOVEL, Material.DIAMOND_HOE));
+
     public void updateInventory() {
         ItemStack left = inventory.getItem(10);
         ItemStack middle = inventory.getItem(11);
@@ -91,16 +94,13 @@ public class EndBlacksmithUpgrade implements CustomInventory {
             }
         }
     }
+
     private void setColour(boolean left, boolean middle, boolean right, boolean bookLeft, boolean bookRight) {
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-        ItemMeta redMeta = redPane.getItemMeta();
-        redMeta.displayName(Component.empty());
-        redPane.setItemMeta(redMeta);
+        redPane.editMeta(meta -> meta.displayName(Component.empty()));
 
         ItemStack greenPane = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
-        ItemMeta greenMeta = greenPane.getItemMeta();
-        greenMeta.displayName(Component.empty());
-        greenPane.setItemMeta(greenMeta);
+        greenPane.editMeta(meta -> meta.displayName(Component.empty()));
 
         ItemStack leftItem = inventory.getItem(10);
         ItemStack middleItem = inventory.getItem(11);
@@ -196,18 +196,18 @@ public class EndBlacksmithUpgrade implements CustomInventory {
                 inventory.setItem(16, upgrade);
             } else {
                 ItemStack needMoney = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-                ItemMeta needMeta = needMoney.getItemMeta();
-                needMeta.displayName(Component.text("Not Enough Money", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(price), TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
-                        .decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Missing: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(hasMoney), NamedTextColor.RED, TextDecoration.BOLD))
-                        .decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("                  ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH).decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(PlayerManager.getBalance(player)), NamedTextColor.RED, TextDecoration.BOLD))
-                        .decoration(TextDecoration.ITALIC, false));
-                needMeta.lore(lore);
-                needMoney.setItemMeta(needMeta);
+                needMoney.editMeta(meta -> {
+                    meta.displayName(Component.text("Not Enough Money", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                    List<Component> lore = new ArrayList<>();
+                    lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(price),
+                            TextColor.fromHexString("#52fc28"), TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
+                    lore.add(Component.text("Missing: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(hasMoney),
+                            NamedTextColor.RED, TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
+                    lore.add(Component.text("                  ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH).decoration(TextDecoration.ITALIC, false));
+                    lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(PlayerManager.getBalance(player)),
+                            NamedTextColor.RED, TextDecoration.BOLD)).decoration(TextDecoration.ITALIC, false));
+                    meta.lore(lore);
+                });
                 inventory.setItem(16, needMoney);
             }
         } else {
@@ -215,27 +215,32 @@ public class EndBlacksmithUpgrade implements CustomInventory {
             setColour(false, false, false, false, false);
         }
     }
+
     private ItemStack getUpgradingItem(ItemStack... items) {
         return Arrays.stream(items)
                 .filter(item -> diamondItems.contains(item.getType()))
                 .findFirst()
                 .orElse(null);
     }
+
     private ItemStack getUpgradeTemplateItem(ItemStack left, ItemStack middle, ItemStack right) {
         if(left.getType().equals(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE)) return left;
         if(middle.getType().equals(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE)) return middle;
         if(right.getType().equals(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE)) return right;
         return null;
     }
+
     private ItemStack getNetheriteItem(ItemStack left, ItemStack middle, ItemStack right) {
         if(left.getType().equals(Material.NETHERITE_INGOT)) return left;
         if(middle.getType().equals(Material.NETHERITE_INGOT)) return middle;
         if(right.getType().equals(Material.NETHERITE_INGOT)) return right;
         return null;
     }
+
     public boolean upgradingArmour() {
         return upgradingArmour(currLeft, currMiddle, currRight);
     }
+
     public boolean upgradingArmour(ItemStack left, ItemStack middle, ItemStack right) {
         return (left != null && MaterialTags.ARMOR.isTagged(left)) || (middle != null && MaterialTags.ARMOR.isTagged(middle))
                 || (right != null && MaterialTags.ARMOR.isTagged(right));
@@ -248,14 +253,17 @@ public class EndBlacksmithUpgrade implements CustomInventory {
         if(currBookLeft != null) currBookLeft.setAmount(currBookLeft.getAmount()-1);
         if(currBookRight != null) currBookRight.setAmount(currBookRight.getAmount()-1);
     }
+
     public void resetResult() {
         inventory.setItem(16, new ItemStack(Material.AIR));
     }
+
     public boolean isBookValid(ItemStack item) {
         NamespacedKey upgradeKey = new NamespacedKey(plugin, "blacksmith-end-addon");
         return item.getType().equals(Material.ENCHANTED_BOOK) && item.hasItemMeta()
                 && !item.getPersistentDataContainer().isEmpty() && item.getPersistentDataContainer().has(upgradeKey, PersistentDataType.STRING);
     }
+
     public boolean hasResetRepairCost() {
         NamespacedKey upgradeKey = new NamespacedKey(plugin, "blacksmith-end-addon");
         return (currBookLeft != null && isBookValid(currBookLeft) && Objects.requireNonNull(currBookLeft.getPersistentDataContainer()
@@ -263,6 +271,7 @@ public class EndBlacksmithUpgrade implements CustomInventory {
                 || (currBookRight != null && isBookValid(currBookRight) && Objects.requireNonNull(currBookRight.getPersistentDataContainer()
                 .get(upgradeKey, PersistentDataType.STRING)).equalsIgnoreCase("reset-repair"));
     }
+
     public boolean hasKeepEnchants() {
         NamespacedKey upgradeKey = new NamespacedKey(plugin, "blacksmith-end-addon");
         return (currBookLeft != null && isBookValid(currBookLeft) && Objects.requireNonNull(currBookLeft.getPersistentDataContainer()
@@ -270,6 +279,7 @@ public class EndBlacksmithUpgrade implements CustomInventory {
                 || (currBookRight != null && isBookValid(currBookRight) && Objects.requireNonNull(currBookRight.getPersistentDataContainer()
                 .get(upgradeKey, PersistentDataType.STRING)).equalsIgnoreCase("keep-enchants"));
     }
+
     public boolean hasKeepTrims() {
         return hasKeepTrims(currBookLeft, currBookRight);
     }
@@ -281,6 +291,7 @@ public class EndBlacksmithUpgrade implements CustomInventory {
                 || (rightBook != null && isBookValid(rightBook) && Objects.requireNonNull(rightBook.getPersistentDataContainer()
                 .get(upgradeKey, PersistentDataType.STRING)).equalsIgnoreCase("keep-trims"));
     }
+
     public boolean areBooksValid(ItemStack leftBook, ItemStack rightBook) {
         NamespacedKey upgradeKey = new NamespacedKey(plugin, "blacksmith-end-addon");
         if(leftBook != null && leftBook.getType().equals(Material.ENCHANTED_BOOK) && leftBook.hasItemMeta()
@@ -298,12 +309,14 @@ public class EndBlacksmithUpgrade implements CustomInventory {
         }
         return false;
     }
+
     public boolean isItemValid(ItemStack item) {
         Material mat = item.getType();
         return (item.getPersistentDataContainer().isEmpty() && (diamondItems.contains(mat))) || (mat.equals(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE) && item.hasItemMeta()
                 && !item.getPersistentDataContainer().isEmpty() && item.getPersistentDataContainer().has(new NamespacedKey(plugin, "blacksmith-end-upgrade")))
                 || (item.getPersistentDataContainer().isEmpty() && mat.equals(Material.NETHERITE_INGOT));
     }
+
     public boolean areAllValid(ItemStack... items) {
         ItemStack upgradeItem = null;
         ItemStack templateItem = null;
@@ -332,33 +345,28 @@ public class EndBlacksmithUpgrade implements CustomInventory {
         }
         return false;
     }
+
     public double hasMoney(double cost) {
         double money = PlayerManager.getBalance(player);
         return (money >= cost) ? 0 : cost - money;
     }
+
     public double getPrice() {
         return 50000;
     }
+
     public EndBlacksmithUpgrade(SkyPrisonCore plugin, Player player) {
         this.plugin = plugin;
         this.player = player;
         this.inventory = plugin.getServer().createInventory(this, 27, Component.text("Smithy", TextColor.fromHexString("#0fc3ff")));
         ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta paneMeta = blackPane.getItemMeta();
-        paneMeta.displayName(Component.empty());
-        blackPane.setItemMeta(paneMeta);
+        blackPane.editMeta(meta -> meta.displayName(Component.empty()));
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-        ItemMeta redMeta = redPane.getItemMeta();
-        redMeta.displayName(Component.empty());
-        redPane.setItemMeta(redMeta);
+        redPane.editMeta(meta -> meta.displayName(Component.empty()));
         ItemStack blackArrow = new HeadDatabaseAPI().getItemHead("10307");
-        ItemMeta arrowMeta = blackArrow.getItemMeta();
-        arrowMeta.displayName(Component.text("Insert item below", NamedTextColor.GRAY));
-        blackArrow.setItemMeta(arrowMeta);
+        blackArrow.editMeta(meta -> meta.displayName(Component.text("Insert item below", NamedTextColor.GRAY)));
         ItemStack purpleArrow = new HeadDatabaseAPI().getItemHead("9443");
-        ItemMeta purpleMeta = purpleArrow.getItemMeta();
-        purpleMeta.displayName(Component.text("Insert item below", NamedTextColor.GRAY));
-        purpleArrow.setItemMeta(purpleMeta);
+        purpleArrow.editMeta(meta -> meta.displayName(Component.text("Insert item below", NamedTextColor.GRAY)));
 
         for(int i = 0; i < inventory.getSize(); i++) {
             if(i > 0 && i < 4) {

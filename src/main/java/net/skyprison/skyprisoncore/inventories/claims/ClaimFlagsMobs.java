@@ -132,7 +132,7 @@ public class ClaimFlagsMobs implements CustomInventory {
                     .append(Component.text(allSpawnState, allSpawnColor, TextDecoration.BOLD))
                     .decoration(TextDecoration.ITALIC, false));
             meta.lore(lore);
-            meta.addItemFlags(ItemFlag.HIDE_ITEM_SPECIFICS);
+            meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
         });
         inventory.setItem(48, allSpawn);
     }

@@ -12,7 +12,6 @@ import net.skyprison.skyprisoncore.utils.PlayerManager;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -73,17 +72,11 @@ public class MailHistory implements CustomInventory {
         this.inventory = plugin.getServer().createInventory(this, 54, Component.text("Mail History", NamedTextColor.RED));
 
         blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta blackMeta = blackPane.getItemMeta();
-        blackMeta.displayName(Component.text(" "));
-        blackPane.setItemMeta(blackMeta);
+        blackPane.editMeta(meta -> meta.displayName(Component.empty()));
         nextPage = new ItemStack(Material.PAPER);
-        ItemMeta nextMeta = nextPage.getItemMeta();
-        nextMeta.displayName(Component.text("Next Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
-        nextPage.setItemMeta(nextMeta);
+        nextPage.editMeta(meta -> meta.displayName(Component.text("Next Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)));
         prevPage = new ItemStack(Material.PAPER);
-        ItemMeta prevMeta = prevPage.getItemMeta();
-        prevMeta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
-        prevPage.setItemMeta(prevMeta);
+        prevPage.editMeta(meta -> meta.displayName(Component.text("Previous Page", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)));
 
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
                 "SELECT sender_id, item, cost, mailbox_id, sent_at FROM mails WHERE receiver_id = ? AND collected = 1 ORDER BY sent_at ASC")) {

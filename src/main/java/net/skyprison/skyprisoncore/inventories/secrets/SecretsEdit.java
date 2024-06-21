@@ -12,7 +12,6 @@ import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -155,9 +154,7 @@ public class SecretsEdit implements CustomInventory {
             }
         } else {
             ItemStack placeholder = new ItemStack(Material.LIGHT_GRAY_CONCRETE);
-            ItemMeta placeMeta = placeholder.getItemMeta();
-            placeMeta.displayName(Component.text("PUT DISPLAY ITEM HERE", NamedTextColor.RED, TextDecoration.BOLD));
-            placeholder.setItemMeta(placeMeta);
+            placeholder.editMeta(meta -> meta.displayName(Component.text("PUT DISPLAY ITEM HERE", NamedTextColor.RED, TextDecoration.BOLD)));
             this.displayItem = placeholder.serializeAsBytes();
         }
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
@@ -173,31 +170,22 @@ public class SecretsEdit implements CustomInventory {
             } else if (i == 27) {
                 HeadDatabaseAPI hAPI = new HeadDatabaseAPI();
                 ItemStack item = hAPI.getItemHead("10306");
-                ItemMeta itemMeta = item.getItemMeta();
-                itemMeta.displayName(Component.text("Back to Secrets", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-                item.setItemMeta(itemMeta);
+                item.editMeta(meta -> meta.displayName(Component.text("Back to Secrets", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)));
                 inventory.setItem(i, item);
             } else if (i == 30) {
                 ItemStack item = new ItemStack(Material.RED_CONCRETE);
-                ItemMeta itemMeta = item.getItemMeta();
-                itemMeta.displayName(Component.text("Delete Secret", NamedTextColor.DARK_RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
-                item.setItemMeta(itemMeta);
+                item.editMeta(meta -> meta.displayName(Component.text("Delete Secret", NamedTextColor.DARK_RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false)));
                 inventory.setItem(i, item);
             } else if (i == 31) {
                 ItemStack item = new ItemStack(Material.GRAY_CONCRETE);
-                ItemMeta itemMeta = item.getItemMeta();
-                itemMeta.displayName(Component.text(secretsId != -1 ? "Discard Changes" : "Discard Secret", NamedTextColor.RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
-                item.setItemMeta(itemMeta);
+                item.editMeta(meta -> meta.displayName(Component.text(secretsId != -1 ? "Discard Changes" : "Discard Secret", NamedTextColor.RED, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false)));
                 inventory.setItem(i, item);
             } else if (i == 32) {
                 ItemStack item = new ItemStack(Material.LIME_CONCRETE);
-                ItemMeta itemMeta = item.getItemMeta();
-                itemMeta.displayName(Component.text(secretsId != -1 ? "Save Changes" : "Create Secret", NamedTextColor.GREEN, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
-                item.setItemMeta(itemMeta);
+                item.editMeta(meta -> meta.displayName(Component.text(secretsId != -1 ? "Save Changes" : "Create Secret", NamedTextColor.GREEN, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false)));
                 inventory.setItem(i, item);
             }
         }
-
         updateInventory();
     }
     public boolean saveSecret() {
@@ -239,62 +227,79 @@ public class SecretsEdit implements CustomInventory {
     public int getSecretsId() {
         return this.secretsId;
     }
+
     public String getName() {
         return this.name;
     }
+
     public byte[] getDisplayItem() {
         return this.displayItem;
     }
+
     public String getCategory() {
         return this.category;
     }
+
     public String getType() {
         return this.type;
     }
+
     public String getRewardType() {
         return this.rewardType;
     }
+
     public int getRewardAmount() {
         return this.rewardAmount;
     }
+
     public String getCooldown() {
         return this.cooldown;
     }
+
     public int getMaxUses() {
         return this.maxUses;
     }
+
     public void setName(String name) {
         this.name = name;
         updateInventory();
     }
+
     public void setDisplayItem(ItemStack displayItem) {
         this.displayItem = displayItem.serializeAsBytes();
         updateInventory();
     }
+
     public void setCategory(String category) {
         this.category = category;
         updateInventory();
     }
+
     public void setType(String type) {
         this.type = type;
         updateInventory();
     }
+
     public void setRewardType(String rewardType) {
         this.rewardType = rewardType;
         updateInventory();
     }
+
     public void setRewardAmount(int rewardAmount) {
         this.rewardAmount = rewardAmount;
         updateInventory();
     }
+
     public void setCooldown(String cooldown) {
         this.cooldown = cooldown;
         updateInventory();
     }
+
     public void setMaxUses(int maxUses) {
         this.maxUses = maxUses;
         updateInventory();
     }
+
     @Override
     public @NotNull Inventory getInventory() {
         return this.inventory;

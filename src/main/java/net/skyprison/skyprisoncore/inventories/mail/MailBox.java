@@ -128,7 +128,7 @@ public class MailBox implements CustomInventory {
                     ItemStack mail = ItemStack.deserializeBytes(rs.getBytes(4));
                     ItemStack displayMail = mail.clone();
                     displayMail.editMeta(meta -> {
-                        meta.addItemFlags(ItemFlag.HIDE_ITEM_SPECIFICS);
+                        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
                         List<Component> lore = new ArrayList<>();
                         lore.add(Component.text("Sent to: ", NamedTextColor.GRAY).append(Component.text(receiver, NamedTextColor.WHITE))
                                 .decoration(TextDecoration.ITALIC, false));
@@ -161,7 +161,7 @@ public class MailBox implements CustomInventory {
                     ItemStack mail = ItemStack.deserializeBytes(rs.getBytes(4));
                     ItemStack displayMail = mail.clone();
                     displayMail.editMeta(meta -> {
-                        meta.addItemFlags(ItemFlag.HIDE_ITEM_SPECIFICS);
+                        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
                         List<Component> lore = new ArrayList<>();
                         lore.add(Component.text("Sent to: ", NamedTextColor.GRAY).append(Component.text(Objects.requireNonNullElse(
                                 PlayerManager.getPlayerName(UUID.fromString(receiver)), "COULDNT GET NAME"), NamedTextColor.WHITE))

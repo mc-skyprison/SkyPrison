@@ -15,7 +15,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ArmorMeta;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
@@ -28,10 +27,12 @@ public class BlacksmithTrimmer implements CustomInventory {
     private final SkyPrisonCore plugin;
     private final Player player;
     private final Timer timer = new Timer();
+
     private ItemStack currLeft = new ItemStack(Material.AIR);
     private ItemStack currMiddle = new ItemStack(Material.AIR);
     private ItemStack currRight = new ItemStack(Material.AIR);
     private ItemStack armourPiece = new ItemStack(Material.AIR);
+
     public void updateInventory() {
         ItemStack left = inventory.getItem(10);
         ItemStack middle = inventory.getItem(11);
@@ -57,16 +58,13 @@ public class BlacksmithTrimmer implements CustomInventory {
             }
         } else setColour(leftValid, middleValid, rightValid);
     }
+
     private void setColour(boolean left, boolean middle, boolean right) {
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-        ItemMeta redMeta = redPane.getItemMeta();
-        redMeta.displayName(Component.empty());
-        redPane.setItemMeta(redMeta);
+        redPane.editMeta(meta -> meta.displayName(Component.empty()));
 
         ItemStack greenPane = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
-        ItemMeta greenMeta = greenPane.getItemMeta();
-        greenMeta.displayName(Component.empty());
-        greenPane.setItemMeta(greenMeta);
+        greenPane.editMeta(meta -> meta.displayName(Component.empty()));
 
         ItemStack leftItem = inventory.getItem(10);
         ItemStack middleItem = inventory.getItem(11);
@@ -96,9 +94,11 @@ public class BlacksmithTrimmer implements CustomInventory {
             setResult(leftItem, middleItem, rightItem);
         }
     }
+
     public void cancelTimer() {
         timer.cancel();
     }
+
     public void setResult(ItemStack left, ItemStack middle, ItemStack right) {
         armourPiece = getArmourPieceItem(left, middle, right);
         ItemStack trimPattern = getTrimTemplateItem(left, middle, right);
@@ -108,30 +108,30 @@ public class BlacksmithTrimmer implements CustomInventory {
             double hasMoney = hasMoney(price);
             if(hasMoney == 0) {
                 ItemStack trimmedArmour = armourPiece.clone();
-                ArmorMeta armorMeta = (ArmorMeta) trimmedArmour.getItemMeta();
-                ArmorTrim trim = new ArmorTrim(getTrimMaterial(trimMaterial.getType()), getTrimPattern(trimPattern.getType()));
-                armorMeta.setTrim(trim);
+                trimmedArmour.editMeta(ArmorMeta.class, meta -> {
+                    ArmorTrim trim = new ArmorTrim(getTrimMaterial(trimMaterial.getType()), getTrimPattern(trimPattern.getType()));
+                    meta.setTrim(trim);
 
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(price), TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
-                        .decoration(TextDecoration.ITALIC, false));
-                armorMeta.lore(lore);
-                trimmedArmour.setItemMeta(armorMeta);
+                    List<Component> lore = new ArrayList<>();
+                    lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(price), TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
+                            .decoration(TextDecoration.ITALIC, false));
+                    meta.lore(lore);
+                });
                 inventory.setItem(16, trimmedArmour);
             } else {
                 ItemStack needMoney = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-                ItemMeta needMeta = needMoney.getItemMeta();
-                needMeta.displayName(Component.text("Not Enough Money", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(price), TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
-                        .decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Missing: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(hasMoney), NamedTextColor.RED, TextDecoration.BOLD))
-                        .decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("                  ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH).decoration(TextDecoration.ITALIC, false));
-                lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(PlayerManager.getBalance(player)), NamedTextColor.RED, TextDecoration.BOLD))
-                        .decoration(TextDecoration.ITALIC, false));
-                needMeta.lore(lore);
-                needMoney.setItemMeta(needMeta);
+                needMoney.editMeta(meta -> {
+                    meta.displayName(Component.text("Not Enough Money", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+                    List<Component> lore = new ArrayList<>();
+                    lore.add(Component.text("Price: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(price), TextColor.fromHexString("#52fc28"), TextDecoration.BOLD))
+                            .decoration(TextDecoration.ITALIC, false));
+                    lore.add(Component.text("Missing: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(hasMoney), NamedTextColor.RED, TextDecoration.BOLD))
+                            .decoration(TextDecoration.ITALIC, false));
+                    lore.add(Component.text("                  ", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH).decoration(TextDecoration.ITALIC, false));
+                    lore.add(Component.text("Balance: ", NamedTextColor.GRAY).append(Component.text("$" + ChatUtils.formatNumber(PlayerManager.getBalance(player)), NamedTextColor.RED, TextDecoration.BOLD))
+                            .decoration(TextDecoration.ITALIC, false));
+                    meta.lore(lore);
+                });
                 inventory.setItem(16, needMoney);
             }
         } else {
@@ -139,6 +139,7 @@ public class BlacksmithTrimmer implements CustomInventory {
             setColour(false, false, false);
         }
     }
+
     private ItemStack getArmourPieceItem(ItemStack... items) {
         List<Material> chainmailTypes = Arrays.asList(Material.CHAINMAIL_HELMET, Material.CHAINMAIL_CHESTPLATE, Material.CHAINMAIL_LEGGINGS, Material.CHAINMAIL_BOOTS);
         return Arrays.stream(items)
@@ -146,33 +147,40 @@ public class BlacksmithTrimmer implements CustomInventory {
                 .findFirst()
                 .orElse(null);
     }
+
     private boolean isTrimmableArmor(ItemStack item, List<Material> excludedTypes) {
         Material itemType = item.getType();
         return MaterialSetTag.ITEMS_TRIMMABLE_ARMOR.isTagged(itemType) && !excludedTypes.contains(itemType);
     }
+
     private ItemStack getTrimTemplateItem(ItemStack left, ItemStack middle, ItemStack right) {
         if(MaterialSetTag.ITEMS_TRIM_TEMPLATES.isTagged(left.getType())) return left;
         if(MaterialSetTag.ITEMS_TRIM_TEMPLATES.isTagged(middle.getType())) return middle;
         if(MaterialSetTag.ITEMS_TRIM_TEMPLATES.isTagged(right.getType())) return right;
         return null;
     }
+
     private ItemStack getTrimMaterialitem(ItemStack left, ItemStack middle, ItemStack right) {
         if(MaterialSetTag.ITEMS_TRIM_MATERIALS.isTagged(left.getType())) return left;
         if(MaterialSetTag.ITEMS_TRIM_MATERIALS.isTagged(middle.getType())) return middle;
         if(MaterialSetTag.ITEMS_TRIM_MATERIALS.isTagged(right.getType())) return right;
         return null;
     }
+
     public void resultTaken() {
         currLeft.setAmount(currLeft.getAmount()-1);
         currMiddle.setAmount(currMiddle.getAmount()-1);
         currRight.setAmount(currRight.getAmount()-1);
     }
+
     public void resetResult() {
         inventory.setItem(16, new ItemStack(Material.AIR));
     }
+
     public boolean isItemValid(ItemStack item) {
         return !item.hasItemMeta() && (MaterialSetTag.ITEMS_TRIMMABLE_ARMOR.isTagged(item.getType()) || MaterialSetTag.ITEMS_TRIM_TEMPLATES.isTagged(item.getType()) || MaterialSetTag.ITEMS_TRIM_MATERIALS.isTagged(item.getType()));
     }
+
     public boolean areAllValid(Material... materials) {
         boolean hasTrimmableItem = false;
         boolean hasTrimTemplate = false;
@@ -190,6 +198,7 @@ public class BlacksmithTrimmer implements CustomInventory {
 
         return hasTrimmableItem && hasTrimTemplate && hasTrimMaterial;
     }
+
     public boolean canTrim(ItemStack left, ItemStack middle, ItemStack right) {
         ItemStack armourPiece = null;
 
@@ -207,10 +216,12 @@ public class BlacksmithTrimmer implements CustomInventory {
         }
         return false;
     }
+
     public double hasMoney(double cost) {
         double money = PlayerManager.getBalance(player);
         return (money >= cost) ? 0 : cost - money;
     }
+
     public double getPrice() {
         double price = 0;
         if(armourPiece != null) {
@@ -230,6 +241,7 @@ public class BlacksmithTrimmer implements CustomInventory {
         }
         return price;
     }
+
     public TrimMaterial getTrimMaterial(Material type) {
         TrimMaterial mat = null;
         switch (type) {
@@ -246,6 +258,7 @@ public class BlacksmithTrimmer implements CustomInventory {
         }
         return mat;
     }
+
     public TrimPattern getTrimPattern(Material type) {
         TrimPattern pattern = null;
         switch (type) {
@@ -268,23 +281,18 @@ public class BlacksmithTrimmer implements CustomInventory {
         }
         return pattern;
     }
+
     public BlacksmithTrimmer(SkyPrisonCore plugin, Player player) {
         this.plugin = plugin;
         this.player = player;
         this.inventory = plugin.getServer().createInventory(this, 27, Component.text("Smithy", TextColor.fromHexString("#0fc3ff")));
 
         ItemStack blackPane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta paneMeta = blackPane.getItemMeta();
-        paneMeta.displayName(Component.empty());
-        blackPane.setItemMeta(paneMeta);
+        blackPane.editMeta(meta -> meta.displayName(Component.empty()));
         ItemStack redPane = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-        ItemMeta redMeta = redPane.getItemMeta();
-        redMeta.displayName(Component.empty());
-        redPane.setItemMeta(redMeta);
+        redPane.editMeta(meta -> meta.displayName(Component.empty()));
         ItemStack blackArrow = new HeadDatabaseAPI().getItemHead("10307");
-        ItemMeta arrowMeta = blackArrow.getItemMeta();
-        arrowMeta.displayName(Component.text("Insert item below", NamedTextColor.GRAY));
-        blackArrow.setItemMeta(arrowMeta);
+        blackArrow.editMeta(meta -> meta.displayName(Component.text("Insert item below", NamedTextColor.GRAY)));
 
         for(int i = 0; i < inventory.getSize(); i++) {
             if(i > 0 && i < 4) {
