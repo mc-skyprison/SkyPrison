@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners.advancedregionmarket;
+package net.skyprison.skyprisoncore.listeners.plugins;
 
 
 import com.ghostchu.quickshop.api.QuickShopAPI;
@@ -14,7 +14,7 @@ import org.bukkit.event.Listener;
 
 import java.util.List;
 
-public class UnsellRegion implements Listener {
+public class AdvancedRegionMarketListeners implements Listener {
     @EventHandler
     public void onUnsellRegion(UnsellRegionEvent event) {
         Region region = event.getRegion();

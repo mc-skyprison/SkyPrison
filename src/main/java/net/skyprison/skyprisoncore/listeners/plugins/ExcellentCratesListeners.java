@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners.excellentcrates;
+package net.skyprison.skyprisoncore.listeners.plugins;
 
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import org.bukkit.entity.Player;
@@ -10,10 +10,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class CrateObtainReward implements Listener {
+public class ExcellentCratesListeners implements Listener {
     private final DatabaseHook db;
 
-    public CrateObtainReward(DatabaseHook db) {
+    public ExcellentCratesListeners(DatabaseHook db) {
         this.db = db;
     }
 

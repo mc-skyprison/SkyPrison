@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners.parkour;
+package net.skyprison.skyprisoncore.listeners.plugins;
 
 import io.github.a5h73y.parkour.Parkour;
 import io.github.a5h73y.parkour.event.ParkourFinishEvent;
@@ -10,7 +10,7 @@ import org.bukkit.event.Listener;
 
 import java.util.List;
 
-public class ParkourFinish implements Listener {
+public class ParkourListeners implements Listener {
     @EventHandler
     public void onParkourFinish(ParkourFinishEvent event) {
         Player player = event.getPlayer();

@@ -43,9 +43,11 @@ public class PlayerManager {
     public record PlayerTag(UUID playerId, Tags.Tag tag) {}
     public record Ignore(UUID playerId, UUID targetId, boolean ignorePrivate, boolean ignoreTeleport) {}
     public static final HashMap<UUID, HashMap<Tags.Tag, TagsEdit>> tagsEdit = new HashMap<>();
+
     public static PlayerTag getPlayerTag(UUID pUUID) {
         return playerTags.stream().filter(tag -> tag.playerId().equals(pUUID)).findFirst().orElse(null);
     }
+
     public static void addPlayerTags(PlayerTag ...tags) {
         Collections.addAll(playerTags, tags);
         for(PlayerTag tag : tags) {
@@ -66,6 +68,7 @@ public class PlayerManager {
             }
         }
     }
+
     public static void removePlayerTags(PlayerTag ...tags) {
         if(tags != null && tags.length > 0) {
             playerTags.removeAll(Arrays.stream(tags).toList());
@@ -81,18 +84,23 @@ public class PlayerManager {
             }
         }
     }
+
     public static List<Ignore> getPlayerIgnores(UUID pUUID) {
         return playerIgnores.stream().filter(ignores -> ignores.playerId().equals(pUUID)).toList();
     }
+
     public static Ignore getPlayerIgnore(UUID pUUID, UUID targetId) {
         return playerIgnores.stream().filter(ignore -> ignore.playerId().equals(pUUID) && ignore.targetId().equals(targetId)).findFirst().orElse(null);
     }
+
     public static void addPlayerIgnores(Ignore ...ignores) {
         Collections.addAll(playerIgnores, ignores);
     }
+
     public static void removePlayerIgnores(Ignore ...ignores) {
         if(ignores != null) playerIgnores.removeAll(Arrays.stream(ignores).toList());
     }
+
     public static void loadIgnores() {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id, ignored_id, ignore_private, ignore_teleports FROM user_ignores")) {
             ResultSet rs = ps.executeQuery();
@@ -104,21 +112,27 @@ public class PlayerManager {
             throw new IllegalStateException("Failed to load ignores!", e);
         }
     }
+
     public static List<DailyMissions.PlayerMission> getAllMissions() {
         return playerMissions;
     }
+
     public static List<DailyMissions.PlayerMission> getPlayerMissions(UUID pUUID) {
         return playerMissions.stream().filter(playerMission -> playerMission.player().equals(pUUID)).toList();
     }
+
     public static List<DailyMissions.PlayerMission> getPlayerMissions(UUID pUUID, boolean getSpecific) {
         return playerMissions.stream().filter(mission -> mission.player().equals(pUUID) && mission.completed() == getSpecific).toList();
     }
+
     public static void addPlayerMissions(DailyMissions.PlayerMission ...missions) {
         Collections.addAll(playerMissions, missions);
     }
+
     public static void removePlayerMissions(DailyMissions.PlayerMission ...missions) {
         if(missions != null) playerMissions.removeAll(Arrays.stream(missions).toList());
     }
+
     public static UUID getPlayerId(String playerName) {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id FROM users WHERE current_name = ?")) {
             ps.setString(1, playerName);
@@ -131,6 +145,7 @@ public class PlayerManager {
         } catch (SQLException ignored) {}
         return null;
     }
+
     public static String getPlayerName(UUID pUUID) {
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT current_name FROM users WHERE user_id = ?")) {
             ps.setString(1, pUUID.toString());
@@ -141,6 +156,7 @@ public class PlayerManager {
         } catch (SQLException ignored) {}
         return null;
     }
+
     public static long getPlayerDiscord(UUID pUUID) {
         long discordId = 0;
         try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT discord_id FROM users WHERE user_id = ?")) {
@@ -154,12 +170,14 @@ public class PlayerManager {
         }
         return discordId;
     }
+
     public static void giveItems(HumanEntity player, ItemStack... items) {
         HashMap<Integer, ItemStack> didntFit = player.getInventory().addItem(Arrays.stream(items).filter(item -> item != null && item.getType().isItem()).toArray(ItemStack[]::new));
         for(ItemStack dropItem : didntFit.values()) {
             player.getWorld().dropItemNaturally(player.getLocation(), dropItem).setOwner(player.getUniqueId());
         }
     }
+
     public static String toBase64(Inventory inv) throws IllegalStateException {
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -177,6 +195,7 @@ public class PlayerManager {
             throw new IllegalStateException("Failed to encode inventory!", e);
         }
     }
+
     public static Inventory fromBase64(String data) throws IOException {
         try {
             ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64Coder.decodeLines(data));
@@ -201,10 +220,12 @@ public class PlayerManager {
             throw new IllegalStateException("Failed to decode inventory!", e);
         }
     }
+
     public static boolean isPrisonWorld(String world) {
         return world.equals("world_prison") || world.equals("world_free") || world.equals("world_free_nether")
                 || world.equals("world_free_end") || world.equals("world_skycity") || world.equals("world_prison_tutorial");
     }
+
     public static void changeInventory(Player player, boolean fromPrison, boolean toPrison) {
         if(fromPrison || toPrison) {
             PlayerInventory pInv = player.getInventory();
@@ -277,6 +298,7 @@ public class PlayerManager {
             }
         }
     }
+
     public static void checkTotalPurchases(Player player, double total) {
         if(total >= 10.0 && !player.hasPermission("group.donor1")) {
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + player.getUniqueId() + " parent add donor1");
@@ -288,18 +310,23 @@ public class PlayerManager {
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + player.getUniqueId() + " parent add donor3");
         }
     }
+
     public static void sendMessage(UUID pUUID, Component msg, String notifType) {
         sendMessage(pUUID, msg, notifType, null, null, true);
     }
+
     public static void sendMessage(UUID pUUID, Component msg, String notifType, String notifData) {
         sendMessage(pUUID, msg, notifType, notifData, null, true);
     }
+
     public static void sendMessage(UUID pUUID, Component msg, String notifType, boolean deleteOnView) {
         sendMessage(pUUID, msg, notifType, null, null, deleteOnView);
     }
+
     public static void sendMessage(UUID pUUID, Component msg, String notifType, String notifData, boolean deleteOnView) {
         sendMessage(pUUID, msg, notifType, notifData, null, deleteOnView);
     }
+
     public static void sendMessage(UUID pUUID, Component msg, String notifType, String notifData, String notifId, boolean deleteOnView) {
         Player isOnline = Bukkit.getPlayer(pUUID);
         if (isOnline != null) {
@@ -308,6 +335,7 @@ public class PlayerManager {
             NotificationsUtils.createNotification(notifType, notifData, pUUID, msg, notifId, deleteOnView);
         }
     }
+
     public static boolean hasPermission(UUID pUUID, String permission) {
         boolean hasPerm = false;
         Player isOnline = Bukkit.getPlayer(pUUID);
@@ -330,24 +358,31 @@ public class PlayerManager {
         }
         return hasPerm;
     }
+
     public static Double getBalance(Player player) {
         return CMI.getInstance().getPlayerManager().getUser(player).getBalance();
     }
+
     public static long getPlaytime(Player player) {
         return CMI.getInstance().getPlayerManager().getUser(player).getTotalPlayTime();
     }
+
     public static String getLastIp(Player player) {
         return CMI.getInstance().getPlayerManager().getUser(player).getLastIp();
     }
+
     public static String getLastIp(UUID player) {
         return CMI.getInstance().getPlayerManager().getUser(player).getLastIp();
     }
+
     public static String getPrisonRank(Player player) {
         return CMI.getInstance().getPlayerManager().getUser(player).getRank().getName();
     }
+
     public static String getPrisonRank(UUID player) {
         return CMI.getInstance().getPlayerManager().getUser(player).getRank().getName();
     }
+
     public static boolean isGuardGear(ItemStack item) {
         boolean isGuardGear = false;
         String name = item.hasDisplayName() ? item.displayName().toString() : "";
@@ -374,5 +409,18 @@ public class PlayerManager {
                 item.setAmount(0);
             }
         });
+    }
+
+    public static UUID getIdFromDiscord(long discordId) {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT user_id FROM users WHERE discord_id = ?")) {
+            ps.setLong(1, discordId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return UUID.fromString(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

@@ -38,7 +38,6 @@ dependencies {
     compileOnly("org.purpurmc.purpur:purpur-api:1.21-R0.1-SNAPSHOT")
     compileOnly("net.luckperms:api:5.4")
     compileOnly("me.neznamy:tab-api:4.0.2") // Used for PvP
-    compileOnly("com.github.DieReicheErethons:Brewery:3.1.1")
     compileOnly("com.arcaniax:HeadDatabase-API:1.3.1")
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.9-SNAPSHOT")
     compileOnly("me.clip:placeholderapi:2.11.5")
@@ -50,7 +49,6 @@ dependencies {
     compileOnly("com.gitlab.ruany:LiteBansAPI:0.5.0")
     compileOnly("LibsDisguises:LibsDisguises:10.0.42")
     compileOnly("dev.esophose:playerparticles:8.3")
-    // compileOnly("com.github.Realizedd.Duels:duels-api:3.5.1")
     compileOnly("com.vexsoftware:nuvotifier-universal:2.7.2")
     compileOnly("com.ghostchu:quickshop-api:6.0.0.10")
     // Jars

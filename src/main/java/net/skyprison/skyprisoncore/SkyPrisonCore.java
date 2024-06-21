@@ -39,28 +39,12 @@ import net.skyprison.skyprisoncore.items.BlacksmithEnd;
 import net.skyprison.skyprisoncore.items.Greg;
 import net.skyprison.skyprisoncore.items.TreeFeller;
 import net.skyprison.skyprisoncore.items.Vouchers;
-import net.skyprison.skyprisoncore.listeners.advancedregionmarket.UnsellRegion;
-import net.skyprison.skyprisoncore.listeners.brewery.BrewDrink;
-import net.skyprison.skyprisoncore.listeners.cmi.CMIPlayerTeleportRequest;
-import net.skyprison.skyprisoncore.listeners.cmi.CMIUserBalanceChange;
 import net.skyprison.skyprisoncore.listeners.discord.MessageCreate;
 import net.skyprison.skyprisoncore.listeners.discord.SlashCommandCreate;
 import net.skyprison.skyprisoncore.listeners.discord.UserRoleAdd;
 import net.skyprison.skyprisoncore.listeners.discord.UserRoleRemove;
-import net.skyprison.skyprisoncore.listeners.excellentcrates.CrateObtainReward;
-import net.skyprison.skyprisoncore.listeners.mcmmo.McMMOLevelUp;
-import net.skyprison.skyprisoncore.listeners.mcmmo.McMMOPartyChat;
 import net.skyprison.skyprisoncore.listeners.minecraft.*;
-import net.skyprison.skyprisoncore.listeners.nuvotifier.Votifier;
-import net.skyprison.skyprisoncore.listeners.parkour.ParkourFinish;
-import net.skyprison.skyprisoncore.listeners.pvpmanager.PlayerTag;
-import net.skyprison.skyprisoncore.listeners.pvpmanager.PlayerTogglePvP;
-import net.skyprison.skyprisoncore.listeners.pvpmanager.PlayerUntag;
-import net.skyprison.skyprisoncore.listeners.quickshop.ShopCreate;
-import net.skyprison.skyprisoncore.listeners.quickshop.ShopPurchase;
-import net.skyprison.skyprisoncore.listeners.quickshop.ShopSuccessPurchase;
-import net.skyprison.skyprisoncore.listeners.shopguiplus.ShopPostTransaction;
-import net.skyprison.skyprisoncore.listeners.shopguiplus.ShopPreTransaction;
+import net.skyprison.skyprisoncore.listeners.plugins.*;
 import net.skyprison.skyprisoncore.utils.*;
 import net.skyprison.skyprisoncore.utils.claims.ClaimUtils;
 import net.skyprison.skyprisoncore.utils.claims.ConsoleCommandFlagHandler;
@@ -396,8 +380,8 @@ public class SkyPrisonCore extends JavaPlugin {
                     )).createGlobal(discApi).join();
             discApi.addListener(new SlashCommandCreate(this, db));
             discApi.addListener(new MessageCreate(this, new ChatUtils(this, discApi), discApi));
-            discApi.addListener(new UserRoleAdd(this, db));
-            discApi.addListener(new UserRoleRemove(this, db));
+            discApi.addListener(new UserRoleAdd());
+            discApi.addListener(new UserRoleRemove());
         }
     }
 
@@ -701,37 +685,23 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new BlockBreak(this, particles), this);
         pm.registerEvents(new BlockDamage(this, db), this);
         pm.registerEvents(new BlockPlace(this, db), this);
-        pm.registerEvents(new BrewDrink(db), this);
-        pm.registerEvents(new CMIPlayerTeleportRequest(), this);
-        pm.registerEvents(new CMIUserBalanceChange(this, db), this);
+        pm.registerEvents(new CMIListeners(this, db), this);
         pm.registerEvents(new EntityDamageByEntity(this), this);
         pm.registerEvents(new EntityDeath(db), this);
         pm.registerEvents(new EntityPickupItem(this), this);
         pm.registerEvents(new InventoryClick(this, db, particles), this);
         pm.registerEvents(new InventoryOpen(this), this);
         pm.registerEvents(new LeavesDecay(), this);
-        pm.registerEvents(new McMMOLevelUp(this), this);
         pm.registerEvents(new PlayerChangedWorld(), this);
         pm.registerEvents(new PlayerInteract(this, db), this);
         pm.registerEvents(new PlayerMove(this), this);
         pm.registerEvents(new PlayerPostRespawn(), this);
-        pm.registerEvents(new PlayerTag(this), this);
         pm.registerEvents(new PlayerTeleport(this), this);
-        pm.registerEvents(new PlayerUntag(), this);
-        pm.registerEvents(new ShopCreate(this), this);
-        pm.registerEvents(new ShopPostTransaction(db), this);
-        pm.registerEvents(new ShopPreTransaction(db), this);
-        pm.registerEvents(new ShopPurchase(db), this);
-        pm.registerEvents(new ShopSuccessPurchase(db), this);
-        pm.registerEvents(new UnsellRegion(), this);
         pm.registerEvents(new PlayerFish(), this);
         pm.registerEvents(new InventoryClose(), this);
         pm.registerEvents(new EntityDamage(this), this);
         pm.registerEvents(new PlayerCommandPreprocess(), this);
-        pm.registerEvents(new ParkourFinish(), this);
-        pm.registerEvents(new PlayerTogglePvP(), this);
         pm.registerEvents(new ServerLoad(this, particles, db), this);
-        pm.registerEvents(new CrateObtainReward(db), this);
         pm.registerEvents(new EntityToggleGlide(), this);
         pm.registerEvents(new PlayerBucketEmpty(), this);
         pm.registerEvents(new AsyncChatDecorate(this), this);
@@ -741,7 +711,6 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new EnchantItem(this), this);
         pm.registerEvents(new PrepareItemEnchant(this), this);
         pm.registerEvents(new PlayerItemConsume(this), this);
-        pm.registerEvents(new Votifier(this, db), this);
         pm.registerEvents(new PlayerSwapHandItems(this), this);
         pm.registerEvents(new CraftItem(), this);
 
@@ -749,7 +718,14 @@ public class SkyPrisonCore extends JavaPlugin {
         pm.registerEvents(new PlayerQuit(this, db, discApi), this);
         pm.registerEvents(new PlayerJoin(this, db, discApi, particles), this);
 
-        pm.registerEvents(new McMMOPartyChat(discApi), this);
+        pm.registerEvents(new McMMOListeners(discApi), this);
+        pm.registerEvents(new ParkourListeners(), this);
+        pm.registerEvents(new VotifierListeners(this, db), this);
+        pm.registerEvents(new QuickShopListeners(this, db), this);
+        pm.registerEvents(new ShopGUIPlusListeners(db), this);
+        pm.registerEvents(new AdvancedRegionMarketListeners(), this);
+        pm.registerEvents(new PvPManagerListeners(this), this);
+        pm.registerEvents(new ExcellentCratesListeners(db), this);
 
         if(discApi != null) {
             Events.get().register(new Events.Listener() {

@@ -1,17 +1,30 @@
-package net.skyprison.skyprisoncore.listeners.mcmmo;
+package net.skyprison.skyprisoncore.listeners.plugins;
 
 import com.gmail.nossr50.datatypes.player.McMMOPlayer;
+import com.gmail.nossr50.events.chat.McMMOPartyChatEvent;
 import com.gmail.nossr50.events.experience.McMMOPlayerLevelUpEvent;
-import net.skyprison.skyprisoncore.SkyPrisonCore;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.javacord.api.DiscordApi;
+import org.javacord.api.entity.channel.TextChannel;
 
-public class McMMOLevelUp implements Listener {
-    private final SkyPrisonCore plugin;
+import java.util.Objects;
 
-    public McMMOLevelUp(SkyPrisonCore plugin) {
-        this.plugin = plugin;
+public class McMMOListeners implements Listener {
+    private final DiscordApi discApi;
+
+    public McMMOListeners(DiscordApi discApi) {
+        this.discApi = discApi;
+    }
+
+    @EventHandler
+    public void onMcMMOPartyChat(McMMOPartyChatEvent event) {
+        if(discApi != null && discApi.getTextChannelById("811643634562367498").isPresent()) {
+            TextChannel channel = discApi.getTextChannelById("811643634562367498").get();
+            channel.sendMessage("(**" + event.getAuthorParty().getName() + "**) "
+                    + Objects.requireNonNull(Bukkit.getPlayer(event.getPartyChatMessage().getAuthor().uuid())).getName() + " » " + event.getRawMessage());
+        }
     }
 
     @EventHandler

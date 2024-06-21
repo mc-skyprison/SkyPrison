@@ -1,6 +1,8 @@
-package net.skyprison.skyprisoncore.listeners.shopguiplus;
+package net.skyprison.skyprisoncore.listeners.plugins;
 
 import net.brcdev.shopgui.event.ShopPostTransactionEvent;
+import net.brcdev.shopgui.event.ShopPreTransactionEvent;
+import net.brcdev.shopgui.shop.ShopManager;
 import net.brcdev.shopgui.shop.ShopTransactionResult;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
@@ -11,13 +13,33 @@ import org.bukkit.event.Listener;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class ShopPostTransaction implements Listener {
+public class ShopGUIPlusListeners implements Listener {
     private final DatabaseHook db;
-    public ShopPostTransaction(DatabaseHook db) {
+
+    public ShopGUIPlusListeners(DatabaseHook db) {
         this.db = db;
     }
+
+    @EventHandler
+    public void onShopPreTransaction(ShopPreTransactionEvent event) {
+        if(!event.getShopAction().equals(ShopManager.ShopAction.SELL_ALL)) return;
+
+        Player player = event.getPlayer();
+        String iName = event.getShopItem().getItem().getType().name();
+
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement("SELECT block_item FROM block_sells WHERE user_id = ? AND block_item = ?")) {
+            ps.setString(1, player.getUniqueId().toString());
+            ps.setString(2, iName);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) event.setCancelled(true);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     @EventHandler
     public void onShopPostTransaction(ShopPostTransactionEvent event) {
         ShopTransactionResult result = event.getResult();

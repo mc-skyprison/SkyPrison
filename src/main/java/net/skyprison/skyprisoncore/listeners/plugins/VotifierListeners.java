@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.listeners.nuvotifier;
+package net.skyprison.skyprisoncore.listeners.plugins;
 
 import com.vexsoftware.votifier.model.Vote;
 import com.vexsoftware.votifier.model.VotifierEvent;
@@ -24,10 +24,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
-public class Votifier implements Listener {
+public class VotifierListeners implements Listener {
     private final SkyPrisonCore plugin;
     private final DatabaseHook db;
-    public Votifier(SkyPrisonCore plugin, DatabaseHook db) {
+
+    public VotifierListeners(SkyPrisonCore plugin, DatabaseHook db) {
         this.plugin = plugin;
         this.db = db;
     }
@@ -69,6 +70,7 @@ public class Votifier implements Listener {
             plugin.getLogger().warning("Failed to get vote ID from vote made by " + playerName + " on site " + serviceName + "!");
             return;
         }
+
         Component noBold = Component.text("");
         Component voteMsg = noBold.append(Component.text("Vote", TextColor.fromHexString("#37a452"), TextDecoration.BOLD)).append(Component.text(" » ", NamedTextColor.DARK_GRAY));
         Component everyoneMsg = voteMsg.append(Component.text(playerName, TextColor.fromHexString("#e02957"), TextDecoration.BOLD))
