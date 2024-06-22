@@ -40,6 +40,7 @@ import java.util.concurrent.ExecutionException;
 import static net.skyprison.skyprisoncore.SkyPrisonCore.db;
 
 public class PlayerManager {
+    private static final List<SkyPlayer> players = new ArrayList<>();
     private static final List<PlayerTag> playerTags = new ArrayList<>();
     private static final List<Ignore> playerIgnores = new ArrayList<>();
     private static final List<DailyMissions.PlayerMission> playerMissions = new ArrayList<>();
@@ -51,6 +52,19 @@ public class PlayerManager {
     public static PlayerTag getPlayerTag(UUID pUUID) {
         return playerTags.stream().filter(tag -> tag.playerId().equals(pUUID)).findFirst().orElse(null);
     }
+
+    public static void initializeSkyPlayers() {
+        try(Connection conn = db.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                "SELECT current_name, user_id, logout_world, first FROM users")) {
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                players.add(new SkyPlayer(rs.getString(1)));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public static void addPlayerTags(PlayerTag ...tags) {
         Collections.addAll(playerTags, tags);

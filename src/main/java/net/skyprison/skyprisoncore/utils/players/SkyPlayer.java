@@ -12,6 +12,8 @@ import net.luckperms.api.model.user.UserManager;
 import net.skyprison.skyprisoncore.utils.DailyMissions;
 import net.skyprison.skyprisoncore.utils.NotificationsUtils;
 import net.skyprison.skyprisoncore.utils.Tags;
+import net.skyprison.skyprisoncore.utils.TokenUtils;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +29,8 @@ public class SkyPlayer {
     private final UUID uniqueId;
     private Long discordId;
 
+    private long firstJoin;
+
     private String inventory;
     private String enderchest;
 
@@ -40,10 +44,14 @@ public class SkyPlayer {
 
     private List<DailyMissions.PlayerMission> missions;
 
+    private List<Material> blockSells;
+
+    private int tokens;
+
     public SkyPlayer(@NotNull String name, @NotNull UUID uniqueId, @Nullable Tags.Tag tag,
                      @NotNull List<DailyMissions.PlayerMission> missions, @NotNull List<PlayerManager.Ignore> ignores,
                      @Nullable Long discordId, @NotNull CMIUser cmiUser, @Nullable String logoutWorld, @Nullable Component displayName,
-                     @Nullable String inventory, @Nullable String enderchest) {
+                     @Nullable String inventory, @Nullable String enderchest, @NotNull List<Material> blockSells, int tokens, long firstJoin) {
         this.name = name;
         this.uniqueId = uniqueId;
         this.tag = tag;
@@ -53,6 +61,11 @@ public class SkyPlayer {
         this.cmiUser = cmiUser;
         this.logoutWorld = logoutWorld;
         this.displayName = displayName;
+        this.inventory = inventory;
+        this.enderchest = enderchest;
+        this.blockSells = blockSells;
+        this.tokens = tokens;
+        this.firstJoin = firstJoin;
     }
 
     @Nullable
@@ -273,5 +286,38 @@ public class SkyPlayer {
         if (player == null) return false;
         setEnderchest(PlayerManager.toBase64(player.getEnderChest()));
         return true;
+    }
+
+    @NotNull
+    public List<Material> getBlockSells() {
+        return blockSells;
+    }
+
+    public void setBlockSells(@NotNull List<Material> blockSells) {
+        this.blockSells = blockSells;
+    }
+
+    public void addBlockSell(@NotNull Material material) {
+        blockSells.add(material);
+    }
+
+    public void removeBlockSell(@NotNull Material material) {
+        blockSells.remove(material);
+    }
+
+    public int getTokens() {
+        return tokens;
+    }
+
+    public void setTokens(int tokens) {
+        this.tokens = tokens;
+    }
+
+    public void addTokens(int amount, String source, String sourceData) {
+        TokenUtils.addTokens(uniqueId, amount, source, sourceData);
+    }
+
+    public void removeTokens(int amount, String source, String sourceData) {
+        TokenUtils.removeTokens(uniqueId, amount, source, sourceData);
     }
 }
