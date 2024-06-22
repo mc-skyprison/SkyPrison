@@ -23,8 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-import static net.skyprison.skyprisoncore.utils.PlayerManager.checkTotalPurchases;
-import static net.skyprison.skyprisoncore.utils.PlayerManager.getPlayerId;
+import static net.skyprison.skyprisoncore.utils.players.PlayerManager.checkTotalPurchases;
+import static net.skyprison.skyprisoncore.utils.players.PlayerManager.getPlayerId;
 import static org.incendo.cloud.parser.standard.DoubleParser.doubleParser;
 import static org.incendo.cloud.parser.standard.IntegerParser.integerParser;
 import static org.incendo.cloud.parser.standard.StringParser.greedyStringParser;

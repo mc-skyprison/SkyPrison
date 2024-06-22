@@ -7,7 +7,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.skyprison.skyprisoncore.inventories.CustomInventory;
-import net.skyprison.skyprisoncore.utils.PlayerManager;
+import net.skyprison.skyprisoncore.utils.players.PlayerManager;
 import net.skyprison.skyprisoncore.utils.Tags;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;

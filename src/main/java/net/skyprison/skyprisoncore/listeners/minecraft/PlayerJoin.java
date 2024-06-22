@@ -27,6 +27,7 @@ import net.skyprison.skyprisoncore.SkyPrisonCore;
 import net.skyprison.skyprisoncore.commands.JailCommands;
 import net.skyprison.skyprisoncore.utils.*;
 import net.skyprison.skyprisoncore.utils.claims.ClaimUtils;
+import net.skyprison.skyprisoncore.utils.players.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -50,7 +51,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.*;
 
-import static net.skyprison.skyprisoncore.utils.PlayerManager.*;
+import static net.skyprison.skyprisoncore.utils.players.PlayerManager.*;
 
 public class PlayerJoin implements Listener {
     private final SkyPrisonCore plugin;

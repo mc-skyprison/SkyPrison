@@ -10,7 +10,7 @@ import net.skyprison.skyprisoncore.inventories.mail.MailHistory;
 import net.skyprison.skyprisoncore.items.PostOffice;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.MailUtils;
-import net.skyprison.skyprisoncore.utils.PlayerManager;
+import net.skyprison.skyprisoncore.utils.players.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;

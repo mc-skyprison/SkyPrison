@@ -1,6 +1,7 @@
 package net.skyprison.skyprisoncore.utils;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
+import net.skyprison.skyprisoncore.utils.players.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 

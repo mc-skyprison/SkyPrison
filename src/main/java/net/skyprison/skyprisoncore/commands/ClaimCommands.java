@@ -20,7 +20,7 @@ import net.skyprison.skyprisoncore.inventories.claims.ClaimPending;
 import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
 import net.skyprison.skyprisoncore.utils.NotificationsUtils;
-import net.skyprison.skyprisoncore.utils.PlayerManager;
+import net.skyprison.skyprisoncore.utils.players.PlayerManager;
 import net.skyprison.skyprisoncore.utils.claims.ClaimData;
 import net.skyprison.skyprisoncore.utils.claims.ClaimMember;
 import net.skyprison.skyprisoncore.utils.claims.ClaimUtils;

@@ -6,8 +6,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 
-import static net.skyprison.skyprisoncore.utils.PlayerManager.changeInventory;
-import static net.skyprison.skyprisoncore.utils.PlayerManager.isPrisonWorld;
+import static net.skyprison.skyprisoncore.utils.players.PlayerManager.changeInventory;
+import static net.skyprison.skyprisoncore.utils.players.PlayerManager.isPrisonWorld;
 
 public class PlayerChangedWorld implements Listener {
     @EventHandler

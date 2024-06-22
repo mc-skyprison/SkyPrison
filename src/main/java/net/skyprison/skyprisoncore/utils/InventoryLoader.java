@@ -2,6 +2,7 @@ package net.skyprison.skyprisoncore.utils;
 
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
+import net.skyprison.skyprisoncore.utils.players.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.inventory.InventoryType;

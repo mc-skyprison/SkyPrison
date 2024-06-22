@@ -18,7 +18,7 @@ import net.skyprison.skyprisoncore.inventories.misc.Daily;
 import net.skyprison.skyprisoncore.inventories.misc.DatabaseInventory;
 import net.skyprison.skyprisoncore.utils.ChatUtils;
 import net.skyprison.skyprisoncore.utils.DatabaseHook;
-import net.skyprison.skyprisoncore.utils.PlayerManager;
+import net.skyprison.skyprisoncore.utils.players.PlayerManager;
 import net.skyprison.skyprisoncore.utils.TokenUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;

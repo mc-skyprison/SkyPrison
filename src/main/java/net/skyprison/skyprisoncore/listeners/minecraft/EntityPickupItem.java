@@ -1,7 +1,7 @@
 package net.skyprison.skyprisoncore.listeners.minecraft;
 
 import net.skyprison.skyprisoncore.SkyPrisonCore;
-import net.skyprison.skyprisoncore.utils.PlayerManager;
+import net.skyprison.skyprisoncore.utils.players.PlayerManager;
 import net.skyprison.skyprisoncore.utils.Recipes;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;

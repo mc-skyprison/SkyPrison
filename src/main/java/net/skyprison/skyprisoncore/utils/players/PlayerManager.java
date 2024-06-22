@@ -1,4 +1,4 @@
-package net.skyprison.skyprisoncore.utils;
+package net.skyprison.skyprisoncore.utils.players;
 
 import com.Zrips.CMI.CMI;
 import dev.esophose.playerparticles.api.PlayerParticlesAPI;
@@ -11,6 +11,9 @@ import net.luckperms.api.cacheddata.CachedPermissionData;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.model.user.UserManager;
 import net.skyprison.skyprisoncore.inventories.tags.TagsEdit;
+import net.skyprison.skyprisoncore.utils.DailyMissions;
+import net.skyprison.skyprisoncore.utils.NotificationsUtils;
+import net.skyprison.skyprisoncore.utils.Tags;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
@@ -43,6 +46,7 @@ public class PlayerManager {
     public record PlayerTag(UUID playerId, Tags.Tag tag) {}
     public record Ignore(UUID playerId, UUID targetId, boolean ignorePrivate, boolean ignoreTeleport) {}
     public static final HashMap<UUID, HashMap<Tags.Tag, TagsEdit>> tagsEdit = new HashMap<>();
+
 
     public static PlayerTag getPlayerTag(UUID pUUID) {
         return playerTags.stream().filter(tag -> tag.playerId().equals(pUUID)).findFirst().orElse(null);
@@ -121,8 +125,8 @@ public class PlayerManager {
         return playerMissions.stream().filter(playerMission -> playerMission.player().equals(pUUID)).toList();
     }
 
-    public static List<DailyMissions.PlayerMission> getPlayerMissions(UUID pUUID, boolean getSpecific) {
-        return playerMissions.stream().filter(mission -> mission.player().equals(pUUID) && mission.completed() == getSpecific).toList();
+    public static List<DailyMissions.PlayerMission> getPlayerMissions(UUID pUUID, boolean isFinished) {
+        return playerMissions.stream().filter(mission -> mission.player().equals(pUUID) && mission.completed() == isFinished).toList();
     }
 
     public static void addPlayerMissions(DailyMissions.PlayerMission ...missions) {

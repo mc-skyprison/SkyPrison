@@ -1,6 +1,7 @@
 package net.skyprison.skyprisoncore.utils;
 
 import com.destroystokyo.paper.MaterialSetTag;
+import net.skyprison.skyprisoncore.utils.players.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;

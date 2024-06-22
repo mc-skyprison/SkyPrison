@@ -6,8 +6,8 @@ import org.javacord.api.listener.server.role.UserRoleRemoveListener;
 
 import java.util.UUID;
 
-import static net.skyprison.skyprisoncore.utils.PlayerManager.getIdFromDiscord;
-import static net.skyprison.skyprisoncore.utils.PlayerManager.getPlayerName;
+import static net.skyprison.skyprisoncore.utils.players.PlayerManager.getIdFromDiscord;
+import static net.skyprison.skyprisoncore.utils.players.PlayerManager.getPlayerName;
 
 public class UserRoleRemove implements UserRoleRemoveListener {
     public UserRoleRemove() {

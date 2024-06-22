@@ -4,7 +4,7 @@ import net.skyprison.skyprisoncore.inventories.CustomInventory;
 import net.skyprison.skyprisoncore.inventories.smith.BlacksmithTrimmer;
 import net.skyprison.skyprisoncore.inventories.smith.EndBlacksmithUpgrade;
 import net.skyprison.skyprisoncore.inventories.smith.GrassBlacksmithUpgrade;
-import net.skyprison.skyprisoncore.utils.PlayerManager;
+import net.skyprison.skyprisoncore.utils.players.PlayerManager;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;

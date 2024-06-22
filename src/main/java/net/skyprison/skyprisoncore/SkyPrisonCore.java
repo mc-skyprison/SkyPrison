@@ -50,6 +50,7 @@ import net.skyprison.skyprisoncore.utils.claims.ClaimUtils;
 import net.skyprison.skyprisoncore.utils.claims.ConsoleCommandFlagHandler;
 import net.skyprison.skyprisoncore.utils.claims.EffectFlagHandler;
 import net.skyprison.skyprisoncore.utils.claims.FlyFlagHandler;
+import net.skyprison.skyprisoncore.utils.players.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
